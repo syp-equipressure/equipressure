@@ -1,6 +1,5 @@
 = Projektantrag EquiPressure
 Flora Dallinger, Katharina Einzenberger & Lena Graßauer
-4AHIF
 1.0, {docdate}: Projektantrag
 ifndef::imagesdir[:imagesdir: images]
 :icons: font
