@@ -1,93 +1,17 @@
-= asciidoctor-html-template
-Thomas Stütz
-1.0.0, {docdate}
-:imagesdir: img
+= EquiPressure
+Lena Graßauer, Katharina Einzenberger, Flora Dallinger
 :icons: font
-:sectnums:    // Nummerierung der Überschriften / section numbering
-// :toc:
-// :toclevels: 1
-:experimental:
-//https://gist.github.com/dcode/0cfbf2699a1fe9b46ff04c41721dda74?permalink_comment_id=3948218
-ifdef::env-github[]
-:tip-caption: :bulb:
-:note-caption: :information_source:
-:important-caption: :heavy_exclamation_mark:
-:caution-caption: :fire:
-:warning-caption: :warning:
-endif::[]
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Inhaltsverzeichnis
 
-image::https://img.shields.io/badge/version-1.0.0-blue[]
+== Beschreibung
 
-== doc-as-code
+EquiPressure ist eine Anwendung, die den Druck von einem Sattel ermessen und ausgeben soll
 
-=== Overview
+== Team-Mitglieder
 
-The purpose of this template is to convert adoc-Files to html-Files
-These files are divided in html-documents and html-slides. The slides are rendered using https://revealjs.com/[revealjs^].
-
-The convertion of the adoc-files is processed in a docker-container.
-
-
-image::/img/adoc-to-html.png[]
-
-=== Usage
-
-==== Initial Configuration
-
-* After templating this repo commit and push the demo page
-
-* Set Settings - Pages - Branch: gh-pages - Folder: / (root)
-+
-[%collapsible]
-====
-image::/img/permissions-for-asciidoc-2.png[]
-====
-
-==== Accessing the Website(s) for docs
-
-* https://*<github-repo-owner>*.github.io/*<github-repo-name>*
-
-** ie https://htl-leonding-college.github.io/asciidoctor-html-template
-
-==== Accessing the Website(s) for slides
-
-* https://*<github-repo-owner>*.github.io/*<github-repo-name>*/demo/*<file-name>*
-
-** ie https://htl-leonding-college.github.io/asciidoctor-html-template/slides/demo.html
-
-
-
-==== Remote Rendering by github-actions
-
-When commiting and pushing the adoc-files into github, they are automatically rendered by github-actions to html in a (new) branch `gh-pages`. All sub-folders with adoc-files are included.
-
-==== Local Rendering
-
-Because the rendering with gh-actions on a gh-runner takes time, it is possible to create a local dist-folder with
-
-[source,bash]
-----
-./local-convert.sh
-----
-
-IMPORTANT: You need docker installed locally.
-
-You even can publish your locally created html-slides with
-
-[source,bash]
-----
-./publish.sh
-----
-
-
-
-=== Customizing
-
-IMPORTANT: You should not change the scripts in the `asciidocs`-folder, unless you really know what to do.
-
-* The script are available in the `asciidocs`-Folder. So you could change the options for the asciidoctor-engine or the version of revealjs.
-
-=== Docs
-** https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/[Asciidoctor Quick Reference]
-** https://asciidoctor.org/docs/asciidoc-writers-guide/[AsciiDoc Writer’s Guide^]
-** https://docs.asciidoctor.org/reveal.js-converter/latest/converter/features/[Slides with Asciidoctor for revealjs^]
+* Lena Graßauer
+* Katharina Einzenberger
+* Flora Dallinger
