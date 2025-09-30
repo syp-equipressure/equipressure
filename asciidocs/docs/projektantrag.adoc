@@ -1,6 +1,6 @@
 = Projektantrag EquiPressure
 Flora Dallinger, Katharina Einzenberger & Lena Graßauer
-1.0, {docdate}: Projektantrag
+1.0, {docdate}:, Projektantrag
 ifndef::imagesdir[:imagesdir: images]
 :icons: font
 
@@ -14,29 +14,28 @@ Solch ein Messgerät soll nun gebaut werden. Dieses soll per Bluetooth die Daten
 schicken und diese dort abbilden.
 
 == Zweck
-Zweck des Projekts ist es die Messung der Druckpunkte des Sattels so genau wie möglich darstellen zu können.
-Außerdem sollen die Ergebnisse der Messungen übersichtlich und leicht abrufbar im Profil gespeicht werden
-um das anpassen des Sattels zu erleichtern.
+Zweck des Projekts ist es, die Messung der Druckpunkte des Sattels so genau wie möglich darstellen zu können.
+Außerdem sollen die Ergebnisse der Messungen übersichtlich und leicht abrufbar im Profil gespeicht werden,
+um das Anpassen des Sattels zu erleichtern.
 
 
 == Kunde/Stakeholder
 Die Kundschaft besteht genau aus der Schnittstelle zwischen Reiter:innen und Sattler:innen. Es soll den Prozess
-vereinfachenund auch die Daten für die Erstellung bzw. Anpassung des Sattels schnell abrufbar machen.
+vereinfachen und auch die Daten für die Erstellung bzw. Anpassung des Sattels schnell abrufbar machen.
 
 == Endergebnis
 Am Ende soll eine App und ein selbst gebautes Satteldruckmessgerät entstehen.
 
 .Hardware
-Das Satteldruckmessgerät, das in Koopertaion mit den Schüler:innen aus der Abteilung der Elektronik entstehen soll,
+Das Satteldruckmessgerät, das in Kooperation mit den Schüler:innen aus der Abteilung Elektronik entstehen soll,
 muss die Daten, die es von den einzelnen Drucksensoren bekommt, per Bluetooth an das Handy senden.
 
 .Software
-Die dazugehöre App soll diese Daten auswerten und anhand dessen ein 3D-Modell erstellen. Dieses soll die Druckstellen
-farbig herausheben. +
-Zusätzlich gibt es einen Account der alle Messungen in einer Historie speichert.
+Die dazugehörige App soll diese Daten auswerten und daraus ein 3D-Modell erstellen, das die Druckstellen farbig hervorhebt. +
+Zusätzlich gibt es einen Account, der alle Messungen in einer Historie speichert.
 
 == Ressourcen
-Meiner Schätzung nach wird ein Team von **mindestens 3 bis maximal 5 Personen** benötigt. Innbegriffen ist eine **Projektleitung**.
-Das Team sollte in etwa zur Hälfte aus Elektronikern und Informatikern bestehen. +
-Zeitlich wird mit einem Aufwand für die Umsetzung von **30 Personentagen** (1 pt = 8h) gerechnet.
+Unserer Schätzung nach wird ein Team von **mindestens 3 bis maximal 5 Personen** benötigt. Innbegriffen ist eine **Projektleitung**.
+Das Team sollte in etwa zur Hälfte aus Elektroniker:innen und Informatiker:innen bestehen. +
+Zeitlich wird mit einer Projektlänge von **2 Jahren** gerechnet.
 
