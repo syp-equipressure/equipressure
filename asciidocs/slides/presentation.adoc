@@ -1,25 +1,18 @@
 = EqiPressure
-:author: flora dallinger
+
 :revnumber: 1.0
 :revdate: {docdate}
 :encoding: utf-8
 :lang: de
 :doctype: article
-//:icons: font
+:icons: font
 :customcss: css/presentation.css
-//:revealjs_customtheme: css/sky.css
-//:revealjs_customtheme: css/black.css
 :revealjs_width: 1408
 :revealjs_height: 792
 :source-highlighter: highlightjs
-//:revealjs_parallaxBackgroundImage: images/background-landscape-light-orange.jpg
-//:revealjs_parallaxBackgroundSize: 4936px 2092px
-//:highlightjs-theme: css/atom-one-light.css
-// we want local served font-awesome fonts
 :iconfont-remote!:
 :iconfont-name: fonts/fontawesome/css/all
-//:revealjs_parallaxBackgroundImage: background-landscape-light-orange.jpg
-//:revealjs_parallaxBackgroundSize: 4936px 2092px
+
 ifdef::env-ide[]
 :imagesdir: ../images
 endif::[]
