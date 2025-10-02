@@ -5,7 +5,7 @@ ifndef::imagesdir[:imagesdir: images]
 :icons: font
 
 == Projektbeschreibung
-Da unterschiedliche Pferde verschiedene Rückenbegebenheiten haben, benötigt man für das optimale Anpassen des Sattels
+Da unterschiedliche Pferde verschiedene Rückenstruktur- und Muskulatur haben, benötigt man für das optimale Anpassen des Sattels
 ein so genanntes Satteldruckmessgerät. +
 Dies ist eine Satteldecke aus Drucksensoren, die die Druckverteilung des Sattels
 am Pferd misst.
