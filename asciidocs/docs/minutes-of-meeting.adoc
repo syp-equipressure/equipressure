@@ -1,96 +1,192 @@
-= Besprechungsprotokoll dd.mm.yyyy
-firstname lastname
-1.0, {docdate}: Some notes
-ifndef::imagesdir[:imagesdir: images]
-:icons: font
-//:sectnums:    // Nummerierung der Überschriften / section numbering
-//:toc: left
+= Minutes of Meeting
+EquiPressure
+2025/2026/2027
 
-//Need this blank line after ifdef, don't know why...
-ifdef::backend-html5[]
-
-// https://fontawesome.com/v4.7.0/icons/
-icon:file-text-o[link=https://raw.githubusercontent.com/htl-leonding-college/asciidoctor-docker-template/master/asciidocs/{docname}.adoc] ‏ ‏ ‎
-icon:github-square[link=https://github.com/htl-leonding-college/asciidoctor-docker-template] ‏ ‏ ‎
-icon:home[link=https://htl-leonding.github.io/]
-endif::backend-html5[]
-
+== 2025-10-10
 
 .Teilnehmer
+[%collapsible]
+====
 |===
-|anwesend |Verteiler
+|anwesend | |
 
-|Vorname Nachname
-|
+|Vorname
+|Nachname
+|Klasse
 
-|A. Anton (teilweise)
-|A. Anton
 
-|B. Berta
-|B. Berta
+| Peter
+| Bauer
+| Professor, AV
 
-|C. Cäsar
-|C. Cäsar
+| Florian
+| Weber
+| Professor
 
-|
-|D. Dora
+| Markus
+| Haslinger
+| Professor
+
+| Sophie
+| Grüneis
+| Auftraggeber
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Jonas
+| Pfeiffer
+| 4AHBG
 |===
-
+====
 .Ort und Zeit
+[%collapsible]
+====
 [cols=2*]
 |===
 |Ort
-|Online-Unterricht (Discord)
+|Johannes Kepler - Besprechungsraum
 
 |von-bis
-|Mo. 20.4.2020, 2. und 3. EH
+|Fr. 2025/10/10, 9.00 - 9.45
+
 |Dauer
-|70 min
+|45 Minuten
 |===
+====
 
+=== Besprochene Themen
 
+==== Fragen der Entwickler
+* Features die schon da sind & wir auch implementieren sollen
+* Neue Features
+* Ui-Design Fragen (Farben, Startseite)
+* App-Name
 
-== Besprochene Themen
+==== Bisheriges System
+* Satteldruckmessgerät hat 400 Sensoren
+* kostet 9000 Euro
+* man misst verschiedene Gangarten in einem bestimmten Zeitraum
+** Durchschnittdruckspitzen über diesen Zeitraum werden angezeigt
+* man schaut ob es eine Gleichmäßigkeit von links-rechts Druck gibt
+* ab 5-6 Newton/cm² wird es gesundheitsschädigend fürs Pferd
+** muss man abers ans Gewicht von Reiter anpassen
+** wenn z.B. Reiter*in nur 40kg hat, wird es selten zu 5-6 Newton kommen
+* Frau Grüneis fährt im Durchschnitt 3-4 Mal im Jahr fährt zu Kunden, wenn sie Probleme haben
+* Pferde verändern sich aber auch im Laufe des Jahres (im Winter z.B. etwas dicker)
+* Kontrolltermine nur etwa 1-2 Mal im Jahr
 
-* Thema 1
-* Thema 2
-* Thema 3
-* Thema 4 +
-Ev. mit Erläuterungen
-* Thema 5
+==== USP
+* Pferd kann langwierige Schäden bekommen
+** dadurch entstehen hohe Kosten für Reiter durch Tierärzte, Physiotherapien etc.
 
+==== Ideen des Auftraggebers
+* Grundidee: Das Satteldruckmessgerät in Serienreife bringen
+** man soll vorher Sattel prüft wenn Pferd komisch geht, bevor man Tierarzt ruft, bzw. mann muss nicht jedes Mal sofort den Sattler anrufen
+** vlt Kamera anbinden damit man sehen kann, was beim Messen passiert (Pferd erschreckt)
+*** Kamera in der Mitte, von hinten (Hüfte schief vom Reiter, Pferd schief)
 
-== Vereinbarungen und Entscheidungen
+==== Features der App
+* Die Kamerabilder sollen dann später auch angezeigt werden, wenn man die Messung nochmal anschaut
+* Reiter im Modell anzeigen (Reiter muss auch an Schwung angepasst werden)
+** dort wo am durchgängig Druck herscht, sitzt der Reiter am Sattel
+* Reitvorgang über Zeitraum aufnehmen und abspeichern können
+* für Sattler dann auch Ansicht für Newton/cm² 
+** 3D Ansicht vlt für Reiter, dass ers am schnellsten erkennt 
+** 3D Ansicht die ans Pferd angepasst wird (zeigt Skelett, Muskeln) wie es sich bewegt (für GANZ später)
+* vorher / nachher Ansicht vom Sattel 
+* Kunde anlegen, alle Messungen, Notizen hinzufügen (Sattler)
+** Historie fürs Pferd 
+* Basisversion für Kunden ohne Fotos; mit Aufpreis dann Vorher/Nachher Fotos, die am Server gespeichert werden können
+** Expertenversion fürn Sattler (NEwton/cm²)
+* Start/Stop bei Aufnahme (nicht vorgegebenen Zeit)
+* Größe/Gewicht Reiter eingeben
 
-.Was wurde vereinbart?
-[%autowidth]
+Kunde: Stallgemeinschaft kauft sich so ein Gerät
+* Basisversion kauft sich Version für 5 Pferde z.b.
+* Reitstall hat ca 20-30 Pferde
+* Kann selbst prüfen ob Sattel sitzt, wenn es rot wird ruft man sattler an
+* Einzelaccount/Sammelaccount(für Reitställe)
+* vlt Tierarzt als Kunde
+* Sattelgerät: Version mit billigerer Hardware und ohne Kamera
+
+App:
+* nach Pferdeeigentümer filtern
+** weil mehrer Pferde oft denselben Namen haben
+* Sattlerversion am Laptop
+* Liste von Sattler in der App, die die App/Messgerät auch haben, die man in der App kontakieren kann
+
+==== technische Anforderungen an Matte
+* Wasser und Staub aushalten (Version vom Sattler)
+* Material soll leichter sein als das Leder dass es gerade gibt
+** vlt Neopren
+* Sensoren müssen Reiter aushalten
+** auch wenn er sich raufschwingt
+* Firma mit Schafe Amstetten, Sattler Deutschland
+* 2 Größen für größere/kleinere Pferde/Ponys
+
+== 2025-10-14
+
+.Teilnehmer
+[%collapsible]
+====
 |===
-|wer |macht was |bis wann
+|anwesend | |
 
-| Hr. Dora
-a| Erstellung des UCD
-| 20.06.2020
+|Vorname
+|Nachname
+|Klasse
 
-|...
-a|
-.Ev. Bilder und Diagramme
-image:animal-pet-cute-kitten-45201.jpg[width=400px]
 
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-|1.06.2020
+| Hans-Christian
+| Hammer
+| Professor
 
-|Fr. Emil
-a|
-.Class Diagram
-[plantuml,CLD,png]
-----
-@startuml
-class City
-class Street
-City "1" <--right- "*" Street
-@enduml
-----
+| Markus
+| Haslinger
+| Professor
 
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-|3.06.2020
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
 |===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF - E59-1
+
+|von-bis
+|Mo. 2025/10/14, 9.15 - 9.30
+
+|Dauer
+|15 Minuten
+|===
+====
+
+=== Besprochenes
+* Projektantrag durchgegangen
+* Technologie für Handy-App und Desktop Anwendung von Kotlin in Flutter und Angular geändert
+* der Prototyp der Medizintechniker soll bis zu den Weihnachtsferien da sein (Deadline)
+* kurz übers Patent geredet, dass uns Sophie Grüneis geschickt hat
+** Herr Prof. Hammer meint er schaut es sich an
