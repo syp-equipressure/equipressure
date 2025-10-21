@@ -190,3 +190,71 @@ App:
 * der Prototyp der Medizintechniker soll bis zu den Weihnachtsferien da sein (Deadline)
 * kurz übers Patent geredet, dass uns Sophie Grüneis geschickt hat
 ** Herr Prof. Hammer meint er schaut es sich an
+
+== 2025-10-14
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF - E59-1
+
+|von-bis
+|Mo. 2025/10/14
+
+|Dauer
+|10 Minuten
+|===
+====
+
+=== Besprochenes
+* Projektantrag muss unterschrieben werden
+* Datenmodell review
+
+=== Was soll bis zum nächsten Mal gemacht werden
+* Weber bzgl. Patent fragen
+* Bauer über Patent informieren
+* Projektantrag unterschreiben lassen
+* Wireframes erstellen
+* Datenmodell besprechen
+* Logo erstellen
+* Plakat erstellen
+* Datenformat ausmachen
