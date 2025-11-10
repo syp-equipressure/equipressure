@@ -191,7 +191,7 @@ App:
 * kurz übers Patent geredet, dass uns Sophie Grüneis geschickt hat
 ** Herr Prof. Hammer meint er schaut es sich an
 
-== 2025-10-14
+== 2025-10-21
 
 .Teilnehmer
 [%collapsible]
@@ -258,3 +258,75 @@ App:
 * Logo erstellen
 * Plakat erstellen
 * Datenformat ausmachen
+
+== 2025-11-04
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF - E59-1
+
+|von-bis
+|Mo. 2025/10/14
+
+|Dauer
+|10 Minuten
+|===
+====
+
+=== Was wurde erledigt
+* Datenmodell überarbeitet
+* Bauer und Weber über Patent informiert
+** wird bis zum Ende des Projekts ignoriert, bis wir es wirklich vermarkten wollen
+* Wireframe wurde erweitert
+
+=== Besprochenes
+* Projektantrag muss unterschrieben werden
+* Datenmodell review
+** Main Owner der das Messgerät kauft und sich als erstes mit QR-Code anmeldet
+** Main Owner kann andere User aus seiner Gruppe löschen (kann Gerät dann nicht mehr verwenden) oder anderen User Main Owner machen (z.B. wenn er Gerät an diesen User verkauft); Man sieht in Einstellungen andere User
+* wir sollen vorgefertigte Anmeldevarianten implementieren (Google, Apple, Microsoft, GITHUB)
+** kann man später noch auf eigenen Anmeldedaten mit Keycloak ändern
+
+
+=== Was soll bis zum nächsten Mal gemacht werden
+* Projektantrag unterschreiben lassen
+* Logo erstellen
+* Plakat erstellen
+* Wireframe
+* Datenformat für Übertragung suchen
