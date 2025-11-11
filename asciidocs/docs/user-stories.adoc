@@ -15,11 +15,8 @@ Flora Dallinger, Katharina Einzenberger, Lena Graßauer, Lejla Music
 
 . Als Benuter möchte ich den Start- und Endzeitpunkt der Messung selber bestimmen und nicht mit einer vorgegebenen Zeit durchführen, um Stress zu vermeiden.    
 
-. Als Benutzer möchte ich den Besitzer des Pferdes eintragen, falls ich eine Reitbeteiligung habe, und beide Pferde denselben Namen haben.
+. Als Benutzer möchte ich Reitbeteiligungen anlegen, die mit meinen Pferden reiten, damit sie sich die App nicht selber kaufen müssen.
 
 . Als Messgerät-Besitzer*in möchte ich alle bei mir angelegten Reiter einsehen und löschen können, um mein Gerät für viele Leute zur Verfügung stellen zu können und auch um es verkaufen zu können. 
 
 . Als Messgerät-Besitzer*in möchte ich mich mit meinem QR-Code anmelden, der mitgeliefert wird, und der mein Messgerät mit einer Seriennummer identifiziert. Diesen QR-Code möchte ich dann an Reiter*innen weitergeben
-
-
-
