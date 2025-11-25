@@ -389,7 +389,7 @@ App:
 |Di. 2025-11-11
 
 |Dauer
-|13:50 bis 
+|13:50 bis 16:20
 |===
 ====
 
@@ -416,7 +416,7 @@ App:
 * einloggen wir bei WhatsApp: selber Account darf nur auf einem Gerät laufen (damit man App nicht weitergeben kann; aber trotzdem Gerät wechseln kann, wenn man neues Handy kauft)
 * Reiter soll nicht nur Messung an Reiter schicken können sondern auch Liste mit Sattler bekommen, die man anrufen kann
 
-==== Sattler Version:
+==== Sattler Version
 * Sattler will alle Messungen der Kunden sehen FÜR EIN PFERD (d.h. Pferd teilen)
 ** Kunde soll auf Messung klicken und einen Button haben mit sattler finden 
 ** findet sattler, die die sattler-version gekauft haben
@@ -433,3 +433,88 @@ App:
 
 === Was gemacht werden muss
 * ERD
+
+
+== 2025-11-25
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2025-11-11
+
+|Dauer
+|08:30 bis 9:30
+|===
+====
+
+=== Besprochenes
+* Zeiten für einen Sprint angeben im Clockify
+* User Story angeben an der man gearbeitet hat (Clockify)
+** Zeitaufzeichnung für Sprint auch rein => immer der neue Start für einen Sprint
+* Datenmodell  hergezeigt
+* Technologie Stack: Angular, Flutter und Postgresql
+* Wireframe hergezeigt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Einzenberger
+a| User Stories ins Youtrak schreiben (Product Backlog) + 
+ mit Github Issues beschäftigen
+| 09.12.2025
+
+|Einzenberger
+a| PSP überarbeiten und digitalisieren; Gesamtstunden und Stunden die pro Teil reingesteckt werden überlegen
+| 09.12.2025
+
+|Graßauer
+a| am Wireframe weiterarbeiten +
+Einstiegsmaske mit QR-Code scannen erstellen, eine Maske für Pferde erstellen +
+Anzahl der bereits durchgeführten Messungen anzeigen beim Pferd
+| 09.12.2025
+
+|Dallinger
+a| Datenmodell mit Prof. Haslinger besprechen
+| 09.12.2025
+
+|Dallinger
+a| Projektantrag von Prof. Bauer unterschreiben lassen
+| 27.11.2025
+|===
+
