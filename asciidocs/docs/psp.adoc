@@ -1,0 +1,143 @@
+= EquiPressure Projektstrukturplan
+:date: 2025-12-2
+
+== Zeitplanung
+4.Klasse: 32 Wochen +
+5.Klasse: 25 Wochen +
+|-------------------- +
+ca 60 Wochen +
+
+=== Ziel
+8 Personenstunden pro Woche +
+=> 480 Studen pro Person Projektarbeit +
+=> 1920 Gesamtstunden für unser Projekt 
+
+[plantuml, equi-pressure, png]
+----
+@startwbs EquiPressure
+<style>
+wbsDiagram {
+    Linecolor olive
+}
+</style>
+*[#Olive] EquiPressure – Projektstrukturplan
+** Projektmanagement
+*** Projektplanung
+****_ Zeitplanung (2 Jahre)
+****_ Technologieverwendung
+****_ Marktanalyse
+****_ Wireframe erstellen
+****_ Product Backlog
+****_ Datenmodell
+*** Projektleitung & Koordination
+****_ Meetings & Abstimmung Elektronik/Software
+****_ Teamleitung auswählen und Rollen 
+****_ Meetings protokollieren
+*** Dokumentation & Berichte
+****_ Pitch
+****_ Projektantrag
+****_ Pflichtenheft
+
+** Hardware – Satteldruckmessgerät
+*** Konzeption
+****_ Auswahl Drucksensoren
+****_ Materialauswahl Satteldecke
+*** Entwicklung
+****_ Aufbau Sensorarray
+****_ Microcontroller-Programmierung
+****_ Bluetooth-Kommunikation
+*** Prototyp & Fertigung
+****_ Testmessungen
+****_ Optimierung der Hardware
+*** QR-Code Seriennummer-System
+****_ Generierung
+****_ Verbindung Gerät → App
+
+** Frontend (Mobile App; Angular Flutter)
+*** Basisfunktionen (UI/UX)
+****_ Registrierung & Login
+*****_ OAuth (Google, Microsoft, GitHub)
+*****_ später eventuell eigenen Login
+****_ Reitbeteiligungen anlegen
+****_ QR-Code Anmeldung für Gerätebesitzer
+****_ Pferde anlegen & verwalten
+*****_ Übersicht aller Pferde
+*** Messungsfunktionen
+****_ Start-/Endzeit frei bestimmbar
+****_ Messung pro Gangart (Schritt/Trab/Galopp)
+*** Darstellung & Visualisierung
+****_ 3D-Modell anzeigen
+****_ Druckstellen farbig hervorheben
+****_ Messhistorie für Pferd anzeigen
+****_ Nahegelegene Sattler*innen anzeigen
+*****_ Kontaktinformationen oder in App kontaktieren
+
+** Backend (C#)
+*** Benutzerverwaltung
+****_ Authentifizierung (inkl. OAuth)
+****_ Rollen & Berechtigungen
+*****_ Reiter:innen
+******_ Messungen durchführen
+******_ Gerätezugang über Besitzer
+*****_ Messgeräte-Besitzer:innen
+******_ Reiterliste einsehen & löschen
+******_ Gerät weitergeben (QR-Code)
+*** Pferde- & Sattelverwaltung
+*** Messungsverwaltung
+****_ Speicherung der Messdaten
+****_ Gangarten-Handling
+****_ Zeitstempel (Start/Ende)
+*** Datenverarbeitung
+****_ Bluetooth-Datenempfang
+****_ Analyse der Druckdaten
+****_ Generierung der 3D-Modelldaten
+****_ Farbwerte für Druckpunkte berechnen
+*** Standort- & Sattler-Service
+****_ Geodaten-Handling
+****_ Sattler-Datenbank/Index
+
+** Testing & Qualitätssicherung
+*** Hardwaretests
+****_ Sensor-Genauigkeit
+****_ Bluetooth-Reichweite
+*** Softwaretests
+****_ Unit Tests
+****_ UI/UX Tests
+****_ Integration Hardware ↔ App
+*** Feldtests
+****_ Reale Reitversuche
+****_ Vergleich mit Sattler-Messungen
+*** Abnahmetest
+*** Verwertbarkeitsanalyse
+
+** Marketing
+*** Marktforschungstudie
+*** Plakat
+*** Social Media Account
+*** Homepage
+*** Teaser-Video
+*** Logo
+
+** Ressourcen & Infrastruktur
+*** Team (6 Personen)
+****_ Medizintechnik
+*****_ Christoph Fehleisen
+*****_ Jonas Pfeiffer
+****_ Informatik
+*****_ Lena Graßauer (Teamleiter)
+*****_ Flora Dallinger
+*****_ Katharina Einzenberger
+*****_ Lejla Music
+****_ Projektleitung
+*****_ Herr Professor Hammer
+*****_ Herr Professor Haslinger
+****_ Auftraggeber
+*****_ Sophie Grüneis
+*** Tools & Technologien
+****_ Bluetooth-Modul
+****_ App-Framework
+****_ 3D-Analyse-Tools
+****_ Versionsverwaltung (Git)
+
+@endwbs
+----
