@@ -1,5 +1,5 @@
 = EquiPressure Projektstrukturplan
-:date: 2025-12-2
+:date: 2025-12-02
 
 == Zeitplanung
 4.Klasse: 32 Wochen +
