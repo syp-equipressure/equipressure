@@ -19,10 +19,9 @@ a|
 
 a|
 * noch keine Erfahrung in der mobile-App-Entwicklung
-* Projekt über langen Zeitraum (2 Jahre) (Motivation könnte verloren gehen)
 * relativ großer Projektumfang durch Sattler- und Reitervariante
 * kein 100%tiger Fokus aufs Projekt, da es neben der Schule durchgeführt wird
-* Bluetooht Komplexität kann je nach Plattfrom(IOS/Android) sehr anders sein
+* Bluetooth Komplexität kann je nach Plattform(IOS/Android) sehr anders sein
 * fehlende Erfahrung bei 3D-Visualisierung
 
 | *OPPORTUNITIES* | *THREATS*
@@ -41,5 +40,6 @@ a|
 * App-Store-Zulassungsrichtlinien, die zusätzlich Aufwand erzeugen
 * Hohe Erwartungen der Nutzerschaft – Sattler*innen arbeiten teils mit extrem teuren Profi-Systemen
 * sehr ausgereift kommerzielle System für Sattler*innen existieren bereits
+* Projekt über langen Zeitraum (2 Jahre) (Motivation könnte verloren gehen)
 
 |===
