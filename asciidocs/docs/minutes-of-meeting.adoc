@@ -518,3 +518,138 @@ a| Projektantrag von Prof. Bauer unterschreiben lassen
 | 27.11.2025
 |===
 
+== 2025-12-09
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Christoph
+| Fehleisen
+| 4AHBG
+
+| Jonas
+| Pfeiffer
+| 4AHBG
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2025-12-09
+
+|Dauer
+|08:10 bis 9:20
+|===
+====
+
+=== Besprochenes
+* user Story im Clockify eintragen zur Bezeichnung
+* ins verify tragen was zum sprint review gehört
+* Product Owner möchte eine Folie mit dem Tech Stack (für was weiß Flora anscheinend)
+* Bevor wir nichts tun im Sprint lernen wir uns Flutter oder setzten uns nochmal zum PSP
+* Anmeldung führen wir durch mit OIDC Provider
+* Product Backlog ausweiten
+* Minmal API Endpunkte definieren und statisch Werte liefern => Mock Daten
+
+==== PSP
+* Tippfehler bei Stunden
+* Stunden auch zu Unterpunkten eintragen (2000 zu EquiPressure oder so)
+
+==== Wirefrime
+* Login: vlt die Icons die Logos der Konten anzeigen mit Farbe
+** Github fehlt
+** Gast anmelden daweil noch wegdenken
+** wenn ich z.b. mit Google anmelde werden Daten beim Profil schon eingefügt, die wir von Google kennen (z.B. Vor- Nachname)
+** unter Profil konfigurieren hinschreiben z.b. mit google-Konto angemeldet
+** Doppelpunkt wegtun
+** Bei QR-Code spezifischer schreiben: "den QR-Code auf dem EquiPressure Satteldruckmessgerät scannen"
+*** Dümmster anzunehmender User
+* Name für Satteldruckmessgerät kann angegeben werden (DATENMODELL)
+** Wenn wir das erste Mal einscannen, soll gefragt werden, ob wir einen Name vergeben werden wollen
+* Bei Viel Erfolg! => Button statt Starten soll Weiter heißen, damit User nicht verwirrt sind und glauben dass sie starten sollen
+** Viel Erfolg daugt Hammer auch nicht
+* neues Pferd anlegen 
+** es soll erst über alle Pferde drübergeschaut werden; damit keines doppelt angelegt wird
+** floating action button unten rechts zum neu anlegen
+* Pferdehistorie Messung
+** Messung muss anders identifiziert als durch Datum sein; timestamp muss auch dabei sein (wie im Datenmodell)
+** die Uhr gehört entweder weg; oder bei der Uhr wird zusätzlich dann der Zeitstempel sonst Zeitstempel zu "Messung vom ..."
+* Bei Filter den Durchschnitt als default Wert ausgefüllt
+* Kontakte auf Sattler-Kontakte umbenennen
+* Messung
+** Pferdebesitzer wird default angezeigt bei Reiter
+** "zeige versteckte user" User groß schreiben
+* keine persönliche Daten reinschreiben beim User
+** Lena Graßauer auf Max Mustermann ändern
+
+
+==== Hardware
+* Sensoren sind nicht so gut wie gedacht
+* wird schwerer als erwartet => haben aber nicht aufgegeben
+* Mock-Daten sollen schnellst möglich gesendet werden
+* User Story: "Test-Schnittstelle mit Dummy-Daten"
+
+
+=== Feedback Zusammenfassung
+* Verbesserung zum letzten Mal
+* Zeitaufstellung besser
+* PSP entgültig fertig
+* Wireframe weiterarbeiten
+* Techstack Folie
+* Schnittstelle definiert und Datenübertragung
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Einzenberger
+a| PSP überarbeiten
+| 23.12.2025
+
+|Alle
+a| Schnittstelle zum Sattelmessgerät definieren und Testdaten senden
+| 23.12.2025
+
+|Graßauer und Music
+a| Wireframe weiterarbeiten
+| 23.12.2025
+
+|Einzenberger
+a| Techstack Folie
+| 23.12.2025
+|===
