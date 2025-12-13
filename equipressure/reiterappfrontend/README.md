@@ -1,6 +1,6 @@
 # reiterappfrontend
 
-A new Flutter project.
+Frontend for EquiPressure
 
 ## Getting Started
 
