@@ -1,0 +1,35 @@
+= GIT
+
+== Branches
+
+=== Notation
+
+Für jedes neue Feature:
+
+* feature/[name-des-features]
+
+=== Bereits bestehende Branches
+
+.main
+* nur versionen, die man bereits veröffentlichen könnte
+
+.dev
+* komplett abgeschlossene features aus backend und frontend
+* dokumentation (keine gh-pages)
+
+.gh-pages
+* NUR pushes für die gh-pages
+
+.feature/backend
+* Ausgangspunkt aller backend features
+
+.feature/frontend
+* Ausgangspunkt aller frontend features
+
+.feature/sattler-app
+* geht vom feature/frontend aus
+* alles was mit dem frontend der sattler app zu tun hat
+
+.feature/reiter-app
+* geht vom feature/frontend aus
+* alles was mit dem frontend der reiter app zu tun hat
