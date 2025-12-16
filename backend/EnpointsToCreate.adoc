@@ -1,0 +1,25 @@
+== Endpoints 
+
+* Person
+** hat Klasse Role
+** eine Person hat eine oder mehrere Rollen
+** hat List<Person> für Kontakte
+** hat List<Person> für Favouriten
+*** Unterklasse für Rolle
+** persons/devices
+
+* Devices
+** hat Person Besitzer
+** hat List<Person> Nutzer
+** hat DeviceCategory Id
+*** Unterklasse DeviceCategory
+** devices/persons
+
+* Horses
+** /horses/sattel für alle Sättel des Pferdes
+
+* MeasurementGroup
+** /measurementgroup
+** /measurementgoup/id/measurement => Tabelle Measurement
+** /measurementgroup/id/measurement/id => ein Measurement aus Tabelle Measurement
+** /measurementgroup/id/measurement/id/measurementData/id => ein MeasurementData aus Tabelle MeasurementData
