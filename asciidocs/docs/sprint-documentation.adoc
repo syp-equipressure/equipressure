@@ -1,0 +1,19 @@
+= Sprint Documentation
+
+Äquivalent zu den Tags im Clockify
+
+---
+
+== sprint_1
+.Projektstart - 25.11.2025
+
+* Datenmodell
+* Wireframes
+* PSP
+
+== sprint_2
+.25.11.2025 - 09.11.2025
+* Datenmodell
+* Wireframes
+* PSP überarbeiten
+* Frontend Entwicklung Start
