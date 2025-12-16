@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddHorseScreen extends StatefulWidget {
@@ -28,6 +29,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   File? selectedImage;
   String selectedSex = 'female';
+  String? dateErrorMessage;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -43,13 +45,87 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     }
   }
 
-  String _calculateAge() {
-    if (yearController.text.isEmpty) return '';
+  bool _isValidDate(int day, int month, int year) {
+    // Check if year is in valid range
+    if (year < 1950 || year > DateTime.now().year) {
+      return false;
+    }
+
+    // Check if month is valid
+    if (month < 1 || month > 12) {
+      return false;
+    }
+
+    // Days in each month
+    final daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    // Check for leap year
+    if (month == 2 && _isLeapYear(year)) {
+      if (day < 1 || day > 29) {
+        return false;
+      }
+    } else {
+      if (day < 1 || day > daysInMonth[month - 1]) {
+        return false;
+      }
+    }
+
+    // Check if date is not in the future
+    final inputDate = DateTime(year, month, day);
+    if (inputDate.isAfter(DateTime.now())) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _isLeapYear(int year) {
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+  }
+
+  void _validateDate() {
+    setState(() {
+      dateErrorMessage = null;
+    });
+
+    if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
+      return;
+    }
 
     try {
-      final birthYear = int.parse(yearController.text);
-      final currentYear = DateTime.now().year;
-      final age = currentYear - birthYear;
+      final day = int.parse(dayController.text);
+      final month = int.parse(monthController.text);
+      final year = int.parse(yearController.text);
+
+      if (!_isValidDate(day, month, year)) {
+        setState(() {
+          dateErrorMessage = 'Ungültiges Datum';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        dateErrorMessage = 'Ungültiges Datum';
+      });
+    }
+  }
+
+  String _calculateAge() {
+    if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
+      return '';
+    }
+
+    try {
+      final day = int.parse(dayController.text);
+      final month = int.parse(monthController.text);
+      final year = int.parse(yearController.text);
+
+      if (!_isValidDate(day, month, year)) {
+        return '';
+      }
+
+      final birthDate = DateTime(year, month, day);
+      final now = DateTime.now();
+      final age = now.year - birthDate.year;
       return '${age}yo';
     } catch (e) {
       return '';
@@ -69,6 +145,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         ),
         title: const Text(
           'Neues Pferd anlegen',
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -85,46 +162,41 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
             // Bild Upload mit gestricheltem Border
             GestureDetector(
               onTap: _pickImage,
-              child: Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.grey[300]!,
-                    width: 2,
-                    strokeAlign: BorderSide.strokeAlignInside,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[50],
+              child: CustomPaint(
+                painter: DashedBorderPainter(
+                  color: Colors.grey[300]!,
+                  strokeWidth: 2,
+                  borderRadius: 12,
                 ),
-                child: selectedImage == null
-                    ? CustomPaint(
-                  painter: DashedBorderPainter(
-                    color: Colors.grey[300]!,
-                    strokeWidth: 2,
-                    borderRadius: 12,
+                child: Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[50],
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.upload_outlined, size: 40, color: Colors.grey[400]),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Lade ein Bild hoch',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  child: selectedImage == null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.upload_outlined, size: 40, color: Colors.grey[400]),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Lade ein Bild hoch',
+                                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            selectedImage!,
+                            width: double.infinity,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                )
-                    : ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    selectedImage!,
-                    width: double.infinity,
-                    height: 160,
-                    fit: BoxFit.cover,
-                  ),
                 ),
               ),
             ),
@@ -234,119 +306,181 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
             const SizedBox(height: 20),
 
-            // Geburtsdatum
-            const Text(
-              'Geburtsdatum',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
+            // Geburtsdatum mit Validierung
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: dayController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: 'DD',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                const Text(
+                  'Geburtsdatum',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: dayController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 2,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (value) {
+                          if (value.length == 2) {
+                            FocusScope.of(context).nextFocus();
+                          }
+                          _validateDate();
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'DD',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.white,
+                          counterText: '',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.blue[400]!,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: monthController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 2,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (value) {
+                          if (value.length == 2) {
+                            FocusScope.of(context).nextFocus();
+                          }
+                          _validateDate();
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'MM',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.white,
+                          counterText: '',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.blue[400]!,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: yearController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 4,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (value) {
+                          _validateDate();
+                          setState(() {});
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'YYYY',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.white,
+                          counterText: '',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: dateErrorMessage != null ? Colors.red : Colors.blue[400]!,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
+                    ),
+                  ],
+                ),
+                if (dateErrorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 4),
+                    child: Text(
+                      dateErrorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: monthController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: 'MM',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: yearController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    onChanged: (value) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: 'YYYY',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!, width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                  ),
-                  child: Icon(Icons.calendar_today_outlined, size: 20, color: Colors.grey[600]),
-                ),
               ],
             ),
 
@@ -374,6 +508,9 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                             child: TextField(
                               controller: heightController,
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
@@ -428,6 +565,9 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                             child: TextField(
                               controller: weightController,
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
@@ -482,15 +622,43 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   elevation: 0,
                 ),
                 onPressed: () {
-                  if (nameController.text.isNotEmpty) {
-                    String age = _calculateAge();
-                    widget.onSave(
-                      nameController.text,
-                      selectedImage,
-                      age,
-                      breedController.text.isEmpty ? 'Unknown' : breedController.text,
+                  if (nameController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte Name ausfüllen'),
+                        duration: Duration(seconds: 2),
+                      ),
                     );
+                    return;
                   }
+
+                  if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte Geburtsdatum ausfüllen'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (dateErrorMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte gültiges Datum eingeben'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                  String age = _calculateAge();
+                  widget.onSave(
+                    nameController.text,
+                    selectedImage,
+                    age,
+                    breedController.text.isEmpty ? 'Unknown' : breedController.text,
+                  );
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -526,7 +694,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           color: isSelected ? Colors.grey[300] : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? Colors.grey[400]! : Colors.grey[300]!,
+            color: isSelected ? Colors.grey[400]! : const Color.fromARGB(255, 255, 255, 255)!,
             width: 1,
           ),
         ),
