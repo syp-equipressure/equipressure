@@ -1,5 +1,6 @@
 = EquiPressure Projektstrukturplan
 :date: 2025-12-02
+:imagesdirg: ./images
 
 == Zeitplanung
 4.Klasse: 32 Wochen +
@@ -165,3 +166,5 @@ wbsDiagram {
 
 @endwbs
 ----
+
+image::images/PSP_EquiPressure_4AHIF_202526.png[]
