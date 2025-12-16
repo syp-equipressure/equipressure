@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:reiterappfrontend/screens/find_saddler.dart';
-import 'package:reiterappfrontend/screens/horses_screen.dart';
-import 'package:reiterappfrontend/screens/new_measurement.dart';
-import 'package:reiterappfrontend/screens/saddler_contact.dart';
+import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
+import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
+import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
+import 'package:reiterappfrontend/screens/saddler_contact/saddler_contact.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
