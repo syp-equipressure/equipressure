@@ -7,6 +7,20 @@ import 'add_horse_screen.dart';
 
 enum HorsesView { empty, add, list }
 
+class Horse {
+  final String name;
+  final File? image;
+  final String age;
+  final String breed;
+
+  Horse({
+    required this.name,
+    this.image,
+    required this.age,
+    required this.breed,
+  });
+}
+
 class HorsesScreen extends StatefulWidget {
   const HorsesScreen({super.key});
 
@@ -17,11 +31,11 @@ class HorsesScreen extends StatefulWidget {
 class _HorsesScreenState extends State<HorsesScreen> {
   HorsesView view = HorsesView.empty;
 
-  final List<String> horses = [];
+  final List<Horse> horses = [];
 
-  void _addHorse(String name, File? image) {
+  void _addHorse(String name, File? image, String age, String breed) {
     setState(() {
-      horses.add(name); // optional: Du könntest auch das Bild speichern
+      horses.add(Horse(name: name, image: image, age: age, breed: breed));
       view = HorsesView.list;
     });
   }
@@ -29,25 +43,40 @@ class _HorsesScreenState extends State<HorsesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       drawer: const SideNav(),
-      appBar: AppBar(
+      appBar: view == HorsesView.add
+          ? null
+          : AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         title: const Text(
-          'Meine Pferde',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          'EquiPressure',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
+            icon: const Icon(Icons.menu, color: Colors.black),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.account_circle_outlined, color: Colors.deepPurple[300]),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: _buildBody(),
       floatingActionButton: view == HorsesView.list
           ? FloatingActionButton(
+        backgroundColor: Colors.deepPurple[300],
         onPressed: () => setState(() => view = HorsesView.add),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       )
           : null,
     );
@@ -77,44 +106,112 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _horseGrid() {
-    return GridView.builder(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Center(
+              child: Text(
+                'Meine Pferde',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: horses.length,
+              itemBuilder: (context, index) {
+                return _buildHorseCard(horses[index]);
+              },
+            ),
+          ),
+        ],
       ),
-      itemCount: horses.length,
-      itemBuilder: (context, index) {
-        return Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    );
+  }
+
+  Widget _buildHorseCard(Horse horse) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: horse.image != null
+                    ? Image.file(
+                  horse.image!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                )
+                    : Center(
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 50,
+                    color: Colors.grey[400],
                   ),
-                  child: const Icon(Icons.image, size: 50),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  horses[index],
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+            ),
           ),
-        );
-      },
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  horse.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${horse.age} | ${horse.breed}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
