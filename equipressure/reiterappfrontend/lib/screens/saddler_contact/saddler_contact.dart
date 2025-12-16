@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import '../widgets/sidenav.dart';
+import '../../widgets/sidenav.dart';
 
-class NewMeasurement extends StatelessWidget {
-  const NewMeasurement({super.key});
+class SaddlerContact extends StatelessWidget {
+  const SaddlerContact({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Neue Messung',
+        title: const Text('Sattler:innen',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          fontWeight: FontWeight.bold,
+        ),
         ),
         centerTitle: true,
         leading: Builder(
@@ -23,7 +23,7 @@ class NewMeasurement extends StatelessWidget {
         ),
       ),
       body: const Center(
-        child: Text('messen...'),
+        child: Text('ganz viele Kontakte'),
       ),
     );
   }

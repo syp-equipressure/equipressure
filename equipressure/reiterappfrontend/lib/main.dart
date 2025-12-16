@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/horses_screen.dart';
+import 'screens/horses/horses_screen.dart';
 
 void main() {
   runApp(const MyApp());

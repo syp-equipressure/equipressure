@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import '../widgets/sidenav.dart';
+import '../../widgets/sidenav.dart';
 
-class SaddlerContact extends StatelessWidget {
-  const SaddlerContact({super.key});
+class FindSaddler extends StatelessWidget {
+  const FindSaddler({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Sattler:innen',
+        title: const Text('Sattler:in finden',
           style: TextStyle(
           fontWeight: FontWeight.bold,
-        ),
+         ),
         ),
         centerTitle: true,
         leading: Builder(
@@ -23,7 +23,7 @@ class SaddlerContact extends StatelessWidget {
         ),
       ),
       body: const Center(
-        child: Text('ganz viele Kontakte'),
+        child: Text('Sattler:in finden'),
       ),
     );
   }
