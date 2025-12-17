@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/widgets/app_bar.dart' show CustomAppBar;
 import '../../widgets/sidenav.dart';
 
 class SaddlerContact extends StatelessWidget {
@@ -7,22 +8,11 @@ class SaddlerContact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const SideNav(),
-      appBar: AppBar(
-        title: const Text('Sattler:innen',
-          style: TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-        ),
-        centerTitle: true,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ),
-      body: const Center(
+  drawer: const SideNav(),
+  appBar: const CustomAppBar(
+    title: 'EquiPressure',
+  ),
+  body: const Center(
         child: Text('ganz viele Kontakte'),
       ),
     );
