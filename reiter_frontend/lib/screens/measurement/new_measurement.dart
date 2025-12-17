@@ -23,7 +23,7 @@ class NewMeasurement extends StatelessWidget {
         ),
       ),
       body: const Center(
-        child: Text('messen...'),
+        child: Text('messen... '),
       ),
     );
   }
