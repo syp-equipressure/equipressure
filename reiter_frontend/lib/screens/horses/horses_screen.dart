@@ -1,11 +1,24 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import '../../widgets/sidenav.dart';
-import 'empty_horse_screen.dart';
 import 'add_horse_screen.dart';
+import '../../widgets/dashedBorder.dart';
 
-enum HorsesView { empty, add, list }
+enum HorsesView { add, list }
+
+class Horse {
+  final String name;
+  final File? image;
+  final String age;
+  final String breed;
+
+  Horse({
+    required this.name,
+    this.image,
+    required this.age,
+    required this.breed,
+  });
+}
 
 class HorsesScreen extends StatefulWidget {
   const HorsesScreen({super.key});
@@ -15,13 +28,17 @@ class HorsesScreen extends StatefulWidget {
 }
 
 class _HorsesScreenState extends State<HorsesScreen> {
-  HorsesView view = HorsesView.empty;
+  HorsesView view = HorsesView.list;
+  final List<Horse> horses = [];
 
-  final List<String> horses = [];
-
-  void _addHorse(String name, File? image) {
+  void _addHorse(String name, File? image, String age, String breed) {
     setState(() {
-      horses.add(name); // optional: Du könntest auch das Bild speichern
+      horses.add(Horse(
+        name: name,
+        image: image,
+        age: age,
+        breed: breed,
+      ));
       view = HorsesView.list;
     });
   }
@@ -29,92 +46,193 @@ class _HorsesScreenState extends State<HorsesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       drawer: const SideNav(),
-      appBar: AppBar(
-        title: const Text(
-          'Meine Pferde',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ),
-      body: _buildBody(),
-      floatingActionButton: view == HorsesView.list
+      appBar: view == HorsesView.add
+          ? null
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
+              title: const Text(
+                'EquiPressure',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.black),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            ),
+      body: view == HorsesView.add ? _addView() : _listView(),
+      floatingActionButton: horses.isNotEmpty && view == HorsesView.list
           ? FloatingActionButton(
-        onPressed: () => setState(() => view = HorsesView.add),
-        child: const Icon(Icons.add),
-      )
+              backgroundColor: Colors.deepPurple[300],
+              onPressed: () => setState(() => view = HorsesView.add),
+              child: const Icon(Icons.add),
+            )
           : null,
     );
   }
 
-  Widget _buildBody() {
-    if (horses.isEmpty && view != HorsesView.add) {
-      view = HorsesView.empty;
-    }
+  /// =========================
+  /// LIST VIEW (Header + Content)
+  /// =========================
+  Widget _listView() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            'Meine Pferde',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 40),
 
-    switch (view) {
-      case HorsesView.empty:
-        return HorseEmptyScreen(
-          onAddPressed: () => setState(() => view = HorsesView.add),
-        );
-
-      case HorsesView.add:
-        return AddHorseScreen(
-          onSave: _addHorse,
-          onCancel: () =>
-              setState(() => view = horses.isEmpty ? HorsesView.empty : HorsesView.list),
-        );
-
-      case HorsesView.list:
-        return _horseGrid();
-    }
+          Expanded(
+            child: horses.isEmpty ? _emptyBox() : _horseGrid(),
+          ),
+        ],
+      ),
+    );
   }
 
+  /// =========================
+  /// EMPTY BOX
+  /// =========================
+  Widget _emptyBox() {
+    return Center(
+      child: GestureDetector(
+        onTap: () => setState(() => view = HorsesView.add),
+        child: DashedBorder(
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: 280,
+            height: 280,
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey[400]!, width: 2),
+                  ),
+                  child: Icon(Icons.add, size: 32, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Füge ein Pferd hinzu um mit\n'
+                  'den Messungen starten zu\nkönnen',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// =========================
+  /// GRID
+  /// =========================
   Widget _horseGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.8,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.75,
       ),
       itemCount: horses.length,
-      itemBuilder: (context, index) {
-        return Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
+      itemBuilder: (_, i) => _horseCard(horses[i]),
+    );
+  }
+
+  Widget _horseCard(Horse horse) {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+          color: Colors.black.withOpacity(0.06),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// Bild
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 1, // 🔑 quadratisches Bild
+            child: horse.image != null
+                ? Image.file(
+                    horse.image!,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    color: Colors.grey[200],
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
                     ),
                   ),
-                  child: const Icon(Icons.image, size: 50),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  horses[index],
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
           ),
-        );
-      },
+        ),
+
+        const SizedBox(height: 12),
+
+        /// Name
+        Text(
+          horse.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        /// Alter | Rasse
+        Text(
+          '${horse.age} | ${horse.breed}',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+  /// =========================
+  /// ADD VIEW
+  /// =========================
+  Widget _addView() {
+    return AddHorseScreen(
+      onSave: _addHorse,
+      onCancel: () => setState(() => view = HorsesView.list),
     );
   }
 }
