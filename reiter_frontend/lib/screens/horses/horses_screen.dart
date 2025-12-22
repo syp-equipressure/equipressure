@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import '../../widgets/dashed_border.dart';
 import '../../widgets/sidenav.dart';
@@ -12,12 +13,21 @@ class Horse {
   final File? image;
   final String age;
   final String breed;
+  final String birthDate;
+  final String weight;
+  final String sex;
+  final String height;
 
   Horse({
     required this.name,
     this.image,
     required this.age,
     required this.breed,
+    required this.birthDate,
+    required this.weight,
+    required this.height,
+    required this.sex,
+
   });
 }
 
@@ -32,13 +42,17 @@ class _HorsesScreenState extends State<HorsesScreen> {
   HorsesView view = HorsesView.list;
   final List<Horse> horses = [];
 
-  void _addHorse(String name, File? image, String age, String breed) {
+  void _addHorse(String name, File? image, String age, String breed, String birthDate, String weight, String height, String sex) {
     setState(() {
       horses.add(Horse(
         name: name,
         image: image,
         age: age,
         breed: breed,
+        birthDate: birthDate,
+        weight: weight,
+        height: height,
+        sex: sex
       ));
       view = HorsesView.list;
     });
@@ -57,7 +71,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
       body: view == HorsesView.add ? _addView() : _listView(),
       floatingActionButton: horses.isNotEmpty && view == HorsesView.list
           ? FloatingActionButton(
-              backgroundColor: Colors.deepPurple[300],
+              backgroundColor: const Color.fromARGB(255, 178, 149, 230),
               onPressed: () => setState(() => view = HorsesView.add),
               child: const Icon(Icons.add),
             )
@@ -148,68 +162,66 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _horseCard(Horse horse) {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-          color: Colors.black.withOpacity(0.06),
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HorseProfileScreen(horse: horse),
         ),
-      ],
-    ),
-    padding: const EdgeInsets.all(12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// Bild
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: AspectRatio(
-            aspectRatio: 1, // 🔑 quadratisches Bild
-            child: horse.image != null
-                ? Image.file(
-                    horse.image!,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    color: Colors.grey[200],
-                    child: Icon(
-                      Icons.image_outlined,
-                      size: 48,
-                      color: Colors.grey[400],
+      );
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.06),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: horse.image != null
+                  ? Image.file(horse.image!, fit: BoxFit.cover)
+                  : Container(
+                      color: Colors.grey[200],
+                      child: Icon(Icons.image_outlined,
+                          size: 48, color: Colors.grey[400]),
                     ),
-                  ),
+            ),
           ),
-        ),
-
-        const SizedBox(height: 12),
-
-        /// Name
-        Text(
-          horse.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+          const SizedBox(height: 12),
+          Text(
+            horse.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
           ),
-        ),
-
-        const SizedBox(height: 4),
-
-        /// Alter | Rasse
-        Text(
-          '${horse.age} | ${horse.breed}',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
+          const SizedBox(height: 4),
+          Text(
+            '${horse.age} | ${horse.breed}',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
+
 
 
 
@@ -220,3 +232,4 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
   }
 }
+
