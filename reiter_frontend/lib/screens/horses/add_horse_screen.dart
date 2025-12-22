@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddHorseScreen extends StatefulWidget {
-  final void Function(String name, File? image, String age, String breed) onSave;
+  final void Function(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) onSave;
   final VoidCallback onCancel;
 
   const AddHorseScreen({
@@ -130,6 +130,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     } catch (e) {
       return '';
     }
+  }
+
+  String _formatBirthDate() {
+    if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
+      return '';
+    }
+    
+    final day = dayController.text.padLeft(2, '0');
+    final month = monthController.text.padLeft(2, '0');
+    final year = yearController.text;
+    
+    return '$day.$month.$year';
   }
 
   @override
@@ -653,13 +665,20 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   }
 
                   String age = _calculateAge();
-                  String breed = breedController.text.isEmpty ? 'Unknown' : breedController.text;
+                  String breed = breedController.text.isEmpty ? 'Unbekannt' : breedController.text;
+                  String birthDate = _formatBirthDate();
+                  String height = heightController.text;
+                  String weight = weightController.text;
                   
                   widget.onSave(
                     nameController.text,
                     selectedImage,
                     age,
                     breed,
+                    birthDate,
+                    height,
+                    weight,
+                    selectedSex,
                   );
                 },
                 child: Row(
