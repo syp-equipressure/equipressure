@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/horses/horses_screen.dart';
+import 'theme/app_theme.dart';
+import 'screens/onboarding/onboarding_flow.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +13,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HorsesScreen(),
+      theme: AppTheme.light,
+      home: const OnboardingFlow(),
     );
   }
 }
