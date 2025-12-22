@@ -148,68 +148,69 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _horseCard(Horse horse) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-            color: Colors.black.withOpacity(0.05),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              child: horse.image != null
-                  ? Image.file(
-                      horse.image!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    )
-                  : Container(
-                      color: Colors.grey[200],
-                      child: Icon(
-                        Icons.image_outlined,
-                        size: 50,
-                        color: Colors.grey[400],
-                      ),
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+          color: Colors.black.withOpacity(0.06),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// Bild
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 1, // 🔑 quadratisches Bild
+            child: horse.image != null
+                ? Image.file(
+                    horse.image!,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    color: Colors.grey[200],
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
                     ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  horse.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${horse.age} | ${horse.breed}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        const SizedBox(height: 12),
+
+        /// Name
+        Text(
+          horse.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        /// Alter | Rasse
+        Text(
+          '${horse.age} | ${horse.breed}',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 
 
   Widget _addView() {
