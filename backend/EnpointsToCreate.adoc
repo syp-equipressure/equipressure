@@ -1,12 +1,16 @@
-== Endpoints 
+= API Vordefinition
+== Klassendefinition 
 
 * Person
-** hat Klasse Role
 ** eine Person hat eine oder mehrere Rollen
-** hat List<Person> für Kontakte
-** hat List<Person> für Favouriten
-*** Unterklasse für Rolle
+*** Unterklasse für Rolle (kein eigener Endpunkt später)
 ** persons/devices
+
+* CustomerRelationship
+** hat Id für Kunde
+** hat Id für Sattler
+** hat boolean für isFavourite (einziger Grund warums die Klasse gibt)
+** hat boolean für isContact
 
 * Devices
 ** hat Person Besitzer
@@ -15,11 +19,41 @@
 *** Unterklasse DeviceCategory
 ** devices/persons
 
-* Horses
-** /horses/sattel für alle Sättel des Pferdes
 
-* MeasurementGroup
-** /measurementgroup
-** /measurementgoup/id/measurement => Tabelle Measurement
-** /measurementgroup/id/measurement/id => ein Measurement aus Tabelle Measurement
-** /measurementgroup/id/measurement/id/measurementData/id => ein MeasurementData aus Tabelle MeasurementData
+== Endpunkte
+
+Personen:
+
+* /persons => alle Personen
+* /persons/:id => Person mit id :id
+* /persons/:id/contacts => Kontakte einer Person
+* /persons/:id/favourites => Favourisierte Sattler einer Person
+* /persons/:id/devices => alle Geräte einer Person
+** könnte eventuell boolean liefern ob Person Owner ist
+* /persons/:id/horses => alle Pferde einer Person
+
+Geräte:
+
+* /devices => alle existierende Geräte
+* /devices/:id => Gerät mit der id :id
+* /devices/:id/owner => Besitzer des Gerätes (Person)
+* /devices/:id/users => alle Personen eines Geräts
+
+Pferde: 
+
+* /horses => alle Pferde
+* /horses/:id => Pferd mit id :id
+* /horses/:id/saddles => alle Sättel eines Pferdes
+* eventuell /horses/:id/owner
+
+Messungen: 
+
+* /measurementgroups => alle Messungsgruppen
+* /measurementgoups/:id/measurements => Tabelle Measurement
+* /measurementgroups/:id/measurements/:id => ein Measurement aus Tabelle Measurement
+* /measurementgroups/:id/measurements/:id/measurementData/:id => ein MeasurementData aus Tabelle MeasurementData
+
+== Fragen an die Professoren 
+* Braucht man immer eine endpont für "get all"
+* Herr Professor Haslinger fragen, ob eigener Endpunkt nötig ist für roles bzw perons/:id/roles
+* Könnte /horses/:id/owner sinnvoll sein?
