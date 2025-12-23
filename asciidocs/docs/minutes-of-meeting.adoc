@@ -653,3 +653,187 @@ a| Wireframe weiterarbeiten
 a| Techstack Folie
 | 23.12.2025
 |===
+
+
+== 2025-11-25
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2025-11-11
+
+|Dauer
+|08:30 bis 9:30
+|===
+====
+
+=== Besprochenes
+* Zeiten für einen Sprint angeben im Clockify
+* User Story angeben an der man gearbeitet hat (Clockify)
+** Zeitaufzeichnung für Sprint auch rein => immer der neue Start für einen Sprint
+* Datenmodell  hergezeigt
+* Technologie Stack: Angular, Flutter und Postgresql
+* Wireframe hergezeigt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Einzenberger
+a| User Stories ins Youtrak schreiben (Product Backlog) + 
+ mit Github Issues beschäftigen
+| 09.12.2025
+
+|Einzenberger
+a| PSP überarbeiten und digitalisieren; Gesamtstunden und Stunden die pro Teil reingesteckt werden überlegen
+| 09.12.2025
+
+|Graßauer
+a| am Wireframe weiterarbeiten +
+Einstiegsmaske mit QR-Code scannen erstellen, eine Maske für Pferde erstellen +
+Anzahl der bereits durchgeführten Messungen anzeigen beim Pferd
+| 09.12.2025
+
+|Dallinger
+a| Datenmodell mit Prof. Haslinger besprechen
+| 09.12.2025
+
+|Dallinger
+a| Projektantrag von Prof. Bauer unterschreiben lassen
+| 27.11.2025
+|===
+
+== 2025-12-23
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2025-12-23
+
+|Dauer
+|08:35 bis 09:30
+|===
+====
+
+=== Besprochenes
+
+*  haben eingelenkt, dass wir noch keine Dummy-Daten brauchen, weil wir noch nicht die Technologie dafür haben
+
+==== Wireframe
+
+* Rechtschreibfehler Messung "Gallopp"
+* weniger "Messung" bei Messunge starten Folie sondern andere Namen finden oder weglassen (Teilmessung, Messvorgang)
+
+==== TechStack
+
+* Pferd nach Links rücken und recht eine Legende machen mit Stichwort für wieso wir sie
+* github Sterne; OpenSource Projekte haben Sterne (wie viele Leute finden das gut)
+* Logo nicht verzerren
+
+==== Branches
+* Prof. Haslinger würde keine Unterbranches für frontend/backend machen, sondern nur dev und vom den gehen die features weg
+
+==== Frontend
+* Tutorial, wenn wir noch keine Pferde angeleget haben (Step 1, 2, 3..)
+** Schritt 1: Lege Pferd an, Schritt 2: Führe Messung durch, Schritt 3: Kontaktiere Sattler
+** Primitiv, aber als erster Input für neue Benutzer
+** ODER: Navigation (wie man es kennt von erstem Mal einloggen)
+** ODER: Nach dem Einloggen: "Herzlichen Glückwünsch zu ihrem Gerät" oder so "Nächste Schritte:"
+* Meine Pferde: yo (years old) ist Englisch obwohl restliche Daten Deutsch sind
+* wireframe herz ausfüllen
+
+==== Backend
+* all brauch ma nd unbedingt -> wenn mas nd brauchen brauch mas nd kontaktieren
+* über auth token geräte von einem user nehmen
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Graßauer, Music
+a| Wireframe anpassen an Wünsche
+| 20.01.2026
+
+| Dallinger, Einzenberger
+a| Endpunkte weiter definieren und Backend Programmierung anfangen
+| 20.01.2026
+|===

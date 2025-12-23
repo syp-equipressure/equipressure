@@ -56,6 +56,6 @@ Messungen:
 * /measurementgroups/:id/measurements/:id/measurementData/:id => ein MeasurementData aus Tabelle MeasurementData
 
 == Fragen an die Professoren 
-* Braucht man immer eine endpont für "get all"
+* Braucht man immer eine endpoint für "get all"
 * Herr Professor Haslinger fragen, ob eigener Endpunkt nötig ist für roles bzw perons/:id/roles
 * Könnte /horses/:id/owner sinnvoll sein? Oder string/int für name/id im Pferd selber
