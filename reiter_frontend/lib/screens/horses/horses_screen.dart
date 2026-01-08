@@ -65,6 +65,9 @@ class _HorsesScreenState extends State<HorsesScreen> {
     setState(() {
       view = HorsesView.list;
     });
+    
+    // Lade die Pferde neu, um die Liste zu aktualisieren
+    await _loadHorses();
   }
 
   @override
@@ -160,19 +163,25 @@ class _HorsesScreenState extends State<HorsesScreen> {
         childAspectRatio: 0.75,
       ),
       itemCount: horses.length,
-      itemBuilder: (_, i) => _horseCard(horses[i]),
+      itemBuilder: (_, i) => _horseCard(horses[i], i),
     );
   }
 
-  Widget _horseCard(Horse horse) {
+  Widget _horseCard(Horse horse, int index) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        // Warte auf das Ergebnis vom HorseProfileScreen
+        final updatedHorse = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => HorseProfileScreen(horse: horse),
           ),
         );
+
+        // Falls das Pferd aktualisiert wurde, lade die Liste neu
+        if (updatedHorse != null && updatedHorse is Horse) {
+          await _loadHorses();
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -182,7 +191,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
             BoxShadow(
               blurRadius: 12,
               offset: const Offset(0, 4),
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.05),
             ),
           ],
         ),
@@ -213,7 +222,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              '${horse.age} | ${horse.breed}',
+              '${_calculateAge(horse.birthDate)} | ${horse.breed}',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -223,6 +232,29 @@ class _HorsesScreenState extends State<HorsesScreen> {
         ),
       ),
     );
+  }
+
+  String _calculateAge(String birthDate) {
+    if (birthDate.isEmpty) return '?yo';
+    
+    try {
+      final parts = birthDate.split('.');
+      if (parts.length == 3) {
+        final day = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final year = int.parse(parts[2]);
+        
+        final birth = DateTime(year, month, day);
+        final now = DateTime.now();
+        final age = now.year - birth.year;
+        
+        return '${age}yo';
+      }
+    } catch (e) {
+      return '?yo';
+    }
+    
+    return '?yo';
   }
 
   Widget _addView() {

@@ -3,15 +3,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:reiterappfrontend/models/horse.dart';
 
 class AddHorseScreen extends StatefulWidget {
   final void Function(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) onSave;
   final VoidCallback onCancel;
+  final Horse? horse; // Optional: Wenn vorhanden, dann Edit-Modus
 
   const AddHorseScreen({
     super.key,
     required this.onSave,
     required this.onCancel,
+    this.horse,
   });
 
   @override
@@ -30,36 +33,87 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   File? selectedImage;
   String selectedSex = 'female';
   String? dateErrorMessage;
+  bool _isPickingImage = false;
 
   final ImagePicker _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    
+    // Wenn ein Pferd übergeben wurde (Edit-Modus), fülle die Felder
+    if (widget.horse != null) {
+      final horse = widget.horse!;
+      
+      nameController.text = horse.name;
+      breedController.text = horse.breed == 'Unbekannt' ? '' : horse.breed;
+      selectedSex = horse.sex;
+      selectedImage = horse.image;
+      
+      // Geburtsdatum parsen (Format: DD.MM.YYYY)
+      if (horse.birthDate.isNotEmpty) {
+        final parts = horse.birthDate.split('.');
+        if (parts.length == 3) {
+          dayController.text = parts[0];
+          monthController.text = parts[1];
+          yearController.text = parts[2];
+        }
+      }
+      
+      // Stockmaß und Gewicht (ohne "cm" und "kg")
+      heightController.text = horse.height;
+      weightController.text = horse.weight;
+    }
+  }
+
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 600,
-    );
-    if (image != null) {
-      setState(() {
-        selectedImage = File(image.path);
-      });
+    // Verhindere mehrfache gleichzeitige Aufrufe
+    if (_isPickingImage) return;
+    
+    setState(() {
+      _isPickingImage = true;
+    });
+
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+      );
+      if (image != null) {
+        setState(() {
+          selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      // Fehlerbehandlung, falls der Image Picker fehlschlägt
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Laden des Bildes: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingImage = false;
+        });
+      }
     }
   }
 
   bool _isValidDate(int day, int month, int year) {
-    // Check if year is in valid range
     if (year < 1990 || year > DateTime.now().year) {
       return false;
     }
 
-    // Check if month is valid
     if (month < 1 || month > 12) {
       return false;
     }
 
-    // Days in each month
     final daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-    // Check for leap year
     if (month == 2 && _isLeapYear(year)) {
       if (day < 1 || day > 29) {
         return false;
@@ -70,7 +124,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       }
     }
 
-    // Check if date is not in the future
     final inputDate = DateTime(year, month, day);
     if (inputDate.isAfter(DateTime.now())) {
       return false;
@@ -146,6 +199,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = widget.horse != null;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -155,10 +210,10 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: widget.onCancel,
         ),
-        title: const Text(
-          'Neues Pferd anlegen',
+        title: Text(
+          isEditMode ? 'Pferd bearbeiten' : 'Neues Pferd anlegen',
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.black,
