@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
-import 'horses_screen.dart';
+import 'package:reiterappfrontend/models/horse.dart';
 
 class HorseProfileScreen extends StatelessWidget {
   final Horse horse;
