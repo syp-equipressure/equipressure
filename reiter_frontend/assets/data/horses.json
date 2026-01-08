@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "name": "Luna",
+    "imagePath": null,
+    "breed": "Hannoveraner",
+    "birthDate": "15.03.2017",
+    "weight": "520",
+    "height": "168",
+    "sex": "female"
+  },
+  {
+    "id": "2",
+    "name": "Apollo",
+    "imagePath": null,
+    "breed": "Holsteiner",
+    "birthDate": "22.07.2013",
+    "weight": "580",
+    "height": "172",
+    "sex": "male"
+  },
+  {
+    "id": "3",
+    "name": "Bella",
+    "imagePath": null,
+    "breed": "Westfale",
+    "birthDate": "10.05.2020",
+    "weight": "490",
+    "height": "165",
+    "sex": "female"
+  },
+  {
+    "id": "4",
+    "name": "Thunder",
+    "imagePath": null,
+    "breed": "Trakehner",
+    "birthDate": "03.12.2010",
+    "weight": "610",
+    "height": "175",
+    "sex": "male"
+  }
+]

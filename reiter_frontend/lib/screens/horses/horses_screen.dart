@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/horse_service.dart';
 import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import '../../widgets/dashed_border.dart';
@@ -7,29 +9,6 @@ import '../../widgets/sidenav.dart';
 import 'add_horse_screen.dart';
 
 enum HorsesView { add, list }
-
-class Horse {
-  final String name;
-  final File? image;
-  final String age;
-  final String breed;
-  final String birthDate;
-  final String weight;
-  final String sex;
-  final String height;
-
-  Horse({
-    required this.name,
-    this.image,
-    required this.age,
-    required this.breed,
-    required this.birthDate,
-    required this.weight,
-    required this.height,
-    required this.sex,
-
-  });
-}
 
 class HorsesScreen extends StatefulWidget {
   const HorsesScreen({super.key});
@@ -40,20 +19,50 @@ class HorsesScreen extends StatefulWidget {
 
 class _HorsesScreenState extends State<HorsesScreen> {
   HorsesView view = HorsesView.list;
-  final List<Horse> horses = [];
+  List<Horse> horses = [];
+  bool isLoading = true;
+  final HorseService _horseService = HorseService();
 
-  void _addHorse(String name, File? image, String age, String breed, String birthDate, String weight, String height, String sex) {
+  @override
+  void initState() {
+    super.initState();
+    _loadHorses();
+  }
+
+  Future<void> _loadHorses() async {
+    setState(() => isLoading = true);
+    
+    try {
+      final loadedHorses = await _horseService.getHorses();
+      setState(() {
+        horses = loadedHorses;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Laden: $e')),
+        );
+      }
+    }
+  }
+
+  void _addHorse(String name, File? image, String age, String breed, String birthDate, String weight, String height, String sex) async {
+    final newHorse = Horse(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      image: image,
+      breed: breed,
+      birthDate: birthDate,
+      weight: weight,
+      height: height,
+      sex: sex,
+    );
+
+    await _horseService.addHorse(newHorse);
+    
     setState(() {
-      horses.add(Horse(
-        name: name,
-        image: image,
-        age: age,
-        breed: breed,
-        birthDate: birthDate,
-        weight: weight,
-        height: height,
-        sex: sex
-      ));
       view = HorsesView.list;
     });
   }
@@ -68,7 +77,11 @@ class _HorsesScreenState extends State<HorsesScreen> {
           : const CustomAppBar(
               title: 'EquiPressure',
             ),
-      body: view == HorsesView.add ? _addView() : _listView(),
+      body: view == HorsesView.add 
+          ? _addView() 
+          : isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _listView(),
       floatingActionButton: horses.isNotEmpty && view == HorsesView.list
           ? FloatingActionButton(
               backgroundColor: const Color.fromARGB(255, 178, 149, 230),
@@ -79,9 +92,6 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
   }
 
-  /// =========================
-  /// LIST VIEW (Header + Content)
-  /// =========================
   Widget _listView() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -93,7 +103,6 @@ class _HorsesScreenState extends State<HorsesScreen> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 40),
-
           Expanded(
             child: horses.isEmpty ? _emptyBox() : _horseGrid(),
           ),
@@ -102,9 +111,6 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
   }
 
-  /// =========================
-  /// EMPTY BOX
-  /// =========================
   Widget _emptyBox() {
     return Center(
       child: GestureDetector(
@@ -145,9 +151,6 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
   }
 
-  /// =========================
-  /// GRID
-  /// =========================
   Widget _horseGrid() {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -162,68 +165,65 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _horseCard(Horse horse) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HorseProfileScreen(horse: horse),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HorseProfileScreen(horse: horse),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.06),
+            ),
+          ],
         ),
-      );
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            color: Colors.black.withOpacity(0.06),
-          ),
-        ],
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: horse.image != null
+                    ? Image.file(horse.image!, fit: BoxFit.cover)
+                    : Container(
+                        color: Colors.grey[200],
+                        child: Icon(Icons.image_outlined,
+                            size: 48, color: Colors.grey[400]),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              horse.name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${horse.age} | ${horse.breed}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: horse.image != null
-                  ? Image.file(horse.image!, fit: BoxFit.cover)
-                  : Container(
-                      color: Colors.grey[200],
-                      child: Icon(Icons.image_outlined,
-                          size: 48, color: Colors.grey[400]),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            horse.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${horse.age} | ${horse.breed}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
-
+    );
+  }
 
   Widget _addView() {
     return AddHorseScreen(
@@ -232,4 +232,3 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
   }
 }
-
