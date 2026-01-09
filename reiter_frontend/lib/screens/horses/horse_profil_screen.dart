@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/horses/add_horse_screen.dart';
+import 'package:reiterappfrontend/screens/horses/horse_history.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
@@ -28,7 +29,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
   }
 
   Future<void> _updateHorse(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) async {
-    // Erstelle aktualisiertes Horse-Objekt
     final updatedHorse = Horse(
       id: currentHorse.id,
       name: name,
@@ -40,10 +40,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       sex: sex,
     );
 
-    // Speichere im Service
     await _horseService.updateHorse(updatedHorse);
 
-    // Aktualisiere den lokalen State
     setState(() {
       currentHorse = updatedHorse;
     });
@@ -64,7 +62,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          // Gebe das aktualisierte Pferd zurück
           Navigator.of(context).pop(currentHorse);
         }
       },
@@ -73,9 +70,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              /// =========================
-              /// HEADER MIT BILD
-              /// =========================
               Stack(
                 children: [
                   currentHorse.image != null
@@ -95,8 +89,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                             color: Colors.grey[500],
                           ),
                         ),
-
-                  /// Zurück Button
                   Positioned(
                     top: 16,
                     left: 16,
@@ -107,8 +99,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       },
                     ),
                   ),
-
-                  /// Bearbeiten Button
                   Positioned(
                     top: 16,
                     right: 16,
@@ -133,10 +123,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                   ),
                 ],
               ),
-
-              /// =========================
-              /// DETAILS
-              /// =========================
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -152,7 +138,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /// Name + Geschlecht
                         Row(
                           children: [
                             Text(
@@ -172,15 +157,11 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 32),
-
                         _buildInfoRow('Rasse:', currentHorse.breed),
                         const SizedBox(height: 20),
-
                         _buildInfoRow('Geburtsdatum:', currentHorse.birthDate),
                         const SizedBox(height: 20),
-
                         _buildInfoRow(
                           'Stockmaß:',
                           currentHorse.height.isEmpty
@@ -188,7 +169,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               : '${currentHorse.height} cm',
                         ),
                         const SizedBox(height: 20),
-
                         _buildInfoRow(
                           'Gewicht:',
                           currentHorse.weight.isEmpty
@@ -196,45 +176,50 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               : '${currentHorse.weight} kg',
                         ),
                         const SizedBox(height: 20),
-
                         _buildInfoRow('Besitzer:in:', 'Lena Graßauer'),
-
                         const SizedBox(height: 40),
 
-                        /// Historie
+                        /// Historie Button - WICHTIG!
                         Align(
                           alignment: Alignment.centerRight,
-                          child: GestureDetector(
+                          child: InkWell(
                             onTap: () {
-                              // TODO: Historie Screen
+                              print('Historie Button geklickt für ${currentHorse.name}');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HorseHistoryScreen(horse: currentHorse),
+                                ),
+                              );
                             },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${currentHorse.name}\'s Historie',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[800],
-                                    fontWeight: FontWeight.w500,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${currentHorse.name}\'s Historie',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[800],
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_forward,
-                                  size: 20,
-                                  color: Colors.grey[800],
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    size: 20,
+                                    color: Colors.grey[800],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
 
                         const SizedBox(height: 32),
 
-                        /// =========================
-                        /// MESSUNG STARTEN
-                        /// =========================
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -275,10 +260,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       ),
     );
   }
-
-  /// =========================
-  /// HELPER WIDGETS
-  /// =========================
 
   Widget _buildInfoRow(String label, String value) {
     return Row(

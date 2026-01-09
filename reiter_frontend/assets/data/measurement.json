@@ -1,0 +1,259 @@
+{
+  "measurements": [
+    {
+      "id": "1",
+      "horseId": "1",
+      "horseName": "Luna",
+      "date": "2025-01-08T14:30:00",
+      "owner": "Lena Graßauer",
+      "rider": "Lena Graßauer",
+      "weight": "520kg",
+      "height": "1.68m",
+      "pressureLevel": "X 02",
+      "notes": "Dressurtraining - sehr ausbalanciert",
+      "images": {
+        "normal": "measurement_1_normal.png",
+        "filtered": "measurement_1_filtered.png",
+        "profile": "measurement_1_profile.png"
+      }
+    },
+    {
+      "id": "2",
+      "horseId": "1",
+      "horseName": "Luna",
+      "date": "2025-01-03T10:15:00",
+      "owner": "Lena Graßauer",
+      "rider": "Sarah Weber",
+      "weight": "520kg",
+      "height": "1.68m",
+      "pressureLevel": "X 01",
+      "notes": "Ausritt im Gelände",
+      "images": {
+        "normal": "measurement_2_normal.png",
+        "filtered": "measurement_2_filtered.png",
+        "profile": "measurement_2_profile.png"
+      }
+    },
+    {
+      "id": "3",
+      "horseId": "1",
+      "horseName": "Luna",
+      "date": "2024-12-28T16:45:00",
+      "owner": "Lena Graßauer",
+      "rider": "Lena Graßauer",
+      "weight": "520kg",
+      "height": "1.68m",
+      "pressureLevel": "X 02",
+      "notes": "Springtraining - gute Haltung",
+      "images": {
+        "normal": "measurement_3_normal.png",
+        "filtered": "measurement_3_filtered.png",
+        "profile": "measurement_3_profile.png"
+      }
+    },
+    {
+      "id": "4",
+      "horseId": "2",
+      "horseName": "Apollo",
+      "date": "2025-01-07T11:20:00",
+      "owner": "Michael Schmidt",
+      "rider": "Michael Schmidt",
+      "weight": "580kg",
+      "height": "1.72m",
+      "pressureLevel": "X 03",
+      "notes": "Vielseitigkeit - Dressurphase",
+      "images": {
+        "normal": "measurement_4_normal.png",
+        "filtered": "measurement_4_filtered.png",
+        "profile": "measurement_4_profile.png"
+      }
+    },
+    {
+      "id": "5",
+      "horseId": "2",
+      "horseName": "Apollo",
+      "date": "2025-01-02T15:30:00",
+      "owner": "Michael Schmidt",
+      "rider": "Julia Meier",
+      "weight": "580kg",
+      "height": "1.72m",
+      "pressureLevel": "X 02",
+      "notes": "Longenstunde zur Lockerung",
+      "images": {
+        "normal": "measurement_5_normal.png",
+        "filtered": "measurement_5_filtered.png",
+        "profile": "measurement_5_profile.png"
+      }
+    },
+    {
+      "id": "6",
+      "horseId": "2",
+      "horseName": "Apollo",
+      "date": "2024-12-29T09:00:00",
+      "owner": "Michael Schmidt",
+      "rider": "Michael Schmidt",
+      "weight": "580kg",
+      "height": "1.72m",
+      "pressureLevel": "X 03",
+      "notes": "Geländeritt - Konditionstraining",
+      "images": {
+        "normal": "measurement_6_normal.png",
+        "filtered": "measurement_6_filtered.png",
+        "profile": "measurement_6_profile.png"
+      }
+    },
+    {
+      "id": "7",
+      "horseId": "2",
+      "horseName": "Apollo",
+      "date": "2024-12-20T13:45:00",
+      "owner": "Michael Schmidt",
+      "rider": "Michael Schmidt",
+      "weight": "580kg",
+      "height": "1.72m",
+      "pressureLevel": "X 02",
+      "notes": "Sattelanpassung nach Kontrolle",
+      "images": {
+        "normal": "measurement_7_normal.png",
+        "filtered": "measurement_7_filtered.png",
+        "profile": "measurement_7_profile.png"
+      }
+    },
+    {
+      "id": "8",
+      "horseId": "3",
+      "horseName": "Bella",
+      "date": "2025-01-06T10:30:00",
+      "owner": "Anna Hoffmann",
+      "rider": "Anna Hoffmann",
+      "weight": "490kg",
+      "height": "1.65m",
+      "pressureLevel": "X 01",
+      "notes": "Jungpferdetraining - Basis Dressur",
+      "images": {
+        "normal": "measurement_8_normal.png",
+        "filtered": "measurement_8_filtered.png",
+        "profile": "measurement_8_profile.png"
+      }
+    },
+    {
+      "id": "9",
+      "horseId": "3",
+      "horseName": "Bella",
+      "date": "2024-12-30T14:15:00",
+      "owner": "Anna Hoffmann",
+      "rider": "Lisa Koch",
+      "weight": "490kg",
+      "height": "1.65m",
+      "pressureLevel": "X 01",
+      "notes": "Gewöhnung an neuen Sattel",
+      "images": {
+        "normal": "measurement_9_normal.png",
+        "filtered": "measurement_9_filtered.png",
+        "profile": "measurement_9_profile.png"
+      }
+    },
+    {
+      "id": "10",
+      "horseId": "3",
+      "horseName": "Bella",
+      "date": "2024-12-22T11:00:00",
+      "owner": "Anna Hoffmann",
+      "rider": "Anna Hoffmann",
+      "weight": "490kg",
+      "height": "1.65m",
+      "pressureLevel": "X 02",
+      "notes": "Cavaletti-Training",
+      "images": {
+        "normal": "measurement_10_normal.png",
+        "filtered": "measurement_10_filtered.png",
+        "profile": "measurement_10_profile.png"
+      }
+    },
+    {
+      "id": "11",
+      "horseId": "4",
+      "horseName": "Thunder",
+      "date": "2025-01-05T08:45:00",
+      "owner": "Thomas Bauer",
+      "rider": "Thomas Bauer",
+      "weight": "610kg",
+      "height": "1.75m",
+      "pressureLevel": "X 03",
+      "notes": "Intensives Dressurtraining",
+      "images": {
+        "normal": "measurement_11_normal.png",
+        "filtered": "measurement_11_filtered.png",
+        "profile": "measurement_11_profile.png"
+      }
+    },
+    {
+      "id": "12",
+      "horseId": "4",
+      "horseName": "Thunder",
+      "date": "2024-12-31T10:30:00",
+      "owner": "Thomas Bauer",
+      "rider": "Thomas Bauer",
+      "weight": "610kg",
+      "height": "1.75m",
+      "pressureLevel": "X 02",
+      "notes": "Jahresabschluss - Ausritt",
+      "images": {
+        "normal": "measurement_12_normal.png",
+        "filtered": "measurement_12_filtered.png",
+        "profile": "measurement_12_profile.png"
+      }
+    },
+    {
+      "id": "13",
+      "horseId": "4",
+      "horseName": "Thunder",
+      "date": "2024-12-25T15:00:00",
+      "owner": "Thomas Bauer",
+      "rider": "Thomas Bauer",
+      "weight": "610kg",
+      "height": "1.75m",
+      "pressureLevel": "X 03",
+      "notes": "Weihnachtsritt - entspannt",
+      "images": {
+        "normal": "measurement_13_normal.png",
+        "filtered": "measurement_13_filtered.png",
+        "profile": "measurement_13_profile.png"
+      }
+    },
+    {
+      "id": "14",
+      "horseId": "4",
+      "horseName": "Thunder",
+      "date": "2024-12-18T12:30:00",
+      "owner": "Thomas Bauer",
+      "rider": "Markus Weber",
+      "weight": "610kg",
+      "height": "1.75m",
+      "pressureLevel": "X 02",
+      "notes": "Bereitertraining",
+      "images": {
+        "normal": "measurement_14_normal.png",
+        "filtered": "measurement_14_filtered.png",
+        "profile": "measurement_14_profile.png"
+      }
+    },
+    {
+      "id": "15",
+      "horseId": "4",
+      "horseName": "Thunder",
+      "date": "2024-12-15T09:15:00",
+      "owner": "Thomas Bauer",
+      "rider": "Thomas Bauer",
+      "weight": "610kg",
+      "height": "1.75m",
+      "pressureLevel": "X 03",
+      "notes": "Springstunde - Parcours",
+      "images": {
+        "normal": "measurement_15_normal.png",
+        "filtered": "measurement_15_filtered.png",
+        "profile": "measurement_15_profile.png"
+      }
+    }
+  ]
+}
