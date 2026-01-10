@@ -22,9 +22,12 @@ public class Person
     public string? WebsiteLink { get; set; }
     public string? Description { get; set; }
     
-    public List<CustomerRelationship> CustomerRelationships { get; set; } = [];
-    public List<Role> Roles { get; set; } = [];
+    /*
+     * We don't need Lists for CustomerRelationsship, Roles, Horses etc here,
+     * because without EF Core (or another ORM) nothing will ever populate them automatically
+     */
 }
+
 /// <summary>
 /// Represents a directed relationship between two persons.
 /// 
@@ -40,7 +43,8 @@ public class Person
 /// 
 /// Without this associative table, these additional attributes could
 /// not be modeled without losing information or introducing ambiguity.
-///
+/// 
+/// PersonId defines the owner of the relationship.
 /// quelle: vertrau mir Bruder
 /// </summary>
 public class CustomerRelationship
@@ -63,4 +67,10 @@ public class Role
 {
     public int RoleId { get; set; }
     public required string Name { get; set; }
+}
+
+public class RoleAssignment
+{
+    public int PersonId { get; set; }
+    public int RoleId { get; set; }
 }

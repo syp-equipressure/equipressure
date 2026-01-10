@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <Folder Include="Core\Devices\" />
-    <Folder Include="Core\Horses\" />
     <Folder Include="Core\Measurements\" />
   </ItemGroup>
 
