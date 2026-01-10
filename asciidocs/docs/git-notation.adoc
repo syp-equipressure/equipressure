@@ -18,7 +18,6 @@ $ git switch feature/backend
 $ gh pr create --base dev --title "Backend Feature" --body "Beschreibung"
 # oder
 $ gh pr create --base dev
-
 ----
 
 == Commits
@@ -101,7 +100,7 @@ main
 ├── dev
 │   ├── feature/backend
 │   └── feature/frontend
-│       ├── feature/satiler-app
+│       ├── feature/sattler-app
 │       └── feature/reiter-app
 └── release/*
 
@@ -110,7 +109,7 @@ main
 === Bereits bestehende Branches
 
 .main
-* nur versionen, die man bereits veröffentlichen könnte
+* nur Versionen, die man bereits veröffentlichen könnte
 
 .dev
 * komplett abgeschlossene features aus backend und frontend
