@@ -1,5 +1,9 @@
 = GIT
 
+== Befehle
+
+== Commits
+
 == Branches
 
 === Notation
@@ -7,6 +11,77 @@
 Für jedes neue Feature:
 
 * feature/[name-des-features]
+
+=== Workflow
+
+[plantuml, git-simple, png]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title Git Branch Workflow
+
+package "Repository" {
+  database "main" as main
+  database "dev" as dev
+
+  file "feature/frontend" as frontend
+  file "feature/backend" as backend
+  file "feature/sattler-app" as sattler
+  file "feature/reiter-app" as reiter
+}
+
+main -right-> dev : "git checkout -b dev"
+dev -down-> frontend : "git checkout -b"
+dev -down-> backend : "git checkout -b"
+frontend -down-> sattler : "git checkout -b"
+frontend -down-> reiter : "git checkout -b"
+
+frontend -up-> dev : "git merge"
+backend -up-> dev : "git merge"
+sattler -up-> frontend : "git merge"
+reiter -up-> frontend : "git merge"
+
+dev -left-> main : "Release merge"
+
+note right of main
+  <b>Protected Branch</b>
+  • No direct commits
+  • PR reviews required
+  • CI/CD must pass
+end note
+@enduml
+----
+
+.Git Branch Structure (ASCII)
+[source,asciidoc]
+----
+main
+├── dev
+│   ├── feature/backend
+│   └── feature/frontend
+│       ├── feature/satiler-app
+│       └── feature/reiter-app
+└── release/*
+
+----
+
+.Git Commands Sequence
+[listing,terminal]
+----
+# Develop feature
+$ git add .
+$ git commit -m "Add UI components"
+$ git push origin feature/frontend
+
+# Create merge request (on GitLab/GitHub UI)
+# After approval:
+$ git checkout dev
+$ git merge feature/frontend
+$ git branch -d feature/frontend
+
+----
 
 === Bereits bestehende Branches
 
