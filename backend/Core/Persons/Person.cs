@@ -1,5 +1,8 @@
 ﻿namespace EquiPressure.Core.Persons;
-
+/// <summary>
+///     A Person to exist in our database
+///     string are required because professor said that in last class
+/// </summary>
 public class Person
 {
     public int PersonId { get; set; }
@@ -22,20 +25,40 @@ public class Person
     public List<CustomerRelationship> CustomerRelationships { get; set; } = [];
     public List<Role> Roles { get; set; } = [];
 }
-
-// Assoziationstabelle 
+/// <summary>
+/// Represents a directed relationship between two persons.
+/// 
+/// This table is required because the relationship between customers
+/// is not a simple many-to-many relation. The relationship itself
+/// carries additional domain-specific information, such as whether
+/// the related person appears as a favorite or as a contact for the
+/// owning person.
+/// 
+/// Each entry describes how <see cref="PersonId"/> perceives
+/// <see cref="RelatedPersonId"/>, making the relation asymmetric
+/// (Person A can mark Person B as favorite, without the inverse being true).
+/// 
+/// Without this associative table, these additional attributes could
+/// not be modeled without losing information or introducing ambiguity.
+///
+/// quelle: vertrau mir Bruder
+/// </summary>
 public class CustomerRelationship
 {
     public int PersonId { get; set; }
     public int RelatedPersonId { get; set; }
 
-    // erscheint in der Favouriten-Liste unserer Person
+    // Appears in the favorites list of PersonId
     public bool IsFavorite { get; set; }
 
-    // erscheint in der Kontakt-Liste unserer Person
+    // Appears in the contact list of PersonId
     public bool IsContact { get; set; }
 }
 
+/// <summary>
+///     Represents a Role a Person can have
+///     since a person can have multiple roles
+/// </summary>
 public class Role
 {
     public int RoleId { get; set; }
