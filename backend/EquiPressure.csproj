@@ -13,4 +13,10 @@
     <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Core\Devices\" />
+    <Folder Include="Core\Horses\" />
+    <Folder Include="Core\Measurements\" />
+  </ItemGroup>
+
 </Project>
