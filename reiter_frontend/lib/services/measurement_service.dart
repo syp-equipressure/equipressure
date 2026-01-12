@@ -4,27 +4,29 @@ import 'package:reiterappfrontend/models/measurement.dart';
 
 class MeasurementService {
   Future<List<Measurement>> getMeasurements() async {
-    try {
-      print('Versuche measurements.json zu laden...');
-      final String response = await rootBundle.loadString('assets/data/measurement.json');
-      print('JSON geladen, Größe: ${response.length} Zeichen');
-      
-      final data = json.decode(response);
-      print('JSON geparst, Anzahl Messungen: ${data['measurements'].length}');
-      
-      List<Measurement> measurements = [];
-      for (var item in data['measurements']) {
-        measurements.add(Measurement.fromJson(item));
-      }
-      
-      print('${measurements.length} Messungen erfolgreich geladen');
-      return measurements;
-    } catch (e) {
-      print('FEHLER beim Laden der Messungen: $e');
-      print('Stack trace: ${StackTrace.current}');
-      return [];
-    }
+  try {
+    final String response =
+        await rootBundle.loadString('assets/data/measurement.json');
+
+    final Map<String, dynamic> data =
+        json.decode(response) as Map<String, dynamic>;
+
+    final List<dynamic> list =
+        data['measurements'] as List<dynamic>;
+
+    final measurements = list
+        .map((item) =>
+            Measurement.fromJson(item as Map<String, dynamic>))
+        .toList();
+
+    return measurements;
+  } catch (e, s) {
+    print('FEHLER beim Laden der Messungen: $e');
+    print(s);
+    return [];
   }
+}
+
 
   Future<List<Measurement>> getMeasurementsForHorse(String horseId) async {
     final allMeasurements = await getMeasurements();
@@ -38,5 +40,18 @@ class MeasurementService {
     } catch (e) {
       return null;
     }
+  }
+
+    Future<void> deleteMeasurement(String id) async {
+    try {
+      final measurements = await getMeasurements();
+      measurements.removeWhere((m) => m.id == id);
+      print('Messung $id erfolgreich gelöscht');
+    } catch (e) {
+      print('Fehler beim Löschen der Messung: $e');
+      rethrow;
+    }
+
+
   }
 }

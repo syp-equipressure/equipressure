@@ -4,16 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/widgets/dashed_border.dart';
 
 class AddHorseScreen extends StatefulWidget {
   final void Function(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) onSave;
   final VoidCallback onCancel;
-  final Horse? horse; // Optional: Wenn vorhanden, dann Edit-Modus
+  final VoidCallback? onDelete; // Optional: Nur im Edit-Modus
+  final Horse? horse;
 
   const AddHorseScreen({
     super.key,
     required this.onSave,
     required this.onCancel,
+    this.onDelete,
     this.horse,
   });
 
@@ -41,7 +44,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   void initState() {
     super.initState();
     
-    // Wenn ein Pferd übergeben wurde (Edit-Modus), fülle die Felder
     if (widget.horse != null) {
       final horse = widget.horse!;
       
@@ -50,7 +52,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       selectedSex = horse.sex;
       selectedImage = horse.image;
       
-      // Geburtsdatum parsen (Format: DD.MM.YYYY)
       if (horse.birthDate.isNotEmpty) {
         final parts = horse.birthDate.split('.');
         if (parts.length == 3) {
@@ -60,14 +61,12 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         }
       }
       
-      // Stockmaß und Gewicht (ohne "cm" und "kg")
       heightController.text = horse.height;
       weightController.text = horse.weight;
     }
   }
 
   Future<void> _pickImage() async {
-    // Verhindere mehrfache gleichzeitige Aufrufe
     if (_isPickingImage) return;
     
     setState(() {
@@ -85,7 +84,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         });
       }
     } catch (e) {
-      // Fehlerbehandlung, falls der Image Picker fehlschlägt
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -197,6 +195,34 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     return '$day.$month.$year';
   }
 
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pferd löschen'),
+        content: Text('Möchtest du ${widget.horse!.name} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Dialog schließen
+              if (widget.onDelete != null) {
+                widget.onDelete!();
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.horse != null;
@@ -220,21 +246,28 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           ),
         ),
         centerTitle: false,
+        actions: isEditMode
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: _showDeleteConfirmation,
+                  tooltip: 'Pferd löschen',
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bild Upload mit gestricheltem Border
+            // Bild Upload mit DashedBorder Widget
             GestureDetector(
               onTap: _pickImage,
-              child: CustomPaint(
-                painter: DashedBorderPainter(
-                  color: Colors.grey[300]!,
-                  strokeWidth: 2,
-                  borderRadius: 12,
-                ),
+              child: DashedBorder(
+                color: Colors.grey[300]!,
+                strokeWidth: 2,
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
                   height: 160,
                   decoration: BoxDecoration(
@@ -782,60 +815,4 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       ),
     );
   }
-}
-
-// Custom painter for dashed border
-class DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double borderRadius;
-  final double dashWidth;
-  final double dashSpace;
-
-  DashedBorderPainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.borderRadius,
-    this.dashWidth = 8,
-    this.dashSpace = 4,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        Radius.circular(borderRadius),
-      ));
-
-    final dashPath = _createDashedPath(path);
-    canvas.drawPath(dashPath, paint);
-  }
-
-  Path _createDashedPath(Path source) {
-    final path = Path();
-    final metrics = source.computeMetrics();
-
-    for (final metric in metrics) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final segment = metric.extractPath(
-          distance,
-          distance + dashWidth,
-        );
-        path.addPath(segment, Offset.zero);
-        distance += dashWidth + dashSpace;
-      }
-    }
-
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(DashedBorderPainter oldDelegate) => false;
 }

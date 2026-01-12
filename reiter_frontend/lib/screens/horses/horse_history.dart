@@ -3,7 +3,10 @@ import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
-import 'package:intl/intl.dart';
+import 'package:reiterappfrontend/widgets/history_dropdown_filter.dart';
+import 'package:reiterappfrontend/widgets/measurement_card.dart';
+import 'package:reiterappfrontend/widgets/history_filter.dart';
+
 
 class HorseHistoryScreen extends StatefulWidget {
   final Horse horse;
@@ -49,7 +52,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
       // Extrahiere unique Reiter und Sättel
       final riders = horseMeasurements.map((m) => m.rider).toSet().toList();
       final saddles = horseMeasurements
-          .map((m) => 'Prestige Dressursattel ${m.pressureLevel}')
+          .map((m) => '${m.saddleName}')
           .toSet()
           .toList();
 
@@ -78,10 +81,68 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
       filteredMeasurements = allMeasurements.where((m) {
         bool matchesRider = selectedRider == null || m.rider == selectedRider;
         bool matchesSaddle = selectedSaddle == null ||
-            'Prestige Dressursattel ${m.pressureLevel}' == selectedSaddle;
+            '${m.saddleName}' == selectedSaddle;
         return matchesRider && matchesSaddle;
       }).toList();
     });
+  }
+
+  void _showDeleteConfirmation(Measurement measurement) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Messung löschen'),
+        content: Text('Möchtest du die Messung "${measurement.notes}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Dialog schließen
+              await _deleteMeasurement(measurement);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteMeasurement(Measurement measurement) async {
+    try {
+      await _measurementService.deleteMeasurement(measurement.id);
+      
+      // Entferne aus der lokalen Liste
+      setState(() {
+        allMeasurements.removeWhere((m) => m.id == measurement.id);
+      });
+      
+      // Filter neu anwenden
+      _applyFilters();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Messung wurde gelöscht'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Löschen: $e'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -127,11 +188,31 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
-                _buildFilterChip('Zeitraum'),
+                const customFilterChip(label: 'Zeitraum'),
                 const SizedBox(width: 8),
-                _buildRiderFilterChip(),
+                DropdownFilterChip(
+                  label: 'Reiter:in',
+                  items: availableRiders,
+                  selectedItem: selectedRider,
+                  onSelected: (value) {
+                    setState(() {
+                      selectedRider = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
                 const SizedBox(width: 8),
-                _buildSaddleFilterChip(),
+                DropdownFilterChip(
+                  label: 'Sattel',
+                  items: availableSaddles,
+                  selectedItem: selectedSaddle,
+                  onSelected: (value) {
+                    setState(() {
+                      selectedSaddle = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
               ],
             ),
           ),
@@ -156,260 +237,20 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
                         padding: const EdgeInsets.all(16),
                         itemCount: filteredMeasurements.length,
                         itemBuilder: (context, index) {
-                          return _buildMeasurementCard(filteredMeasurements[index]);
+                          final measurement = filteredMeasurements[index];
+                          return MeasurementCard(
+                            measurement: measurement,
+                            onTap: () {
+                              // TODO: Navigation zur Messungsdetail-Seite
+                              print('Messung angeklickt: ${measurement.id}');
+                            },
+                            onDelete: () => _showDeleteConfirmation(measurement),
+                          );
                         },
                       ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFilterChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRiderFilterChip() {
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        setState(() {
-          selectedRider = value == 'Alle' ? null : value;
-        });
-        _applyFilters();
-      },
-      itemBuilder: (context) {
-        return [
-          const PopupMenuItem(
-            value: 'Alle',
-            child: Row(
-              children: [
-                Icon(Icons.check_box_outline_blank, size: 20),
-                SizedBox(width: 8),
-                Text('Alle'),
-              ],
-            ),
-          ),
-          ...availableRiders.map((rider) {
-            final isSelected = selectedRider == rider;
-            return PopupMenuItem(
-              value: rider,
-              child: Row(
-                children: [
-                  Icon(
-                    isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(rider),
-                ],
-              ),
-            );
-          }).toList(),
-        ];
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selectedRider != null ? Colors.grey[200] : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selectedRider != null ? Colors.grey[400]! : Colors.grey[300]!,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Reiter:in',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-                fontWeight: selectedRider != null ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 20,
-              color: Colors.grey[700],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSaddleFilterChip() {
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        setState(() {
-          selectedSaddle = value == 'Alle' ? null : value;
-        });
-        _applyFilters();
-      },
-      itemBuilder: (context) {
-        return [
-          const PopupMenuItem(
-            value: 'Alle',
-            child: Row(
-              children: [
-                Icon(Icons.check_box_outline_blank, size: 20),
-                SizedBox(width: 8),
-                Text('Alle'),
-              ],
-            ),
-          ),
-          ...availableSaddles.map((saddle) {
-            final isSelected = selectedSaddle == saddle;
-            return PopupMenuItem(
-              value: saddle,
-              child: Row(
-                children: [
-                  Icon(
-                    isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(saddle),
-                ],
-              ),
-            );
-          }).toList(),
-        ];
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selectedSaddle != null ? Colors.grey[200] : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selectedSaddle != null ? Colors.grey[400]! : Colors.grey[300]!,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Sattel',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-                fontWeight: selectedSaddle != null ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 20,
-              color: Colors.grey[700],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMeasurementCard(Measurement measurement) {
-    final dateFormat = DateFormat('dd.MM.yyyy');
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // TODO: Navigation zur Messungsdetail-Seite
-            print('Messung angeklickt: ${measurement.id}');
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header mit Titel und Delete Button
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        measurement.notes,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete_outline, color: Colors.grey[600], size: 20),
-                      onPressed: () {
-                        // TODO: Messung löschen
-                        print('Löschen: ${measurement.id}');
-                      },
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // Details
-                _buildDetailRow(Icons.access_time, dateFormat.format(measurement.date)),
-                const SizedBox(height: 8),
-                _buildDetailRow(Icons.person_outline, measurement.rider),
-                const SizedBox(height: 8),
-                _buildDetailRow(
-                  Icons.analytics_outlined,
-                  'Prestige Dressursattel ${measurement.pressureLevel}',
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

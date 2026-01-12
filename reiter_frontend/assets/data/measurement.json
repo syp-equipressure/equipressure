@@ -9,7 +9,7 @@
       "rider": "Lena Graßauer",
       "weight": "520kg",
       "height": "1.68m",
-      "pressureLevel": "X 02",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Dressurtraining - sehr ausbalanciert",
       "images": {
         "normal": "measurement_1_normal.png",
@@ -26,7 +26,7 @@
       "rider": "Sarah Weber",
       "weight": "520kg",
       "height": "1.68m",
-      "pressureLevel": "X 01",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Ausritt im Gelände",
       "images": {
         "normal": "measurement_2_normal.png",
@@ -43,7 +43,7 @@
       "rider": "Lena Graßauer",
       "weight": "520kg",
       "height": "1.68m",
-      "pressureLevel": "X 02",
+      "saddleName": "Renaissance F Springsattel",
       "notes": "Springtraining - gute Haltung",
       "images": {
         "normal": "measurement_3_normal.png",
@@ -60,7 +60,7 @@
       "rider": "Michael Schmidt",
       "weight": "580kg",
       "height": "1.72m",
-      "pressureLevel": "X 03",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Vielseitigkeit - Dressurphase",
       "images": {
         "normal": "measurement_4_normal.png",
@@ -77,7 +77,7 @@
       "rider": "Julia Meier",
       "weight": "580kg",
       "height": "1.72m",
-      "pressureLevel": "X 02",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Longenstunde zur Lockerung",
       "images": {
         "normal": "measurement_5_normal.png",
@@ -94,7 +94,7 @@
       "rider": "Michael Schmidt",
       "weight": "580kg",
       "height": "1.72m",
-      "pressureLevel": "X 03",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Geländeritt - Konditionstraining",
       "images": {
         "normal": "measurement_6_normal.png",
@@ -111,7 +111,7 @@
       "rider": "Michael Schmidt",
       "weight": "580kg",
       "height": "1.72m",
-      "pressureLevel": "X 02",
+      "saddleName": "Renaissance F Springsattel",
       "notes": "Sattelanpassung nach Kontrolle",
       "images": {
         "normal": "measurement_7_normal.png",
@@ -128,7 +128,7 @@
       "rider": "Anna Hoffmann",
       "weight": "490kg",
       "height": "1.65m",
-      "pressureLevel": "X 01",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Jungpferdetraining - Basis Dressur",
       "images": {
         "normal": "measurement_8_normal.png",
@@ -145,7 +145,7 @@
       "rider": "Lisa Koch",
       "weight": "490kg",
       "height": "1.65m",
-      "pressureLevel": "X 01",
+      "saddleName": "Dressursattel WINTEC 500",
       "notes": "Gewöhnung an neuen Sattel",
       "images": {
         "normal": "measurement_9_normal.png",
@@ -162,7 +162,7 @@
       "rider": "Anna Hoffmann",
       "weight": "490kg",
       "height": "1.65m",
-      "pressureLevel": "X 02",
+      "saddleName": "Renaissance F Springsattel",
       "notes": "Cavaletti-Training",
       "images": {
         "normal": "measurement_10_normal.png",
@@ -179,7 +179,7 @@
       "rider": "Thomas Bauer",
       "weight": "610kg",
       "height": "1.75m",
-      "pressureLevel": "X 03",
+      "saddleName": "Prestige Italia Versailles Springsattel",
       "notes": "Intensives Dressurtraining",
       "images": {
         "normal": "measurement_11_normal.png",
@@ -196,7 +196,7 @@
       "rider": "Thomas Bauer",
       "weight": "610kg",
       "height": "1.75m",
-      "pressureLevel": "X 02",
+      "saddleName": "Dressurg. Silk Touch Crystal 120",
       "notes": "Jahresabschluss - Ausritt",
       "images": {
         "normal": "measurement_12_normal.png",
@@ -213,7 +213,7 @@
       "rider": "Thomas Bauer",
       "weight": "610kg",
       "height": "1.75m",
-      "pressureLevel": "X 03",
+      "saddleName": "Dressurg. Silk Touch Crystal 120",
       "notes": "Weihnachtsritt - entspannt",
       "images": {
         "normal": "measurement_13_normal.png",
@@ -230,7 +230,7 @@
       "rider": "Markus Weber",
       "weight": "610kg",
       "height": "1.75m",
-      "pressureLevel": "X 02",
+      "saddleName": "Prestige Italia Versailles Springsattel",
       "notes": "Bereitertraining",
       "images": {
         "normal": "measurement_14_normal.png",
@@ -247,7 +247,7 @@
       "rider": "Thomas Bauer",
       "weight": "610kg",
       "height": "1.75m",
-      "pressureLevel": "X 03",
+      "saddleName": "Prestige Italia Versailles Springsattel",
       "notes": "Springstunde - Parcours",
       "images": {
         "normal": "measurement_15_normal.png",

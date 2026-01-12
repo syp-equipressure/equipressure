@@ -115,6 +115,19 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                 Navigator.pop(context);
                               },
                               onCancel: () => Navigator.pop(context),
+                              onDelete: () async {
+                                // TODO: Pferd löschen und zurück zur Liste
+                                await _horseService.deleteHorse(currentHorse.id);
+                                if (mounted) {
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Pferd wurde gelöscht'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ),
                         );
