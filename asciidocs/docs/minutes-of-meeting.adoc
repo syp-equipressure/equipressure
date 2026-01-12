@@ -837,3 +837,83 @@ a| Wireframe anpassen an Wünsche
 a| Endpunkte weiter definieren und Backend Programmierung anfangen
 | 20.01.2026
 |===
+
+== 2026-01-12
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Christoph
+| Fehleisen
+| 4AHBH
+
+| Jonas
+| Pfeiffer
+| 4AHBG
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|HBLA Lentia
+
+|Datum
+|Di. 2026-01-12
+
+|Dauer
+|15:15 bis 16:20
+|===
+====
+
+=== Besprochenes
+* Sattler*innen müssen angeben welche Sättel sie machen
+* Wireframe unseren Partnern gezeigt
+* BEIM NÄCHSTEN PITCH: erwähnen das Hauptklientel Reiter*innen sind
+* ca. 400 Sensoren sollen in einer Matte sein 
+
+=== Gespräch mit Mentor
+* Verkaufsmodell überlegen 
+** Social Media, etc
+** klare saubere Website über unser Produkt
+*** USP, warum heben wir uns ab, was machen wir besser als die anderen
+** wie verkaufen wir es; was kostet es
+* anschauen wie viele Sattler*innen dass es gibt in Österreich
+* nachforschen wo ich den geringsten Widerstand haben bei den Sattler*innen
+* Sattler*innen werden Bedenken haben
+
+Vorteile/Nachteile gehören noch ausgearbeitet
+
+=== Vorteile für Sattler*innen
+* gewinnen Kunden durch Kenntnis über App
+* manche Reiter*innen wissen vlt gar nicht dass es so eine Möglichkeit gibt, oder es ist ihnen zu teuer
+* weniger Aufwand im Vorhinein, weil Reiter*innen vorher schon Messungen durchgeführt haben
+
+=== Nachteile für Sattler*innen
+* keine Nachkontrolltermine
