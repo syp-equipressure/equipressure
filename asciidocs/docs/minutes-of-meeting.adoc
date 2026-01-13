@@ -917,3 +917,33 @@ Vorteile/Nachteile gehören noch ausgearbeitet
 
 === Nachteile für Sattler*innen
 * keine Nachkontrolltermine
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Dallinger
+a| 20 Seiten Jugend Innovativ Antrag schreiben +
+ Anmeldung Think Your Product +
+ GitHub Rules erweitern +
+ Datenmodell anpassen
+| 20.01.2026
+
+| Dallinger, Graßauer
+a| Vorteile und Nachteile für Sattler*innen herausfiltern 
+| 20.01.2026
+
+| Graßauer
+a| Frontend: Messungsformular
+| 20.01.2026
+
+| Einzenberger
+a| Backend mit Minimal API weiterarbeiten + 
+ Techstack an Wünsche anpassen
+| 20.01.2026
+
+| Music
+a| Frontend: Login und Chat
+| 20.01.2026
+|===
