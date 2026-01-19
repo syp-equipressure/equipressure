@@ -7,7 +7,7 @@ class Measurement {
   final String rider;
   final String weight;
   final String height;
-  final String pressureLevel;
+  final String saddleName;
   final String notes;
   final MeasurementImages images;
 
@@ -20,7 +20,7 @@ class Measurement {
     required this.rider,
     required this.weight,
     required this.height,
-    required this.pressureLevel,
+    required this.saddleName,
     required this.notes,
     required this.images,
   });
@@ -35,7 +35,7 @@ class Measurement {
       rider: json['rider'],
       weight: json['weight'],
       height: json['height'],
-      pressureLevel: json['pressureLevel'],
+      saddleName: json['saddleName'],
       notes: json['notes'],
       images: MeasurementImages.fromJson(json['images']),
     );
@@ -51,7 +51,7 @@ class Measurement {
       'rider': rider,
       'weight': weight,
       'height': height,
-      'pressureLevel': pressureLevel,
+      'saddleName': saddleName,
       'notes': notes,
       'images': images.toJson(),
     };
