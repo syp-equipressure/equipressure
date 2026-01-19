@@ -119,9 +119,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               onDelete: () async {
                                 await _horseService.deleteHorse(currentHorse.id);
                                 if (mounted) {
-                                  // Schließe den Edit-Screen
                                   Navigator.pop(context);
-                                  // Schließe den Profile-Screen und signalisiere Löschung
                                   Navigator.pop(context, 'deleted');
                                 }
                               },
@@ -247,7 +245,9 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const NewMeasurementScreen(),
+                                  builder: (_) => NewMeasurementScreen(
+                                    horse: currentHorse, // Übergebe das aktuelle Pferd
+                                  ),
                                 ),
                               );
                             },

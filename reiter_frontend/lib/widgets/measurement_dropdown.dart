@@ -5,8 +5,11 @@ class SelectionDropdown<T> extends StatelessWidget {
   final T? value;
   final List<T> items;
   final String Function(T) getItemText;
-  final void Function(T?) onChanged;
+  final String Function(T) getItemId; // Neue Funktion für eindeutige ID
+  final ValueChanged<T?> onChanged;
   final bool enabled;
+  final VoidCallback? onAddNew;
+  final String? addNewText;
 
   const SelectionDropdown({
     super.key,
@@ -14,12 +17,18 @@ class SelectionDropdown<T> extends StatelessWidget {
     required this.value,
     required this.items,
     required this.getItemText,
+    required this.getItemId,
     required this.onChanged,
     this.enabled = true,
+    this.onAddNew,
+    this.addNewText,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Verwende einen speziellen Marker-Wert für "Hinzufügen"
+    const addNewMarker = '__ADD_NEW__';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -34,33 +43,66 @@ class SelectionDropdown<T> extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
+            ),
             borderRadius: BorderRadius.circular(12),
+            color: enabled ? Colors.white : Colors.grey[50],
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<T>(
-              value: value,
+            child: DropdownButton<String>(
+              value: value != null ? getItemId(value as T) : null,
               isExpanded: true,
-              hint: Text(
-                'Auswählen',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
               icon: Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
+                Icons.expand_more,
                 color: enabled ? Colors.grey[600] : Colors.grey[400],
               ),
-              items: items.map((item) {
-                return DropdownMenuItem<T>(
-                  value: item,
-                  child: Text(
-                    getItemText(item),
-                    style: const TextStyle(fontSize: 16),
+              hint: Text(
+                'Bitte wählen...',
+                style: TextStyle(color: Colors.grey[400]),
+              ),
+              items: [
+                ...items.map((T item) {
+                  return DropdownMenuItem<String>(
+                    value: getItemId(item),
+                    child: Text(getItemText(item)),
+                  );
+                }),
+                if (onAddNew != null)
+                  DropdownMenuItem<String>(
+                    value: addNewMarker,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.add_circle_outline,
+                          size: 20,
+                          color: Color(0xFF6B4C9A),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          addNewText ?? '$label hinzufügen',
+                          style: const TextStyle(
+                            color: Color(0xFF6B4C9A),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              }).toList(),
-              onChanged: enabled ? onChanged : null,
+              ],
+              onChanged: enabled
+                  ? (String? newValue) {
+                      if (newValue == addNewMarker && onAddNew != null) {
+                        onAddNew!();
+                      } else if (newValue != null) {
+                        // Finde das entsprechende Item anhand der ID
+                        final selectedItem = items.firstWhere(
+                          (item) => getItemId(item) == newValue,
+                        );
+                        onChanged(selectedItem);
+                      }
+                    }
+                  : null,
             ),
           ),
         ),

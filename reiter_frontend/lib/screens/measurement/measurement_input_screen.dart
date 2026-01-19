@@ -3,6 +3,7 @@ import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
+import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:intl/intl.dart';
@@ -404,59 +405,66 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
   }
 
   Future<void> _endMeasurement() async {
-    // Formatiere Datum für den Titel
-    final dateFormat = DateFormat('dd.MM.yyyy');
-    final measurementTitle = 'Messung vom ${dateFormat.format(DateTime.now())}';
-    
-    // Erstelle die Notizen aus den Teilmessungen
-    final notes = _notesController.text.isNotEmpty 
-        ? _notesController.text 
-        : sections.map((s) => _getSectionTitle(s)).join(', ');
+  // Formatiere Datum für den Titel
+  final dateFormat = DateFormat('dd.MM.yyyy');
+  final measurementTitle = 'Messung vom ${dateFormat.format(DateTime.now())}';
+  
+  // Erstelle die Notizen aus den Teilmessungen
+  final notes = _notesController.text.isNotEmpty 
+      ? _notesController.text 
+      : sections.map((s) => _getSectionTitle(s)).join(', ');
 
-    // Erstelle neue Messung
-    final newMeasurement = Measurement(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      horseId: widget.horse.id,
-      horseName: widget.horse.name,
-      date: DateTime.now(),
-      owner: 'Lena Graßauer', 
-      rider: widget.user.fullName,
-      weight: '${widget.horse.weight}kg',
-      height: '${widget.horse.height}m',
-      saddleName: widget.saddle.name, 
-      notes: notes.isNotEmpty ? notes : measurementTitle,
-      images: MeasurementImages(
-        normal: 'measurement_normal.png',
-        filtered: 'measurement_filtered.png',
-        profile: 'measurement_profile.png',
-      ),
-    );
+  // Erstelle neue Messung
+  final newMeasurement = Measurement(
+    id: DateTime.now().millisecondsSinceEpoch.toString(),
+    horseId: widget.horse.id,
+    horseName: widget.horse.name,
+    date: DateTime.now(),
+    owner: 'Lena Graßauer', 
+    rider: widget.user.fullName,
+    weight: '${widget.horse.weight}kg',
+    height: '${widget.horse.height}m',
+    saddleName: widget.saddle.name, 
+    notes: notes.isNotEmpty ? notes : measurementTitle,
+    images: MeasurementImages(
+      normal: 'measurement_normal.png',
+      filtered: 'measurement_filtered.png',
+      profile: 'measurement_profile.png',
+    ),
+  );
 
-    try {
-      // Speichere Messung
-      await _measurementService.addMeasurement(newMeasurement);
+  try {
+    // Speichere Messung
+    await _measurementService.addMeasurement(newMeasurement);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Messung erfolgreich gespeichert'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Messung erfolgreich gespeichert'),
+          duration: Duration(seconds: 2),
+        ),
+      );
 
-        // Zurück zur vorherigen Seite
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fehler beim Speichern: $e'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      // Gehe zurück zum NewMeasurementScreen (schließe beide Screens)
+      // und öffne einen neuen NewMeasurementScreen ohne vorselektiertes Pferd
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NewMeasurementScreen(),
+        ),
+      );
     }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fehler beim Speichern: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
   }
 }
 

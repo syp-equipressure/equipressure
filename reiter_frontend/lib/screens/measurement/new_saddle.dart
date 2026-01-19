@@ -6,7 +6,12 @@ import 'package:reiterappfrontend/services/saddle_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
 
 class NewSaddleScreen extends StatefulWidget {
-  const NewSaddleScreen({super.key});
+  final Horse? preselectedHorse;
+  
+  const NewSaddleScreen({
+    super.key,
+    this.preselectedHorse,
+  });
 
   @override
   State<NewSaddleScreen> createState() => _NewSaddleScreenState();
@@ -24,6 +29,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedHorse = widget.preselectedHorse;
     _loadHorses();
   }
 
@@ -32,6 +38,14 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
       final horses = await HorseService().getHorses();
       setState(() {
         _horses = horses;
+        
+        // Stelle sicher, dass das vorausgewählte Pferd aus der geladenen Liste kommt
+        if (widget.preselectedHorse != null) {
+          _selectedHorse = horses.firstWhere(
+            (h) => h.id == widget.preselectedHorse!.id,
+            orElse: () => widget.preselectedHorse!,
+          );
+        }
       });
     } catch (e) {
       print('Fehler beim Laden der Pferde: $e');
@@ -165,55 +179,38 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _showHorsePicker(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _selectedHorse?.name ?? '',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _selectedHorse == null ? Colors.grey[400] : Colors.black,
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
-              ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedHorse?.id,
+              isExpanded: true,
+              icon: Icon(Icons.expand_more, color: Colors.grey[600]),
+              hint: Text(
+                'Pferd auswählen',
+                style: TextStyle(color: Colors.grey[400]),
+              ),
+              items: _horses.map((Horse horse) {
+                return DropdownMenuItem<String>(
+                  value: horse.id,
+                  child: Text(horse.name),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedHorse = _horses.firstWhere((h) => h.id == newValue);
+                  });
+                }
+              },
             ),
           ),
         ),
       ],
-    );
-  }
-
-  void _showHorsePicker() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: _horses.isEmpty
-            ? const Center(child: Text('Keine Pferde verfügbar'))
-            : ListView.builder(
-                shrinkWrap: true,
-                itemCount: _horses.length,
-                itemBuilder: (context, index) {
-                  final horse = _horses[index];
-                  return ListTile(
-                    title: Text(horse.name),
-                    onTap: () {
-                      setState(() => _selectedHorse = horse);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-      ),
     );
   }
 
@@ -241,7 +238,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
       await service.addSaddle(saddle);
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, saddle); // Gib den erstellten Sattel zurück
       }
     } catch (e) {
       if (mounted) {

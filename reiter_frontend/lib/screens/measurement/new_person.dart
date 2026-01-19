@@ -201,8 +201,7 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
       final service = PersonService();
       final nextId = await service.getNextId();
 
-      await service.addPerson(
-        Person(
+      final person = Person(
           id: nextId,
           firstname: _firstname.text,
           lastname: _lastname.text,
@@ -214,11 +213,13 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
           housenumber: 0,
           email: _email.text,
           hidden: hidden,
-        ),
-      );
+        );
+
+      await service.addPerson(person);
+        
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, person); 
       }
     } catch (e) {
       if (mounted) {
