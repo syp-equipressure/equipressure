@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/models/saddle.dart';
+import 'package:reiterappfrontend/screens/measurement/new_person.dart';
+import 'package:reiterappfrontend/screens/measurement/new_saddle.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
 import 'package:reiterappfrontend/services/saddle_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
@@ -78,6 +80,56 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
     }
   }
 
+  void _showAddRiderDialog() {
+   
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewPersonScreen()
+      ),
+    ).then((newPerson) async {
+      await _loadData();
+      
+      if (newPerson != null && newPerson is Person) {
+        setState(() {
+          selectedPerson = persons.firstWhere(
+            (p) => p.id == newPerson.id,
+            orElse: () => newPerson,
+          );
+        });
+      }
+    });
+  }
+
+  void _showAddSaddleDialog() {
+    if (selectedHorse == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bitte wähle zuerst ein Pferd aus'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewSaddleScreen(preselectedHorse: selectedHorse),
+      ),
+    ).then((newSaddle) async {
+      await _loadData();
+      
+      if (newSaddle != null && newSaddle is Saddle) {
+        setState(() {
+          selectedSaddle = saddles.firstWhere(
+            (s) => s.id == newSaddle.id,
+            orElse: () => newSaddle,
+          );
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Filtere Sättel für das ausgewählte Pferd
@@ -111,11 +163,14 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                     value: selectedPerson,
                     items: persons,
                     getItemText: (person) => person.fullName,
+                    getItemId: (person) => person.id.toString(),
                     onChanged: (person) {
                       setState(() {
                         selectedPerson = person;
                       });
                     },
+                    onAddNew: _showAddRiderDialog,
+                    addNewText: 'Reiter:in hinzufügen',
                   ),
 
                   if (selectedPerson != null) ...[
@@ -136,6 +191,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                     value: selectedHorse,
                     items: horses,
                     getItemText: (horse) => horse.name,
+                    getItemId: (horse) => horse.id,
                     onChanged: (horse) {
                       setState(() {
                         selectedHorse = horse;
@@ -166,12 +222,15 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                         : null,
                     items: saddlesForHorse,
                     getItemText: (saddle) => saddle.name,
+                    getItemId: (saddle) => saddle.id,
                     onChanged: (saddle) {
                       setState(() {
                         selectedSaddle = saddle;
                       });
                     },
                     enabled: selectedHorse != null,
+                    onAddNew: _showAddSaddleDialog,
+                    addNewText: 'Sattel hinzufügen',
                   ),
 
                   if (selectedSaddle != null) ...[
