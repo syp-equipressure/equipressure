@@ -115,8 +115,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                 Navigator.pop(context);
                               },
                               onCancel: () => Navigator.pop(context),
-<<<<<<< Updated upstream
-=======
+
                               onDelete: () async {
                                 await _horseService.deleteHorse(currentHorse.id);
                                 if (mounted) {
@@ -126,7 +125,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                   Navigator.pop(context, 'deleted');
                                 }
                               },
->>>>>>> Stashed changes
                             ),
                           ),
                         );

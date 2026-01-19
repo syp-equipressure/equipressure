@@ -8,28 +8,6 @@ class MeasurementService {
 
   Future<List<Measurement>> getMeasurements() async {
     try {
-<<<<<<< Updated upstream
-      print('Versuche measurements.json zu laden...');
-      final String response = await rootBundle.loadString('assets/data/measurement.json');
-      print('JSON geladen, Größe: ${response.length} Zeichen');
-      
-      final data = json.decode(response);
-      print('JSON geparst, Anzahl Messungen: ${data['measurements'].length}');
-      
-      List<Measurement> measurements = [];
-      for (var item in data['measurements']) {
-        measurements.add(Measurement.fromJson(item));
-      }
-      
-      print('${measurements.length} Messungen erfolgreich geladen');
-      return measurements;
-    } catch (e) {
-      print('FEHLER beim Laden der Messungen: $e');
-      print('Stack trace: ${StackTrace.current}');
-      return [];
-    }
-  }
-=======
       List<Measurement> allMeasurements = [];
       
       // 1. Lade von Assets (Beispiel-Daten)
@@ -83,6 +61,22 @@ class MeasurementService {
     }
   }
 
+  Future<void> updateMeasurement(Measurement updatedMeasurement) async {
+    try {
+      final index = _localMeasurements.indexWhere((m) => m.id == updatedMeasurement.id);
+      
+      if (index != -1) {
+        _localMeasurements[index] = updatedMeasurement;
+        print('Messung ${updatedMeasurement.id} erfolgreich aktualisiert (In-Memory)');
+      } else {
+        print('Messung mit ID ${updatedMeasurement.id} nicht gefunden');
+      }
+    } catch (e) {
+      print('Fehler beim Aktualisieren der Messung: $e');
+      rethrow;
+    }
+  }
+
   Future<void> deleteMeasurement(String id) async {
     try {
       _localMeasurements.removeWhere((m) => m.id == id);
@@ -92,7 +86,6 @@ class MeasurementService {
       rethrow;
     }
   }
->>>>>>> Stashed changes
 
   Future<List<Measurement>> getMeasurementsForHorse(String horseId) async {
     final allMeasurements = await getMeasurements();
@@ -107,8 +100,15 @@ class MeasurementService {
       return null;
     }
   }
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
+  // Optional: Alle In-Memory Messungen löschen (z.B. bei Logout)
+  void clearLocalMeasurements() {
+    _localMeasurements.clear();
+    print('Alle In-Memory Messungen gelöscht');
+  }
+
+  // Optional: Anzahl der In-Memory Messungen abrufen
+  int getLocalMeasurementsCount() {
+    return _localMeasurements.length;
+  }
 }

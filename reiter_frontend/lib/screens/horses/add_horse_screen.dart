@@ -8,12 +8,14 @@ import 'package:reiterappfrontend/models/horse.dart';
 class AddHorseScreen extends StatefulWidget {
   final void Function(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) onSave;
   final VoidCallback onCancel;
-  final Horse? horse; // Optional: Wenn vorhanden, dann Edit-Modus
+  final VoidCallback? onDelete; // NEU: Delete Callback
+  final Horse? horse;
 
   const AddHorseScreen({
     super.key,
     required this.onSave,
     required this.onCancel,
+    this.onDelete, // NEU: Optional
     this.horse,
   });
 
@@ -41,7 +43,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   void initState() {
     super.initState();
     
-    // Wenn ein Pferd übergeben wurde (Edit-Modus), fülle die Felder
     if (widget.horse != null) {
       final horse = widget.horse!;
       
@@ -50,7 +51,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       selectedSex = horse.sex;
       selectedImage = horse.image;
       
-      // Geburtsdatum parsen (Format: DD.MM.YYYY)
       if (horse.birthDate.isNotEmpty) {
         final parts = horse.birthDate.split('.');
         if (parts.length == 3) {
@@ -60,14 +60,12 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         }
       }
       
-      // Stockmaß und Gewicht (ohne "cm" und "kg")
       heightController.text = horse.height;
       weightController.text = horse.weight;
     }
   }
 
   Future<void> _pickImage() async {
-    // Verhindere mehrfache gleichzeitige Aufrufe
     if (_isPickingImage) return;
     
     setState(() {
@@ -85,7 +83,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         });
       }
     } catch (e) {
-      // Fehlerbehandlung, falls der Image Picker fehlschlägt
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -197,6 +194,34 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     return '$day.$month.$year';
   }
 
+  // NEU: Delete Confirmation Dialog
+  Future<void> _showDeleteConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pferd löschen'),
+        content: Text('Möchten Sie ${widget.horse?.name ?? 'dieses Pferd'} wirklich löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && widget.onDelete != null) {
+      widget.onDelete!();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.horse != null;
@@ -220,6 +245,15 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           ),
         ),
         centerTitle: false,
+        // NEU: Delete Button in AppBar (nur im Edit-Modus)
+        actions: isEditMode && widget.onDelete != null
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: _showDeleteConfirmation,
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
