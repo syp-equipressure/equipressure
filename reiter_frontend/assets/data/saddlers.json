@@ -1,0 +1,29 @@
+{
+  "saddlers": [
+    {
+      "id": "saddler1",
+      "name": "Sophie Grüneis",
+      "imagePath": null
+    },
+    {
+      "id": "saddler2",
+      "name": "Thomas Müller",
+      "imagePath": null
+    },
+    {
+      "id": "saddler3",
+      "name": "Anna Schmidt",
+      "imagePath": null
+    },
+    {
+      "id": "saddler4",
+      "name": "Michael Weber",
+      "imagePath": null
+    },
+    {
+      "id": "saddler5",
+      "name": "Lisa Hofmann",
+      "imagePath": null
+    }
+  ]
+}
