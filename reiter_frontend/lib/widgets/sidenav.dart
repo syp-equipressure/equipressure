@@ -32,7 +32,7 @@ class SideNav extends StatelessWidget {
               text: 'Neue Messung',
               onTap: () {
                 Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => NewMeasurement())
+                    MaterialPageRoute(builder: (context) => NewMeasurementScreen())
                 );
               }
             ),

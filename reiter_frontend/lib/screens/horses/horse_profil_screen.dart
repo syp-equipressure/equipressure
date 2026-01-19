@@ -104,8 +104,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                     right: 16,
                     child: _circleIconButton(
                       icon: Icons.edit,
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => AddHorseScreen(
@@ -115,9 +115,31 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                 Navigator.pop(context);
                               },
                               onCancel: () => Navigator.pop(context),
+<<<<<<< Updated upstream
+=======
+                              onDelete: () async {
+                                await _horseService.deleteHorse(currentHorse.id);
+                                if (mounted) {
+                                  // Schließe den Edit-Screen
+                                  Navigator.pop(context);
+                                  // Schließe den Profile-Screen und signalisiere Löschung
+                                  Navigator.pop(context, 'deleted');
+                                }
+                              },
+>>>>>>> Stashed changes
                             ),
                           ),
                         );
+                        
+                        // Wenn gelöscht wurde, schließe auch diesen Screen
+                        if (result == 'deleted' && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Pferd wurde gelöscht'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),
@@ -227,7 +249,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const NewMeasurement(),
+                                  builder: (_) => const NewMeasurementScreen(),
                                 ),
                               );
                             },

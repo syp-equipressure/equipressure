@@ -64,6 +64,8 @@ flutter:
   assets:
     - assets/data/horses.json
     - assets/data/measurement.json
+    - assets/data/user.json
+    - assets/data/saddle.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

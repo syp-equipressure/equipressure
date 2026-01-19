@@ -4,7 +4,7 @@ class Horse {
   final String id;
   final String name;
   final File? image;
-  final String? imagePath; // Pfad für JSON
+  final String? imagePath; 
   final String breed;
   final String birthDate; // Format: DD.MM.YYYY
   final String weight;
