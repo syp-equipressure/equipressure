@@ -171,7 +171,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
     return GestureDetector(
       onTap: () async {
         // Warte auf das Ergebnis vom HorseProfileScreen
-        final updatedHorse = await Navigator.push(
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => HorseProfileScreen(horse: horse),
@@ -179,7 +179,18 @@ class _HorsesScreenState extends State<HorsesScreen> {
         );
 
         // Falls das Pferd aktualisiert wurde, lade die Liste neu
-        if (updatedHorse != null && updatedHorse is Horse) {
+        if (result == 'deleted') {
+          await _loadHorses();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Pferd wurde gelöscht'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            }
+            }
+            else if (result != null && result is Horse) {
           await _loadHorses();
         }
       },

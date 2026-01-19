@@ -1,0 +1,50 @@
+[
+  {
+    "person_id": 1,
+    "firstname": "Sarah",
+    "lastname": "Weber",
+    "height_cm": 1,
+    "weight_kg": 2,
+    "plz": 80331,
+    "city": "München",
+    "street": "Maximilianstraße",
+    "housenumber": 10,
+    "email": "anna.mueller@example.com",
+    "website_link": "https://www.annamueller.de",
+    "description": "Reiterin seit 10 Jahren, spezialisiert auf Dressur.",
+    "dob": "1992-06-15T00:00:00.000Z",
+    "hidden": false
+  },
+  {
+    "person_id": 2,
+    "firstname": "Anna",
+    "lastname": "Hoffmann",
+    "height_cm": 18,
+    "weight_kg": 7,
+    "plz": 10115,
+    "city": "Berlin",
+    "street": "Friedrichstraße",
+    "housenumber": 45,
+    "email": "lukas.schmidt@example.com",
+    "website_link": null,
+    "description": "Springreiter mit Fokus auf Turniere.",
+    "dob": "1988-11-02T00:00:00.000Z",
+    "hidden": false
+  },
+  {
+    "person_id": 3,
+    "firstname": "Thomas",
+    "lastname": "Bauer",
+    "height_cm": 172,
+    "weight_kg": 68,
+    "plz": 50667,
+    "city": "Köln",
+    "street": "Schildergasse",
+    "housenumber": 22,
+    "email": "marie.klein@example.com",
+    "website_link": "https://www.marieklein.de",
+    "description": null,
+    "dob": null,
+    "hidden": true
+  }
+]
