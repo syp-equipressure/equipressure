@@ -947,3 +947,159 @@ a| Backend mit Minimal API weiterarbeiten +
 a| Frontend: Login und Chat
 | 20.01.2026
 |===
+
+== 2026-01-20
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-01-20
+
+|Dauer
+|08:00 bis 09:10
+|===
+====
+
+=== Besprochenes
+
+* Wireframe
+* Frontend
+* Techstack-Folie
+* Business-Plan
+
+==== Zeitaufzeichnung
+* Zeitaufzeichnung mit User Stories verknüfen (# dazuschreiben)
+
+==== Wireframe
+* "Messung" wurde ausgetauscht -> passt jetzt
+* Buttons sind nicht gleich groß (optischer Unterschied tut weh)
+** wir sagen bei der Umsetzung wird das dann ausgebessert
+* Logik vom Wireframe durchbesprochen
+* Profil erstellen
+** mit Github fehlt anmelden fehlt noch
+** hinschreiben dass anmelden mit registrieren nicht möglich sein wird (weil wir ja keine Login verwalten wollen); soll klar kommuniziert sein mit dem Kunden
+** hinschreiben, warum wir Größe und Gewicht wissen wollen
+*** z.B. mit kleinem Fragezeichen mit popup oder so, wo man draufklicken kann
+** "Profil konfigurieren" auf "dein Profil konfigurieren"; damit keiner glaubt man konfiguriert z.B. das Pferd
+** Geschlecht speichern bzgl Anrede wenn wir Email verschicken etc. 
+** Email soll auch hingeschrieben werden; damit User sich auskennt mit welcher Email er angemeldet ist
+** Überlegen welche adresse wir wirklich speichern wollen (Wohnadresse User oder Standort vom Pferd)
+** Über Ort, PLZ, Straße ,... Überschrift "Adresse" schreiben, auch mit dem Fragezeichen (weil wir halt Adresse wollen um Sattler*innen in der Nähe zu finden)
+* nach dem Anmelden soll eine Email an den User geschickt werden mit den Daten die sie angegeben haben und einem Wilkommensgruß (mit Foto wo wir winken)
+* Sattel umbenennen soll darstellen mit post-it und gekrackel (Foto von Haslinger)
+* Pferd anlegen
+** Rasse soll ein Autocomplete Feld sein (damit werden Fehler vermieden und man kann trotzdem Mischling Rassen angegeben)
+** Überkategorie Warm-, Vollblut etc soll angegeben werden; Layout wie bei Sex mit auswählen
+* Karte
+** optional Adresse bei Pferde einschreiben und die dann in der Karte anzeigen (mit so kleinem Pferd Bild)
+*** optional, falls Besitzer Adresse der Pferde nicht angeben wollen
+** Besitzer, Pferde, Sattler mit Farbe unterscheiden
+* Profil 
+** alle persönlichen Daten weg; auch Name, Ort und so
+** statt "meine Geräte" "meine Satteldruckmessgeräte" oder so; für User die denken man kann mehrer Geräte oder so anmelden
+** "Gerätegruppe" irgendwie beschreiben; damit man versteht dass das die Leute sind, die auch mein Geräte verwenden
+** beschreiben was "Owner" heißt; hinschreiben dass man nur als Owner löschen kann
+** irgendwo soll man noch das Gerät weitergeben können (Besitzer übertragen können)
+* immer neben Überschriften kleine Hilfe Buttons (falls Menschen nach 5 Jahren das Gerät wieder benutzen und kein Plan mehr haben)
+
+==== TechStack
+* Sterne symbol dazutun
+
+==== Frontend
+* Pferd anlegen
+** bei Sex (is btw englisch digga) männlich oder weiblich hinschreiben für wen der Symbole nicht kennt
+** der Kontrast beim draufklicken größer machen oder genrell andere Farbe (pink oder so)
+* Konfirmation für Löschen
+* Neben Messungs-Namen einen Bleistift damit man die Messung umbennen kann
+* Lejla designed Icon für Sattel :)
+* bei Stockmaß und Gewicht Zahlen überprüfen
+** gewisses Stockmaß hat nur eine gewisse range für Gewicht und vice versa
+** dürfen keine negativen Werte haben und so
+* Chat angeschaut
+
+==== Datenbank
+* optionales Feld für die E-Mail, Name; weils auf den Provider drauf an kommt, ob wir sie speichern oder immer holen müssen
+* Rasse Tabelle damit wir Initialdaten haben für das Autocomplete
+* Tabelle dann auch für die Überkategorien (Warmblut und so) => Pferdetyp
+** Lena fragen, ob dass von der Rasse abgeleitet werden kann (dass es bei der Rasse mitgespeichert wird)
+* bei Rolle: isHidden Feld für Reitbeteiligungen bei Person oder Rolle
+* Kathi wäre immer noch für alles auf Englisch oder Deutsch umschreiben
+* PLZ kein Primärschlüssel
+* evtl die ganze Adresse herausziehen zusätlich zur City
+* Beziehung zwischen Gerät und Rolle (bin ich für dieses Gerät ein Owner, eine Reitbeteiligung)
+* Sättel auslagern und mit autocomplete machen wie bei Rasse
+
+==== Idee
+* wir könnten zu den Pferden nu de Adresse vom stall dazutun (optional) damit ma quasi sowohl de eigene Adresse als auch die vo de Pferden hat und ma zeigt dann alle auf da map an
+* überlegen wo wir KI anwenden können in unserem Projekt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Graßauer
+a| Wireframe an Wünsche anpassen
+ Frontend Design Wünsche anpassen
+| 03.02.2026
+
+| Music
+a| Karte im Frontend anpassen (Sattler finden generell)
+ Sattel Icon designen
+| 03.02.2026
+
+| Dallinger, Einzenberger
+a| EF Backend beginnen
+| 03.02.2026
+
+| Einzenberger
+a| Techstackfolien zusammenfassen
+| 03.02.2026
+
+| Dallinger
+a| Datenmodell anpassen
+| 03.02.2026
+|===
