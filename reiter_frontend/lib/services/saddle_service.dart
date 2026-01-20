@@ -18,13 +18,9 @@ class SaddleService {
     try {
       final String response = await rootBundle.loadString('assets/data/saddle.json');
       final List<dynamic> data = json.decode(response);
-      print('RAW JSON: $data');
-      print('COUNT: ${data.length}');
-
       _cachedSaddles = data.map((json) => Saddle.fromJson(json)).toList();
       return _cachedSaddles!;
     } catch (e) {
-      print('Fehler beim Laden der Saddles: $e');
       return [];
     }
   }

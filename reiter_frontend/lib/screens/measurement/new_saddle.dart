@@ -48,7 +48,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
         }
       });
     } catch (e) {
-      print('Fehler beim Laden der Pferde: $e');
+      // Fehler beim Laden ignorieren
     }
   }
 

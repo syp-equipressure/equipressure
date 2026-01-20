@@ -47,7 +47,7 @@ class DropdownFilterChip extends StatelessWidget {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ];
       },
       child: Container(
