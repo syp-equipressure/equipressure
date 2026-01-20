@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class customFilterChip extends StatelessWidget {
+class CustomFilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
 
-  const customFilterChip({
+  const CustomFilterChip({
     super.key,
     required this.label,
     this.isSelected = false,

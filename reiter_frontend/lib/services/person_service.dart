@@ -18,13 +18,9 @@ class PersonService {
     try {
       final String response = await rootBundle.loadString('assets/data/user.json');
       final List<dynamic> data = json.decode(response);
-      print('RAW JSON: $data');
-      print('COUNT: ${data.length}');
-
       _cachedPersons = data.map((json) => Person.fromJson(json)).toList();
       return _cachedPersons!;
     } catch (e) {
-      print('Fehler beim Laden der Personen: $e');
       return [];
     }
   }

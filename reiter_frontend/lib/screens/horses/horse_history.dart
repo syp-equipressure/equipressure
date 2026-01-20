@@ -52,7 +52,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
       // Extrahiere unique Reiter und Sättel
       final riders = horseMeasurements.map((m) => m.rider).toSet().toList();
       final saddles = horseMeasurements
-          .map((m) => '${m.saddleName}')
+          .map((m) => m.saddleName)
           .toSet()
           .toList();
 
@@ -63,10 +63,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
         availableSaddles = saddles;
         isLoading = false;
       });
-
-      print('Geladene Messungen für ${widget.horse.name}: ${allMeasurements.length}');
     } catch (e) {
-      print('Fehler beim Laden: $e');
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +78,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
       filteredMeasurements = allMeasurements.where((m) {
         bool matchesRider = selectedRider == null || m.rider == selectedRider;
         bool matchesSaddle = selectedSaddle == null ||
-            '${m.saddleName}' == selectedSaddle;
+            m.saddleName == selectedSaddle;
         return matchesRider && matchesSaddle;
       }).toList();
     });
@@ -188,7 +185,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
-                const customFilterChip(label: 'Zeitraum'),
+                const CustomFilterChip(label: 'Zeitraum'),
                 const SizedBox(width: 8),
                 DropdownFilterChip(
                   label: 'Reiter:in',
@@ -242,7 +239,6 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
                             measurement: measurement,
                             onTap: () {
                               // TODO: Navigation zur Messungsdetail-Seite
-                              print('Messung angeklickt: ${measurement.id}');
                             },
                             onDelete: () => _showDeleteConfirmation(measurement),
                           );

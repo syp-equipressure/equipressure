@@ -23,14 +23,9 @@ class HorseService {
       // final String response = await rootBundle.loadString('assets/data/horses.json');
       
       final List<dynamic> data = json.decode(response);
-      print('RAW JSON: $data');
-      print('COUNT: ${data.length}');
-
-      
       _cachedHorses = data.map((json) => Horse.fromJson(json)).toList();
       return _cachedHorses!;
     } catch (e) {
-      print('Fehler beim Laden der Pferde: $e');
       return [];
     }
   }

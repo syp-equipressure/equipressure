@@ -105,31 +105,35 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                     child: _circleIconButton(
                       icon: Icons.edit,
                       onTap: () async {
-                        final result = await Navigator.push(
-                          context,
+                        final navigator = Navigator.of(context);
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                        final result = await navigator.push(
                           MaterialPageRoute(
                             builder: (_) => AddHorseScreen(
                               horse: currentHorse,
                               onSave: (name, image, age, breed, birthDate, height, weight, sex) async {
+                                final nav = Navigator.of(context);
                                 await _updateHorse(name, image, age, breed, birthDate, height, weight, sex);
-                                Navigator.pop(context);
+                                if (mounted) nav.pop();
                               },
                               onCancel: () => Navigator.pop(context),
 
                               onDelete: () async {
+                                final nav = Navigator.of(context);
                                 await _horseService.deleteHorse(currentHorse.id);
                                 if (mounted) {
-                                  Navigator.pop(context);
-                                  Navigator.pop(context, 'deleted');
+                                  nav.pop();
+                                  nav.pop('deleted');
                                 }
                               },
                             ),
                           ),
                         );
-                        
+
                         // Wenn gelöscht wurde, schließe auch diesen Screen
                         if (result == 'deleted' && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          scaffoldMessenger.showSnackBar(
                             const SnackBar(
                               content: Text('Pferd wurde gelöscht'),
                               duration: Duration(seconds: 2),
@@ -202,7 +206,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           alignment: Alignment.centerRight,
                           child: InkWell(
                             onTap: () {
-                              print('Historie Button geklickt für ${currentHorse.name}');
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -317,7 +320,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
