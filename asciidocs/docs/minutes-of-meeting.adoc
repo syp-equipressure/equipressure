@@ -1103,3 +1103,75 @@ a| Techstackfolien zusammenfassen
 a| Datenmodell anpassen
 | 03.02.2026
 |===
+
+== 2026-01-27
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+| Sophie
+| Grüneis
+| externer Partner
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|1AHIF, Raum 132
+
+|Datum
+|Di. 2026-01-27
+
+|Dauer
+|13:40 - 15:25
+|===
+====
+
+=== Besprochenes
+* Vorteile für Sattler*innen
+* Wireframes Abnahme
+
+==== Warum Sattler es annehmen
+* es gibt immer etwas zum Ausbessern
+** auch wenns nur ein Loch zum stopfen ist
+* weniger Reklamationsgründe (Reiter hat es schwarz auf weiß, dass alles passt)
+** rechtliche Absicherung (damit Sattler nicht für Tierarzt oder Physiokosten verklagt werden können)
+* wenn Messgerät in einem ganzen Stall ausprobiert wird, bekommen Sattler sehr viele neue Kunden
+** weil Reiter halt sagen, "Mah dei Sattler kommt doch eh boid, kau si der des bei mir a amoi anschauen"
+
+==== Wireframes
+* Adresse vom Reiter muss nicht verpflichtend sein 
+* evtl wenn man Stalladresse nicht angeben will, nur PLZ verpflichtend machen
+* Idee von Kathi: Sattler auch nach Namen suchen können (falls man vom hören einen kennt)
+* Vergleich zwischen 2 Bildern anzeigen (von März und September oder so)
+** falls uns fad wird (Zusatz für premium menschen)
+* für User so simpel wie möglich
+* drittes Geschlecht für kastrierte Pferde evtl
+
+==== Ideen
+* auf der Website anzeigen welche Sattler das haben 
+** falls es so Reitställe gibt die sich das nicht kaufen will
+* Verleihstellen auch anzeigen
