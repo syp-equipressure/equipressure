@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reiterappfrontend/models/horse.dart';
-import 'package:reiterappfrontend/widgets/info_button.dart'; // ← NEU
+import 'package:reiterappfrontend/widgets/info_button.dart';
 
 class AddHorseScreen extends StatefulWidget {
   final void Function(
@@ -16,10 +16,10 @@ class AddHorseScreen extends StatefulWidget {
     String height,
     String weight,
     String sex,
-    String stableCity,      // ← NEU
-    String stablePostalCode, // ← NEU
-    String stableStreet,     // ← NEU
-    String stableHouseNumber, // ← NEU
+    String stableCity,
+    String stablePostalCode,
+    String stableStreet,
+    String stableHouseNumber,
   ) onSave;
   final VoidCallback onCancel;
   final VoidCallback? onDelete;
@@ -46,7 +46,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
   
-  // ← NEU: Stalladresse Controller
   final TextEditingController stableCityController = TextEditingController();
   final TextEditingController stablePostalCodeController = TextEditingController();
   final TextEditingController stableStreetController = TextEditingController();
@@ -55,6 +54,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   File? selectedImage;
   String selectedSex = 'female';
   String? dateErrorMessage;
+  String? heightWeightErrorMessage; // ← NEU: Für Größe/Gewicht Validierung
   bool _isPickingImage = false;
 
   final ImagePicker _picker = ImagePicker();
@@ -83,7 +83,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       heightController.text = horse.height;
       weightController.text = horse.weight;
       
-      // ← NEU: Stalladresse laden
       stableCityController.text = horse.stableCity ?? '';
       stablePostalCodeController.text = horse.stablePostalCode ?? '';
       stableStreetController.text = horse.stableStreet ?? '';
@@ -182,6 +181,59 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       setState(() {
         dateErrorMessage = 'Ungültiges Datum';
       });
+    }
+  }
+
+  // ← NEU: Validierung für Größe und Gewicht
+  void _validateHeightWeight() {
+    setState(() {
+      heightWeightErrorMessage = null;
+    });
+
+    if (heightController.text.isEmpty || weightController.text.isEmpty) {
+      return;
+    }
+
+    try {
+      final height = int.parse(heightController.text);
+      final weight = int.parse(weightController.text);
+
+     
+
+      if (height < 60 || height > 250) {
+        setState(() {
+          heightWeightErrorMessage = 'Stockmaß sollte zwischen 60 und 250 cm liegen';
+        });
+        return;
+      }
+
+      if (weight < 50 || weight > 1500) {
+        setState(() {
+          heightWeightErrorMessage = 'Gewicht sollte zwischen 50 und 1500 kg liegen';
+        });
+        return;
+      }
+
+      // Mindestgewicht = Stockmaß * 1.5, Maximalgewicht = Stockmaß * 7
+      final minWeight = (height * 1.5).round();
+      final maxWeight = (height * 7).round();
+
+      if (weight < minWeight) {
+        setState(() {
+          heightWeightErrorMessage = 'Gewicht zu niedrig für diese Größe (mind. ${minWeight} kg)';
+        });
+        return;
+      }
+
+      if (weight > maxWeight) {
+        setState(() {
+          heightWeightErrorMessage = 'Gewicht zu hoch für diese Größe (max. ${maxWeight} kg)';
+        });
+        return;
+      }
+
+    } catch (e) {
+      // Ungültige Zahlen werden ignoriert
     }
   }
 
@@ -611,123 +663,172 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
             const SizedBox(height: 20),
 
-            // Stockmaß und Gewicht
-            Row(
+            // Stockmaß und Gewicht mit Validierung
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Stockmaß',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: TextField(
-                              controller: heightController,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                              ),
+                          const Text(
+                            'Stockmaß',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'cm',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: heightController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  onChanged: (value) => _validateHeightWeight(), // ← NEU
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: heightWeightErrorMessage != null 
+                                            ? Colors.red 
+                                            : Colors.grey[300]!,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: heightWeightErrorMessage != null 
+                                            ? Colors.red 
+                                            : Colors.grey[300]!,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: heightWeightErrorMessage != null 
+                                            ? Colors.red 
+                                            : Colors.blue[400]!,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'cm',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Gewicht',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: TextField(
-                              controller: weightController,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                              ),
+                          const Text(
+                            'Gewicht',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'kg',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: weightController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  onChanged: (value) => _validateHeightWeight(), // ← NEU
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: heightWeightErrorMessage != null 
+                                            ? Colors.red 
+                                            : Colors.grey[300]!,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: heightWeightErrorMessage != null 
+                                            ? Colors.red 
+                                            : Colors.grey[300]!,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: heightWeightErrorMessage != null 
+                                            ? Colors.red 
+                                            : Colors.blue[400]!,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'kg',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+                // ← NEU: Fehlermeldung anzeigen
+                if (heightWeightErrorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 4),
+                    child: Text(
+                      heightWeightErrorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
               ],
             ),
 
@@ -841,7 +942,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
             const SizedBox(height: 12),
 
-            // Straße und Hausnr
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -972,6 +1072,17 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     return;
                   }
 
+                  // ← NEU: Validierung für Größe/Gewicht
+                  if (heightWeightErrorMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(heightWeightErrorMessage!),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
                   String age = _calculateAge();
                   String breed = breedController.text.isEmpty ? 'Unbekannt' : breedController.text;
                   String birthDate = _formatBirthDate();
@@ -987,10 +1098,10 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     height,
                     weight,
                     selectedSex,
-                    stableCityController.text,      // ← NEU
-                    stablePostalCodeController.text, // ← NEU
-                    stableStreetController.text,     // ← NEU
-                    stableHouseNumberController.text, // ← NEU
+                    stableCityController.text,
+                    stablePostalCodeController.text,
+                    stableStreetController.text,
+                    stableHouseNumberController.text,
                   );
                 },
                 child: Row(
@@ -1017,49 +1128,47 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   }
 
   Widget _buildSexButton(String sex, IconData icon) {
-  final isSelected = selectedSex == sex;
+    final isSelected = selectedSex == sex;
 
-  Color backgroundColor;
-  Color borderColor;
+    Color backgroundColor;
+    Color borderColor;
 
-  if (isSelected) {
-    if (sex == 'female') {
-      backgroundColor = Colors.pink[100]!;
-      borderColor = Colors.pink[300]!;
+    if (isSelected) {
+      if (sex == 'female') {
+        backgroundColor = Colors.pink[100]!;
+        borderColor = Colors.pink[300]!;
+      } else {
+        backgroundColor = Colors.blue[100]!;
+        borderColor = Colors.blue[300]!;
+      }
     } else {
-      backgroundColor = Colors.blue[100]!;
-      borderColor = Colors.blue[300]!;
+      backgroundColor = Colors.grey[100]!;
+      borderColor = Colors.grey[300]!;
     }
-  } else {
-    backgroundColor = Colors.grey[100]!;
-    borderColor = Colors.grey[300]!;
-  }
 
-  return GestureDetector(
-    onTap: () => setState(() => selectedSex = sex),
-    child: Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: borderColor,
-          width: 1,
+    return GestureDetector(
+      onTap: () => setState(() => selectedSex = sex),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.black87,
+          size: 20,
         ),
       ),
-      child: Icon(
-        icon,
-        color: Colors.black87,
-        size: 20,
-      ),
-    ),
-  );
+    );
+  }
 }
 
-}
-
-// Custom painter for dashed border
 class DashedBorderPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
