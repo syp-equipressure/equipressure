@@ -48,7 +48,21 @@ class _HorsesScreenState extends State<HorsesScreen> {
     }
   }
 
-  void _addHorse(String name, File? image, String age, String breed, String birthDate, String weight, String height, String sex) async {
+  // ✅ AKTUALISIERT: Jetzt mit 12 Parametern (inkl. Stalladresse)
+  void _addHorse(
+    String name,
+    File? image,
+    String age,
+    String breed,
+    String birthDate,
+    String weight,
+    String height,
+    String sex,
+    String stableCity,       // ← NEU
+    String stablePostalCode, // ← NEU
+    String stableStreet,     // ← NEU
+    String stableHouseNumber,// ← NEU
+  ) async {
     final newHorse = Horse(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
@@ -58,6 +72,10 @@ class _HorsesScreenState extends State<HorsesScreen> {
       weight: weight,
       height: height,
       sex: sex,
+      stableCity: stableCity.isEmpty ? null : stableCity,
+      stablePostalCode: stablePostalCode.isEmpty ? null : stablePostalCode,
+      stableStreet: stableStreet.isEmpty ? null : stableStreet,
+      stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber,
     );
 
     await _horseService.addHorse(newHorse);
@@ -188,9 +206,9 @@ class _HorsesScreenState extends State<HorsesScreen> {
                 duration: Duration(seconds: 2),
               ),
             );
-            }
-            }
-            else if (result != null && result is Horse) {
+          }
+        }
+        else if (result != null && result is Horse) {
           await _loadHorses();
         }
       },

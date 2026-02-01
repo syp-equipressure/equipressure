@@ -28,7 +28,20 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
     currentHorse = widget.horse;
   }
 
-  Future<void> _updateHorse(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) async {
+  Future<void> _updateHorse(
+    String name,
+    File? image,
+    String age,
+    String breed,
+    String birthDate,
+    String height,
+    String weight,
+    String sex,
+    String stableCity,      // ← NEU
+    String stablePostalCode, // ← NEU
+    String stableStreet,     // ← NEU
+    String stableHouseNumber, // ← NEU
+  ) async {
     final updatedHorse = Horse(
       id: currentHorse.id,
       name: name,
@@ -38,6 +51,10 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       height: height,
       weight: weight,
       sex: sex,
+      stableCity: stableCity.isEmpty ? null : stableCity,           // ← NEU
+      stablePostalCode: stablePostalCode.isEmpty ? null : stablePostalCode, // ← NEU
+      stableStreet: stableStreet.isEmpty ? null : stableStreet,     // ← NEU
+      stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber, // ← NEU
     );
 
     await _horseService.updateHorse(updatedHorse);
@@ -112,9 +129,9 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           MaterialPageRoute(
                             builder: (_) => AddHorseScreen(
                               horse: currentHorse,
-                              onSave: (name, image, age, breed, birthDate, height, weight, sex) async {
+                              onSave: (name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber) async {
                                 final nav = Navigator.of(context);
-                                await _updateHorse(name, image, age, breed, birthDate, height, weight, sex);
+                                await _updateHorse(name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber);
                                 if (mounted) nav.pop();
                               },
                               onCancel: () => Navigator.pop(context),
@@ -131,7 +148,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           ),
                         );
 
-                        // Wenn gelöscht wurde, schließe auch diesen Screen
                         if (result == 'deleted' && mounted) {
                           scaffoldMessenger.showSnackBar(
                             const SnackBar(
@@ -198,10 +214,16 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               : '${currentHorse.weight} kg',
                         ),
                         const SizedBox(height: 20),
-                        _buildInfoRow('Besitzer:in:', 'Lena Graßauer'),
+                        
+                        // ← NEU: Stalladresse anzeigen
+                        _buildInfoRow(
+                          'Adresse:',
+                          currentHorse.fullStableAddress,
+                        ),
+                        
                         const SizedBox(height: 40),
 
-                        /// Historie Button - WICHTIG!
+                        /// Historie Button
                         Align(
                           alignment: Alignment.centerRight,
                           child: InkWell(
@@ -249,7 +271,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => NewMeasurementScreen(
-                                    horse: currentHorse, // Übergebe das aktuelle Pferd
+                                    horse: currentHorse,
                                   ),
                                 ),
                               );
@@ -286,6 +308,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
           width: 140,

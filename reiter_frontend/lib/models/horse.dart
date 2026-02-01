@@ -10,6 +10,12 @@ class Horse {
   final String weight;
   final String height;
   final String sex;
+  
+  // ← NEU: Stalladresse Felder
+  final String? stableCity;
+  final String? stablePostalCode;
+  final String? stableStreet;
+  final String? stableHouseNumber;
 
   Horse({
     required this.id,
@@ -21,6 +27,10 @@ class Horse {
     required this.weight,
     required this.height,
     required this.sex,
+    this.stableCity,
+    this.stablePostalCode,
+    this.stableStreet,
+    this.stableHouseNumber,
   });
 
   /// Berechnet das Alter aus dem Geburtsdatum
@@ -53,6 +63,28 @@ class Horse {
     }
   }
 
+  /// ← NEU: Hilfsmethode für vollständige Adresse
+  String get fullStableAddress {
+    if (stableStreet == null || stableStreet!.isEmpty) {
+      return '-';
+    }
+    
+    final street = '${stableStreet ?? ''} ${stableHouseNumber ?? ''}'.trim();
+    final cityLine = '${stablePostalCode ?? ''} ${stableCity ?? ''}'.trim();
+    
+    if (cityLine.isEmpty) {
+      return street;
+    }
+    
+    return '$street\n$cityLine';
+  }
+
+  /// ← NEU: Prüft ob Adresse vorhanden ist
+  bool get hasStableAddress {
+    return (stableStreet != null && stableStreet!.isNotEmpty) ||
+           (stableCity != null && stableCity!.isNotEmpty);
+  }
+
   /// Erstellt ein Horse-Objekt aus JSON
   factory Horse.fromJson(Map<String, dynamic> json) {
     return Horse(
@@ -65,6 +97,10 @@ class Horse {
       weight: json['weight'] ?? '',
       height: json['height'] ?? '',
       sex: json['sex'] ?? 'female',
+      stableCity: json['stableCity'],
+      stablePostalCode: json['stablePostalCode'],
+      stableStreet: json['stableStreet'],
+      stableHouseNumber: json['stableHouseNumber'],
     );
   }
 
@@ -79,6 +115,10 @@ class Horse {
       'weight': weight,
       'height': height,
       'sex': sex,
+      'stableCity': stableCity,
+      'stablePostalCode': stablePostalCode,
+      'stableStreet': stableStreet,
+      'stableHouseNumber': stableHouseNumber,
     };
   }
 
@@ -93,6 +133,10 @@ class Horse {
     String? weight,
     String? height,
     String? sex,
+    String? stableCity,
+    String? stablePostalCode,
+    String? stableStreet,
+    String? stableHouseNumber,
   }) {
     return Horse(
       id: id ?? this.id,
@@ -104,6 +148,10 @@ class Horse {
       weight: weight ?? this.weight,
       height: height ?? this.height,
       sex: sex ?? this.sex,
+      stableCity: stableCity ?? this.stableCity,
+      stablePostalCode: stablePostalCode ?? this.stablePostalCode,
+      stableStreet: stableStreet ?? this.stableStreet,
+      stableHouseNumber: stableHouseNumber ?? this.stableHouseNumber,
     );
   }
 }

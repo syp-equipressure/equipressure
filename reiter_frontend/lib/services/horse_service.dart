@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import '../models/horse.dart';
+import 'package:reiterappfrontend/models/horse.dart';
 
 class HorseService {
   static final HorseService _instance = HorseService._internal();
@@ -16,12 +16,7 @@ class HorseService {
     }
 
     try {
-      // Option 1: Aus lib/data/ laden (Mock-Daten)
       final String response = await rootBundle.loadString('assets/data/horses.json');
-      
-      // Option 2: Aus assets/ laden (Production-Daten)
-      // final String response = await rootBundle.loadString('assets/data/horses.json');
-      
       final List<dynamic> data = json.decode(response);
       _cachedHorses = data.map((json) => Horse.fromJson(json)).toList();
       return _cachedHorses!;
@@ -54,6 +49,16 @@ class HorseService {
     
     _cachedHorses!.removeWhere((h) => h.id == id);
     // TODO: Später hier aus der Datenbank löschen
+  }
+
+  /// Findet ein Pferd anhand der ID
+  Future<Horse?> getHorseById(String id) async {
+    final horses = await getHorses();
+    try {
+      return horses.firstWhere((h) => h.id == id);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Cache leeren (z.B. beim Logout)

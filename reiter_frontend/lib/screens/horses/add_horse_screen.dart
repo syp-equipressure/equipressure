@@ -4,18 +4,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/widgets/info_button.dart'; // ← NEU
 
 class AddHorseScreen extends StatefulWidget {
-  final void Function(String name, File? image, String age, String breed, String birthDate, String height, String weight, String sex) onSave;
+  final void Function(
+    String name,
+    File? image,
+    String age,
+    String breed,
+    String birthDate,
+    String height,
+    String weight,
+    String sex,
+    String stableCity,      // ← NEU
+    String stablePostalCode, // ← NEU
+    String stableStreet,     // ← NEU
+    String stableHouseNumber, // ← NEU
+  ) onSave;
   final VoidCallback onCancel;
-  final VoidCallback? onDelete; // NEU: Delete Callback
+  final VoidCallback? onDelete;
   final Horse? horse;
 
   const AddHorseScreen({
     super.key,
     required this.onSave,
     required this.onCancel,
-    this.onDelete, // NEU: Optional
+    this.onDelete,
     this.horse,
   });
 
@@ -31,6 +45,12 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   final TextEditingController yearController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
+  
+  // ← NEU: Stalladresse Controller
+  final TextEditingController stableCityController = TextEditingController();
+  final TextEditingController stablePostalCodeController = TextEditingController();
+  final TextEditingController stableStreetController = TextEditingController();
+  final TextEditingController stableHouseNumberController = TextEditingController();
 
   File? selectedImage;
   String selectedSex = 'female';
@@ -62,6 +82,12 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       
       heightController.text = horse.height;
       weightController.text = horse.weight;
+      
+      // ← NEU: Stalladresse laden
+      stableCityController.text = horse.stableCity ?? '';
+      stablePostalCodeController.text = horse.stablePostalCode ?? '';
+      stableStreetController.text = horse.stableStreet ?? '';
+      stableHouseNumberController.text = horse.stableHouseNumber ?? '';
     }
   }
 
@@ -194,7 +220,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     return '$day.$month.$year';
   }
 
-  // NEU: Delete Confirmation Dialog
   Future<void> _showDeleteConfirmation() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -245,7 +270,6 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           ),
         ),
         centerTitle: false,
-        // NEU: Delete Button in AppBar (nur im Edit-Modus)
         actions: isEditMode && widget.onDelete != null
             ? [
                 IconButton(
@@ -260,7 +284,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bild Upload mit gestricheltem Border
+            // Bild Upload
             GestureDetector(
               onTap: _pickImage,
               child: CustomPaint(
@@ -386,7 +410,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Sex',
+                      'Geschlecht',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -407,7 +431,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
             const SizedBox(height: 20),
 
-            // Geburtsdatum mit Validierung
+            // Geburtsdatum
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -707,6 +731,201 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
               ],
             ),
 
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                const Text(
+                  'Stalladresse',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                InfoButton(
+                  infoText: 'Geben Sie hier die Stalladresse ein. Wir brauchen die Stalladresse um Sattler*innen in der Nähe Ihres Stalles zu finden.',
+                  size: 16,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ort',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: stableCityController,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'PLZ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: stablePostalCodeController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Straße und Hausnr
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Straße',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: stableStreetController,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Hausnr',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: stableHouseNumberController,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 32),
 
             // Speichern Button
@@ -768,6 +987,10 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     height,
                     weight,
                     selectedSex,
+                    stableCityController.text,      // ← NEU
+                    stablePostalCodeController.text, // ← NEU
+                    stableStreetController.text,     // ← NEU
+                    stableHouseNumberController.text, // ← NEU
                   );
                 },
                 child: Row(
@@ -794,28 +1017,46 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   }
 
   Widget _buildSexButton(String sex, IconData icon) {
-    final isSelected = selectedSex == sex;
-    return GestureDetector(
-      onTap: () => setState(() => selectedSex = sex),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.grey[300] : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.grey[400]! : Colors.grey[300]!,
-            width: 1,
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.black87,
-          size: 20,
+  final isSelected = selectedSex == sex;
+
+  Color backgroundColor;
+  Color borderColor;
+
+  if (isSelected) {
+    if (sex == 'female') {
+      backgroundColor = Colors.pink[100]!;
+      borderColor = Colors.pink[300]!;
+    } else {
+      backgroundColor = Colors.blue[100]!;
+      borderColor = Colors.blue[300]!;
+    }
+  } else {
+    backgroundColor = Colors.grey[100]!;
+    borderColor = Colors.grey[300]!;
+  }
+
+  return GestureDetector(
+    onTap: () => setState(() => selectedSex = sex),
+    child: Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: borderColor,
+          width: 1,
         ),
       ),
-    );
-  }
+      child: Icon(
+        icon,
+        color: Colors.black87,
+        size: 20,
+      ),
+    ),
+  );
+}
+
 }
 
 // Custom painter for dashed border
