@@ -11,6 +11,7 @@ import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:reiterappfrontend/widgets/measurement_dropdown.dart';
 import 'package:reiterappfrontend/widgets/measurement_infobox.dart';
 import 'package:reiterappfrontend/widgets/sidenav.dart';
+import 'package:reiterappfrontend/widgets/info_button.dart'; // ← NEU: InfoButton importieren
 import 'package:reiterappfrontend/screens/measurement/measurement_input_screen.dart';
 
 class NewMeasurementScreen extends StatefulWidget {
@@ -148,11 +149,25 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Neue Messung',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                  // ← HIER: Row mit Text und InfoButton (zentriert)
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Neue Messung',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InfoButton(
+                          infoText: 'Hier können Sie eine neue Messung für Reiter:in und Pferd erstellen. '
+                              'Wählen Sie die entsprechenden Daten aus und starten Sie die Messung.',
+                          size: 24,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 32),

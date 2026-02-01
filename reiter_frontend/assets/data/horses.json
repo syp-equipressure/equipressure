@@ -7,7 +7,11 @@
     "birthDate": "15.03.2017",
     "weight": "520",
     "height": "168",
-    "sex": "female"
+    "sex": "female",
+    "stableCity": "München",
+    "stablePostalCode": "80331",
+    "stableStreet": "Musterstraße",
+    "stableHouseNumber": "12"
   },
   {
     "id": "2",
@@ -17,7 +21,11 @@
     "birthDate": "22.07.2013",
     "weight": "580",
     "height": "172",
-    "sex": "male"
+    "sex": "male",
+    "stableCity": "Hamburg",
+    "stablePostalCode": "20095",
+    "stableStreet": "Reeperbahn",
+    "stableHouseNumber": "5"
   },
   {
     "id": "3",
@@ -27,7 +35,11 @@
     "birthDate": "10.05.2020",
     "weight": "490",
     "height": "165",
-    "sex": "female"
+    "sex": "female",
+    "stableCity": "Linz",
+    "stablePostalCode": "4020",
+    "stableStreet": "Kathis Brücke",
+    "stableHouseNumber": "1"
   },
   {
     "id": "4",
@@ -37,6 +49,10 @@
     "birthDate": "03.12.2010",
     "weight": "610",
     "height": "175",
-    "sex": "male"
+    "sex": "male",
+    "stableCity": "Berlin",
+    "stablePostalCode": "10178",
+    "stableStreet": "Unter den Linden",
+    "stableHouseNumber": "77"
   }
 ]
