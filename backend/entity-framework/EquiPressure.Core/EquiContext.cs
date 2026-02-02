@@ -30,7 +30,10 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
 
     private static void ConfigurePerson(EntityTypeBuilder<Person> person)
     {
-        
+        person.HasKey(p => p.Id);
+        person.Property(p => p.Id).ValueGeneratedOnAdd();
+        person.HasIndex(p => new { p.FirstName, p.LastName });
+        person.HasIndex(p => p.Email).IsUnique();
     }
     private static void ConfigurePersonRelationship(EntityTypeBuilder<PersonRelationship> personRelation)
     {
