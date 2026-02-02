@@ -15,7 +15,7 @@ public class Person
     public string? Description { get; set; }
 
     public List<PersonRelationship> Relationships { get; set; } = [];
-    public List<PersonRole> Roles { get; set; } = [];
+    public List<PersonRoleAssignment> Roles { get; set; } = [];
     public List<PersonHorse> Horses { get; set; } = [];
     public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
     public List<DeviceUser> Devices { get; set; } = [];
