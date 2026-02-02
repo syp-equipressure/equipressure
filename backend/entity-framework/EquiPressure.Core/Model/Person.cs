@@ -15,12 +15,12 @@ public class Person
     public string? Description { get; set; }
 
     public List<PersonRelationship> Relationships { get; set; } = [];
-    public List<PersonRoleAssignment> Roles { get; set; } = [];
+    public List<PersonRole> Roles { get; set; } = [];
     public List<PersonHorse> Horses { get; set; } = [];
     public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
     public List<DeviceUser> Devices { get; set; } = [];
     public List<MeasurementDevice> AdminDevices { get; set; } = [];
-    public List<Release> Releases { get; set; } = [];
+    public List<Release> Releases { get; set; } = [];   
 }
 
 // m-m bzh zwischen Person und Person
@@ -41,7 +41,7 @@ public class PersonRole
     public int Id { get; set; }
     public required string Name { get; set; }
 
-    public List<PersonRoleAssignment> RoleAssignments { get; set; } = null!;
+    public List<PersonRoleAssignment> RoleAssignments { get; set; } = [];
 }
 
 public class PersonRoleAssignment
