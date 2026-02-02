@@ -26,7 +26,14 @@ public class Person
 // m-m bzh zwischen Person und Person
 public class PersonRelationship
 {
-    
+    public int Person1Id { get; set; }
+    public int Person2Id { get; set; }
+
+    public bool IsContact { get; set; }
+    public bool IsFavourite { get; set; }
+
+    public Person Person1 { get; set; } = null!;
+    public Person Person2 { get; set; } = null!;
 }
 
 public class PersonRole
