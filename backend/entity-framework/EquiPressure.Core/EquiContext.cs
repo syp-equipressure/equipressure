@@ -52,6 +52,8 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     }
     private static void ConfigurePersonRole(EntityTypeBuilder<PersonRole> personRole)
     {
+        personRole.HasKey(p => p.Id);
+        personRole.Property(p => p.Id).ValueGeneratedOnAdd();
         
     }
     private static void ConfigurePersonRoleAssignment(EntityTypeBuilder<PersonRoleAssignment> personRoleAssignment)
