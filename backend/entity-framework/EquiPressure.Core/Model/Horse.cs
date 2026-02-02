@@ -19,6 +19,11 @@ public class Horse
 
 public class HorseBreed
 {
+    public int BreedId { get; set; }
+    public int HorseId { get; set; }
+
+    public Breed Breed { get; set; } = null!;
+    public Horse Horse { get; set; } = null!;
 }
 
 public class Breed
