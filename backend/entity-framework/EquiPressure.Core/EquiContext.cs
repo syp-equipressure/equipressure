@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EquiPressure.Core;
 
-public class EquiContext
+public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(options)
 {
     // Person db sets
     public DbSet<Person> Person { get; set; }
@@ -15,5 +15,9 @@ public class EquiContext
     public DbSet<Horse> Horses { get; set; }
     public DbSet<HorseBreed> HorseBreeds { get; set; }
     public DbSet<Breed> Breeds { get; set; }
-    
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+    }
 }
