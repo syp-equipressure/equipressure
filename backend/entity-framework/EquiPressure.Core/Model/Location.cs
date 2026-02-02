@@ -12,5 +12,7 @@ public class Address
 
 public class City
 {
-    
+    public int Id { get; set; }
+    public required string PLZ { get; set; }
+    public required string Name { get; set; }
 }
