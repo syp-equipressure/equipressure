@@ -55,5 +55,12 @@ public class PersonRoleAssignment
 
 public class PersonHorse
 {
+    public int PersonId { get; set; }
+    public int HorseId { get; set; }
     
+    public bool IsHidden { get; set; }
+    public bool IsOwner { get; set; }
+
+    public Person Person { get; set; } = null!;
+    public Horse Horse { get; set; } = null!;
 }
