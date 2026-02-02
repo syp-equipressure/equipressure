@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Model\" />
+      <PackageReference Include="NodaTime" Version="3.3.0" />
     </ItemGroup>
 
 </Project>
