@@ -3,27 +3,87 @@
     {
       "id": "saddler1",
       "name": "Sophie Grüneis",
-      "imagePath": null
+      "imagePath": null,
+      "logoPath": null,
+      "street": "Lenastraße",
+      "houseNumber": "18",
+      "postalCode": "4050",
+      "city": "Traun",
+      "latitude": 48.2206,
+      "longitude": 14.2353,
+      "website": "https://reiter-sattlerei.at",
+      "email": "sophie@grueneis-sattler.at",
+      "phone": "+43 664 1234567",
+      "description": "Wir passen alle Sättel an, die getauscht werden können und deren Kopfeisen sich verstellen lässt. Spezialisiert auf Dressur- und Springsättel.",
+      "isFavorite": true
     },
     {
       "id": "saddler2",
-      "name": "Thomas Müller",
-      "imagePath": null
+      "name": "Ferdinand Feldhofer",
+      "imagePath": null,
+      "logoPath": null,
+      "street": "Hauptstraße",
+      "houseNumber": "42",
+      "postalCode": "4020",
+      "city": "Linz",
+      "latitude": 48.3069,
+      "longitude": 14.2858,
+      "website": "https://feldhofer-sattlerei.at",
+      "email": "info@feldhofer-sattlerei.at",
+      "phone": "+43 732 987654",
+      "description": "Traditionelle Sattlerei seit 1985. Reparaturen, Neuanfertigungen und Sattelanpassungen für alle Reitdisziplinen.",
+      "isFavorite": true
     },
     {
       "id": "saddler3",
       "name": "Anna Schmidt",
-      "imagePath": null
+      "imagePath": null,
+      "logoPath": null,
+      "street": "Reitweg",
+      "houseNumber": "7",
+      "postalCode": "4060",
+      "city": "Leonding",
+      "latitude": 48.2600,
+      "longitude": 14.2500,
+      "website": null,
+      "email": "anna.schmidt@sattler.at",
+      "phone": "+43 664 5551234",
+      "description": "Mobile Sattlerin für den Großraum Linz. Hausbesuche nach Terminvereinbarung.",
+      "isFavorite": false
     },
     {
       "id": "saddler4",
       "name": "Michael Weber",
-      "imagePath": null
+      "imagePath": null,
+      "logoPath": null,
+      "street": "Pferdestraße",
+      "houseNumber": "15",
+      "postalCode": "4070",
+      "city": "Eferding",
+      "latitude": 48.3100,
+      "longitude": 14.0200,
+      "website": "https://weber-reitsport.at",
+      "email": "m.weber@reitsport.at",
+      "phone": "+43 7272 12345",
+      "description": "Spezialist für Westernsättel und Barocksättel. Auch Zaumzeug und Lederreparaturen.",
+      "isFavorite": false
     },
     {
       "id": "saddler5",
       "name": "Lisa Hofmann",
-      "imagePath": null
+      "imagePath": null,
+      "logoPath": null,
+      "street": "Stallgasse",
+      "houseNumber": "3",
+      "postalCode": "4040",
+      "city": "Linz-Urfahr",
+      "latitude": 48.3200,
+      "longitude": 14.2900,
+      "website": "https://hofmann-sattel.at",
+      "email": "lisa@hofmann-sattel.at",
+      "phone": "+43 664 9876543",
+      "description": "Ergonomische Sattelanpassung mit modernster Druckmessung. Beratung für Pferd und Reiter.",
+      "isFavorite": false
     }
   ]
 }
