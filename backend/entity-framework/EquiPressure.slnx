@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="EquiPressure/EquiPressure.csproj" />
+  <Project Path="EquiPressure.Test/EquiPressure.Test.csproj" />
+</Solution>
