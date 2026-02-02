@@ -38,7 +38,10 @@ public class PersonRelationship
 
 public class PersonRole
 {
-    
+    public int Id { get; set; }
+    public required string Name { get; set; }
+
+    public List<PersonRoleAssignment> RoleAssignments { get; set; } = null!;
 }
 
 public class PersonRoleAssignment
