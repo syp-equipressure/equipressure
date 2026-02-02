@@ -11,11 +11,13 @@ class Horse {
   final String height;
   final String sex;
   
-  // ← NEU: Stalladresse Felder
+  // Stalladresse Felder
   final String? stableCity;
   final String? stablePostalCode;
   final String? stableStreet;
   final String? stableHouseNumber;
+  final double? stableLatitude;
+  final double? stableLongitude;
 
   Horse({
     required this.id,
@@ -31,7 +33,11 @@ class Horse {
     this.stablePostalCode,
     this.stableStreet,
     this.stableHouseNumber,
+    this.stableLatitude,
+    this.stableLongitude,
   });
+
+  bool get hasStableLocation => stableLatitude != null && stableLongitude != null;
 
   /// Berechnet das Alter aus dem Geburtsdatum
   String get age {
@@ -101,6 +107,8 @@ class Horse {
       stablePostalCode: json['stablePostalCode'],
       stableStreet: json['stableStreet'],
       stableHouseNumber: json['stableHouseNumber'],
+      stableLatitude: json['stableLatitude']?.toDouble(),
+      stableLongitude: json['stableLongitude']?.toDouble(),
     );
   }
 
@@ -119,6 +127,8 @@ class Horse {
       'stablePostalCode': stablePostalCode,
       'stableStreet': stableStreet,
       'stableHouseNumber': stableHouseNumber,
+      'stableLatitude': stableLatitude,
+      'stableLongitude': stableLongitude,
     };
   }
 
@@ -137,6 +147,8 @@ class Horse {
     String? stablePostalCode,
     String? stableStreet,
     String? stableHouseNumber,
+    double? stableLatitude,
+    double? stableLongitude,
   }) {
     return Horse(
       id: id ?? this.id,
@@ -152,6 +164,8 @@ class Horse {
       stablePostalCode: stablePostalCode ?? this.stablePostalCode,
       stableStreet: stableStreet ?? this.stableStreet,
       stableHouseNumber: stableHouseNumber ?? this.stableHouseNumber,
+      stableLatitude: stableLatitude ?? this.stableLatitude,
+      stableLongitude: stableLongitude ?? this.stableLongitude,
     );
   }
 }
