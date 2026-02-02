@@ -37,7 +37,18 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     }
     private static void ConfigurePersonRelationship(EntityTypeBuilder<PersonRelationship> personRelation)
     {
+        personRelation.HasKey(p => new {p.Person1Id, p.Person2Id});
+
+        // TODO think about the correct delete behaviour
+        personRelation.HasOne(pr => pr.Person1)
+                      .WithMany(p => p.Relationships)
+                      .HasForeignKey(pr => pr.Person1Id)
+                      .OnDelete(DeleteBehavior.Cascade);
         
+        personRelation.HasOne(pr => pr.Person2)
+                      .WithMany(p => p.Relationships)
+                      .HasForeignKey(pr => pr.Person2Id)
+                      .OnDelete(DeleteBehavior.Cascade);
     }
     private static void ConfigurePersonRole(EntityTypeBuilder<PersonRole> personRole)
     {
