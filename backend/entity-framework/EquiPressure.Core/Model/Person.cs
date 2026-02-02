@@ -46,7 +46,11 @@ public class PersonRole
 
 public class PersonRoleAssignment
 {
-    
+    public int PersonId { get; set; }
+    public int RoleId { get; set; }
+
+    public Person Person { get; set; } = null!;
+    public PersonRole Role { get; set; } = null!;
 }
 
 public enum PossiblePersonRole
