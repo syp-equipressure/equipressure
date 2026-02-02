@@ -13,8 +13,9 @@ public class Horse
     
     public int HorseBreedId { get; set; }
     public int AddressId { get; set; }
-    public List<HorseBreed> HorseBreeds { get; set; } = null!;
-    public List<Address> HorseAddress { get; set; } = null!;
+    public List<HorseBreed> HorseBreeds { get; set; } = [];
+    public List<Address> HorseAddress { get; set; } = [];
+    public List<PersonHorse> Persons { get; set; } = [];
 }
 
 public class HorseBreed

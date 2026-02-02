@@ -73,6 +73,15 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
 
     private static void ConfigurePersonHorse(EntityTypeBuilder<PersonHorse> personHorse)
     {
-        
+        personHorse.HasKey(ph => new { ph.PersonId, ph.HorseId });
+
+        personHorse.HasOne(ph => ph.Person)
+                   .WithMany(p => p.Horses)
+                   .HasForeignKey(ph => ph.PersonId)
+                   .OnDelete(DeleteBehavior.Cascade);
+        personHorse.HasOne(ph => ph.Horse)
+                   .WithMany(h => h.Persons)
+                   .HasForeignKey(ph => ph.HorseId)
+                   .OnDelete(DeleteBehavior.Cascade);
     }
 }
