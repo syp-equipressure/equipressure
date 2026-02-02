@@ -58,6 +58,21 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     }
     private static void ConfigurePersonRoleAssignment(EntityTypeBuilder<PersonRoleAssignment> personRoleAssignment)
     {
+        personRoleAssignment.HasKey(p => new { p.PersonId, p.RoleId });
+
+        personRoleAssignment.HasOne(pr => pr.Person)
+                            .WithMany(p => p.Roles)
+                            .HasForeignKey(pr => pr.PersonId)
+                            .OnDelete(DeleteBehavior.Cascade);
+
+        personRoleAssignment.HasOne(pr => pr.Role)
+                            .WithMany(r => r.RoleAssignments)
+                            .HasForeignKey(pr => pr.RoleId)
+                            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private static void ConfigurePersonHorse(EntityTypeBuilder<PersonHorse> personHorse)
+    {
         
     }
 }
