@@ -1,10 +1,12 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EquiPressure", "backend\EquiPressure.csproj", "{BA484CA6-244D-EADD-8F70-5523981840B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EquiPressure.Core", "backend\EquiPressure.Core\EquiPressure.Core.csproj", "{B665CC34-B239-447C-AE9E-CCD394B094A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,12 +18,17 @@ Global
 		{BA484CA6-244D-EADD-8F70-5523981840B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA484CA6-244D-EADD-8F70-5523981840B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA484CA6-244D-EADD-8F70-5523981840B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B665CC34-B239-447C-AE9E-CCD394B094A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B665CC34-B239-447C-AE9E-CCD394B094A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B665CC34-B239-447C-AE9E-CCD394B094A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B665CC34-B239-447C-AE9E-CCD394B094A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BA484CA6-244D-EADD-8F70-5523981840B1} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
+		{B665CC34-B239-447C-AE9E-CCD394B094A8} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52F40D3C-53EB-48DD-816B-399B8B4BE1E8}
