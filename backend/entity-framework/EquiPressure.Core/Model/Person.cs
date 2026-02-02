@@ -53,12 +53,7 @@ public class PersonRoleAssignment
     public PersonRole Role { get; set; } = null!;
 }
 
-public enum PossiblePersonRole
-{
-    
-}
-
-public enum PersonHorse
+public class PersonHorse
 {
     
 }
