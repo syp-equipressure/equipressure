@@ -1,3 +1,3 @@
 ﻿namespace EquiPressure.Core;
 
-public class Class1 { }
+public class EquiContext { }
