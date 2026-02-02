@@ -1,5 +1,6 @@
 ﻿using EquiPressure.Core.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace EquiPressure.Core;
 
@@ -19,5 +20,28 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        
+        ConfigurePerson(modelBuilder.Entity<Person>());
+        ConfigurePersonRelationship(modelBuilder.Entity<PersonRelationship>());
+        ConfigurePersonRole(modelBuilder.Entity<PersonRole>());
+        ConfigurePersonRoleAssignment(modelBuilder.Entity<PersonRoleAssignment>());
+        
+    }
+
+    private static void ConfigurePerson(EntityTypeBuilder<Person> person)
+    {
+        
+    }
+    private static void ConfigurePersonRelationship(EntityTypeBuilder<PersonRelationship> personRelation)
+    {
+        
+    }
+    private static void ConfigurePersonRole(EntityTypeBuilder<PersonRole> personRole)
+    {
+        
+    }
+    private static void ConfigurePersonRoleAssignment(EntityTypeBuilder<PersonRoleAssignment> personRoleAssignment)
+    {
+        
     }
 }
