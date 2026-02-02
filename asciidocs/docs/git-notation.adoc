@@ -1,5 +1,48 @@
     = GIT
 
+== Befehle
+
+[listing,terminal]
+----
+# Develop feature
+$ git add .
+$ git commit -m "Add UI components"
+$ git push origin feature/frontend
+
+# Merge conflict
+$ git fetch
+$ git pull --rebase
+
+# Create merge request (mit Github CLI)
+$ git switch feature/backend
+$ gh pr create --base dev --title "Backend Feature" --body "Beschreibung"
+# oder
+$ gh pr create --base dev
+----
+
+== Commits
+
+notation: nachricht #youtrack
+
+z.B. "feat: added a backend route #EP-01"
+
+=== Notation
+* **feat**: a new feature is introduced with the changes
+* **fix**: a bug fix has occurred
+* **chore**: changes that do not relate to a fix or feature and don’t modify src or test files 
+(for example updating dependencies)
+* **refactor**: refactored code that neither fixes a bug nor adds a feature
+* **style**: changes that do not affect the meaning of the code, likely related to code formatting such as white-space,
+missing semi-colons, and so on.
+
+* **docs**: updates to documentation such as a the README or other markdown files
+* **test**: including new or correcting previous tests
+* **ci** – continuous integration related
+* **perf** – performance improvements
+* **build** – changes that affect the build system or external dependencies
+* **revert** – reverts a previous commit
+
+
 == Branches
 
 === Notation
@@ -8,10 +51,65 @@ Für jedes neue Feature:
 
 * feature/[name-des-features]
 
+=== Workflow
+
+[plantuml, git-simple, png]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title Git Branch Workflow
+
+package "Repository" {
+  database "main" as main
+  database "dev" as dev
+
+  file "feature/frontend" as frontend
+  file "feature/backend" as backend
+  file "feature/sattler-app" as sattler
+  file "feature/reiter-app" as reiter
+}
+
+main -right-> dev : "git checkout -b dev"
+dev -down-> frontend : "git checkout -b"
+dev -down-> backend : "git checkout -b"
+frontend -down-> sattler : "git checkout -b"
+frontend -down-> reiter : "git checkout -b"
+
+frontend -up-> dev : "git merge"
+backend -up-> dev : "git merge"
+sattler -up-> frontend : "git merge"
+reiter -up-> frontend : "git merge"
+
+dev -left-> main : "Release merge"
+
+note right of main
+  <b>Protected Branch</b>
+  • No direct commits
+  • PR reviews required
+  • CI/CD must pass
+end note
+@enduml
+----
+
+.Git Branch Structure (ASCII)
+[source,asciidoc]
+----
+main
+├── dev
+│   ├── feature/backend
+│   └── feature/frontend
+│       ├── feature/sattler-app
+│       └── feature/reiter-app
+└── release/*
+
+----
+
 === Bereits bestehende Branches
 
 .main
-* nur versionen, die man bereits veröffentlichen könnte
+* nur Versionen, die man bereits veröffentlichen könnte
 
 .dev
 * komplett abgeschlossene features aus backend und frontend
