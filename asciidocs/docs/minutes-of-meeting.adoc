@@ -1175,3 +1175,94 @@ a| Datenmodell anpassen
 * auf der Website anzeigen welche Sattler das haben 
 ** falls es so Reitställe gibt die sich das nicht kaufen will
 * Verleihstellen auch anzeigen
+
+== 2026-02-03
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-02-03
+
+|Dauer
+|08:00 bis 08:35
+|===
+====
+
+=== Besprochenes
+
+* Wireframe
+* Frontend
+* Model Backend
+
+==== Wireframe
+* Wireframe ist abgeschlossen
+
+==== Frontend
+* Geschlecht farblich hinterlegt passt gut
+* Map
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Graßauer, Music
+a| Frontend weiterarbeiten
+| 03.03.2026
+
+| Dallinger
+a| Linq queries im Backend schreiben
+| 03.03.2026
+
+| Einzenberger
+a| Importer aus csv files für Datenbank schreiben
+| 03.03.2026
+
+| Einzenberger, Dallinger
+a| in WebAPI einlesen
+| 03.03.2026
+
+|===
