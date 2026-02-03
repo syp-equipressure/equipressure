@@ -12,26 +12,21 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     public DbSet<PersonRole> PersonRoles { get; set; }
     public DbSet<PersonRoleAssignment> PersonRoleAssignments { get; set; }
     public DbSet<PersonHorse> PersonHorses { get; set; }
-
     // Horse DbSets
     public DbSet<Horse> Horses { get; set; }
     public DbSet<HorseBreed> HorseBreeds { get; set; }
     public DbSet<Breed> Breeds { get; set; }
-
     // Device DbSets
     public DbSet<MeasurementDevice> Devices { get; set; }
     public DbSet<DeviceCategory> DeviceCategories { get; set; }
     public DbSet<DeviceUser> DeviceUsers { get; set; }
-    
     // Measurement DbSets
     public DbSet<MeasurementGroup> MeasurementGroups { get; set; }
     public DbSet<Measurement> Measurements { get; set; }
     public DbSet<MeasurementData> MeasurementDates { get; set; }
-    
     // Release DbSets
     public DbSet<Release> Releases { get; set; }
     public DbSet<MeasurementEligibility> MeasurementEligibilities { get; set; }
-
     // Saddle DbSets
     public DbSet<Saddle> Saddles { get; set; }
     public DbSet<SaddleCategory> SaddleCategories { get; set; }
