@@ -44,6 +44,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         ConfigurePersonRelationship(modelBuilder.Entity<PersonRelationship>());
         ConfigurePersonRole(modelBuilder.Entity<PersonRole>());
         ConfigurePersonRoleAssignment(modelBuilder.Entity<PersonRoleAssignment>());
+        ConfigurePersonHorse(modelBuilder.Entity<PersonHorse>());
     }
 
     private static void ConfigurePerson(EntityTypeBuilder<Person> person)
