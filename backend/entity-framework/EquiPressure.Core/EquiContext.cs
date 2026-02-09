@@ -312,7 +312,58 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #endregion
     }
 
-    private static void ConfigureMeasurement(ModelBuilder mb) { }
+    /// <summary>
+    /// Configure the measurement classes: MeasurementGroup, MeasurementEligibility, Measurement, MeasurementData
+    /// </summary>
+    /// <param name="mb"></param>
+    private static void ConfigureMeasurement(ModelBuilder mb)
+    {
+        #region measurementGroup
+
+        var group = mb.Entity<MeasurementGroup>();
+        group.HasKey(mg => mg.Id);
+        group.Property(mg => mg.Id).ValueGeneratedOnAdd();
+
+        group.HasMany(mg => mg.MeasurementEligibilities)
+             .WithOne(me => me.MeasurementGroup)
+             .HasForeignKey(me => me.MeasurementGroupId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        group.HasMany(mg => mg.Measurements)
+             .WithOne(mg => mg.Group)
+             .HasForeignKey(mg => mg.GroupId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region measurementEligibility
+
+        var eligibility = mb.Entity<MeasurementEligibility>();
+        eligibility.HasKey(me => new { me.MeasurementGroupId, me.ReleaseId });
+
+        #endregion
+
+        #region measurement
+
+        var measurement = mb.Entity<Measurement>();
+        measurement.HasKey(m => m.Id);
+        measurement.Property(m => m.Id).ValueGeneratedOnAdd();
+
+        measurement.HasMany(m => m.MeasurementDates)
+                   .WithOne(m => m.Measurement)
+                   .HasForeignKey(m => m.MeasurementId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region measurementData
+
+        var data = mb.Entity<MeasurementData>();
+        data.HasKey(d => d.Id);
+        data.Property(d => d.Id).ValueGeneratedOnAdd();
+
+        #endregion
+    }
 
     private static void ConfigureRelease(ModelBuilder mb)
     {
