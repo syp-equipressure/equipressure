@@ -14,13 +14,16 @@ public class Person
     public string? WebsiteLink { get; set; }
     public string? Description { get; set; }
 
+    public int AddressId { get; set; }
+    public Address Address { get; set; } = null!;
+
     public List<PersonRelationship> Relationships { get; set; } = [];
     public List<PersonRoleAssignment> Roles { get; set; } = [];
     public List<PersonHorse> Horses { get; set; } = [];
     public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
     public List<DeviceUser> Devices { get; set; } = [];
     public List<MeasurementDevice> AdminDevices { get; set; } = [];
-    public List<Release> Releases { get; set; } = [];   
+    public List<Release> Releases { get; set; } = [];
 }
 
 // m-m bzh zwischen Person und Person
@@ -57,7 +60,7 @@ public class PersonHorse
 {
     public int PersonId { get; set; }
     public int HorseId { get; set; }
-    
+
     public bool IsHidden { get; set; }
     public bool IsOwner { get; set; }
 

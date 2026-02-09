@@ -10,11 +10,12 @@ public class Horse
     public decimal Weight { get; set; }
     public decimal Height { get; set; }
     public required string Gender { get; set; }
-    
-    public int HorseBreedId { get; set; }
+
     public int AddressId { get; set; }
+    public Address Address { get; set; } = null!;
+
+    public int HorseBreedId { get; set; }
     public List<HorseBreed> HorseBreeds { get; set; } = [];
-    public List<Address> HorseAddress { get; set; } = [];
     public List<PersonHorse> Persons { get; set; } = [];
 }
 
@@ -33,4 +34,3 @@ public class Breed
     public required string Name { get; set; }
     public int Counter { get; set; }
 }
-

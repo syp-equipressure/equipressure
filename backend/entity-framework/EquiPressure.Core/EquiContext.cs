@@ -30,6 +30,9 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     // Saddle DbSets
     public DbSet<Saddle> Saddles { get; set; }
     public DbSet<SaddleCategory> SaddleCategories { get; set; }
+    // Location DbSets
+    public DbSet<Address> Addresses { get; set; }
+    public DbSet<City> Cities { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
