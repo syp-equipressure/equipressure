@@ -8,7 +8,7 @@ namespace EquiPressure.Core;
 public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(options)
 {
     // Person DbSets
-    public DbSet<Person> Person { get; set; }
+    public DbSet<Person> Persons { get; set; }
     public DbSet<PersonRelationship> PersonRelationships { get; set; }
     public DbSet<AccountRole> PersonRoles { get; set; }
     public DbSet<PersonRoleAssignment> PersonRoleAssignments { get; set; }
@@ -80,6 +80,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         person.Property(p => p.Id).ValueGeneratedOnAdd();
         person.HasIndex(p => new { p.FirstName, p.LastName });
         person.HasIndex(p => p.Email).IsUnique();
+        person.HasIndex(p => p.DateOfBirth);
 
         person.HasMany(p => p.Relationships)
               .WithOne(ps => ps.Person1)
@@ -162,6 +163,8 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         horse.Property(h => h.Id).ValueGeneratedOnAdd();
         horse.Property(h => h.Gender)
              .HasConversion(new EnumToStringConverter<HorseGender>());
+        horse.HasIndex(h => h.Name);
+        horse.HasIndex(h => h.Address);
 
         horse.HasMany(h => h.Persons)
              .WithOne(ph => ph.Horse)
@@ -348,6 +351,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         var measurement = mb.Entity<Measurement>();
         measurement.HasKey(m => m.Id);
         measurement.Property(m => m.Id).ValueGeneratedOnAdd();
+        measurement.HasIndex(m => m.GroupId);
 
         measurement.HasMany(m => m.MeasurementDates)
                    .WithOne(m => m.Measurement)
