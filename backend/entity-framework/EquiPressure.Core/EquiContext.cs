@@ -365,13 +365,52 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #endregion
     }
 
+    /// <summary>
+    /// Configure the realese table
+    /// </summary>
+    /// <param name="mb"></param>
     private static void ConfigureRelease(ModelBuilder mb)
     {
-        throw new NotImplementedException();
+        var release = mb.Entity<Release>();
+        release.HasKey(r => r.Id);
+        release.Property(r => r.Id).ValueGeneratedOnAdd();
+
+        release.HasMany(r => r.MeasurementEligibilities)
+               .WithOne(me => me.Release)
+               .HasForeignKey(me => me.ReleaseId)
+               .OnDelete(DeleteBehavior.Cascade);
     }
 
+    /// <summary>
+    /// Configure the context for the saddles and their categories
+    /// </summary>
+    /// <param name="mb"></param>
     private static void ConfigureSaddle(ModelBuilder mb)
     {
-        throw new NotImplementedException();
+        #region saddle
+
+        var saddle = mb.Entity<Saddle>();
+        saddle.HasKey(s => s.Id);
+        saddle.Property(s => s.Id).ValueGeneratedOnAdd();
+
+        saddle.HasMany(s => s.MeasurementGroups)
+              .WithOne(mg => mg.Saddle)
+              .HasForeignKey(mg => mg.SaddleId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region saddleCategory
+
+        var category = mb.Entity<SaddleCategory>();
+        category.HasKey(c => c.Id);
+        category.Property(c => c.Id).ValueGeneratedOnAdd();
+
+        category.HasMany(c => c.Saddles)
+                .WithOne(s => s.Category)
+                .HasForeignKey(s => s.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
     }
 }
