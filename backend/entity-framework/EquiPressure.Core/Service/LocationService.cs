@@ -43,7 +43,6 @@ public class LocationService(EquiContext context) : ILocationService
     
     public async ValueTask<GetCityAsyncResult> GetCityAsync(int length, string nameFilter)
     {
-        
         throw new NotImplementedException();
     }
 
