@@ -234,6 +234,45 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #endregion
     }
 
+    /// <summary>
+    /// Configure the Address and City Objects
+    /// </summary>
+    /// <param name="mb"></param>
+    private static void ConfigureLocation(ModelBuilder mb)
+    {
+        #region address
+
+        var address = mb.Entity<Address>();
+        address.HasKey(a => a.Id);
+        address.Property(a => a.Id).ValueGeneratedOnAdd();
+
+        address.HasMany(a => a.Persons)
+               .WithOne(p => p.Address)
+               .HasForeignKey(a => a.AddressId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        address.HasMany(a => a.Horses)
+               .WithOne(h => h.Address)
+               .HasForeignKey(h => h.AddressId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        #endregion
+
+        #region city
+
+        var city = mb.Entity<City>();
+        city.HasKey(c => c.Id);
+        city.Property(c => c.Id).ValueGeneratedOnAdd();
+        city.HasIndex(c => new { c.PLZ, c.Name });
+
+        city.HasMany(c => c.Addresses)
+            .WithOne(a => a.City)
+            .HasForeignKey(a => a.CityId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        #endregion
+    }
+
     private static void ConfigureRelease(ModelBuilder mb)
     {
         throw new NotImplementedException();
@@ -250,11 +289,6 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     }
 
     private static void ConfigureDevice(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureLocation(ModelBuilder mb)
     {
         throw new NotImplementedException();
     }
