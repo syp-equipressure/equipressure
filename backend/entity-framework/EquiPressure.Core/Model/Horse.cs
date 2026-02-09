@@ -14,9 +14,10 @@ public class Horse
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
 
-    public int HorseBreedId { get; set; }
     public List<HorseBreed> HorseBreeds { get; set; } = [];
     public List<PersonHorse> Persons { get; set; } = [];
+    public List<Saddle> Saddles { get; set; } = [];
+    public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
 }
 
 public class HorseBreed
@@ -33,6 +34,8 @@ public class Breed
     public int Id { get; set; }
     public required string Name { get; set; }
     public int Counter { get; set; }
+    
+    public List<HorseBreed> HorseBreeds { get; set; } = [];
 }
 
 public enum HorseGender

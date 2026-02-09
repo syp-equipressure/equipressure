@@ -1,6 +1,7 @@
 ﻿using EquiPressure.Core.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EquiPressure.Core;
 
@@ -59,8 +60,6 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         ConfigureSaddle(modelBuilder);
         ConfigureRelease(modelBuilder);
     }
-
-   
 
     /// <summary>
     /// Configure the Person Objects
@@ -147,15 +146,62 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #endregion
     }
 
+    /// <summary>
+    /// Configure the Horse Objects
+    /// The Enum of the Horse Gender should be persisted as a string in the database
+    /// Configures the association for the HorseBreed
+    /// Configures the Breed Entites as well
+    /// </summary>
+    /// <param name="mb"></param>
     private static void ConfigureHorse(ModelBuilder mb)
     {
         #region horse
 
         var horse = mb.Entity<Horse>();
+        horse.HasKey(h => h.Id);
+        horse.Property(h => h.Id).ValueGeneratedOnAdd();
+        horse.Property(h => h.Gender)
+             .HasConversion(new EnumToStringConverter<HorseGender>());
+
         horse.HasMany(h => h.Persons)
              .WithOne(ph => ph.Horse)
              .HasForeignKey(ph => ph.HorseId)
              .OnDelete(DeleteBehavior.Cascade);
+
+        horse.HasMany(h => h.HorseBreeds)
+             .WithOne(hb => hb.Horse)
+             .HasForeignKey(hb => hb.HorseId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        horse.HasMany(h => h.Saddles)
+             .WithOne(s => s.Horse)
+             .HasForeignKey(s => s.HorseId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        horse.HasMany(h => h.MeasurementGroups)
+             .WithOne(mg => mg.Horse)
+             .HasForeignKey(mg => mg.HorseId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region Breed
+
+        var breed = mb.Entity<Breed>();
+        breed.HasKey(b => b.Id);
+        breed.Property(b => b.Id).ValueGeneratedOnAdd();
+
+        breed.HasMany(b => b.HorseBreeds)
+             .WithOne(hb => hb.Breed)
+             .HasForeignKey(hb => hb.BreedId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region HorseBreed
+
+        var horseBreed = mb.Entity<HorseBreed>();
+        horseBreed.HasKey(hb => new { hb.HorseId, hb.BreedId });
 
         #endregion
     }
@@ -182,7 +228,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
 
         #endregion
     }
-    
+
     private static void ConfigureRelease(ModelBuilder mb)
     {
         throw new NotImplementedException();
