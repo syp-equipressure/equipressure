@@ -24,7 +24,6 @@ public interface ILocationService
                                                             , string cityName, string plz);
     public readonly record struct InvalidData;
     
-    
 }
 
 public class LocationService(EquiContext context) : ILocationService
