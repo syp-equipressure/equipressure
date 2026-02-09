@@ -24,7 +24,7 @@ using GetPersonAsSaddlerByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<SaddlerMinimalData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
 using GetNameOfPersonByIdAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<NameData>, OneOf.Types.NotFound>;
-using GetFavouritesFromPersonAsyncResult 
+using GetFavouritesOrContactsFromPersonAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<List<Person>>, OneOf.Types.NotFound>;
 
 public interface IPersonService
@@ -33,7 +33,8 @@ public interface IPersonService
     public ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id);
     public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
     public ValueTask<GetNameOfPersonByIdAsyncResult> GetNameOfPersonByIdAsync(int id);
-    public ValueTask<GetFavouritesFromPersonAsyncResult> GetFavouritesFromPersonAsync(int id);
+    public ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetFavouritesFromPersonAsync(int id);
+    public ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetContactsFromPersonAsync(int id);
 }
 
 public class PersonService(EquiContext context) : IPersonService
@@ -133,7 +134,7 @@ public class PersonService(EquiContext context) : IPersonService
             : new NotFound();
     }
 
-    public async ValueTask<GetFavouritesFromPersonAsyncResult> GetFavouritesFromPersonAsync(int id)
+    public async ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetFavouritesFromPersonAsync(int id)
     {
         var personExists = await context.Person.AnyAsync(p => p.Id == id);
         if (!personExists)
@@ -145,6 +146,21 @@ public class PersonService(EquiContext context) : IPersonService
                             .Where(p => p.Id == id)
                             .Where(p => p.Relationships.All(r => r.IsFavourite))
                             .ToListAsync();
+        return new Success<List<Person>>(result);
+    }
+
+    public async ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetContactsFromPersonAsync(int id)
+    {
+        var personExists = await context.Person.AnyAsync(p => p.Id == id);
+        if (!personExists)
+        {
+            return new NotFound();
+        }
+        var result = await context.Person
+                                  .Include(p => p.Relationships)
+                                  .Where(p => p.Id == id)
+                                  .Where(p => p.Relationships.All(r => r.IsContact))
+                                  .ToListAsync();
         return new Success<List<Person>>(result);
     }
 }
