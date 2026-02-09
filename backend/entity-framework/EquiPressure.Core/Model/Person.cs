@@ -39,7 +39,7 @@ public class PersonRelationship
     public Person Person2 { get; set; } = null!;
 }
 
-public class PersonRole
+public class AccountRole
 {
     public int Id { get; set; }
     public required string Name { get; set; }
@@ -53,7 +53,7 @@ public class PersonRoleAssignment
     public int RoleId { get; set; }
 
     public Person Person { get; set; } = null!;
-    public PersonRole Role { get; set; } = null!;
+    public AccountRole Role { get; set; } = null!;
 }
 
 public class PersonHorse
