@@ -57,8 +57,8 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         ConfigureLocation(modelBuilder);
         ConfigureDevice(modelBuilder);
         ConfigureMeasurement(modelBuilder);
-        ConfigureSaddle(modelBuilder);
         ConfigureRelease(modelBuilder);
+        ConfigureSaddle(modelBuilder);
     }
 
     /// <summary>
@@ -273,22 +273,53 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #endregion
     }
 
+    /// <summary>
+    /// Configures the MeasurementDevice Objects
+    /// Configures the DeviceCategory as well
+    /// </summary>
+    /// <param name="mb"></param>
+    private static void ConfigureDevice(ModelBuilder mb)
+    {
+        #region device
+
+        var device = mb.Entity<MeasurementDevice>();
+        device.HasKey(d => d.Id);
+        device.Property(d => d.Id).ValueGeneratedOnAdd();
+
+        device.HasMany(d => d.Users)
+              .WithOne(du => du.Device)
+              .HasForeignKey(du => du.DeviceId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+        device.HasMany(d => d.MeasurementGroups)
+              .WithOne(mg => mg.Device)
+              .HasForeignKey(mg => mg.DeviceId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region deviceCategory
+
+        var category = mb.Entity<DeviceCategory>();
+        category.HasKey(c => c.Id);
+        category.Property(c => c.Id).ValueGeneratedOnAdd();
+
+        category.HasMany(c => c.Devices)
+                .WithOne(d => d.Category)
+                .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+    }
+
+    private static void ConfigureMeasurement(ModelBuilder mb) { }
+
     private static void ConfigureRelease(ModelBuilder mb)
     {
         throw new NotImplementedException();
     }
 
     private static void ConfigureSaddle(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureMeasurement(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureDevice(ModelBuilder mb)
     {
         throw new NotImplementedException();
     }
