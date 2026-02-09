@@ -85,6 +85,15 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Configure the Person Objects
+    /// An index for the person consisting of the firstname and the lastname exists
+    /// the email of a person has to be unique
+    /// Configures the association for PersonRelationship, PersonRoleAssignment and DeviceUser
+    /// </summary>
+    /// <param name="mb">
+    /// the modelbuilder to be used
+    /// </param>
     private static void ConfigurePerson(ModelBuilder mb)
     {
         #region person
@@ -100,7 +109,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
               .WithOne(ps => ps.Person1)
               .HasForeignKey(ps => ps.Person1Id)
               .OnDelete(DeleteBehavior.Cascade);
-        
+
         person.HasMany(p => p.Relationships)
               .WithOne(pr => pr.Person2)
               .HasForeignKey(pr => pr.Person2Id)
@@ -115,23 +124,23 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
               .WithOne(ph => ph.Person)
               .HasForeignKey(ph => ph.PersonId)
               .OnDelete(DeleteBehavior.Cascade);
-        
+
         person.HasMany(p => p.Releases)
               .WithOne(r => r.Person)
               .HasForeignKey(r => r.PersonId)
               .OnDelete(DeleteBehavior.Cascade);
-        
+
         // A device can always have just one owner
         person.HasMany(p => p.OwnerDevices)
               .WithOne(md => md.Owner)
               .HasForeignKey(md => md.OwnerId)
               .OnDelete(DeleteBehavior.Cascade);
-        
+
         person.HasMany(p => p.UserDevices)
               .WithOne(du => du.User) // du = Assoziationstabelle für Person und Device als User
               .HasForeignKey(du => du.UserId)
               .OnDelete(DeleteBehavior.Cascade);
-        
+
         person.HasMany(p => p.MeasurementGroups)
               .WithOne(mg => mg.Person)
               .HasForeignKey(mp => mp.PersonId)
@@ -150,6 +159,13 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
 
         var personHorse = mb.Entity<PersonHorse>();
         personHorse.HasKey(ph => new { ph.PersonId, ph.HorseId });
+
+        #endregion
+
+        #region userDevice
+
+        var userDevice = mb.Entity<DeviceUser>();
+        userDevice.HasKey(du => new { du.DeviceId, du.UserId });
 
         #endregion
     }
