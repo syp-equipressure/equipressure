@@ -17,8 +17,7 @@ using EquiPressure.Core.Model;
 using GetPersonAsEquestrianByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimaldata>, OneOf.Types.NotFound>;
 using GetPersonAddressAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Model.Address>,
-        IBaseService.InvalidData, OneOf.Types.Error>;
+    = OneOf.OneOf<OneOf.Types.Success<Model.Address>, OneOf.Types.NotFound>;
 
 public interface IPersonService
 {
@@ -57,7 +56,18 @@ public class PersonService(EquiContext context) : IPersonService
             : new NotFound();
     }
 
-    public async ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id) => throw new NotImplementedException();
+    public async ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id)
+    {
+        var result = await context.Person
+                                  .Include(p => p.Address)
+                                  .ThenInclude(a => a.City)
+                                  .Where(p => p.Id == id)
+                                  .Select(p => p.Address)
+                                  .FirstOrDefaultAsync();
+        return result != null
+            ? new Success<Address>(result)
+            : new NotFound();
+    }
 }
 
 public record EquestrianMinimaldata(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
