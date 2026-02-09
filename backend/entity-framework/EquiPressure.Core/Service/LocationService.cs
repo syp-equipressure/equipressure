@@ -15,14 +15,13 @@ using GetCityAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Model.City[]>, OneOf.Types.Error>;
 using AddAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Model.Address>,
-        ILocationService.InvalidData, OneOf.Types.Error>;
+        IBaseService.InvalidData, OneOf.Types.Error>;
 
 public interface ILocationService
 {
     public ValueTask<GetCityAsyncResult> GetCityAsync(int? length, string? nameFilter);
     public ValueTask<AddAddressAsyncResult> AddAddressAsync(string? street, int? houseNumber
                                                             , string cityName, string plz);
-    public readonly record struct InvalidData;
     
 }
 
@@ -74,7 +73,7 @@ public class LocationService(EquiContext context) : ILocationService
     {
         if (string.IsNullOrEmpty(cityName) || string.IsNullOrEmpty(plz))
         {
-            return new ILocationService.InvalidData();
+            return new IBaseService.InvalidData();
         }
 
         await BeginTransactionAsync();

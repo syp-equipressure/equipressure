@@ -1,4 +1,6 @@
-﻿namespace EquiPressure.Core.Service;
+﻿using System.Runtime.InteropServices.ComTypes;
+
+namespace EquiPressure.Core.Service;
 
 using System;
 using System.Collections.Generic;
@@ -12,21 +14,51 @@ using OneOf;
 using OneOf.Types;
 using EquiPressure.Core.Model;
 
-using GetPersonByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Model.City[]>, OneOf.Types.Error>;
+using GetPersonAsEquestrianByIdAsyncResult
+    = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimaldata>, OneOf.Types.NotFound>;
 using GetPersonAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Model.Address>,
-        ILocationService.InvalidData, OneOf.Types.Error>;
+        IBaseService.InvalidData, OneOf.Types.Error>;
 
 public interface IPersonService
 {
-    public ValueTask<GetPersonByIdAsyncResult> GetPersonByIdAsync(int id);
+    public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id);
     public ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id);
 }
 
-public class PersonService : IPersonService
+public class PersonService(EquiContext context) : IPersonService
 {
-    public ValueTask<GetPersonByIdAsyncResult> GetPersonByIdAsync(int id) => throw new NotImplementedException();
+    public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id)
+    {
+        var result = await context.PersonRoleAssignments
+                                  .Include(pra => pra.Person)
+                                    .ThenInclude(p => p.Address)
+                                    .ThenInclude(a => a.City)
+                                  .Include(pra => pra.Role)
+                                  .Where(pra => pra.Role.Name.ToLower() == "equestrian")
+                                  .Where(pra => pra.PersonId == id)
+                                  .Select(pra => new EquestrianMinimaldata
+                                  (
+                                   pra.Person.FirstName,
+                                   pra.Person.LastName,
+                                   pra.Person.Address.Street,
+                                   pra.Person.Address.HouseNumber,
+                                   pra.Person.Address.City.Name,
+                                   pra.Person.Address.City.PLZ,
+                                   pra.Person.Email!,
+                                   pra.Person.Height,
+                                   pra.Person.Weight
+                                      
+                                  ))
+                                  .FirstOrDefaultAsync();
 
-    public ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id) => throw new NotImplementedException();
+        return result != null 
+            ? new Success<EquestrianMinimaldata>(result) 
+            : new NotFound();
+    }
+
+    public async ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id) => throw new NotImplementedException();
 }
+
+public record EquestrianMinimaldata(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
+                                    string PLZ, string Email, decimal Height, decimal Weight);
