@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices.ComTypes;
+using Saddle = EquiPressure.Core.Model.Saddle;
 
 namespace EquiPressure.Core.Service;
 
@@ -18,11 +19,14 @@ using GetPersonAsEquestrianByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimaldata>, OneOf.Types.NotFound>;
 using GetPersonAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Model.Address>, OneOf.Types.NotFound>;
+using GetPersonAsSaddlerByIdAsyncResult
+    = OneOf.OneOf<OneOf.Types.Success<SaddlerMinimaldata>, IBaseService.InvalidData, OneOf.Types.NotFound>;
 
 public interface IPersonService
 {
     public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id);
     public ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id);
+    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
 }
 
 public class PersonService(EquiContext context) : IPersonService
@@ -68,7 +72,51 @@ public class PersonService(EquiContext context) : IPersonService
             ? new Success<Address>(result)
             : new NotFound();
     }
+
+    public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId)
+    {
+        var equestrian = GetPersonAsEquestrianByIdAsync(equestrianId);
+        if (!equestrian.Result.IsT0)
+        {
+            return new IBaseService.InvalidData();
+        }
+        
+        var result = await  context.PersonRoleAssignments
+                            .Include(pra => pra.Person)
+                                .ThenInclude(p => p.Address)
+                                .ThenInclude(a => a.City)
+                            .Include(pra => pra.Person)
+                                .ThenInclude(p => p.Relationships)
+                            .Include(pra => pra.Role)
+                            .Where(pra => pra.Role.Name.ToLower() == "saddler")
+                            .Where(pra => pra.PersonId == saddlerId)
+                            .Select(pra => new { pra.Person, 
+                                        rel = (pra.Person.Relationships.Where(r => 
+                                                                                   (r.Person1Id == saddlerId
+                                                                         && r.Person2Id == equestrianId) 
+                                    || (r.Person1Id == equestrianId && r.Person2Id == saddlerId)))})
+                            .Select(p => new SaddlerMinimaldata
+                            (
+                                p.Person.FirstName,
+                                p.Person.LastName,
+                                p.Person.Address.Street,
+                                p.Person.Address.HouseNumber,
+                                p.Person.Address.City.Name,
+                                p.Person.Address.City.PLZ,
+                                p.Person.WebsiteLink,
+                                p.Person.Description,
+                                p.rel.Select(r => r.IsFavourite).FirstOrDefault()
+                            ))
+                            .FirstOrDefaultAsync();
+        
+        return result != null
+            ? new Success<SaddlerMinimaldata>(result)
+                : new NotFound();
+    }
 }
 
 public record EquestrianMinimaldata(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
                                     string PLZ, string Email, decimal Height, decimal Weight);
+                                    
+public record SaddlerMinimaldata(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
+                                 string PLZ, string? Link, string? Description, bool isFavourite);
