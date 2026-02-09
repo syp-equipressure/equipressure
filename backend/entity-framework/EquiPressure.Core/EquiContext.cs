@@ -150,7 +150,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
     /// Configure the Horse Objects
     /// The Enum of the Horse Gender should be persisted as a string in the database
     /// Configures the association for the HorseBreed
-    /// Configures the Breed Entites as well
+    /// Configures the Breed Entities as well
     /// </summary>
     /// <param name="mb"></param>
     private static void ConfigureHorse(ModelBuilder mb)
@@ -206,16 +206,21 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #endregion
     }
 
+    /// <summary>
+    /// Configure the AccountRole Objects
+    /// Configures the association for the personRoleAssignment
+    /// </summary>
+    /// <param name="mb"></param>
     private static void ConfigureAccountRole(ModelBuilder mb)
     {
         #region accountRole
 
         var accountRole = mb.Entity<AccountRole>();
-        accountRole.HasKey(p => p.Id);
-        accountRole.Property(p => p.Id).ValueGeneratedOnAdd();
+        accountRole.HasKey(ar => ar.Id);
+        accountRole.Property(ar => ar.Id).ValueGeneratedOnAdd();
 
         accountRole.HasMany(ar => ar.RoleAssignments)
-                   .WithOne(ra => ra.Role)
+                   .WithOne(pra => pra.Role)
                    .HasForeignKey(ra => ra.RoleId)
                    .OnDelete(DeleteBehavior.Cascade);
 
@@ -224,7 +229,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         #region personRoleAssignment
 
         var personRoleAssignment = mb.Entity<PersonRoleAssignment>();
-        personRoleAssignment.HasKey(p => new { p.PersonId, p.RoleId });
+        personRoleAssignment.HasKey(pra => new { pra.PersonId, pra.RoleId });
 
         #endregion
     }
