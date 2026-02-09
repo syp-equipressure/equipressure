@@ -100,7 +100,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
               .WithOne(ps => ps.Person1)
               .HasForeignKey(ps => ps.Person1Id)
               .OnDelete(DeleteBehavior.Cascade);
-
+        
         person.HasMany(p => p.Relationships)
               .WithOne(pr => pr.Person2)
               .HasForeignKey(pr => pr.Person2Id)
@@ -114,6 +114,27 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         person.HasMany(p => p.Horses)
               .WithOne(ph => ph.Person)
               .HasForeignKey(ph => ph.PersonId)
+              .OnDelete(DeleteBehavior.Cascade);
+        
+        person.HasMany(p => p.Releases)
+              .WithOne(r => r.Person)
+              .HasForeignKey(r => r.PersonId)
+              .OnDelete(DeleteBehavior.Cascade);
+        
+        // A device can always have just one owner
+        person.HasMany(p => p.OwnerDevices)
+              .WithOne(md => md.Owner)
+              .HasForeignKey(md => md.OwnerId)
+              .OnDelete(DeleteBehavior.Cascade);
+        
+        person.HasMany(p => p.UserDevices)
+              .WithOne(du => du.User) // du = Assoziationstabelle für Person und Device als User
+              .HasForeignKey(du => du.UserId)
+              .OnDelete(DeleteBehavior.Cascade);
+        
+        person.HasMany(p => p.MeasurementGroups)
+              .WithOne(mg => mg.Person)
+              .HasForeignKey(mp => mp.PersonId)
               .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
