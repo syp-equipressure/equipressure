@@ -60,30 +60,7 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         ConfigureRelease(modelBuilder);
     }
 
-    private static void ConfigureRelease(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureSaddle(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureMeasurement(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureDevice(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void ConfigureLocation(ModelBuilder mb)
-    {
-        throw new NotImplementedException();
-    }
+   
 
     /// <summary>
     /// Configure the Person Objects
@@ -204,5 +181,30 @@ public class EquiContext(DbContextOptions<EquiContext> options) : DbContext(opti
         personRoleAssignment.HasKey(p => new { p.PersonId, p.RoleId });
 
         #endregion
+    }
+    
+    private static void ConfigureRelease(ModelBuilder mb)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void ConfigureSaddle(ModelBuilder mb)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void ConfigureMeasurement(ModelBuilder mb)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void ConfigureDevice(ModelBuilder mb)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void ConfigureLocation(ModelBuilder mb)
+    {
+        throw new NotImplementedException();
     }
 }

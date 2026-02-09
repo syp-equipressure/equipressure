@@ -9,7 +9,7 @@ public class Horse
     public LocalDate DateOfBirth { get; set; }
     public decimal Weight { get; set; }
     public decimal Height { get; set; }
-    public required string Gender { get; set; }
+    public HorseGender Gender { get; set; }
 
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
@@ -33,4 +33,10 @@ public class Breed
     public int Id { get; set; }
     public required string Name { get; set; }
     public int Counter { get; set; }
+}
+
+public enum HorseGender
+{
+    Female = 10,
+    Male = 20
 }
