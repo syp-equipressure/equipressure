@@ -1,6 +1,6 @@
 ﻿namespace EquiPressure.Core.Service;
 
-public class IBaseService
+public interface IBaseService
 {
     public readonly record struct InvalidData;
 }
