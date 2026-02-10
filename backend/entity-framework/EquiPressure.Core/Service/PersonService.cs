@@ -1,6 +1,8 @@
-﻿using System.Runtime.InteropServices.ComTypes;
+﻿
+
+using System.Runtime.InteropServices.ComTypes;
+using Horse = EquiPressure.Core.Model.Horse;
 using Person = EquiPressure.Core.Model.Person;
-using Saddle = EquiPressure.Core.Model.Saddle;
 
 namespace EquiPressure.Core.Service;
 
@@ -16,25 +18,31 @@ using OneOf;
 using OneOf.Types;
 using EquiPressure.Core.Model;
 
+
+
 using GetPersonAsEquestrianByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimalData>, OneOf.Types.NotFound>;
-using GetPersonAddressAsyncResult
+using GetAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Model.Address>, OneOf.Types.NotFound>;
 using GetPersonAsSaddlerByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<SaddlerMinimalData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
-using GetNameOfPersonByIdAsyncResult 
+using GetNameByIdAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<NameData>, OneOf.Types.NotFound>;
-using GetFavouritesOrContactsFromPersonAsyncResult 
+using GetFavouritesOrContactsAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<List<Person>>, OneOf.Types.NotFound>;
+using GetOwnedHorsesAsyncResult
+    = OneOf.OneOf<OneOf.Types.Success<List<Horse>>, OneOf.Types.NotFound>;
+
 
 public interface IPersonService
 {
     public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id);
-    public ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id);
+    public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id);
     public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
-    public ValueTask<GetNameOfPersonByIdAsyncResult> GetNameOfPersonByIdAsync(int id);
-    public ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetFavouritesFromPersonAsync(int id);
-    public ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetContactsFromPersonAsync(int id);
+    public ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id);
+    public ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id);
+    public ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id);
+    public ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id);
 }
 
 public class PersonService(EquiContext context) : IPersonService
@@ -68,7 +76,7 @@ public class PersonService(EquiContext context) : IPersonService
             : new NotFound();
     }
 
-    public async ValueTask<GetPersonAddressAsyncResult> GetPersonAddressAsync(int id)
+    public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id)
     {
         var result = await context.Person
                                   .Include(p => p.Address)
@@ -122,7 +130,7 @@ public class PersonService(EquiContext context) : IPersonService
                 : new NotFound();
     }
 
-    public async ValueTask<GetNameOfPersonByIdAsyncResult> GetNameOfPersonByIdAsync(int id)
+    public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id)
     {
         var result = await context.Person
                             .Where(p => p.Id == id)
@@ -134,7 +142,7 @@ public class PersonService(EquiContext context) : IPersonService
             : new NotFound();
     }
 
-    public async ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetFavouritesFromPersonAsync(int id)
+    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id)
     {
         var personExists = await context.Person.AnyAsync(p => p.Id == id);
         if (!personExists)
@@ -149,7 +157,7 @@ public class PersonService(EquiContext context) : IPersonService
         return new Success<List<Person>>(result);
     }
 
-    public async ValueTask<GetFavouritesOrContactsFromPersonAsyncResult> GetContactsFromPersonAsync(int id)
+    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id)
     {
         var personExists = await context.Person.AnyAsync(p => p.Id == id);
         if (!personExists)
@@ -162,6 +170,21 @@ public class PersonService(EquiContext context) : IPersonService
                                   .Where(p => p.Relationships.All(r => r.IsContact))
                                   .ToListAsync();
         return new Success<List<Person>>(result);
+    }
+
+    public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id)
+    {
+        var personExists = await context.Person.AnyAsync(p => p.Id == id);
+        if (!personExists)
+        {
+            return new NotFound();
+        }
+
+        var result = await context.Horses
+                                  .Include(h => h.Persons)
+                                  .Where(ph => ph.Persons.Any(p => p.PersonId == id && p.IsOwner))
+                                  .ToListAsync();
+        return new Success<List<Horse>>(result);
     }
 }
 
