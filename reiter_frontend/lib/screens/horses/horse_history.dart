@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
+import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:reiterappfrontend/widgets/custom_filter_chip.dart';
@@ -142,6 +143,17 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
     }
   }
 
+  void _navigateToMeasurementDetail(Measurement measurement) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MeasurementDetailScreen(
+          measurement: measurement,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -237,9 +249,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
                           final measurement = filteredMeasurements[index];
                           return MeasurementCard(
                             measurement: measurement,
-                            onTap: () {
-                              // TODO: Navigation zur Messungsdetail-Seite
-                            },
+                            onTap: () => _navigateToMeasurementDetail(measurement),
                             onDelete: () => _showDeleteConfirmation(measurement),
                           );
                         },
