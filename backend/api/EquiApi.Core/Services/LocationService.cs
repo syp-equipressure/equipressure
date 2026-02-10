@@ -1,15 +1,16 @@
-﻿namespace EquiPressure.Core.Service;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using EquiApi.Persistence.Model;
+using EquiApi.Persistence.Util;
+using EquiPressure.Core.Service;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using OneOf.Types;
-using Model;
+
+namespace EquiApi.Core.Services;
 
 using GetCityAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Model.City[]>, OneOf.Types.Error>;
+    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<City>>, OneOf.Types.Error>;
 using AddAddressAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Model.Address>,
+    = OneOf.OneOf<OneOf.Types.Success<Address>,
         IBaseService.InvalidData, OneOf.Types.Error>;
 
 public interface ILocationService
@@ -20,46 +21,13 @@ public interface ILocationService
     
 }
 
-public class LocationService(EquiContext context) : ILocationService
+public class LocationService(IUnitOfWork uow) : ILocationService
 {
-    // yo warum geht das nicht mit IsolationLevel.Snapshot als Parameter
-    private Task<IDbContextTransaction> BeginTransactionAsync() 
-        => context.Database.BeginTransactionAsync();
-
-    private async ValueTask CommitAsync()
-    {
-        await context.SaveChangesAsync();
-        await context.Database.CommitTransactionAsync();
-    }
-
-    private Task RollbackAsync() => context.Database.RollbackTransactionAsync();
-    
     public async ValueTask<GetCityAsyncResult> GetCityAsync(int? length, string? nameFilter)
     {
-        var result = context.Addresses
-                            .GroupBy(a => a.City)
-                            .Select(g => new
-                            {
-                                city = g.Key,
-                                count = g.Sum(a => a.Persons.Count)
-                            });
-        if (nameFilter != null)
-        {
-            result = result.Where(g => g.city.Name.ToLower()
-                               .Contains(nameFilter.ToLower()));
-            
-        }
+        var res = await uow.LocationRepository.GetCityAsync(length, nameFilter, true);
 
-        result = result.OrderBy(r => r.count);
-        
-        if (length != null)
-        {
-            result = result.Take(length.Value);
-        }
-
-        var res = await result.Select(r => r.city).ToArrayAsync();
-
-        return res.Any() ? new Success<City[]>(res) 
+        return res.Any() ? new Success<IReadOnlyCollection<City>>(res) 
             : new Error();
     }
 
