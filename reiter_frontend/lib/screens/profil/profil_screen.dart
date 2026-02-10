@@ -379,9 +379,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        backgroundColor: Color(0xFFC8A2D0),
-        elevation: 2,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+        child: const Icon(Icons.add),
       ),
     );
   }
