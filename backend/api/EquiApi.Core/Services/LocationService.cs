@@ -1,4 +1,4 @@
-﻿namespace EquiPressure.Core.Service;
+﻿/*namespace EquiPressure.Core.Service;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -109,3 +109,4 @@ public class LocationService(EquiContext context) : ILocationService
         }
     }
 }
+*/

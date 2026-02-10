@@ -146,7 +146,7 @@ public sealed class RocketDto
     public required string Manufacturer { get; set; }
     public double MaxThrust { get; set; }
     public long PayloadDeltaV { get; set; }
-    
+
     public static RocketDto FromRocket(Rocket rocket) =>
         new()
         {
