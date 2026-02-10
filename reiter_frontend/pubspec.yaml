@@ -77,6 +77,7 @@ flutter:
     - assets/data/saddle.json
     - assets/data/chat.json
     - assets/data/saddlers.json
+    - assets/icon/horseIcon.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
