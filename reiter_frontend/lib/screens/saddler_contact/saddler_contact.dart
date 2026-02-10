@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart' show CustomAppBar;
 import '../../widgets/sidenav.dart';
 import '../../models/chat.dart';
 import '../../services/chat_service.dart';
 import 'chat_screen.dart';
-import 'add_saddler_dialog.dart';
 
 class SaddlerContact extends StatefulWidget {
   const SaddlerContact({super.key});
@@ -32,16 +32,13 @@ class _SaddlerContactState extends State<SaddlerContact> {
     });
   }
 
-  void _showAddSaddlerDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AddSaddlerDialog(
-        onSaddlerAdded: (chat) async {
-          await _chatService.addChat(chat);
-          _loadChats();
-        },
+  void _navigateToSaddlerMap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FindSaddler(),
       ),
-    );
+    ).then((_) => _loadChats()); 
   }
 
   @override
@@ -55,6 +52,13 @@ class _SaddlerContactState extends State<SaddlerContact> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildBody(),
+      floatingActionButton: _chats.isNotEmpty
+          ? FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+              onPressed: _navigateToSaddlerMap,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -64,28 +68,15 @@ class _SaddlerContactState extends State<SaddlerContact> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Sattler*innen',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (_chats.isNotEmpty)
-                IconButton(
-                  onPressed: _showAddSaddlerDialog,
-                  icon: const Icon(Icons.add),
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C4DFF),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-            ],
+          child: const Center(
+          child: const Text(
+            'Sattler*innen',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+        ), ),
         Expanded(
           child: _chats.isEmpty ? _buildEmptyState() : _buildChatList(),
         ),
@@ -98,7 +89,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: GestureDetector(
-          onTap: _showAddSaddlerDialog,
+          onTap: _navigateToSaddlerMap,
           child: CustomPaint(
             painter: DashedBorderPainter(
               color: Colors.grey[300]!,

@@ -154,6 +154,9 @@ class ChatService {
         return count == 1 ? 'Datei' : '$count Dateien';
       case MessageType.text:
         return message.content;
+      case MessageType.profile:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 
