@@ -5,6 +5,7 @@ namespace EquiApi.Persistence.Repositories;
 
 public interface IPersonRepository
 {
+    public ValueTask<Person?> GetPersonById(int id, bool tracking);
     public ValueTask<EquestrianMinimalData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking);
     public ValueTask<Address?> GetPersonAddressAsync(int id, bool tracking);
     public ValueTask<SaddlerMinimalData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
@@ -14,22 +15,39 @@ public interface IPersonRepository
     public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int id, bool tracking);
-    public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId);
+    public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking);
+    public ValueTask<bool> RoleExists(AccountRole role);
     public Person AddPerson(string firstName, string lastName, decimal height,
                                                           decimal weight, LocalDate dateOfBirth, string? email, 
                                                           string? websiteLink, string? description, Address address,
                                                           AccountRole role);
     public void UpdatePerson(Person person);
-    public void RemovePerson(int id);
+    public void RemovePerson(Person person);
 }
 
-public class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet) : IPersonRepository
+public class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
+                              DbSet<AccountRole> rolesSet) : IPersonRepository
 {
     private IQueryable<Person> Persons => personSet;
     
     private IQueryable<Person> PersonsNoTracking => Persons.AsNoTracking();
     private IQueryable<PersonRoleAssignment> PersonRoleAssignments => personRoleSet;
     private IQueryable<PersonRoleAssignment> PersonRoleAssignmentsNoTracking => PersonRoleAssignments.AsNoTracking();
+    private IQueryable<AccountRole> Roles => rolesSet;
+    private IQueryable<AccountRole> RolesNoTracking => Roles.AsNoTracking();
+
+
+    /// <summary>
+    /// returns a person with the given id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="tracking"></param>
+    /// <returns>a person</returns>
+    public async ValueTask<Person?> GetPersonById(int id, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        return await source.Where(p => p.Id == id).FirstOrDefaultAsync();
+    }
     
     /// <summary>
     /// searches for an equestrian with the given id
@@ -193,24 +211,77 @@ public class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignmen
                                   .ToListAsync();
     }
 
-    public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId)
+    /// <summary>
+    /// checks if a role with the given role exists
+    /// </summary>
+    /// <param name="role"></param>
+    /// <returns>true if exists, false if not</returns>
+    public async ValueTask<bool> RoleExists(AccountRole role)
     {
-        throw new NotImplementedException();
+        var source = RolesNoTracking;
+        return await source.AnyAsync(r => r.Name.ToLower() == role.Name.ToLower() && r.Id == role.Id);
+    }
+    
+    /// <summary>
+    /// returns all devices that belong to the person with the given id
+    /// </summary>
+    /// <param name="personId"></param>
+    /// <param name="tracking"></param>
+    /// <returns>list of devices</returns>
+    public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        
+
+        return await source.Include(p => p.UserDevices)
+                           .ThenInclude(ud => ud.Device)
+                           .Include(p => p.OwnerDevices)
+                           .Select(p => new
+                           {
+                               uDevice = p.UserDevices.Select(ud => ud.Device),
+                               oDevice = p.OwnerDevices
+                           })
+                           .SelectMany(p => p.uDevice.Concat(p.oDevice))
+                           .ToListAsync();
     }
 
     public Person AddPerson(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
                             string? email, string? websiteLink, string? description,
-                            Address address, AccountRole role) =>
-        throw new NotImplementedException();
+                            Address address, AccountRole role)
+    {
+        var person = new Person
+        {
+            Address = address,
+            DateOfBirth = dateOfBirth,
+            Email = email,
+            FirstName = firstName,
+            Height = height,
+            LastName = lastName,
+            WebsiteLink = websiteLink,
+            Weight = weight,
+            Description = description
+        };
+        
+        var personRoleAssignent = new PersonRoleAssignment
+        {
+            Person = person,
+            Role = role
+        };
+        
+        personSet.Add(person);
+        personRoleSet.Add(personRoleAssignent);
+        
+        return person;
+    }
 
     public void UpdatePerson(Person person)
     {
         throw new NotImplementedException();
     }
 
-    public void RemovePerson(int id)
+    public void RemovePerson(Person person)
     {
-        throw new NotImplementedException();
+        personSet.Remove(person);
     }
 }
 
