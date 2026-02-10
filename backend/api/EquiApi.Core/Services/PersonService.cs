@@ -7,11 +7,11 @@ using OneOf.Types;
 namespace EquiApi.Core.Services;
 
 using GetPersonAsEquestrianByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimalData>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<EquestrianBasicData>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
 using GetPersonAsSaddlerByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<SaddlerMinimalData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<SaddlerBasicData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
 using GetNameByIdAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<NameData>, OneOf.Types.NotFound>;
 using GetFavouritesOrContactsAsyncResult 
@@ -21,6 +21,7 @@ using GetOwnedHorsesAsyncResult
 
 using GetAllDevicesAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.Error>;
+// TODO: why would we get a InvalidData if we only check the data in the controller?
 using AddPersonAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.Error, IBaseService.InvalidData>;
 using UpdatePersonAsyncResult 
@@ -54,7 +55,7 @@ public class PersonService(IUnitOfWork uow) : IPersonService
         var result = await uow.PersonRepository.GetPersonAsEquestrianByIdAsync(id, false);
 
         return result != null 
-            ? new Success<EquestrianMinimalData>(result) 
+            ? new Success<EquestrianBasicData>(result) 
             : new NotFound();
     }
 
@@ -78,7 +79,7 @@ public class PersonService(IUnitOfWork uow) : IPersonService
                                                                       , false);
         
         return result != null
-            ? new Success<SaddlerMinimalData>(result)
+            ? new Success<SaddlerBasicData>(result)
                 : new NotFound();
     }
 

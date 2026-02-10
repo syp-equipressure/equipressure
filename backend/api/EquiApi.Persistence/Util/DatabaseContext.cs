@@ -102,16 +102,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         person.HasIndex(p => p.Email).IsUnique();
         person.HasIndex(p => p.DateOfBirth);
 
-        person.HasMany(p => p.Relationships)
-              .WithOne(ps => ps.Person1)
-              .HasForeignKey(ps => ps.Person1Id)
-              .OnDelete(DeleteBehavior.Cascade);
-
-        person.HasMany(p => p.Relationships)
-              .WithOne(pr => pr.Person2)
-              .HasForeignKey(pr => pr.Person2Id)
-              .OnDelete(DeleteBehavior.Cascade);
-
         person.HasMany(p => p.Roles)
               .WithOne(pra => pra.Person)
               .HasForeignKey(pra => pra.PersonId)
@@ -148,7 +138,18 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         #region personRelation
 
         var personRelation = mb.Entity<PersonRelationship>();
-        personRelation.HasKey(p => new { p.Person1Id, p.Person2Id });
+        personRelation.HasKey(p => new { Person1Id = p.EquestrianId, Person2Id = p.SaddlerId });
+
+        // Configure the self-referencing relationship properly
+        personRelation.HasOne(pr => pr.Equestrian)
+                      .WithMany() // Don't use the Relationships navigation here
+                      .HasForeignKey(pr => pr.EquestrianId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+        personRelation.HasOne(pr => pr.Saddler)
+                      .WithMany(p => p.Relationships) // Use Relationships only once
+                      .HasForeignKey(pr => pr.SaddlerId)
+                      .OnDelete(DeleteBehavior.Restrict); // Use Restrict to avoid cascade cycles
 
         #endregion
 
@@ -184,7 +185,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         horse.Property(h => h.Gender)
              .HasConversion(new EnumToStringConverter<HorseGender>());
         horse.HasIndex(h => h.Name);
-        horse.HasIndex(h => h.Address);
 
         horse.HasMany(h => h.Persons)
              .WithOne(ph => ph.Horse)
