@@ -15,6 +15,7 @@ public interface ITransactionProvider : IAsyncDisposable, IDisposable
 public interface IUnitOfWork
 {
     public IRocketRepository RocketRepository { get; }
+    public IPersonRepository PersonRepository { get; }
     public Task SaveChangesAsync();
 }
 
@@ -24,6 +25,7 @@ internal sealed class UnitOfWork(DatabaseContext context, ILogger<UnitOfWork> lo
     private IDbContextTransaction? _transaction;
     
     public IRocketRepository RocketRepository => new RocketRepository(context.Rockets);
+    public IPersonRepository PersonRepository => new PersonRepository(context.Persons, context.PersonRoleAssignments);
 
     public async ValueTask BeginTransactionAsync()
     {

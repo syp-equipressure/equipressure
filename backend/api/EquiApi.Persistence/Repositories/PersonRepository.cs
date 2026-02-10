@@ -5,9 +5,9 @@ namespace EquiApi.Persistence.Repositories;
 
 public interface IPersonRepository
 {
-    public ValueTask<EquestrianMinimalData?> GetPersonAsEquestrianByIdAsync(int id);
-    public ValueTask<Address> GetPersonAddressAsync(int id);
-    public ValueTask<SaddlerMinimalData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
+    public ValueTask<EquestrianMinimalData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking);
+    public ValueTask<Address?> GetPersonAddressAsync(int id, bool tracking);
+    public ValueTask<SaddlerMinimalData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
     public ValueTask<NameData?> GetNameByIdAsync(int id);
     public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int id);
     public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id);
@@ -28,10 +28,17 @@ public class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignmen
     private IQueryable<Person> PersonsNoTracking => Persons.AsNoTracking();
     private IQueryable<PersonRoleAssignment> PersonRoleAssignments => personRoleSet;
     private IQueryable<PersonRoleAssignment> PersonRoleAssignmentsNoTracking => PersonRoleAssignments.AsNoTracking();
+    
+    /// <summary>
+    /// searches for an equestrian with the given id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="tracking"></param>
+    /// <returns>Minimal Data for an equestrian if existing</returns>
     public async ValueTask<EquestrianMinimalData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking)
     {
         IQueryable<PersonRoleAssignment> source = tracking ? PersonRoleAssignments : PersonRoleAssignmentsNoTracking;
-        var result = await source.Include(pra => pra.Person)
+        return await source.Include(pra => pra.Person)
                                  .ThenInclude(p => p.Address)
                                  .ThenInclude(a => a.City)
                                  .Include(pra => pra.Role)
@@ -51,10 +58,24 @@ public class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignmen
                                       
                                              ))
                                  .FirstOrDefaultAsync();
-        throw new NotImplementedException();
     }
 
-    public ValueTask<Address> GetPersonAddressAsync(int id) => throw new NotImplementedException();
+    /// <summary>
+    /// searches for the address of a person with the given id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="tracking"></param>
+    /// <returns>the address if it exists or at least the city</returns>
+    public async ValueTask<Address?> GetPersonAddressAsync(int id, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        return await source.Include(p => p.Address)
+                                 .ThenInclude(a => a.City)
+                                 .Where(p => p.Id == id)
+                                 .Select(p => p.Address)
+                                 .FirstOrDefaultAsync();
+        
+    }
 
     public ValueTask<SaddlerMinimalData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId) => throw new NotImplementedException();
 

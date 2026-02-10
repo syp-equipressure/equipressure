@@ -1,22 +1,15 @@
-using NodaTime;
-using DeviceUser = EquiPressure.Core.Model.DeviceUser;
-using Horse = EquiPressure.Core.Model.Horse;
-using MeasurementDevice = EquiPressure.Core.Model.MeasurementDevice;
-using Person = EquiPressure.Core.Model.Person;
-
-namespace EquiPressure.Core.Service;
-
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using EquiApi.Persistence.Model;
+using EquiApi.Persistence.Repositories;
+using EquiApi.Persistence.Util;
+using EquiPressure.Core.Service;
 using OneOf.Types;
-using Model;
+
+namespace EquiApi.Core.Services;
 
 using GetPersonAsEquestrianByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimalData>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Model.Address>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
 using GetPersonAsSaddlerByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<SaddlerMinimalData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
 using GetNameByIdAsyncResult 
@@ -54,31 +47,11 @@ public interface IPersonService
     public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id);
 }
 
-public class PersonService(EquiContext context) : IPersonService
+public class PersonService(IUnitOfWork uow) : IPersonService
 {
     public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id)
     {
-        var result = await context.PersonRoleAssignments
-                                  .Include(pra => pra.Person)
-                                    .ThenInclude(p => p.Address)
-                                    .ThenInclude(a => a.City)
-                                  .Include(pra => pra.Role)
-                                  .Where(pra => pra.Role.Name.ToLower() == "equestrian")
-                                  .Where(pra => pra.PersonId == id)
-                                  .Select(pra => new EquestrianMinimalData
-                                  (
-                                   pra.Person.FirstName,
-                                   pra.Person.LastName,
-                                   pra.Person.Address.Street,
-                                   pra.Person.Address.HouseNumber,
-                                   pra.Person.Address.City.Name,
-                                   pra.Person.Address.City.PLZ,
-                                   pra.Person.Email!,
-                                   pra.Person.Height,
-                                   pra.Person.Weight
-                                      
-                                  ))
-                                  .FirstOrDefaultAsync();
+        var result = await uow.PersonRepository.GetPersonAsEquestrianByIdAsync(id, false);
 
         return result != null 
             ? new Success<EquestrianMinimalData>(result) 
@@ -87,12 +60,7 @@ public class PersonService(EquiContext context) : IPersonService
 
     public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id)
     {
-        var result = await context.Persons
-                                  .Include(p => p.Address)
-                                  .ThenInclude(a => a.City)
-                                  .Where(p => p.Id == id)
-                                  .Select(p => p.Address)
-                                  .FirstOrDefaultAsync();
+        var result = await uow.PersonRepository.GetPersonAddressAsync(id, false);
         return result != null
             ? new Success<Address>(result)
             : new NotFound();
@@ -197,10 +165,3 @@ public class PersonService(EquiContext context) : IPersonService
     }
 }
 
-public record EquestrianMinimalData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
-                                    string PLZ, string Email, decimal Height, decimal Weight);
-                                    
-public record SaddlerMinimalData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
-                                 string PLZ, string? Link, string? Description, bool isFavourite);
-                                 
-public record NameData(string FirstName, string LastName);
