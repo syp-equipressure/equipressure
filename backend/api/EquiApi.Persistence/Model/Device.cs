@@ -1,4 +1,5 @@
-﻿namespace EquiPressure.Core.Model;
+﻿namespace EquiApi.Persistence.Model;
+
 
 public class MeasurementDevice
 {

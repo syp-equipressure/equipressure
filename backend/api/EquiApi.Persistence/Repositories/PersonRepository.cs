@@ -1,4 +1,4 @@
-﻿using EquiPressure.Core.Model;
+﻿using EquiApi.Persistence.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace EquiApi.Persistence.Repositories;
