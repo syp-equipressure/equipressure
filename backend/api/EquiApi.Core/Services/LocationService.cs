@@ -16,9 +16,9 @@ using AddAddressAsyncResult
 public interface ILocationService
 {
     public ValueTask<GetCityAsyncResult> GetCityAsync(int? length, string? nameFilter);
+
     public ValueTask<AddAddressAsyncResult> AddAddressAsync(string? street, int? houseNumber
                                                             , string cityName, string plz);
-    
 }
 
 public class LocationService(IUnitOfWork uow) : ILocationService
@@ -27,53 +27,20 @@ public class LocationService(IUnitOfWork uow) : ILocationService
     {
         var res = await uow.LocationRepository.GetCityAsync(length, nameFilter, true);
 
-        return res.Any() ? new Success<IReadOnlyCollection<City>>(res) 
+        return res.Any()
+            ? new Success<IReadOnlyCollection<City>>(res)
             : new Error();
     }
 
-    public async ValueTask<AddAddressAsyncResult> AddAddressAsync(string? street, int? houseNumber, 
+    public async ValueTask<AddAddressAsyncResult> AddAddressAsync(string? street, int? houseNumber,
                                                                   string cityName, string plz)
     {
-        if (string.IsNullOrEmpty(cityName) || string.IsNullOrEmpty(plz))
-        {
-            return new IBaseService.InvalidData();
-        }
+        var city = await uow.LocationRepository.CityExists(cityName, plz, false) 
+                   ?? uow.LocationRepository.AddCityAsync(cityName, plz);
 
-        await BeginTransactionAsync();
-        
-        try
-        {
-            var city = await context.Cities.FirstOrDefaultAsync(c => c.Name == cityName && c.PLZ == plz) 
-                       ?? new City
-                       {
-                           Name = cityName,
-                           PLZ = plz
-                       };
-            
-            await context.AddAsync(city);
-            await context.SaveChangesAsync();
+        var address = await uow.LocationRepository.AddressExists(street, houseNumber, false) 
+                      ?? uow.LocationRepository.AddAddressAsync(street, houseNumber, city);
 
-            var address = await context.Addresses.FirstOrDefaultAsync(a => a.Street == street
-                                                                           && a.HouseNumber == houseNumber
-                                                                           && a.CityId == city.Id)
-                          ?? new Address
-                          {
-                              CityId = city.Id,
-                              City = city,
-                              Street = street,
-                              HouseNumber = houseNumber
-                          };
-            
-            city.Addresses.Add(address);
-            await context.AddAsync(address);
-            await CommitAsync();
-            
-            return new Success<Address>(address);
-        }
-        catch
-        {
-            await RollbackAsync();
-            return new Error();
-        }
+        return new Success<Address>(address);
     }
 }

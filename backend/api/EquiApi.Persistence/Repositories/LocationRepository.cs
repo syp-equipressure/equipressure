@@ -6,8 +6,8 @@ namespace EquiApi.Persistence.Repositories;
 public interface ILocationRepository
 {
     public ValueTask<IReadOnlyCollection<City>> GetCityAsync(int? length, string? nameFilter, bool tracking);
-    public ValueTask<bool> AddressExists(string street, int houseNumber, bool tracking);
-    public ValueTask<bool> CityExists(string name, string plz, bool tracking);
+    public ValueTask<Address?> AddressExists(string? street, int? houseNumber, bool tracking);
+    public ValueTask<City?> CityExists(string name, string plz, bool tracking);
     public Address AddAddressAsync(string? street, int? houseNumber
                                                             , City city);
     public City AddCityAsync(string name, string plz);
@@ -47,18 +47,18 @@ public class LocationRepository(DbSet<Address> addressSet, DbSet<City> citySet) 
         return await result.Select(r => r.city).ToListAsync();
     }
 
-    public async ValueTask<bool> AddressExists(string street, int houseNumber, bool tracking)
+    public async ValueTask<Address?> AddressExists(string? street, int? houseNumber, bool tracking)
     {
         var source = tracking ? AddressesNoTracking : Addresses;
 
-        return await source.AnyAsync(a => a.Street == street && a.HouseNumber == houseNumber);
+        return await source.FirstOrDefaultAsync(a => a.Street == street && a.HouseNumber == houseNumber);
     }
 
-    public async ValueTask<bool> CityExists(string name, string plz, bool tracking)
+    public async ValueTask<City?> CityExists(string name, string plz, bool tracking)
     {
         var source = tracking ? CitiesNoTracking : Cities;
 
-        return await source.AnyAsync(c => c.Name.ToLower() == name.ToLower() && c.PLZ.ToLower() == plz.ToLower());
+        return await source.FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower() && c.PLZ.ToLower() == plz.ToLower());
     }
 
     public Address AddAddressAsync(string? street, int? houseNumber, City city)
