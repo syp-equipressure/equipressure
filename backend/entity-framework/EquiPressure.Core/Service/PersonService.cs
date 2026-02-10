@@ -1,24 +1,14 @@
-﻿
-
-using System.Runtime.InteropServices.ComTypes;
 using Horse = EquiPressure.Core.Model.Horse;
 using Person = EquiPressure.Core.Model.Person;
 
 namespace EquiPressure.Core.Service;
 
-using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using NodaTime.TimeZones;
-using OneOf;
 using OneOf.Types;
-using EquiPressure.Core.Model;
-
-
+using Model;
 
 using GetPersonAsEquestrianByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<EquestrianMinimalData>, OneOf.Types.NotFound>;
@@ -78,7 +68,7 @@ public class PersonService(EquiContext context) : IPersonService
 
     public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id)
     {
-        var result = await context.Person
+        var result = await context.Persons
                                   .Include(p => p.Address)
                                   .ThenInclude(a => a.City)
                                   .Where(p => p.Id == id)
@@ -132,7 +122,7 @@ public class PersonService(EquiContext context) : IPersonService
 
     public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id)
     {
-        var result = await context.Person
+        var result = await context.Persons
                             .Where(p => p.Id == id)
                             .Select(p => new NameData(p.FirstName, p.LastName))
                             .FirstOrDefaultAsync();
@@ -144,12 +134,12 @@ public class PersonService(EquiContext context) : IPersonService
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id)
     {
-        var personExists = await context.Person.AnyAsync(p => p.Id == id);
+        var personExists = await context.Persons.AnyAsync(p => p.Id == id);
         if (!personExists)
         {
             return new NotFound();
         }
-        var result = await context.Person
+        var result = await context.Persons
                             .Include(p => p.Relationships)
                             .Where(p => p.Id == id)
                             .Where(p => p.Relationships.All(r => r.IsFavourite))
@@ -159,12 +149,12 @@ public class PersonService(EquiContext context) : IPersonService
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id)
     {
-        var personExists = await context.Person.AnyAsync(p => p.Id == id);
+        var personExists = await context.Persons.AnyAsync(p => p.Id == id);
         if (!personExists)
         {
             return new NotFound();
         }
-        var result = await context.Person
+        var result = await context.Persons
                                   .Include(p => p.Relationships)
                                   .Where(p => p.Id == id)
                                   .Where(p => p.Relationships.All(r => r.IsContact))
@@ -174,7 +164,7 @@ public class PersonService(EquiContext context) : IPersonService
 
     public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id)
     {
-        var personExists = await context.Person.AnyAsync(p => p.Id == id);
+        var personExists = await context.Persons.AnyAsync(p => p.Id == id);
         if (!personExists)
         {
             return new NotFound();
