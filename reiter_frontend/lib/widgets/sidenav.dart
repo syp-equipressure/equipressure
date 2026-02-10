@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // <--- NEU
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
@@ -28,16 +29,16 @@ class SideNav extends StatelessWidget {
 
             // Menu Items
             _DrawerItem(
-              icon: Icons.add,
-              text: 'Neue Messung',
-              onTap: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => NewMeasurementScreen())
-                );
-              }
+                icon: Icons.add,
+                text: 'Neue Messung',
+                onTap: () {
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => NewMeasurementScreen())
+                  );
+                }
             ),
             _DrawerItem(
-              icon: FontAwesomeIcons.horseHead,
+              svgPath: 'assets/icon/horseIcon.svg',
               text: 'Meine Pferde',
               onTap: () {
                 Navigator.of(context).push(
@@ -59,7 +60,7 @@ class SideNav extends StatelessWidget {
               text: 'Sattler*in finden',
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => FindSaddler())
+                    MaterialPageRoute(builder: (context) => FindSaddler())
                 );
               },
             ),
@@ -79,25 +80,40 @@ class SideNav extends StatelessWidget {
 }
 
 class _DrawerItem extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgPath;
+
   final String text;
   final VoidCallback onTap;
 
   const _DrawerItem({
-    required this.icon,
+    this.icon,
+    this.svgPath,
     required this.text,
     required this.onTap,
-  });
+  }) : assert(icon != null || svgPath != null);
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, size: 22),
+      leading: _buildIcon(),
       title: Text(
         text,
         style: const TextStyle(fontSize: 15),
       ),
       onTap: onTap,
     );
+  }
+
+  Widget _buildIcon() {
+    if (svgPath != null) {
+      return SvgPicture.asset(
+        svgPath!,
+        width: 22,
+        height: 22,
+        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+      );
+    }
+    return Icon(icon, size: 22);
   }
 }
