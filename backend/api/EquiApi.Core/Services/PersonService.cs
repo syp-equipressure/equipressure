@@ -15,9 +15,9 @@ using GetPersonAsSaddlerByIdAsyncResult
 using GetNameByIdAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<NameData>, OneOf.Types.NotFound>;
 using GetFavouritesOrContactsAsyncResult 
-    = OneOf.OneOf<OneOf.Types.Success<List<Person>>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Person>>, OneOf.Types.NotFound>;
 using GetOwnedHorsesAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<Horse>>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Horse>>, OneOf.Types.NotFound>;
 
 using GetAllDevicesAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.Error>;
@@ -73,34 +73,9 @@ public class PersonService(IUnitOfWork uow) : IPersonService
         {
             return new IBaseService.InvalidData();
         }
-        
-        var result = await  context.PersonRoleAssignments
-                            .Include(pra => pra.Person)
-                                .ThenInclude(p => p.Address)
-                                .ThenInclude(a => a.City)
-                            .Include(pra => pra.Person)
-                                .ThenInclude(p => p.Relationships)
-                            .Include(pra => pra.Role)
-                            .Where(pra => pra.Role.Name.ToLower() == "saddler")
-                            .Where(pra => pra.PersonId == saddlerId)
-                            .Select(pra => new { pra.Person, 
-                                        rel = (pra.Person.Relationships.Where(r => 
-                                                                                   (r.Person1Id == saddlerId
-                                                                         && r.Person2Id == equestrianId) 
-                                    || (r.Person1Id == equestrianId && r.Person2Id == saddlerId)))})
-                            .Select(p => new SaddlerMinimalData
-                            (
-                                p.Person.FirstName,
-                                p.Person.LastName,
-                                p.Person.Address.Street,
-                                p.Person.Address.HouseNumber,
-                                p.Person.Address.City.Name,
-                                p.Person.Address.City.PLZ,
-                                p.Person.WebsiteLink,
-                                p.Person.Description,
-                                p.rel.Select(r => r.IsFavourite).FirstOrDefault()
-                            ))
-                            .FirstOrDefaultAsync();
+
+        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId
+                                                                      , false);
         
         return result != null
             ? new Success<SaddlerMinimalData>(result)
@@ -109,10 +84,7 @@ public class PersonService(IUnitOfWork uow) : IPersonService
 
     public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id)
     {
-        var result = await context.Persons
-                            .Where(p => p.Id == id)
-                            .Select(p => new NameData(p.FirstName, p.LastName))
-                            .FirstOrDefaultAsync();
+        var result = await uow.PersonRepository.GetNameByIdAsync(id, false);
 
         return result != null
             ? new Success<NameData>(result)
@@ -121,47 +93,58 @@ public class PersonService(IUnitOfWork uow) : IPersonService
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id)
     {
-        var personExists = await context.Persons.AnyAsync(p => p.Id == id);
+        var personExists = await uow.PersonRepository.PersonExists(id, false);
         if (!personExists)
         {
             return new NotFound();
         }
-        var result = await context.Persons
-                            .Include(p => p.Relationships)
-                            .Where(p => p.Id == id)
-                            .Where(p => p.Relationships.All(r => r.IsFavourite))
-                            .ToListAsync();
-        return new Success<List<Person>>(result);
+        var result = await uow.PersonRepository.GetFavouritesAsync(id, false);
+        return new Success<IReadOnlyCollection<Person>>(result);
     }
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id)
     {
-        var personExists = await context.Persons.AnyAsync(p => p.Id == id);
+        var personExists = await uow.PersonRepository.PersonExists(id, false);
         if (!personExists)
         {
             return new NotFound();
         }
-        var result = await context.Persons
-                                  .Include(p => p.Relationships)
-                                  .Where(p => p.Id == id)
-                                  .Where(p => p.Relationships.All(r => r.IsContact))
-                                  .ToListAsync();
-        return new Success<List<Person>>(result);
+        var result = await uow.PersonRepository.GetContactsAsync(id, false);
+        return new Success<IReadOnlyCollection<Person>>(result);
     }
 
     public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id)
     {
-        var personExists = await context.Persons.AnyAsync(p => p.Id == id);
+        var personExists = await uow.PersonRepository.PersonExists(id, false);
         if (!personExists)
         {
             return new NotFound();
         }
 
-        var result = await context.Horses
-                                  .Include(h => h.Persons)
-                                  .Where(ph => ph.Persons.Any(p => p.PersonId == id && p.IsOwner))
-                                  .ToListAsync();
-        return new Success<List<Horse>>(result);
+        var result = await uow.PersonRepository.GetOwnedHorsesAsync(id, false);
+        return new Success<IReadOnlyCollection<Horse>>(result);
+    }
+
+    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
+                                                          string? email, string? websiteLink, string? description,
+                                                          Address address, AccountRole role)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(Person person)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id)
+    {
+        throw new NotImplementedException();
     }
 }
 
