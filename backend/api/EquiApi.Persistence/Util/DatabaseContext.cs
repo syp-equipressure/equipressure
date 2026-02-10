@@ -9,9 +9,9 @@ namespace EquiApi.Persistence.Util;
 public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbContext(options)
 {
     public const string SchemaName = "EquiPressure";
-    
+
     public DbSet<Rocket> Rockets { get; set; }
-    
+
     // Person DbSets
     public DbSet<Person> Persons { get; set; }
     public DbSet<PersonRelationship> PersonRelationships { get; set; }
@@ -22,8 +22,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
     // Horse DbSets
     public DbSet<Horse> Horses { get; set; }
-    public DbSet<HorseBreed> HorseBreeds { get; set; }
-
     public DbSet<Breed> Breeds { get; set; }
 
     // Device DbSets
@@ -82,7 +80,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         rocket.HasKey(r => r.Id);
         rocket.Property(r => r.Id).ValueGeneratedOnAdd();
     }
-    
+
     /// <summary>
     /// Configure the Person Objects
     /// An index for the person consisting of the firstname and the lastname exists
@@ -193,11 +191,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
              .HasForeignKey(ph => ph.HorseId)
              .OnDelete(DeleteBehavior.Cascade);
 
-        horse.HasMany(h => h.HorseBreeds)
-             .WithOne(hb => hb.Horse)
-             .HasForeignKey(hb => hb.HorseId)
-             .OnDelete(DeleteBehavior.Cascade);
-
         horse.HasMany(h => h.Saddles)
              .WithOne(s => s.Horse)
              .HasForeignKey(s => s.HorseId)
@@ -216,17 +209,10 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         breed.HasKey(b => b.Id);
         breed.Property(b => b.Id).ValueGeneratedOnAdd();
 
-        breed.HasMany(b => b.HorseBreeds)
-             .WithOne(hb => hb.Breed)
-             .HasForeignKey(hb => hb.BreedId)
+        breed.HasMany(b => b.Horses)
+             .WithOne(h => h.Breed)
+             .HasForeignKey(h => h.BreedId)
              .OnDelete(DeleteBehavior.Cascade);
-
-        #endregion
-
-        #region HorseBreed
-
-        var horseBreed = mb.Entity<HorseBreed>();
-        horseBreed.HasKey(hb => new { hb.HorseId, hb.BreedId });
 
         #endregion
     }
