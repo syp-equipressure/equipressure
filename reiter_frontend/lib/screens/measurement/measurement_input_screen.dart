@@ -3,6 +3,8 @@ import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
+import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
+import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
@@ -447,13 +449,14 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
 
       // Gehe zurück zum NewMeasurementScreen (schließe beide Screens)
       // und öffne einen neuen NewMeasurementScreen ohne vorselektiertes Pferd
-      Navigator.of(context).popUntil((route) => route.isFirst);
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const NewMeasurementScreen(),
-        ),
-      );
+  context,
+  MaterialPageRoute(
+    builder: (_) => MeasurementDetailScreen(
+      measurement: newMeasurement,
+    ),
+  ),
+);
     }
   } catch (e) {
     if (mounted) {

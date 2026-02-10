@@ -171,7 +171,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   Widget _buildHeatmap() {
   // Lokale Testdaten (String → List<double>)
- const rawData = '''
+  const rawData = '''
 234,328,401,488,586,599,518,421,274,160,123,106,112,172,252,255,186,141,144,135,
 442,654,964,1674,2571,2592,2227,2236,1461,665,412,373,562,1182,1721,1538,940,501,382,333,
 600,925,1634,3628,5978,5523,4635,5404,3457,1239,500,521,1438,4112,5824,4360,2373,1088,672,557,
@@ -239,7 +239,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         children: [
           _buildInfoRow(
             Icons.pets,
-            '${widget.measurement.horseName} | Rasse | 0yo | 0kg',
+            '${widget.measurement.horseName}',
           ),
           const SizedBox(height: 10),
           _buildInfoRow(
