@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
+import 'package:reiterappfrontend/widgets/sidenav.dart';
 
 class ProfilScreen extends StatelessWidget {
   const ProfilScreen({super.key});
@@ -8,13 +9,20 @@ class ProfilScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFB8A5C8),
+      drawer: const SideNav(),
       appBar: AppBar(
-        backgroundColor: Color(0xFFB8A5C8),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
-        ),
+  backgroundColor: Color(0xFFB8A5C8),
+  elevation: 0,
+  leading: Builder(
+    builder: (context) {
+      return IconButton(
+        icon: const Icon(Icons.menu, color: Colors.black),
+        onPressed: () {
+          Scaffold.of(context).openDrawer(); // funktioniert jetzt
+        },
+      );
+    },
+  ),
       ),
       body: Column(
         children: [
@@ -25,10 +33,10 @@ class ProfilScreen extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 24),
             child: Column(
               children: [
-                // Avatar - zeigt Icon wenn kein Bild vorhanden
+                
                 _buildAvatar(
                   'https://www.pferd-aktuell.de/ausbildung/ausbildung-des-reiters/ausbildung-des-reiters',
-                ), // null = kein Bild, String URL = mit Bild
+                ), 
                 const SizedBox(height: 16),
                 // Name
                 const Text(
@@ -54,7 +62,7 @@ class ProfilScreen extends StatelessWidget {
                   topRight: Radius.circular(30),
                 ),
                 border: Border.all(
-                  color: Color(0xFF4A90E2),
+                  color: Color.fromARGB(255, 250, 210, 255),
                   width: 3,
                 ),
               ),
@@ -91,9 +99,6 @@ class ProfilScreen extends StatelessWidget {
                     context,
                     title: 'Meine Pferde',
                     onTap: () {
-                      // Navigation zum Ho
-                      //
-                      //rse Screen
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -281,7 +286,7 @@ class PersonalDataScreen extends StatelessWidget {
                 children: [
                   _buildDataRow('Geburtsdatum:', '01.01.2000'),
                   Divider(height: 32, color: Colors.grey[300]),
-                  _buildDataRow('Adresse:', 'Musterstraße 1\n                         1111 Musterdorf'),
+                  _buildDataRow('Adresse:', 'Musterstraße 1\n 1111 Musterdorf'),
                   Divider(height: 32, color: Colors.grey[300]),
                   _buildDataRow('Email:', 'maxmuster@muster.com'),
                   Divider(height: 32, color: Colors.grey[300]),
@@ -374,9 +379,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        backgroundColor: Color(0xFFC8A2D0),
-        elevation: 2,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -522,9 +526,21 @@ class _DevicesScreenState extends State<DevicesScreen> {
   }
 }
 
-// Gerätegruppe Screen
-class DeviceGroupScreen extends StatelessWidget {
+class DeviceGroupScreen extends StatefulWidget {
   const DeviceGroupScreen({super.key});
+
+  @override
+  State<DeviceGroupScreen> createState() => _DeviceGroupScreenState();
+}
+
+class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
+  final List<Map<String, dynamic>> members = [
+    {'name': 'Du', 'isCurrentUser': true, 'isOwner': true},
+    {'name': 'Flora Dellinger', 'isCurrentUser': false, 'isOwner': false},
+    {'name': 'Katharina Einzl', 'isCurrentUser': false, 'isOwner': false},
+    {'name': 'Lejla Music', 'isCurrentUser': false, 'isOwner': false},
+    {'name': 'Christoph Pfeiffer', 'isCurrentUser': false, 'isOwner': false},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -537,14 +553,27 @@ class DeviceGroupScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Meine Gruppe',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w500,
-            fontSize: 18,
-          ),
+        title: Column(
+          children: [
+            const Text(
+              'Meine Gruppe',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w500,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              '${members.length} Mitglieder*innen',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
         ),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline, color: Colors.black),
@@ -557,25 +586,17 @@ class DeviceGroupScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Mitglieder (5)',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-              ),
-            ),
             const SizedBox(height: 20),
-            _buildMemberTile('Du', null, isCurrentUser: true),
-            const SizedBox(height: 16),
-            _buildMemberTile('Flora Dellinger', null, canRemove: true),
-            const SizedBox(height: 16),
-            _buildMemberTile('Katharina Einzl', null, canRemove: true),
-            const SizedBox(height: 16),
-            _buildMemberTile('Lejla Music', null, canRemove: true),
-            const SizedBox(height: 16),
-            _buildMemberTile('Christoph Pfeiffer', null, canRemove: true),
+            ...members.map((member) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildMemberTile(
+                member['name'],
+                null,
+                isCurrentUser: member['isCurrentUser'],
+                isOwner: member['isOwner'],
+                canRemove: !member['isCurrentUser'],
+              ),
+            )).toList(),
             const Spacer(),
             SizedBox(
               width: double.infinity,
@@ -604,49 +625,69 @@ class DeviceGroupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMemberTile(String name, String? imageUrl,
-      {bool isCurrentUser = false, bool canRemove = false}) {
+  Widget _buildMemberTile(
+    String name,
+    String? imageUrl, {
+    bool isCurrentUser = false,
+    bool isOwner = false,
+    bool canRemove = false,
+  }) {
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.grey[200],
-          ),
-          child: imageUrl != null
-              ? ClipOval(
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(Icons.person, color: Colors.grey[400], size: 24);
-                    },
-                  ),
-                )
-              : Icon(Icons.person, color: Colors.grey[400], size: 24),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+              child: imageUrl == null
+                  ? Icon(Icons.person, size: 32, color: Colors.grey[600])
+                  : null,
+            ),
+          
+          ],
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 16),
         Expanded(
           child: Text(
             name,
             style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
             ),
           ),
         ),
+        if (isOwner)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!, width: 1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              'Owner',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         if (canRemove)
           IconButton(
-            icon: Icon(Icons.delete_outline, size: 22, color: Colors.grey[600]),
-            onPressed: () {},
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+            icon: Icon(Icons.delete_outline, color: Colors.grey[600]),
+            onPressed: () {
+              setState(() {
+                members.removeWhere((m) => m['name'] == name);
+              });
+            },
           ),
       ],
     );
   }
 }
 
+
+  
