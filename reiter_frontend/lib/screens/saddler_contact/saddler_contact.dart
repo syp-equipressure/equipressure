@@ -56,7 +56,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
           ? FloatingActionButton(
               backgroundColor: const Color.fromARGB(255, 178, 149, 230),
               onPressed: _navigateToSaddlerMap,
-              child: const Icon(Icons.add, color: Colors.white),
+              child: const Icon(Icons.add, color: Color.fromARGB(255, 83, 83, 83)),
             )
           : null,
     );
