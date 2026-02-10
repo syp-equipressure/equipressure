@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:reiterappfrontend/models/measurement.dart';
+import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/models/measurement.dart';
 
 class MeasurementDetailScreen extends StatefulWidget {
   final Measurement measurement;
@@ -17,20 +20,126 @@ class MeasurementDetailScreen extends StatefulWidget {
 
 class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   static const int gridSize = 20;
-  
+
   // Filter states
   final Map<String, bool> filters = {
     'profi': true,
     'galopp': true,
     'rechts': true,
   };
-  
+
   bool showFilters = true;
   bool isPlaying = false;
   double currentTime = 30.0;
 
+  // Cached heatmap image for performance
+  ui.Image? _cachedHeatmapImage;
+  List<double>? _cachedData;
+
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  }
+
+  @override
+  void dispose() {
+    _cachedHeatmapImage?.dispose();
+    super.dispose();
+  }
+
+  // Output resolution for smooth interpolation
+  static const int outputSize = 300;
+
+  Future<void> _generateHeatmapImage(List<double> data) async {
+    if (_cachedData == data && _cachedHeatmapImage != null) return;
+
+    final double minValue = data.reduce(min);
+    final double maxValue = data.reduce(max);
+
+    // Create pixel data with bilinear interpolation
+    final pixels = Uint8List(outputSize * outputSize * 4);
+
+    for (int y = 0; y < outputSize; y++) {
+      for (int x = 0; x < outputSize; x++) {
+        // Map output pixel to grid coordinates
+        final double gridX = (x / outputSize) * (gridSize - 1);
+        final double gridY = (y / outputSize) * (gridSize - 1);
+
+        // Bilinear interpolation
+        final int x0 = gridX.floor();
+        final int y0 = gridY.floor();
+        final int x1 = min(x0 + 1, gridSize - 1);
+        final int y1 = min(y0 + 1, gridSize - 1);
+
+        final double fx = gridX - x0;
+        final double fy = gridY - y0;
+
+        final double v00 = data[y0 * gridSize + x0];
+        final double v10 = data[y0 * gridSize + x1];
+        final double v01 = data[y1 * gridSize + x0];
+        final double v11 = data[y1 * gridSize + x1];
+
+        final double v0 = v00 * (1 - fx) + v10 * fx;
+        final double v1 = v01 * (1 - fx) + v11 * fx;
+        final double value = v0 * (1 - fy) + v1 * fy;
+
+        final color = _getHeatmapColor(value, minValue, maxValue);
+
+        final int pixelIndex = (y * outputSize + x) * 4;
+        pixels[pixelIndex] = color.red;
+        pixels[pixelIndex + 1] = color.green;
+        pixels[pixelIndex + 2] = color.blue;
+        pixels[pixelIndex + 3] = 255;
+      }
+    }
+
+    final completer = Completer<ui.Image>();
+    ui.decodeImageFromPixels(
+      pixels,
+      outputSize,
+      outputSize,
+      ui.PixelFormat.rgba8888,
+      (image) => completer.complete(image),
+    );
+
+    _cachedHeatmapImage?.dispose();
+    _cachedHeatmapImage = await completer.future;
+    _cachedData = data;
+    if (mounted) setState(() {});
+  }
+
+  Color _getHeatmapColor(double value, double min, double max) {
+    final double normalized = (value - min) / (max - min);
+
+    int r, g, b;
+
+    if (normalized < 0.2) {
+      final double t = normalized / 0.2;
+      r = 0;
+      g = (t * 100).toInt();
+      b = 255;
+    } else if (normalized < 0.4) {
+      final double t = (normalized - 0.2) / 0.2;
+      r = 0;
+      g = (100 + t * 155).toInt();
+      b = (255 * (1 - t)).toInt();
+    } else if (normalized < 0.6) {
+      final double t = (normalized - 0.4) / 0.2;
+      r = (t * 255).toInt();
+      g = 255;
+      b = 0;
+    } else if (normalized < 0.8) {
+      final double t = (normalized - 0.6) / 0.2;
+      r = 255;
+      g = (255 * (1 - t * 0.5)).toInt();
+      b = 0;
+    } else {
+      final double t = (normalized - 0.8) / 0.2;
+      r = 255;
+      g = (127 * (1 - t)).toInt();
+      b = 0;
+    }
+
+    return Color.fromARGB(255, r, g, b);
   }
 
   @override
@@ -169,9 +278,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     );
   }
 
-  Widget _buildHeatmap() {
-  // Lokale Testdaten (String → List<double>)
-  const rawData = '''
+  List<double> _getTestData() {
+    const rawData = '''
 234,328,401,488,586,599,518,421,274,160,123,106,112,172,252,255,186,141,144,135,
 442,654,964,1674,2571,2592,2227,2236,1461,665,412,373,562,1182,1721,1538,940,501,382,333,
 600,925,1634,3628,5978,5523,4635,5404,3457,1239,500,521,1438,4112,5824,4360,2373,1088,672,557,
@@ -194,40 +302,51 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 1,6,47,288,956,1662,1508,726,192,30,5,17,112,393,682,573,234,48,6,1
 ''';
 
-  final List<double> testData = rawData
-      .replaceAll('\n', '')
-      .split(',')
-      .map((e) => double.tryParse(e.trim()) ?? 0)
-      .take(gridSize * gridSize)
-      .toList();
+    return rawData
+        .replaceAll('\n', '')
+        .split(',')
+        .map((e) => double.tryParse(e.trim()) ?? 0)
+        .take(gridSize * gridSize)
+        .toList();
+  }
 
-  return Container(
-    color: Colors.white,
-    padding: const EdgeInsets.all(16),
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue[700]!, width: 4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: CustomPaint(
-            painter: HeatmapPainter(testData, gridSize),
+  Widget _buildHeatmap() {
+    final testData = _getTestData();
+
+    // Generate image asynchronously if not cached
+    if (_cachedHeatmapImage == null) {
+      _generateHeatmapImage(testData);
+    }
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.blue[700]!, width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: _cachedHeatmapImage != null
+                ? CustomPaint(
+                    painter: CachedHeatmapPainter(_cachedHeatmapImage!),
+                  )
+                : const Center(child: CircularProgressIndicator()),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildInfoSection() {
     return Container(
@@ -297,108 +416,27 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 }
 
-class HeatmapPainter extends CustomPainter {
-  final List<double> sensorData;
-  final int gridSize;
+class CachedHeatmapPainter extends CustomPainter {
+  final ui.Image image;
 
-  HeatmapPainter(this.sensorData, this.gridSize);
+  CachedHeatmapPainter(this.image);
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (sensorData.isEmpty || sensorData.length < gridSize * gridSize) return;
+    // Draw the small cached image scaled up with bilinear filtering
+    final paint = Paint()
+      ..filterQuality = FilterQuality.medium; // Bilinear interpolation
 
-    final double minValue = sensorData.reduce(min);
-    final double maxValue = sensorData.reduce(max);
-
-    // Create image data
-    final int width = size.width.toInt();
-    final int height = size.height.toInt();
-
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final Canvas imageCanvas = Canvas(recorder);
-
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        // Map pixel to grid coordinates
-        final double gridX = (x / width) * gridSize;
-        final double gridY = (y / height) * gridSize;
-
-        // Bilinear interpolation
-        final int x0 = gridX.floor();
-        final int y0 = gridY.floor();
-        final int x1 = min(x0 + 1, gridSize - 1);
-        final int y1 = min(y0 + 1, gridSize - 1);
-
-        final double fx = gridX - x0;
-        final double fy = gridY - y0;
-
-        final double v00 = _getValue(x0, y0);
-        final double v10 = _getValue(x1, y0);
-        final double v01 = _getValue(x0, y1);
-        final double v11 = _getValue(x1, y1);
-
-        final double v0 = v00 * (1 - fx) + v10 * fx;
-        final double v1 = v01 * (1 - fx) + v11 * fx;
-        final double value = v0 * (1 - fy) + v1 * fy;
-
-        // Get color
-        final color = _getColor(value, minValue, maxValue);
-
-        final paint = Paint()..color = color;
-        imageCanvas.drawRect(
-          Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1),
-          paint,
-        );
-      }
-    }
-
-    final ui.Picture picture = recorder.endRecording();
-    canvas.drawPicture(picture);
-  }
-
-  double _getValue(int x, int y) {
-    final index = y * gridSize + x;
-    if (index >= 0 && index < sensorData.length) {
-      return sensorData[index];
-    }
-    return 0;
-  }
-
-  Color _getColor(double value, double min, double max) {
-    final double normalized = (value - min) / (max - min);
-
-    int r, g, b;
-
-    if (normalized < 0.2) {
-      final double t = normalized / 0.2;
-      r = 0;
-      g = (t * 100).toInt();
-      b = 255;
-    } else if (normalized < 0.4) {
-      final double t = (normalized - 0.2) / 0.2;
-      r = 0;
-      g = (100 + t * 155).toInt();
-      b = (255 * (1 - t)).toInt();
-    } else if (normalized < 0.6) {
-      final double t = (normalized - 0.4) / 0.2;
-      r = (t * 255).toInt();
-      g = 255;
-      b = 0;
-    } else if (normalized < 0.8) {
-      final double t = (normalized - 0.6) / 0.2;
-      r = 255;
-      g = (255 * (1 - t * 0.5)).toInt();
-      b = 0;
-    } else {
-      final double t = (normalized - 0.8) / 0.2;
-      r = 255;
-      g = (127 * (1 - t)).toInt();
-      b = 0;
-    }
-
-    return Color.fromARGB(255, r, g, b);
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      paint,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CachedHeatmapPainter oldDelegate) {
+    return oldDelegate.image != image;
+  }
 }
