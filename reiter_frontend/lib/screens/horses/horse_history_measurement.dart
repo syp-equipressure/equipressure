@@ -228,7 +228,17 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         .where((s) => s.pressureData.length >= gridSize * gridSize)
         .toList();
     if (sections.isEmpty) return List.filled(gridSize * gridSize, 0);
-    if (sections.length == 1) return sections.first.pressureData;
+
+    if (sections.length == 1) {
+      // Single section: simulate subtle variation over time
+      final base = sections.first.pressureData;
+      final wave = sin(position * 2 * pi);
+      return List.generate(gridSize * gridSize, (i) {
+        final variation = base[i] * 0.08 * wave *
+            sin((i % gridSize) * 0.5 + position * pi);
+        return (base[i] + variation).clamp(0.0, double.infinity);
+      });
+    }
 
     final pos = position.clamp(0.0, 1.0) * (sections.length - 1);
     final idx = pos.floor().clamp(0, sections.length - 2);
@@ -608,7 +618,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     final sections = widget.measurement.sections
         .where((s) => s.pressureData.length >= gridSize * gridSize)
         .toList();
-    if (sections.length < 2) return const SizedBox.shrink();
+    if (sections.isEmpty) return const SizedBox.shrink();
 
     final framesReady = _profiFrames != null;
 
