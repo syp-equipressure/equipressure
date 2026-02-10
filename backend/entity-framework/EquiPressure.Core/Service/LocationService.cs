@@ -1,15 +1,10 @@
 ﻿namespace EquiPressure.Core.Service;
-using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using NodaTime.TimeZones;
-using OneOf;
 using OneOf.Types;
-using EquiPressure.Core.Model;
+using Model;
 
 using GetCityAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Model.City[]>, OneOf.Types.Error>;

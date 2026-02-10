@@ -1,22 +1,14 @@
-﻿
-
-using System.Runtime.InteropServices.ComTypes;
-using Horse = EquiPressure.Core.Model.Horse;
+﻿using Horse = EquiPressure.Core.Model.Horse;
 using Person = EquiPressure.Core.Model.Person;
 
 namespace EquiPressure.Core.Service;
 
-using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using NodaTime.TimeZones;
-using OneOf;
 using OneOf.Types;
-using EquiPressure.Core.Model;
+using Model;
 
 
 
