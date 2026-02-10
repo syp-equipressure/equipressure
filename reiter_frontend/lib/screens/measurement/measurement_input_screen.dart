@@ -433,6 +433,12 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
       filtered: 'measurement_filtered.png',
       profile: 'measurement_profile.png',
     ),
+    sections: sections.map((s) => MeasurementSectionData(
+      gait: s.gait == 'Sonstiges' && s.customGait?.isNotEmpty == true
+          ? s.customGait!
+          : s.gait,
+      hand: s.hand,
+    )).toList(),
   );
 
   try {
