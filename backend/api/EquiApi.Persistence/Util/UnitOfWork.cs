@@ -25,7 +25,7 @@ internal sealed class UnitOfWork(DatabaseContext context, ILogger<UnitOfWork> lo
     private IDbContextTransaction? _transaction;
     
     public IRocketRepository RocketRepository => new RocketRepository(context.Rockets);
-    public IPersonRepository PersonRepository => new PersonRepository(context.Persons, context.PersonRoleAssignments);
+    public IPersonRepository PersonRepository => new PersonRepository(context.Persons, context.PersonRoleAssignments, context.PersonRoles);
 
     public async ValueTask BeginTransactionAsync()
     {
