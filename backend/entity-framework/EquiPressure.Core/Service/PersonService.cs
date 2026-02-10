@@ -1,4 +1,7 @@
+using NodaTime;
+using DeviceUser = EquiPressure.Core.Model.DeviceUser;
 using Horse = EquiPressure.Core.Model.Horse;
+using MeasurementDevice = EquiPressure.Core.Model.MeasurementDevice;
 using Person = EquiPressure.Core.Model.Person;
 
 namespace EquiPressure.Core.Service;
@@ -23,6 +26,15 @@ using GetFavouritesOrContactsAsyncResult
 using GetOwnedHorsesAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<List<Horse>>, OneOf.Types.NotFound>;
 
+using GetAllDevicesAsyncResult 
+    = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.Error>;
+using AddPersonAsyncResult 
+    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.Error, IBaseService.InvalidData>;
+using UpdatePersonAsyncResult 
+    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.Error, IBaseService.InvalidData>;
+using DeletePersonAsyncResult 
+    = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.Error, OneOf.Types.NotFound>;
+
 
 public interface IPersonService
 {
@@ -33,6 +45,13 @@ public interface IPersonService
     public ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id);
     public ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id);
     public ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id);
+    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId);
+    public ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
+                                                          decimal weight, LocalDate dateOfBirth, string? email, 
+                                                          string? websiteLink, string? description, Address address,
+                                                          AccountRole role);
+    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(Person person);
+    public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id);
 }
 
 public class PersonService(EquiContext context) : IPersonService
