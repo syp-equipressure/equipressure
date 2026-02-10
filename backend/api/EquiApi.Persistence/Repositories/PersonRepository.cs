@@ -25,7 +25,7 @@ public interface IPersonRepository
     public void RemovePerson(Person person);
 }
 
-public class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
+internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
                               DbSet<AccountRole> rolesSet) : IPersonRepository
 {
     private IQueryable<Person> Persons => personSet;
