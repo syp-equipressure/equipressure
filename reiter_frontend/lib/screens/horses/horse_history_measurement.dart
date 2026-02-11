@@ -12,6 +12,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:reiterappfrontend/screens/horses/horse_history.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 
@@ -129,9 +130,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         final color = _getHeatmapColor(value, minValue, maxValue);
 
         final int pixelIndex = (y * outputSize + x) * 4;
-        pixels[pixelIndex] = color.red;
-        pixels[pixelIndex + 1] = color.green;
-        pixels[pixelIndex + 2] = color.blue;
+        pixels[pixelIndex] = (color.r * 255.0).round().clamp(0, 255);
+        pixels[pixelIndex + 1] = (color.g * 255.0).round().clamp(0, 255);
+        pixels[pixelIndex + 2] = (color.b * 255.0).round().clamp(0, 255);
         pixels[pixelIndex + 3] = 255;
       }
     }
@@ -918,11 +919,11 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   Widget _buildInfoSection() {
     final m = widget.measurement;
     final infoItems = [
-      _InfoItem(Icons.pets, '${m.horseName} | ${m.weight} | ${m.height}'),
-      _InfoItem(Icons.calendar_today, _formatDate(m.date)),
-      _InfoItem(Icons.person, m.rider),
-      _InfoItem(Icons.event_seat, m.saddleName),
-      if (m.notes.isNotEmpty) _InfoItem(Icons.info_outline, m.notes),
+      _InfoItem(text: '${m.horseName} | ${m.weight} | ${m.height}', svgPath: 'assets/icon/horseIcon.svg'),
+      _InfoItem(text: _formatDate(m.date), icon: Icons.calendar_today),
+      _InfoItem(text: m.rider, icon: Icons.person),
+      _InfoItem(text: m.saddleName, svgPath: 'assets/icon/saddleIcon.svg'),
+      if (m.notes.isNotEmpty) _InfoItem(text: m.notes, icon: Icons.info_outline),
     ];
 
     return Container(
@@ -939,7 +940,14 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
-                      Icon(item.icon, size: 20, color: Colors.grey[600]),
+                      item.svgPath != null
+                          ? SvgPicture.asset(
+                              item.svgPath!,
+                              width: 20,
+                              height: 20,
+                              colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
+                            )
+                          : Icon(item.icon, size: 20, color: Colors.grey[600]),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -960,9 +968,10 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 }
 
 class _InfoItem {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgPath;
   final String text;
-  _InfoItem(this.icon, this.text);
+  _InfoItem({this.icon, this.svgPath, required this.text});
 }
 
 class CachedHeatmapPainter extends CustomPainter {
