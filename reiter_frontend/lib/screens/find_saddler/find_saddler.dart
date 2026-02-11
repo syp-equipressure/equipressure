@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/sidenav.dart';
 import '../../models/saddler.dart';
 import '../../models/horse.dart';
@@ -567,10 +567,11 @@ class _FindSaddlerState extends State<FindSaddler> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      const Icon(
-                        FontAwesomeIcons.horseHead,
-                        size: 18,
-                        color: Colors.white,
+                      SvgPicture.asset(
+                        'assets/icon/horseIcon.svg',
+                        width: 18,
+                        height: 18,
+                        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                       ),
                       if (horses.length > 1)
                         Positioned(
@@ -812,10 +813,11 @@ class _FindSaddlerState extends State<FindSaddler> {
                       color: const Color(0xFF8BC34A),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      FontAwesomeIcons.horseHead,
-                      color: Colors.white,
-                      size: 22,
+                    child: SvgPicture.asset(
+                      'assets/icon/horseIcon.svg',
+                      width: 22,
+                      height: 22,
+                      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1026,10 +1028,11 @@ class _FindSaddlerState extends State<FindSaddler> {
                     borderRadius: BorderRadius.circular(12),
                     child: Image.asset(horse.imagePath!, fit: BoxFit.cover),
                   )
-                : Icon(
-                    FontAwesomeIcons.horseHead,
-                    color: Colors.brown[400],
-                    size: 24,
+                : SvgPicture.asset(
+                    'assets/icon/horseIcon.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(Colors.brown[400]!, BlendMode.srcIn),
                   ),
           ),
           const SizedBox(width: 12),

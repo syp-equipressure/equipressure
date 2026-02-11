@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // <--- NEU
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
