@@ -598,6 +598,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           MaterialPageRoute(
             builder: (_) => MeasurementDetailScreen(
               measurement: newMeasurement,
+              horse: widget.horse,
             ),
           ),
         );

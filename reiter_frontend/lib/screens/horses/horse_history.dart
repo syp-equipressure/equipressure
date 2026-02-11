@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
+import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:reiterappfrontend/widgets/custom_filter_chip.dart';
@@ -145,15 +146,16 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
   }
 
   void _navigateToMeasurementDetail(Measurement measurement) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MeasurementDetailScreen(
-          measurement: measurement,
-        ),
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => MeasurementDetailScreen(
+        measurement: measurement,
+        horse: widget.horse,
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +173,13 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const HorsesScreen(), // Ihr Screen Name
+                    ),
+                    (route) => false,
+                  ); }
                 ),
                 const SizedBox(width: 8),
                 Text(
