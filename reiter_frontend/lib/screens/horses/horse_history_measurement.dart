@@ -148,8 +148,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Color _getHeatmapColor(double value, double minVal, double maxVal) {
-    final double normalized =
-        (maxVal == minVal) ? (value > 0 ? 0.5 : 0.0) : (value - minVal) / (maxVal - minVal);
+    final double normalized = (value - minVal) / (maxVal - minVal);
     int r, g, b;
 
     if (normalized < 0.2) {
