@@ -73,48 +73,62 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     super.dispose();
   }
 
-  /// Generate a base saddle pressure pattern based on gait.
+  /// Generate a realistic saddle pressure pattern with two parallel strips
+  /// (left and right panels of the saddle on the horse's back).
   List<double> _generateBasePattern() {
     final data = List<double>.filled(gridSize * gridSize, 0);
     final gait = widget.gait.toLowerCase();
 
     double intensity;
-    double centerY;
-    double spreadX;
-    double spreadY;
+    double asymmetry = 1.0; // hand-based asymmetry
 
     if (gait == 'trab') {
-      intensity = 6000;
-      centerY = 10;
-      spreadX = 5.0;
-      spreadY = 6.0;
+      intensity = 7000;
     } else if (gait == 'galopp') {
-      intensity = 8000;
-      centerY = 7;
-      spreadX = 4.0;
-      spreadY = 5.0;
+      intensity = 9000;
     } else {
-      // Schritt or other
-      intensity = 4000;
-      centerY = 10;
-      spreadX = 6.0;
-      spreadY = 7.0;
+      intensity = 5000;
     }
 
-    // Shift slightly based on hand
-    double centerX = 10.0;
     if (widget.hand == 'Links') {
-      centerX = 8.5;
+      asymmetry = 1.25; // more pressure on left
     } else if (widget.hand == 'Rechts') {
-      centerX = 11.5;
+      asymmetry = 0.75; // more pressure on right (right strip gets boosted below)
     }
+
+    // Left strip center ~col 6, right strip center ~col 13
+    const double leftX = 6.0;
+    const double rightX = 13.0;
+    const double spreadX = 2.2;
+
+    // Three hotspot zones per strip (top, middle, bottom of saddle)
+    final hotspots = [
+      {'y': 4.0, 'spreadY': 2.5, 'strength': 0.7},   // front (pommel area)
+      {'y': 10.0, 'spreadY': 3.5, 'strength': 1.0},   // middle (seat area)
+      {'y': 16.0, 'spreadY': 2.5, 'strength': 0.6},   // back (cantle area)
+    ];
 
     for (int row = 0; row < gridSize; row++) {
       for (int col = 0; col < gridSize; col++) {
-        final dx = (col - centerX) / spreadX;
-        final dy = (row - centerY) / spreadY;
-        final distance = dx * dx + dy * dy;
-        data[row * gridSize + col] = intensity * exp(-distance);
+        double leftVal = 0;
+        double rightVal = 0;
+
+        for (final hs in hotspots) {
+          final cy = hs['y']!;
+          final sy = hs['spreadY']!;
+          final strength = hs['strength']!;
+
+          final dxL = (col - leftX) / spreadX;
+          final dyL = (row - cy) / sy;
+          leftVal += intensity * strength * exp(-(dxL * dxL + dyL * dyL));
+
+          final dxR = (col - rightX) / spreadX;
+          final dyR = (row - cy) / sy;
+          rightVal += intensity * strength * exp(-(dxR * dxR + dyR * dyR));
+        }
+
+        data[row * gridSize + col] =
+            leftVal * asymmetry + rightVal * (2.0 - asymmetry);
       }
     }
     return data;
@@ -172,9 +186,9 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
         final color = _getHeatmapColor(value, minValue, maxValue);
 
         final int pixelIndex = (y * outputSize + x) * 4;
-        pixels[pixelIndex] = color.red;
-        pixels[pixelIndex + 1] = color.green;
-        pixels[pixelIndex + 2] = color.blue;
+        pixels[pixelIndex] = (color.r * 255.0).round().clamp(0, 255);
+        pixels[pixelIndex + 1] = (color.g * 255.0).round().clamp(0, 255);
+        pixels[pixelIndex + 2] = (color.b * 255.0).round().clamp(0, 255);
         pixels[pixelIndex + 3] = 255;
       }
     }
