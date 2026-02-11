@@ -2,17 +2,27 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:math';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:reiterappfrontend/screens/horses/horse_history.dart';
+import 'package:share_plus/share_plus.dart';
+
 import 'package:reiterappfrontend/models/measurement.dart';
+import 'package:reiterappfrontend/models/horse.dart';
 
 class MeasurementDetailScreen extends StatefulWidget {
   final Measurement measurement;
+  final Horse horse;
 
   const MeasurementDetailScreen({
     super.key,
     required this.measurement,
+    required this.horse,
   });
 
   @override
@@ -51,6 +61,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   // Cached heatmap for non-profi mode
   ui.Image? _cachedHeatmapImage;
   List<double>? _cachedData;
+
+  // GlobalKey for capturing heatmap
+  final GlobalKey _heatmapKey = GlobalKey();
 
   late final List<String> _availableGaits;
   late final List<String> _availableHands;
@@ -148,7 +161,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Color _getHeatmapColor(double value, double minVal, double maxVal) {
-    final double normalized = (value - minVal) / (maxVal - minVal);
+    final double normalized =
+        (maxVal == minVal) ? (value > 0 ? 0.5 : 0.0) : (value - minVal) / (maxVal - minVal);
     int r, g, b;
 
     if (normalized < 0.2) {
@@ -391,6 +405,203 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     return '${sections[idx].gait} ${sections[idx].hand}';
   }
 
+  // ── PDF Generation ──
+
+  Future<void> _generateAndSharePdf() async {
+    try {
+      // Show loading indicator
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('PDF wird erstellt...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Capture heatmap as image
+      final RenderRepaintBoundary boundary = _heatmapKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // Create PDF
+      final pdf = pw.Document();
+      final m = widget.measurement;
+
+      // Add page
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Title
+                pw.Text(
+                  'Satteldruckmessung',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  'Messung vom ${_formatDate(m.date)}',
+                  style: const pw.TextStyle(fontSize: 16),
+                ),
+                pw.Divider(thickness: 2),
+                pw.SizedBox(height: 20),
+
+                // Horse Information
+                pw.Text(
+                  'Pferdeinformationen',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                _pdfInfoRow('Pferd:', '${m.horseName} | ${m.weight} | ${m.height}'),
+                _pdfInfoRow('Reiter:', m.rider),
+                _pdfInfoRow('Sattel:', m.saddleName),
+                if (m.notes.isNotEmpty) _pdfInfoRow('Notizen:', m.notes),
+                pw.SizedBox(height: 20),
+
+                // Filter Information
+                if (_selectedGait != null || _selectedHand != null || _isMaxMode)
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'Angewandte Filter',
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.SizedBox(height: 8),
+                      if (_selectedGait != null)
+                        _pdfInfoRow('Gangart:', _selectedGait!),
+                      if (_selectedHand != null)
+                        _pdfInfoRow('Hand:', _selectedHand!),
+                      if (_isMaxMode)
+                        _pdfInfoRow('Modus:', 'Maximum'),
+                      pw.SizedBox(height: 20),
+                    ],
+                  ),
+
+                // Heatmap
+                pw.Text(
+                  'Druckverteilung',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+                pw.Center(
+                  child: pw.Container(
+                    width: 400,
+                    height: 400,
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(
+                        color: PdfColor.fromHex('#6B4C9A'),
+                        width: 2,
+                      ),
+                    ),
+                    child: pw.Image(
+                      pw.MemoryImage(pngBytes),
+                      fit: pw.BoxFit.contain,
+                    ),
+                  ),
+                ),
+
+                pw.Spacer(),
+
+                // Footer
+                pw.Text(
+                  'Erstellt am ${_formatDate(DateTime.now())}',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Save PDF to temporary directory
+      final output = await getTemporaryDirectory();
+      final file = File(
+          '${output.path}/messung_${m.horseName}_${_formatDate(m.date)}.pdf');
+      await file.writeAsBytes(await pdf.save());
+
+      // Share the PDF
+      if (mounted) {
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          subject: 'Satteldruckmessung ${m.horseName}',
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF erfolgreich erstellt'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Erstellen des PDFs: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  pw.Widget _pdfInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 120,
+            child: pw.Text(
+              label,
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(value),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Build ──
 
   @override
@@ -421,7 +632,15 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // Navigate back to Horse History
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => HorseHistoryScreen(horse: widget.horse),
+                ),
+                (route) => false,
+              );
+            },
           ),
           Expanded(
             child: Text(
@@ -435,11 +654,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.download, color: Colors.black),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Download-Funktion kommt bald')),
-              );
-            },
+            onPressed: _generateAndSharePdf,
           ),
         ],
       ),
@@ -573,42 +788,45 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _accent, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: _accent.withValues(alpha: 0.15),
-              blurRadius: 12,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(13),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: displayImage != null
-                ? CustomPaint(painter: CachedHeatmapPainter(displayImage))
-                : Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: _accent),
-                        if (_isProfiMode) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Frames werden generiert...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
+      child: RepaintBoundary(
+        key: _heatmapKey,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _accent, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: _accent.withValues(alpha: 0.15),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(13),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: displayImage != null
+                  ? CustomPaint(painter: CachedHeatmapPainter(displayImage))
+                  : Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: _accent),
+                          if (_isProfiMode) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Frames werden generiert...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),
@@ -697,129 +915,14 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     );
   }
 
-
-
-  Widget _buildStatCard(
-      String label, String value, String unit, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8E1F4).withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: _accent),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: _accent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: _accent,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  unit,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceBar(
-    String label,
-    double leftPercent,
-    double rightPercent,
-    String leftLabel,
-    String rightLabel,
-    Color leftColor,
-    Color rightColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: _accent,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Text(leftLabel,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: leftColor)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: SizedBox(
-                  height: 8,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: leftPercent.round().clamp(1, 99),
-                        child: Container(color: leftColor),
-                      ),
-                      Expanded(
-                        flex: rightPercent.round().clamp(1, 99),
-                        child: Container(color: rightColor),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(rightLabel,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: rightColor)),
-          ],
-        ),
-      ],
-    );
-  }
-
   Widget _buildInfoSection() {
     final m = widget.measurement;
     final infoItems = [
-      _InfoItem(text: '${m.horseName} | ${m.weight} | ${m.height}', svgPath: 'assets/icon/horseIcon.svg'),
-      _InfoItem(text: _formatDate(m.date), icon: Icons.calendar_today),
-      _InfoItem(text: m.rider, icon: Icons.person),
-      _InfoItem(text: m.saddleName, svgPath: 'assets/icon/saddleIcon.svg'),
-      if (m.notes.isNotEmpty) _InfoItem(text: m.notes, icon: Icons.info_outline),
+      _InfoItem(Icons.pets, '${m.horseName} | ${m.weight} | ${m.height}'),
+      _InfoItem(Icons.calendar_today, _formatDate(m.date)),
+      _InfoItem(Icons.person, m.rider),
+      _InfoItem(Icons.event_seat, m.saddleName),
+      if (m.notes.isNotEmpty) _InfoItem(Icons.info_outline, m.notes),
     ];
 
     return Container(
@@ -836,14 +939,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
-                      item.svgPath != null
-                          ? SvgPicture.asset(
-                              item.svgPath!,
-                              width: 20,
-                              height: 20,
-                              colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
-                            )
-                          : Icon(item.icon, size: 20, color: Colors.grey[600]),
+                      Icon(item.icon, size: 20, color: Colors.grey[600]),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -864,10 +960,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 }
 
 class _InfoItem {
-  final IconData? icon;
-  final String? svgPath;
+  final IconData icon;
   final String text;
-  _InfoItem({this.icon, this.svgPath, required this.text});
+  _InfoItem(this.icon, this.text);
 }
 
 class CachedHeatmapPainter extends CustomPainter {
