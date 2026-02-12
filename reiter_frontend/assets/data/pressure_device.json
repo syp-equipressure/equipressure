@@ -1,0 +1,34 @@
+{
+  "devices": [
+    {
+      "id": "1",
+      "name": "EquiPressure Pad v1",
+      "macAddress": "AA:BB:CC:DD:EE:01",
+      "firmwareVersion": "1.2.0",
+      "gridRows": 20,
+      "gridCols": 20,
+      "sensorCount": 400,
+      "maxPressure": 10000,
+      "unit": "mbar",
+      "sampleRateHz": 50,
+      "lastCalibration": "2025-01-05T10:00:00",
+      "batteryLevel": 85,
+      "status": "connected"
+    },
+    {
+      "id": "2",
+      "name": "EquiPressure Pad v1",
+      "macAddress": "AA:BB:CC:DD:EE:02",
+      "firmwareVersion": "1.1.3",
+      "gridRows": 20,
+      "gridCols": 20,
+      "sensorCount": 400,
+      "maxPressure": 10000,
+      "unit": "mbar",
+      "sampleRateHz": 50,
+      "lastCalibration": "2024-12-20T14:30:00",
+      "batteryLevel": 62,
+      "status": "disconnected"
+    }
+  ]
+}

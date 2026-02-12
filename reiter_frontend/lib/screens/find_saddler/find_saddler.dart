@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/sidenav.dart';
 import '../../models/saddler.dart';
 import '../../models/horse.dart';
@@ -167,7 +167,15 @@ class _FindSaddlerState extends State<FindSaddler> {
         value: _selectedHorse,
         decoration: InputDecoration(
           labelText: 'Pferd als Referenz',
-          prefixIcon: const Icon(FontAwesomeIcons.horseHead, size: 18),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(12),
+            child: SvgPicture.asset(
+              'assets/icon/horseIcon.svg',
+              width: 18,
+              height: 18,
+              colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
+            ),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
