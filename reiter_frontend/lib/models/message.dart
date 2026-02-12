@@ -44,6 +44,8 @@ class Message {
     );
   }
 
+  get hasFullAccess => null;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -63,7 +65,7 @@ enum MessageType {
   text,
   horses,
   image,
-  file,
+  file, profile,
 }
 
 class MessageAttachment {
