@@ -26,6 +26,8 @@ class _FindSaddlerState extends State<FindSaddler> {
   bool _isLoading = true;
   String _searchQuery = '';
   bool _showOnlyFavorites = false;
+  bool _showBrandFilter = false;
+  Set<String> _selectedBrands = {};
 
   @override
   void initState() {
@@ -82,12 +84,28 @@ class _FindSaddlerState extends State<FindSaddler> {
     );
   }
 
+  List<String> get _allBrands {
+    final brands = <String>{};
+    for (final s in _saddlers) {
+      brands.addAll(s.brands);
+    }
+    final sorted = brands.toList()..sort();
+    return sorted;
+  }
+
   List<Saddler> get _sortedFilteredSaddlers {
     var filtered = _saddlers.toList();
 
     // Filter favorites only
     if (_showOnlyFavorites) {
       filtered = filtered.where((s) => s.isFavorite).toList();
+    }
+
+    // Filter by brands (allBrands saddlers always match)
+    if (_selectedBrands.isNotEmpty) {
+      filtered = filtered.where((s) =>
+        s.allBrands || s.brands.any((b) => _selectedBrands.contains(b))
+      ).toList();
     }
 
     // Filter by search query
@@ -183,6 +201,7 @@ class _FindSaddlerState extends State<FindSaddler> {
               children: [
                 _buildHorseDropdown(),
                 _buildSearchField(),
+                _buildBrandFilter(),
                 Expanded(child: _buildSaddlerList()),
               ],
             ),
@@ -265,6 +284,108 @@ class _FindSaddlerState extends State<FindSaddler> {
     );
   }
 
+  Widget _buildBrandFilter() {
+    final brands = _allBrands;
+    if (brands.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _showBrandFilter = !_showBrandFilter),
+            child: Row(
+              children: [
+                const Text(
+                  'Sattelmarken',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey,
+                  ),
+                ),
+                if (_selectedBrands.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B4C9A),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_selectedBrands.length}',
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 4),
+                Icon(
+                  _showBrandFilter ? Icons.arrow_drop_down : Icons.arrow_right,
+                  size: 20,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          ),
+          if (_showBrandFilter) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildChip(
+                  'Alle',
+                  _selectedBrands.isEmpty,
+                  onTap: () => setState(() => _selectedBrands = {}),
+                ),
+                ...brands.map((brand) => _buildChip(
+                  brand,
+                  _selectedBrands.contains(brand),
+                  onTap: () {
+                    setState(() {
+                      if (_selectedBrands.contains(brand)) {
+                        _selectedBrands.remove(brand);
+                      } else {
+                        _selectedBrands.add(brand);
+                      }
+                    });
+                  },
+                )),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String label, bool isActive, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF6B4C9A) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? const Color(0xFF6B4C9A) : Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          isActive ? '✓ $label' : label,
+          style: TextStyle(
+            fontSize: 13,
+            color: isActive ? Colors.white : Colors.grey[700],
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSaddlerList() {
     final saddlers = _sortedFilteredSaddlers;
 
@@ -315,9 +436,26 @@ class _FindSaddlerState extends State<FindSaddler> {
             saddler.name,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: Text(
-            saddler.city ?? '',
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (saddler.city != null)
+                Text(
+                  saddler.city!,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
+              if (saddler.allBrands)
+                Text(
+                  'Alle Marken',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12, fontStyle: FontStyle.italic),
+                )
+              else if (saddler.brands.isNotEmpty)
+                Text(
+                  saddler.brands.join(', '),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
