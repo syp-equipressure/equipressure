@@ -1,8 +1,5 @@
-import 'dart:ui' as ui;
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
-import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/sidenav.dart';
 import '../../models/saddler.dart';
@@ -21,29 +18,24 @@ class FindSaddler extends StatefulWidget {
 class _FindSaddlerState extends State<FindSaddler> {
   final SaddlerService _saddlerService = SaddlerService();
   final HorseService _horseService = HorseService();
-  final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
 
   List<Saddler> _saddlers = [];
   List<Horse> _horses = [];
-  Saddler? _selectedSaddler;
-  List<Horse>? _selectedHorses;
+  Horse? _selectedHorse;
   bool _isLoading = true;
-  bool _showSearch = false;
-  bool _isSatelliteView = false;
-  bool _showFavoritesList = false;
   String _searchQuery = '';
-
-  // Center on Upper Austria (Linz area)
-  static const LatLng _initialCenter = LatLng(48.27, 14.20);
-  static const double _initialZoom = 10.5;
-
-  // User's home location
-  static const LatLng _userHomeLocation = LatLng(48.2856, 14.2858);
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -52,13 +44,47 @@ class _FindSaddlerState extends State<FindSaddler> {
     setState(() {
       _saddlers = saddlers;
       _horses = horses;
+      if (_selectedHorse == null && horses.isNotEmpty) {
+        _selectedHorse = horses.first;
+      }
       _isLoading = false;
     });
   }
 
-  List<Saddler> get _filteredSaddlers {
-    var filtered = _saddlers;
+  /// Haversine formula - returns distance in km between two lat/lng points.
+  double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+    const earthRadius = 6371.0; // km
+    final dLat = _degToRad(lat2 - lat1);
+    final dLon = _degToRad(lon2 - lon1);
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) *
+        sin(dLon / 2) * sin(dLon / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
 
+  double _degToRad(double deg) => deg * (pi / 180);
+
+  /// Returns distance in km from the selected horse's stable to the saddler,
+  /// or null if coordinates are missing.
+  double? _distanceToSaddler(Saddler saddler) {
+    if (_selectedHorse == null ||
+        !_selectedHorse!.hasStableLocation ||
+        !saddler.hasLocation) {
+      return null;
+    }
+    return _haversineKm(
+      _selectedHorse!.stableLatitude!,
+      _selectedHorse!.stableLongitude!,
+      saddler.latitude!,
+      saddler.longitude!,
+    );
+  }
+
+  List<Saddler> get _sortedFilteredSaddlers {
+    var filtered = _saddlers.toList();
+
+    // Filter by search query
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((s) =>
@@ -67,117 +93,26 @@ class _FindSaddlerState extends State<FindSaddler> {
       ).toList();
     }
 
+    // Sort by distance if a horse with location is selected, otherwise alphabetically
+    if (_selectedHorse != null && _selectedHorse!.hasStableLocation) {
+      filtered.sort((a, b) {
+        final distA = _distanceToSaddler(a);
+        final distB = _distanceToSaddler(b);
+        if (distA == null && distB == null) return a.name.compareTo(b.name);
+        if (distA == null) return 1;
+        if (distB == null) return -1;
+        return distA.compareTo(distB);
+      });
+    } else {
+      filtered.sort((a, b) => a.name.compareTo(b.name));
+    }
+
     return filtered;
-  }
-
-  List<Saddler> get _favoriteSaddlers {
-    return _saddlers.where((s) => s.isFavorite).toList();
-  }
-
-  // Group horses by stable location
-  Map<String, List<Horse>> get _horsesGroupedByLocation {
-    final Map<String, List<Horse>> grouped = {};
-    for (final horse in _horses) {
-      if (horse.hasStableLocation) {
-        final key = '${horse.stableLatitude},${horse.stableLongitude}';
-        grouped.putIfAbsent(key, () => []);
-        grouped[key]!.add(horse);
-      }
-    }
-    return grouped;
-  }
-
-  void _selectSaddler(Saddler saddler) {
-    setState(() {
-      _selectedSaddler = saddler;
-      _selectedHorses = null;
-      _showSearch = false;
-    });
-
-    if (saddler.hasLocation) {
-      _mapController.move(
-        LatLng(saddler.latitude!, saddler.longitude!),
-        14.0,
-      );
-    }
-  }
-
-  void _selectHorses(List<Horse> horses) {
-    setState(() {
-      _selectedHorses = horses;
-      _selectedSaddler = null;
-      _showSearch = false;
-    });
-
-    if (horses.isNotEmpty && horses.first.hasStableLocation) {
-      _mapController.move(
-        LatLng(horses.first.stableLatitude!, horses.first.stableLongitude!),
-        14.0,
-      );
-    }
-  }
-
-  void _toggleFavoritesList() {
-    setState(() {
-      _showFavoritesList = !_showFavoritesList;
-      if (_showFavoritesList) {
-        _showSearch = false;
-        _selectedSaddler = null;
-        _selectedHorses = null;
-      }
-    });
-  }
-
-  void _closeFavoritesList() {
-    setState(() {
-      _showFavoritesList = false;
-    });
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _showSearch = !_showSearch;
-    });
-  }
-
-  void _toggleMapType() {
-    setState(() {
-      _isSatelliteView = !_isSatelliteView;
-    });
-  }
-
-  void _goToUserHome() {
-    _mapController.move(_userHomeLocation, 14.0);
-    setState(() {
-      _selectedSaddler = null;
-      _selectedHorses = null;
-      _showSearch = false;
-    });
   }
 
   Future<void> _toggleFavorite(Saddler saddler) async {
     await _saddlerService.toggleFavorite(saddler.id);
     await _loadData();
-
-    if (_selectedSaddler?.id == saddler.id) {
-      final updated = await _saddlerService.getSaddlerById(saddler.id);
-      setState(() {
-        _selectedSaddler = updated;
-      });
-    }
-  }
-
-  void _closePopup() {
-    setState(() {
-      _selectedSaddler = null;
-      _selectedHorses = null;
-    });
-  }
-
-  void _closeSearch() {
-    setState(() {
-      _showSearch = false;
-    });
   }
 
   void _openProfile(Saddler saddler) {
@@ -204,7 +139,7 @@ class _FindSaddlerState extends State<FindSaddler> {
           ),
         ),
         title: const Text(
-          'EquiPressure',
+          'Sattler finden',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w600,
@@ -215,879 +150,176 @@ class _FindSaddlerState extends State<FindSaddler> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Stack(
+          : Column(
               children: [
-                _buildMap(),
-                _buildSearchHeader(),
-                if (_showSearch) _buildSearchDropdown(),
-                _buildTopRightButtons(),
-                _buildBottomLeftButtons(),
-                if (_selectedSaddler != null) _buildSaddlerPopup(),
-                if (_selectedHorses != null) _buildHorsesPopup(),
-                if (_showFavoritesList) _buildFavoritesList(),
+                _buildHorseDropdown(),
+                _buildSearchField(),
+                Expanded(child: _buildSaddlerList()),
               ],
             ),
     );
   }
 
-  Widget _buildSearchHeader() {
-    return Positioned(
-      top: 16,
-      left: 16,
-      right: 110,
-      child: GestureDetector(
-        onTap: _toggleSearch,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
+  Widget _buildHorseDropdown() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: DropdownButtonFormField<Horse>(
+        value: _selectedHorse,
+        decoration: InputDecoration(
+          labelText: 'Pferd als Referenz',
+          prefixIcon: const Icon(FontAwesomeIcons.horseHead, size: 18),
+          border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _searchQuery.isEmpty ? 'Sattler*in finden' : _searchQuery,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _searchQuery.isEmpty ? Colors.grey[600] : Colors.black,
-                  ),
-                ),
-              ),
-              Icon(
-                _showSearch ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                color: Colors.grey[600],
-              ),
-            ],
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSearchDropdown() {
-    return Positioned(
-      top: 70,
-      left: 16,
-      right: 110,
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 300),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+        isExpanded: true,
+        items: _horses.map((horse) {
+          final stableInfo = horse.stableCity != null
+              ? ' - ${horse.stableCity}'
+              : '';
+          return DropdownMenuItem<Horse>(
+            value: horse,
+            child: Text(
+              '${horse.name}$stableInfo',
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: TextField(
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Suchen...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: _filteredSaddlers.length,
-                itemBuilder: (context, index) {
-                  final saddler = _filteredSaddlers[index];
-                  return ListTile(
-                    leading: _buildSmallAvatar(saddler),
-                    title: Text(saddler.name),
-                    subtitle: Text(saddler.city ?? ''),
-                    trailing: saddler.isFavorite
-                        ? const Icon(Icons.star, color: Colors.amber, size: 20)
-                        : null,
-                    onTap: () {
-                      _selectSaddler(saddler);
-                      _closeSearch();
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopRightButtons() {
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: Column(
-        children: [
-          // Favorites list toggle
-          _buildSmallButton(
-            icon: _showFavoritesList ? Icons.star : Icons.star_border,
-            color: _showFavoritesList ? Colors.amber : Colors.grey[700]!,
-            onTap: _toggleFavoritesList,
-            isActive: _showFavoritesList,
-          ),
-          const SizedBox(height: 8),
-          // Map type toggle
-          _buildSmallButton(
-            icon: _isSatelliteView ? Icons.map : Icons.satellite_alt,
-            onTap: _toggleMapType,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmallButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    Color? color,
-    bool isActive = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF6B4C9A) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: isActive ? Colors.white : (color ?? Colors.grey[700]),
-          size: 22,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomLeftButtons() {
-    final bottomOffset = (_selectedSaddler != null || _selectedHorses != null) ? 160.0 : 24.0;
-
-    return Positioned(
-      left: 16,
-      bottom: bottomOffset,
-      child: Column(
-        children: [
-          // Home button
-          _buildCircleButton(
-            icon: Icons.home,
-            onTap: _goToUserHome,
-            tooltip: 'Mein Zuhause',
-          ),
-          const SizedBox(height: 12),
-          // My location button
-          _buildCircleButton(
-            icon: Icons.my_location,
-            onTap: () {
-              _mapController.move(_initialCenter, _initialZoom);
-              _closePopup();
-            },
-            tooltip: 'Übersicht',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCircleButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    String? tooltip,
-  }) {
-    final button = GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: Colors.grey[700],
-          size: 24,
-        ),
-      ),
-    );
-
-    if (tooltip != null) {
-      return Tooltip(message: tooltip, child: button);
-    }
-    return button;
-  }
-
-  Widget _buildMap() {
-    final tileUrl = _isSatelliteView
-        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: _initialCenter,
-        initialZoom: _initialZoom,
-        onTap: (_, __) {
-          _closePopup();
-          _closeSearch();
+          );
+        }).toList(),
+        onChanged: (horse) {
+          setState(() {
+            _selectedHorse = horse;
+          });
         },
       ),
-      children: [
-        TileLayer(
-          urlTemplate: tileUrl,
-          userAgentPackageName: 'com.equipressure.app',
-          tileProvider: CancellableNetworkTileProvider(),
-        ),
-        MarkerLayer(
-          markers: [
-            // User home marker
-            _buildHomeMarker(),
-            // Horse stable markers
-            ..._buildHorseMarkers(),
-            // Saddler markers
-            ..._filteredSaddlers.map((saddler) => _buildSaddlerMarker(saddler)),
-          ],
-        ),
-      ],
     );
   }
 
-  Marker _buildHomeMarker() {
-    return Marker(
-      point: _userHomeLocation,
-      width: 44,
-      height: 54,
-      child: GestureDetector(
-        onTap: _goToUserHome,
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.home,
-                size: 22,
-                color: Colors.white,
-              ),
-            ),
-            CustomPaint(
-              size: const Size(14, 10),
-              painter: _MarkerTrianglePainter(color: const Color(0xFF2196F3)),
-            ),
-          ],
+  Widget _buildSearchField() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Nach Name oder Stadt suchen...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
       ),
     );
   }
 
-  List<Marker> _buildHorseMarkers() {
-    final markers = <Marker>[];
+  Widget _buildSaddlerList() {
+    final saddlers = _sortedFilteredSaddlers;
 
-    _horsesGroupedByLocation.forEach((key, horses) {
-      final first = horses.first;
-      markers.add(
-        Marker(
-          point: LatLng(first.stableLatitude!, first.stableLongitude!),
-          width: 44,
-          height: 54,
-          child: GestureDetector(
-            onTap: () => _selectHorses(horses),
-            child: Column(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8BC34A),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      const Icon(
-                        FontAwesomeIcons.horseHead,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                      if (horses.length > 1)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              '${horses.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                CustomPaint(
-                  size: const Size(14, 10),
-                  painter: _MarkerTrianglePainter(color: const Color(0xFF8BC34A)),
-                ),
-              ],
+    if (saddlers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Keine Sattler gefunden',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
+          ],
         ),
       );
-    });
+    }
 
-    return markers;
-  }
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: saddlers.length,
+      separatorBuilder: (_, __) => Divider(height: 1, indent: 72, color: Colors.grey[200]),
+      itemBuilder: (context, index) {
+        final saddler = saddlers[index];
+        final distance = _distanceToSaddler(saddler);
 
-  Marker _buildSaddlerMarker(Saddler saddler) {
-    final isSelected = _selectedSaddler?.id == saddler.id;
-    final isFavorite = saddler.isFavorite;
-
-    return Marker(
-      point: LatLng(saddler.latitude!, saddler.longitude!),
-      width: 44,
-      height: 54,
-      child: GestureDetector(
-        onTap: () => _selectSaddler(saddler),
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF6B4C9A)
-                    : isFavorite
-                        ? const Color(0xFFE53935)
-                        : Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFF6B4C9A)
-                      : isFavorite
-                          ? const Color(0xFFE53935)
-                          : const Color(0xFF6B4C9A),
-                  width: 3,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.person,
-                size: 22,
-                color: isSelected || isFavorite
-                    ? Colors.white
-                    : const Color(0xFF6B4C9A),
-              ),
-            ),
-            CustomPaint(
-              size: const Size(14, 10),
-              painter: _MarkerTrianglePainter(
-                color: isSelected
-                    ? const Color(0xFF6B4C9A)
-                    : isFavorite
-                        ? const Color(0xFFE53935)
-                        : const Color(0xFF6B4C9A),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSaddlerPopup() {
-    final saddler = _selectedSaddler!;
-
-    return Positioned(
-      bottom: 24,
-      left: 16,
-      right: 16,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildAvatar(saddler),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          saddler.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          saddler.shortAddress,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+        return ListTile(
+          leading: _buildAvatar(saddler),
+          title: Text(
+            saddler.name,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            saddler.city ?? '',
+            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (distance != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    '${distance.toStringAsFixed(1)} km',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _toggleFavorite(saddler),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        saddler.isFavorite ? Icons.star : Icons.star_border,
-                        color: saddler.isFavorite ? Colors.amber : Colors.grey[400],
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: () => _openProfile(saddler),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF6B4C9A),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  'Zum Profil',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+              GestureDetector(
+                onTap: () => _toggleFavorite(saddler),
+                child: Icon(
+                  saddler.isFavorite ? Icons.star : Icons.star_border,
+                  color: saddler.isFavorite ? Colors.amber : Colors.grey[400],
+                  size: 24,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHorsesPopup() {
-    final horses = _selectedHorses!;
-    final stableName = horses.first.stableStreet ?? 'Stall';
-    final stableLocation = '${horses.first.stablePostalCode ?? ''} ${horses.first.stableCity ?? ''}'.trim();
-
-    return Positioned(
-      bottom: 24,
-      left: 16,
-      right: 16,
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 300),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF8BC34A).withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8BC34A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      FontAwesomeIcons.horseHead,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          stableName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (stableLocation.isNotEmpty)
-                          Text(
-                            stableLocation,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _closePopup,
-                    child: Icon(Icons.close, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-
-            // Horse list
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: horses.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
-                itemBuilder: (context, index) {
-                  final horse = horses[index];
-                  return _buildHorseListItem(horse);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFavoritesList() {
-    return Positioned(
-      top: 70,
-      right: 16,
-      child: Container(
-        width: 280,
-        constraints: const BoxConstraints(maxHeight: 400),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 24),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Meine Favoriten',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _closeFavoritesList,
-                    child: Icon(Icons.close, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-
-            // Favorites list
-            if (_favoriteSaddlers.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(Icons.star_border, size: 48, color: Colors.grey[300]),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Keine Favoriten',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tippe auf den Stern bei einem\nSattler, um ihn hinzuzufügen',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _favoriteSaddlers.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, indent: 72, color: Colors.grey[200]),
-                  itemBuilder: (context, index) {
-                    final saddler = _favoriteSaddlers[index];
-                    return _buildFavoriteListItem(saddler);
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFavoriteListItem(Saddler saddler) {
-    return InkWell(
-      onTap: () {
-        _closeFavoritesList();
-        _selectSaddler(saddler);
+            ],
+          ),
+          onTap: () => _openProfile(saddler),
+        );
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            _buildSmallAvatar(saddler),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    saddler.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  if (saddler.city != null)
-                    Text(
-                      saddler.city!,
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 13,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildHorseListItem(Horse horse) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Horse avatar
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.brown[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: horse.imagePath != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(horse.imagePath!, fit: BoxFit.cover),
-                  )
-                : Icon(
-                    FontAwesomeIcons.horseHead,
-                    color: Colors.brown[400],
-                    size: 24,
-                  ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  horse.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                Text(
-                  '${horse.breed} - ${horse.age}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            horse.sex == 'male' ? Icons.male : Icons.female,
-            color: horse.sex == 'male' ? Colors.blue : Colors.pink,
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(Saddler saddler, {double radius = 28}) {
+  Widget _buildAvatar(Saddler saddler) {
     if (saddler.imagePath != null) {
       return CircleAvatar(
-        radius: radius,
+        radius: 22,
         backgroundImage: AssetImage(saddler.imagePath!),
       );
     }
 
     return CircleAvatar(
-      radius: radius,
+      radius: 22,
       backgroundColor: Colors.green[50],
       child: Text(
         _getInitials(saddler.name),
         style: TextStyle(
           color: Colors.green[700],
           fontWeight: FontWeight.bold,
-          fontSize: radius * 0.6,
+          fontSize: 13,
         ),
       ),
     );
-  }
-
-  Widget _buildSmallAvatar(Saddler saddler) {
-    return _buildAvatar(saddler, radius: 22);
   }
 
   String _getInitials(String name) {
@@ -1097,28 +329,4 @@ class _FindSaddlerState extends State<FindSaddler> {
     }
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
-}
-
-class _MarkerTrianglePainter extends CustomPainter {
-  final Color color;
-
-  _MarkerTrianglePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = ui.Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
