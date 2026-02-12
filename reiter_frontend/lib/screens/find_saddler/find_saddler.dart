@@ -25,6 +25,7 @@ class _FindSaddlerState extends State<FindSaddler> {
   Horse? _selectedHorse;
   bool _isLoading = true;
   String _searchQuery = '';
+  bool _showOnlyFavorites = false;
 
   @override
   void initState() {
@@ -84,6 +85,11 @@ class _FindSaddlerState extends State<FindSaddler> {
   List<Saddler> get _sortedFilteredSaddlers {
     var filtered = _saddlers.toList();
 
+    // Filter favorites only
+    if (_showOnlyFavorites) {
+      filtered = filtered.where((s) => s.isFavorite).toList();
+    }
+
     // Filter by search query
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
@@ -93,9 +99,13 @@ class _FindSaddlerState extends State<FindSaddler> {
       ).toList();
     }
 
-    // Sort by distance if a horse with location is selected, otherwise alphabetically
+    // Sort: favorites first, then by distance or alphabetically
     if (_selectedHorse != null && _selectedHorse!.hasStableLocation) {
       filtered.sort((a, b) {
+        if (!_showOnlyFavorites) {
+          if (a.isFavorite && !b.isFavorite) return -1;
+          if (!a.isFavorite && b.isFavorite) return 1;
+        }
         final distA = _distanceToSaddler(a);
         final distB = _distanceToSaddler(b);
         if (distA == null && distB == null) return a.name.compareTo(b.name);
@@ -104,7 +114,13 @@ class _FindSaddlerState extends State<FindSaddler> {
         return distA.compareTo(distB);
       });
     } else {
-      filtered.sort((a, b) => a.name.compareTo(b.name));
+      filtered.sort((a, b) {
+        if (!_showOnlyFavorites) {
+          if (a.isFavorite && !b.isFavorite) return -1;
+          if (!a.isFavorite && b.isFavorite) return 1;
+        }
+        return a.name.compareTo(b.name);
+      });
     }
 
     return filtered;
@@ -147,6 +163,19 @@ class _FindSaddlerState extends State<FindSaddler> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showOnlyFavorites ? Icons.star : Icons.star_border,
+              color: _showOnlyFavorites ? Colors.amber : Colors.grey[600],
+            ),
+            onPressed: () {
+              setState(() {
+                _showOnlyFavorites = !_showOnlyFavorites;
+              });
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -244,16 +273,29 @@ class _FindSaddlerState extends State<FindSaddler> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+            Icon(
+              _showOnlyFavorites ? Icons.star_border : Icons.search_off,
+              size: 64,
+              color: Colors.grey[300],
+            ),
             const SizedBox(height: 16),
             Text(
-              'Keine Sattler gefunden',
+              _showOnlyFavorites
+                  ? 'Keine Favoriten vorhanden'
+                  : 'Keine Sattler gefunden',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
             ),
+            if (_showOnlyFavorites) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Tippe auf den Stern bei einem Sattler',
+                style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              ),
+            ],
           ],
         ),
       );
