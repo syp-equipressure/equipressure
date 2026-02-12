@@ -5,12 +5,14 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Result returned when user stops the live measurement.
 class LiveMeasurementResult {
   final Duration duration;
-  final List<double> pressureData; // 400 values (20x20)
+  final List<double> pressureData;
 
-  LiveMeasurementResult({required this.duration, required this.pressureData});
+  LiveMeasurementResult({
+    required this.duration,
+    required this.pressureData,
+  });
 }
 
 class LiveMeasurementScreen extends StatefulWidget {
@@ -24,7 +26,8 @@ class LiveMeasurementScreen extends StatefulWidget {
   });
 
   @override
-  State<LiveMeasurementScreen> createState() => _LiveMeasurementScreenState();
+  State<LiveMeasurementScreen> createState() =>
+      _LiveMeasurementScreenState();
 }
 
 class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
@@ -37,7 +40,6 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   Timer? _uiTimer;
   Timer? _frameTimer;
 
-  // Pre-generate base pattern once, then add noise each frame
   late final List<double> _basePattern;
   List<double> _currentData = List.filled(400, 0);
   ui.Image? _currentFrame;
@@ -50,17 +52,14 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     _currentData = List.from(_basePattern);
     _stopwatch = Stopwatch()..start();
 
-    // Update timer display every 100ms
     _uiTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (mounted) setState(() {});
     });
 
-    // Update heatmap frame every 300ms (slow enough to look like real data, not flickery)
     _frameTimer = Timer.periodic(const Duration(milliseconds: 300), (_) {
       _updateFrame();
     });
 
-    // Generate first frame
     _updateFrame();
   }
 
@@ -73,14 +72,12 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     super.dispose();
   }
 
-  /// Generate a realistic saddle pressure pattern with two parallel strips
-  /// (left and right panels of the saddle on the horse's back).
+  // 🔥 SYMMETRISCHE BASIS – keine Hand-Asymmetrie mehr
   List<double> _generateBasePattern() {
     final data = List<double>.filled(gridSize * gridSize, 0);
     final gait = widget.gait.toLowerCase();
 
     double intensity;
-    double asymmetry = 1.0; // hand-based asymmetry
 
     if (gait == 'trab') {
       intensity = 7000;
@@ -90,22 +87,14 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
       intensity = 5000;
     }
 
-    if (widget.hand == 'Links') {
-      asymmetry = 1.25; // more pressure on left
-    } else if (widget.hand == 'Rechts') {
-      asymmetry = 0.75; // more pressure on right (right strip gets boosted below)
-    }
-
-    // Left strip center ~col 6, right strip center ~col 13
     const double leftX = 6.0;
     const double rightX = 13.0;
     const double spreadX = 2.2;
 
-    // Three hotspot zones per strip (top, middle, bottom of saddle)
     final hotspots = [
-      {'y': 4.0, 'spreadY': 2.5, 'strength': 0.7},   // front (pommel area)
-      {'y': 10.0, 'spreadY': 3.5, 'strength': 1.0},   // middle (seat area)
-      {'y': 16.0, 'spreadY': 2.5, 'strength': 0.6},   // back (cantle area)
+      {'y': 4.0, 'spreadY': 2.5, 'strength': 0.7},
+      {'y': 10.0, 'spreadY': 3.5, 'strength': 1.0},
+      {'y': 16.0, 'spreadY': 2.5, 'strength': 0.6},
     ];
 
     for (int row = 0; row < gridSize; row++) {
@@ -127,15 +116,14 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
           rightVal += intensity * strength * exp(-(dxR * dxR + dyR * dyR));
         }
 
-        data[row * gridSize + col] =
-            leftVal * asymmetry + rightVal * (2.0 - asymmetry);
+        // 🔥 KEINE Asymmetrie mehr
+        data[row * gridSize + col] = leftVal + rightVal;
       }
     }
     return data;
   }
 
   void _updateFrame() async {
-    // Add noise to base pattern to simulate live data
     final noisy = List<double>.generate(400, (i) {
       final base = _basePattern[i];
       final noise = (_rng.nextDouble() - 0.5) * base * 0.3;
@@ -143,6 +131,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     });
 
     _currentData = noisy;
+
     final pixels = _renderPixels(noisy);
     final image = await _pixelsToImage(pixels);
 
@@ -210,30 +199,31 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   Color _getHeatmapColor(double value, double minVal, double maxVal) {
     final double normalized =
         maxVal == minVal ? 0 : (value - minVal) / (maxVal - minVal);
+
     int r, g, b;
 
     if (normalized < 0.2) {
-      final double t = normalized / 0.2;
+      final t = normalized / 0.2;
       r = 0;
       g = (t * 100).toInt();
       b = 255;
     } else if (normalized < 0.4) {
-      final double t = (normalized - 0.2) / 0.2;
+      final t = (normalized - 0.2) / 0.2;
       r = 0;
       g = (100 + t * 155).toInt();
       b = (255 * (1 - t)).toInt();
     } else if (normalized < 0.6) {
-      final double t = (normalized - 0.4) / 0.2;
+      final t = (normalized - 0.4) / 0.2;
       r = (t * 255).toInt();
       g = 255;
       b = 0;
     } else if (normalized < 0.8) {
-      final double t = (normalized - 0.6) / 0.2;
+      final t = (normalized - 0.6) / 0.2;
       r = 255;
       g = (255 * (1 - t * 0.5)).toInt();
       b = 0;
     } else {
-      final double t = (normalized - 0.8) / 0.2;
+      final t = (normalized - 0.8) / 0.2;
       r = 255;
       g = (127 * (1 - t)).toInt();
       b = 0;
@@ -256,6 +246,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     );
     Navigator.pop(context, result);
   }
+
 
   @override
   Widget build(BuildContext context) {
