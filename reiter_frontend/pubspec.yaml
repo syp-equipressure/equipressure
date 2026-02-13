@@ -82,6 +82,7 @@ flutter:
     - assets/icon/horseIcon.svg
     - assets/icon/saddleIcon.svg
     - assets/data/pressure_device.json
+    - assets/horseImg/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
