@@ -234,11 +234,13 @@ class _HorsesScreenState extends State<HorsesScreen> {
                 aspectRatio: 1,
                 child: horse.image != null
                     ? Image.file(horse.image!, fit: BoxFit.cover)
-                    : Container(
-                        color: Colors.grey[200],
-                        child: Icon(Icons.image_outlined,
-                            size: 48, color: Colors.grey[400]),
-                      ),
+                    : horse.assetImage != null
+                        ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
+                        : Container(
+                            color: Colors.grey[200],
+                            child: Icon(Icons.image_outlined,
+                                size: 48, color: Colors.grey[400]),
+                          ),
               ),
             ),
             const SizedBox(height: 12),
