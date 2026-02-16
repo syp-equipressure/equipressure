@@ -333,7 +333,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                         children: [
                           _buildInfoRow('Aktiver Gang', widget.gait),
                           const SizedBox(height: 12),
-                          _buildInfoRow('Aktiver Hand', widget.hand),
+                          _buildInfoRow('Aktive Hand', widget.hand),
                         ],
                       ),
                     ),
