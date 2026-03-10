@@ -1266,3 +1266,87 @@ a| in WebAPI einlesen
 | 03.03.2026
 
 |===
+
+== 2026-03-10
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-03-10
+
+|Dauer
+|08:00 bis
+|===
+====
+
+=== Besprochenes
+* über Make your Product nachbesprochen
+* über Mentorenfeedback reden
+** Prof. Hammer hält es auch für nicht gut
+* anscheinend sobald man miteinander redet, dass man ein Projekt macht und dass dann umsetzt, ist man schon eine gesellschaft bürgerlichen Rechtes
+** deshalb aufpassen wen wir uns als Hilfe holen im Projekt (wir können nur Hr. Professor Haslinger vertrauen)
+* Bevor wir mit Sophie etwas unterschreiben sollen wir das von Vetrauten überprüfen lassen (Rechtsanwalt oder so)
+
+==== Feedback Frontend
+* Die Zeit bei Teilmessung darf kein Eingabefeld sein sondern einfach ein Text
+* die map soll nicht weg; wir sollen das verbinden und nicht weghauen (links die Liste und rechts wo man die Liste hat oder so)
+** wir sollen nicht auf Stefan hören (aber sie wollen uns nicht sagen wieso)#
+* Kathis Feedback: kinnan ma so a Gestaltungsding einfügen in der app für Farben uns so Sochen
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger, Dallinger
+a| Backend weiterarbeiten
+| 07.04.2026
+
+| Music, Graßauer
+a| Wireframe Sattler-App
+| 07.04.2026
+
+|===
