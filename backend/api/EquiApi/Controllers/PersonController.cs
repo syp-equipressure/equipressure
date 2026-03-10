@@ -17,6 +17,29 @@ public sealed class PersonController(
     ILogger<PersonController> logger*/) : BaseController
 {
     [HttpGet]
+    [Route("{id:int}/isSaddler")]
+    [ProducesResponseType<SaddlerBasicDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<SaddlerBasicDto>> GetSaddlerById([FromRoute] int id)
+    {
+        var result = await personService.GetPersonAsSaddlerByIdAsync(id);
+
+        return result.Match<ActionResult<SaddlerBasicDto>>(success =>
+                                                               Ok(SaddlerBasicDto.FromSaddlerBasicData(success.Value,
+                                                                   id)),
+                                                           notFound => NotFound());
+    }
+
+    [HttpGet]
+    [Route("{id:int}/address")]
+    [ProducesResponseType<Address>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<Address>> GetAddressOfPersonById([FromRoute] int id)
+    {
+        
+    }
+
+    [HttpGet]
     [Route("{id:int}/isEquestrian")]
     [ProducesResponseType<EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
