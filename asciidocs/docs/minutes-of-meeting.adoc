@@ -1318,7 +1318,7 @@ a| in WebAPI einlesen
 |Di. 2026-03-10
 
 |Dauer
-|08:00 bis
+|08:00 bis 08:38
 |===
 ====
 
