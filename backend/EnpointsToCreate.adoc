@@ -34,7 +34,7 @@ Personen:
 
 Geräte:
 
-* /devices => alle existierende Geräte
+* /devices/:personId => alle Geräte einer Person
 * /devices/:id => Gerät mit der id :id
 * /devices/:id/owner => Besitzer des Gerätes (Person)
 * /devices/:id/users => alle Personen eines Geräts
