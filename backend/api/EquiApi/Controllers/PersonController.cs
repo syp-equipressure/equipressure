@@ -16,7 +16,7 @@ public sealed class PersonController(
     IPersonService personService /*,
     ILogger<PersonController> logger*/) : BaseController
 {
-    [HttpGet]
+    /* [HttpGet]
     [Route("{id:int}/isEquestrian")]
     [ProducesResponseType<EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -29,7 +29,9 @@ public sealed class PersonController(
                                                                Ok(EquestrianBasicDto
                                                                       .FromEquestrianBasicData(success.Value, id)),
                                                            notFound => NotFound());
-    }
+    } */
+    
+    
 }
 
 public sealed class AddPersonRequest()

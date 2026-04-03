@@ -1,27 +1,68 @@
-@Host = http://localhost:5200
+@BaseUrl = http://localhost:5200/equipressure/api/
 
-# Execute in order for variables (with IDs) to work correctly
+### Person Endpoints
+@personId = 1
+@saddlerId = 2
+@equestrianId = 1
 
-### Add rocket
-POST {{Host}}/api/rockets
+### 1. Alle Personen abrufen
+GET {{BaseUrl}}/persons
+
+### 2. Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}
+
+### 3. Person abrufen (minimale Daten)
+GET {{BaseUrl}}/persons/{{personId}}/profile-data
+
+### 4. Adresse einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/address
+
+### 5. Kontakte einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/contacts
+
+### 6. Favoriten einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/favourites
+
+### 7. Alle Sattler mit Adresse (Alle Personen mit Rolle 'Sattler')
+GET {{BaseUrl}}/persons/saddlers
+
+### 8. Alle Pferde einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/horses
+
+### 9. Alle Geräte einer Person abrufen (inkl. Owner-Info)
+GET {{BaseUrl}}/persons/{{personId}}/devices
+
+### 10. Neue Person anlegen (inkl. Rolle)
+POST {{BaseUrl}}/persons
 Content-Type: application/json
 
 {
-    "modelName": "Ariane 5",
-    "manufacturer": "Arianespace",
-    "maxThrust": "13700000",
-    "payloadDeltaV": "205800000"
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "height": 180.5,
+    "weight": 75.0,
+    "dateOfBirth": "1995-05-20",
+    "email": "max@reiter.at",
+    "websiteLink": "https://max-reitet.at",
+    "description": "Erfahrener Springreiter",
+    "addressId": 1,
+    "roleId": 2
 }
 
-> {%
-    client.global.set("rocketId", response.body.id);
-%}
+### 11. Person aktualisieren
+PUT {{BaseUrl}}/persons/{{personId}}
+Content-Type: application/json
 
-### Get rocket by ID
-GET {{Host}}/api/rockets/{{rocketId}}
+{
+    "id": {{personId}},
+    "firstName": "Max",
+    "lastName": "Mustermann-Update",
+    "height": 182.0,
+    "weight": 74.5,
+    "dateOfBirth": "1995-05-20",
+    "email": "max.neu@reiter.at",
+    "addressId": 1
+}
 
-### Get all rockets
-GET {{Host}}/api/rockets
-
-### Delete rocket
-DELETE {{Host}}/api/rockets/{{rocketId}}
+### 12. Person löschen
+DELETE {{BaseUrl}}/persons/{{personId}}

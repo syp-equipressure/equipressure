@@ -276,7 +276,7 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
 
     public void UpdatePerson(Person person)
     {
-        throw new NotImplementedException();
+        personSet.Update(person);
     }
 
     public void RemovePerson(Person person)
