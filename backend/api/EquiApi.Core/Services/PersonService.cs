@@ -15,19 +15,19 @@ using GetPersonAsSaddlerByIdAsyncResult
 using GetNameByIdAsyncResult 
     = OneOf.OneOf<OneOf.Types.Success<NameData>, OneOf.Types.NotFound>;
 using GetFavouritesOrContactsAsyncResult 
-    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Person>>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Person>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetOwnedHorsesAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Horse>>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Horse>>, OneOf.Types.None, OneOf.Types.NotFound>;
 
 using GetAllDevicesAsyncResult 
-    = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.Error>;
+    = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.None, OneOf.Types.NotFound>;
 // TODO: why would we get a InvalidData if we only check the data in the controller?
 using AddPersonAsyncResult 
-    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.Error, IBaseService.InvalidData>;
+    = OneOf.OneOf<OneOf.Types.Success<Person>, IBaseService.InvalidData, IBaseService.Conflict>;
 using UpdatePersonAsyncResult 
-    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.Error, IBaseService.InvalidData>;
+    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.NotFound, IBaseService.InvalidData, IBaseService.Conflict>;
 using DeletePersonAsyncResult 
-    = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.Error, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound>;
 
 
 public interface IPersonService
@@ -69,14 +69,13 @@ public class PersonService(IUnitOfWork uow) : IPersonService
 
     public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId)
     {
-        var equestrian = GetPersonAsEquestrianByIdAsync(equestrianId);
-        if (!equestrian.Result.IsT0)
+        if (!await uow.PersonRepository.PersonExists(equestrianId, false))
         {
             return new IBaseService.InvalidData();
         }
 
         var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId
-                                                                      , false);
+                                                                            , false);
         
         return result != null
             ? new Success<SaddlerBasicData>(result)
