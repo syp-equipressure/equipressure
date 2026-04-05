@@ -11,7 +11,7 @@ public interface IDeviceService
         (int userId);
     
     public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(int deviceId);
-    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetUsersOfDevice(int deviceId);
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(int deviceId);
 
     public record NoOwnerFound(int deviceId);
     public record NoUsersFound(int deviceId);
@@ -46,9 +46,19 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
                     notFound => new IDeviceService.NoOwnerFound(deviceId));
     }
 
-    public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetUsersOfDevice(int deviceId)
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>> GetUsersOfDevice(int deviceId)
     {
+        var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
+        if (!exists)
+        {
+            return new NotFound();
+        }
         
-        throw n ew NotImplementedException();
+        var users = await uow.DeviceRepository.GetPersonOfDeviceAsync(deviceId);
+
+        return users.Match<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>>(
+             success => new Success<IReadOnlyCollection<Person>>(success),
+             notFound => new IDeviceService.NoUsersFound(deviceId)
+             );
     }
 }
