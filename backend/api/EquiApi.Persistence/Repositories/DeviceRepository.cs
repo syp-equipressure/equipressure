@@ -7,13 +7,24 @@ namespace EquiApi.Persistence.Repositories;
 
 public interface IDeviceRepository
 {
+    public ValueTask<bool> DeviceExistsAsync(int deviceId);
+    
+    public ValueTask<MeasurementDevice?> GetDeviceByIdAsync(int deviceId);
     public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetDevicesFromUserIdAsync(int userId);
     public ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(int deviceId);
     public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId);
+
 }
 
 public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceRepository
 {
+    
+    public async ValueTask<bool> DeviceExistsAsync(int deviceId)
+    => await devices.AnyAsync(d => d.Id == deviceId);
+
+    public async ValueTask<MeasurementDevice?> GetDeviceByIdAsync(int deviceId)
+        =>  await devices.FirstOrDefaultAsync(d => d.Id == deviceId);
+    
     
     public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetDevicesFromUserIdAsync(int userId)
     {

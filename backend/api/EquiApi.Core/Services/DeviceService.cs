@@ -7,7 +7,14 @@ namespace EquiApi.Core.Services;
 
 public interface IDeviceService
 {
-    public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync(int userId);
+    public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
+        (int userId);
+    
+    public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(int deviceId);
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetUsersOfDevice(int deviceId);
+
+    public record NoOwnerFound(int deviceId);
+    public record NoUsersFound(int deviceId);
 }
 
 public class DeviceService(IUnitOfWork uow) : IDeviceService
@@ -23,5 +30,25 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
         
         var devices = await uow.DeviceRepository.GetDevicesFromUserIdAsync(userId);
         return new Success<IReadOnlyCollection<MeasurementDevice>>(devices);
+    }
+
+    public async ValueTask<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>> GetOwnerOfDevice(int deviceId)
+    {
+        var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
+        if (!exists)
+        {
+            return new NotFound();
+        }
+        
+        var owner = await uow.DeviceRepository.GetOwnerOfDeviceAsync(deviceId);
+        return owner.Match<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>>(success => 
+             new Success<Person>(success),
+                    notFound => new IDeviceService.NoOwnerFound(deviceId));
+    }
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetUsersOfDevice(int deviceId)
+    {
+        
+        throw n ew NotImplementedException();
     }
 }
