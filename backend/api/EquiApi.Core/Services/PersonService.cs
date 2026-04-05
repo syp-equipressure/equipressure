@@ -135,7 +135,7 @@ public class PersonService(IUnitOfWork uow) : IPersonService
             return new NotFound();
         }
         var result = await uow.PersonRepository.GetFavouritesAsync(id, false);
-        return new Success<IReadOnlyCollection<Person>>(result);
+        return result.Count > 0 ? new Success<IReadOnlyCollection<Person>>(result) : new None();
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public class PersonService(IUnitOfWork uow) : IPersonService
             return new NotFound();
         }
         var result = await uow.PersonRepository.GetContactsAsync(id, false);
-        return new Success<IReadOnlyCollection<Person>>(result);
+        return result.Count > 0 ? new Success<IReadOnlyCollection<Person>>(result) : new None();
     }
 
     /// <summary>
@@ -176,7 +176,8 @@ public class PersonService(IUnitOfWork uow) : IPersonService
         }
 
         var result = await uow.PersonRepository.GetOwnedHorsesAsync(id, false);
-        return new Success<IReadOnlyCollection<Horse>>(result);
+        return result.Count > 0 ? new Success<IReadOnlyCollection<Horse>>(result) : new None();
+        
     }
 
     public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId)
