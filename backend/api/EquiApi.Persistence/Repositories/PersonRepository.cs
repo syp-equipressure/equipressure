@@ -11,18 +11,21 @@ public interface IPersonRepository
     public ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
     public ValueTask<NameData?> GetNameByIdAsync(int id, bool tracking);
     public ValueTask<bool> PersonExists(int id, bool tracking);
+    public ValueTask<bool> PersonWithEmailExists(string email, bool tracking);
+    public ValueTask<bool> RoleExists(AccountRole role);
+
+    public ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId, bool tracking);
     
     public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking);
-    public ValueTask<bool> RoleExists(AccountRole role);
     public Person AddPerson(string firstName, string lastName, decimal height,
                                                           decimal weight, LocalDate dateOfBirth, string? email, 
                                                           string? websiteLink, string? description, Address address,
                                                           AccountRole role);
     public void UpdatePerson(Person person);
-    public void RemovePerson(Person person);
+    public void RemovePerson(Person person); 
 }
 
 internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
@@ -161,6 +164,24 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
     {
         var source = tracking ? Persons : PersonsNoTracking;
         return await source.AnyAsync(p => p.Id == id);
+    }
+
+    /// <summary>
+    /// checks if a person with the given email exists
+    /// </summary>
+    /// <param name="email"></param>
+    /// <param name="tracking"></param>
+    /// <returns>true if exists false if not</returns>
+    public async ValueTask<bool> PersonWithEmailExists(string email, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        return await source.AnyAsync(p => p.Email == email);
+    }
+
+    public async ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        return await source.AnyAsync(p => p.Email == personEmail && p.Id != personId);
     }
 
     /// <summary>
