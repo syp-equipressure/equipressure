@@ -244,7 +244,21 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
                            .SelectMany(p => p.uDevice.Concat(p.oDevice))
                            .ToListAsync();
     }
-
+    
+    /// <summary>
+    /// Creates a new person in the system and assigns a role.
+    /// </summary>
+    /// <param name="firstName">The person's first name</param>
+    /// <param name="lastName">The person's last name.</param>
+    /// <param name="height">Body height in cm.</param>
+    /// <param name="weight">Body weight in kg.</param>
+    /// <param name="dateOfBirth">Date of birth</param>
+    /// <param name="email">Unique email address</param>
+    /// <param name="websiteLink">Optional URL for professional profiles</param>
+    /// <param name="description">Optional bio or service description.</param>
+    /// <param name="address">The <see cref="Address"/> entity to be linked with this person.</param>
+    /// <param name="role">The <see cref="AccountRole"/> assigned to this user</param>
+    /// <returns>The newly created <see cref="Person"/> entity</returns>
     public Person AddPerson(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
                             string? email, string? websiteLink, string? description,
                             Address address, AccountRole role)
@@ -274,11 +288,19 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
         return person;
     }
 
+    /// <summary>
+    /// Updates an existing person's information in the database.
+    /// </summary>
+    /// <param name="person">The person entity containing the updated property values.</param>
     public void UpdatePerson(Person person)
     {
         personSet.Update(person);
     }
 
+    /// <summary>
+    /// Removes a person and their associated role assignments from the database.
+    /// </summary>
+    /// <param name="person">The person entity to be deleted.</param>
     public void RemovePerson(Person person)
     {
         personSet.Remove(person);

@@ -1,55 +1,47 @@
-@BaseUrl = http://localhost:5200/equipressure/api/
+@BaseUrl = http://localhost:5200/equipressure/api
 
 ### Person Endpoints
 @personId = 1
 @saddlerId = 2
 @equestrianId = 1
 
-### 1. Alle Personen abrufen
-GET {{BaseUrl}}/persons
-
-### 2. Person abrufen
+### 1. Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}
 
-### 3. Person abrufen (minimale Daten)
+### 2. Person abrufen (minimale Daten)
 GET {{BaseUrl}}/persons/{{personId}}/profile-data
 
-### 4. Adresse einer Person abrufen
+### 3. Adresse einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/address
 
-### 5. Kontakte einer Person abrufen
+### 4. Kontakte einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/contacts
 
-### 6. Favoriten einer Person abrufen
+### 5. Favoriten einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/favourites
 
-### 7. Alle Sattler mit Adresse (Alle Personen mit Rolle 'Sattler')
+### 6. Alle Sattler mit Adresse (Alle Personen mit Rolle 'Sattler')
 GET {{BaseUrl}}/persons/saddlers
 
-### 8. Alle Pferde einer Person abrufen
+### 7. Alle Pferde einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/horses
 
-### 9. Alle Geräte einer Person abrufen (inkl. Owner-Info)
+### 8. Alle Geräte einer Person abrufen (inkl. Owner-Info)
 GET {{BaseUrl}}/persons/{{personId}}/devices
 
-### 10. Neue Person anlegen (inkl. Rolle)
+### 9. Neue Person anlegen
 POST {{BaseUrl}}/persons
 Content-Type: application/json
 
 {
     "firstName": "Max",
     "lastName": "Mustermann",
-    "height": 180.5,
-    "weight": 75.0,
     "dateOfBirth": "1995-05-20",
     "email": "max@reiter.at",
-    "websiteLink": "https://max-reitet.at",
-    "description": "Erfahrener Springreiter",
-    "addressId": 1,
-    "roleId": 2
+    "addressId": 1
 }
 
-### 11. Person aktualisieren
+### 10. Person aktualisieren
 PUT {{BaseUrl}}/persons/{{personId}}
 Content-Type: application/json
 
@@ -64,5 +56,5 @@ Content-Type: application/json
     "addressId": 1
 }
 
-### 12. Person löschen
+### 11. Person löschen
 DELETE {{BaseUrl}}/persons/{{personId}}
