@@ -6,6 +6,7 @@ using OneOf.Types;
 
 namespace EquiApi.Core.Services;
 
+
 using GetPersonAsEquestrianByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<EquestrianBasicData>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
@@ -50,6 +51,14 @@ public interface IPersonService
 
 public class PersonService(IUnitOfWork uow) : IPersonService
 {
+    /// <summary>
+    /// Retrieves the data of a person formatted for an equestrian user view.
+    /// </summary>
+    /// <param name="id">The id of the person.</param>
+    /// <returns>
+    /// A <see cref="Success{EquestrianBasicData}"/> containing the data, 
+    /// or <see cref="NotFound"/> if the person does not exist.
+    /// </returns>
     public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id)
     {
         var result = await uow.PersonRepository.GetPersonAsEquestrianByIdAsync(id, false);
@@ -59,6 +68,14 @@ public class PersonService(IUnitOfWork uow) : IPersonService
             : new NotFound();
     }
 
+    /// <summary>
+    /// Retrieves the specific address for a person.
+    /// </summary>
+    /// <param name="id">The id of the person.</param>
+    /// <returns>
+    /// A <see cref="Success{Address}"/> containing the address, 
+    /// or <see cref="NotFound"/> if the person or their address is missing.
+    /// </returns>
     public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id)
     {
         var result = await uow.PersonRepository.GetPersonAddressAsync(id, false);
@@ -67,6 +84,7 @@ public class PersonService(IUnitOfWork uow) : IPersonService
             : new NotFound();
     }
 
+    
     public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId)
     {
         if (!await uow.PersonRepository.PersonExists(equestrianId, false))
@@ -82,6 +100,15 @@ public class PersonService(IUnitOfWork uow) : IPersonService
                 : new NotFound();
     }
 
+    
+    /// <summary>
+    /// Retrieves the First and Last name for a person.
+    /// </summary>
+    /// <param name="id">The id of the person.</param>
+    /// <returns>
+    /// A <see cref="Success{NameData}"/> if found,
+    /// or <see cref="NotFound"/> if the ID is unknown.
+    /// </returns>
     public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id)
     {
         var result = await uow.PersonRepository.GetNameByIdAsync(id, false);
@@ -91,6 +118,15 @@ public class PersonService(IUnitOfWork uow) : IPersonService
             : new NotFound();
     }
 
+    /// <summary>
+    /// Retrieves the list of persons marked as favorites by the specified user.
+    /// </summary>
+    /// <param name="id">The id of the perosn</param>
+    /// <returns>
+    /// A collection of <see cref="Person"/> entities,
+    /// <see cref="None"/> if the collection is empty, 
+    /// or <see cref="NotFound"/> if the user does not exist.
+    /// </returns>
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id)
     {
         var personExists = await uow.PersonRepository.PersonExists(id, false);
@@ -102,6 +138,15 @@ public class PersonService(IUnitOfWork uow) : IPersonService
         return new Success<IReadOnlyCollection<Person>>(result);
     }
 
+    /// <summary>
+    /// Retrieves the list of contacts associated with the specified user.
+    /// </summary>
+    /// <param name="id">The id of the person</param>
+    /// <returns>
+    /// A collection of <see cref="Person"/> entities,
+    /// <see cref="None"/> if the collection is empty, 
+    /// or <see cref="NotFound"/> if the user does not exist.
+    /// </returns>
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id)
     {
         var personExists = await uow.PersonRepository.PersonExists(id, false);
@@ -113,6 +158,15 @@ public class PersonService(IUnitOfWork uow) : IPersonService
         return new Success<IReadOnlyCollection<Person>>(result);
     }
 
+    /// <summary>
+    /// Retrieves all horses owned by the person.
+    /// </summary>
+    /// <param name="id">The id of the person</param>
+    /// <returns>
+    /// A collection of <see cref="Horse"/> entities,
+    /// <see cref="None"/> if the collection is empty,
+    /// or <see cref="NotFound"/> if the person does not exist.
+    /// </returns>
     public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id)
     {
         var personExists = await uow.PersonRepository.PersonExists(id, false);
