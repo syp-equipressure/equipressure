@@ -9,7 +9,7 @@ public interface IDeviceRepository
 {
     public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetDevicesFromUserIdAsync(int userId);
     public ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(int deviceId);
-    public ValueTask<IReadOnlyCollection<Person>> GetPersonOfDeviceAsync(int deviceId);
+    public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId);
 }
 
 public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceRepository
@@ -33,5 +33,23 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceReposit
         return result;
     }
 
-    public ValueTask<IReadOnlyCollection<Person>> GetPersonOfDeviceAsync(int deviceId) => throw new NotImplementedException();
+    public async ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId)
+    {
+        var result = await devices.Include(d => d.Users)
+                                  .ThenInclude(u => u.User)
+                                  .Where(d => d.Id == deviceId)
+                                  .Select(d => d.Users.Select(u => u.User).FirstOrDefault())
+                                  .ToListAsync();
+        
+        var res = result.Where(p => p != null)
+                        .Cast<Person>()
+                        .ToList();
+
+        if (res.Count < 0)
+        {
+            return  new NotFound();
+        }
+
+        return res;
+    }
 }
