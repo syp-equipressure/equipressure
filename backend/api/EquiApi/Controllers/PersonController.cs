@@ -112,12 +112,12 @@ public sealed class PersonController(
 
         // bei none einfach eine leere liste zurückgeben
         return result.Match<ActionResult<PersonListResponse>>(success =>
-                                                                           Ok(PersonListResponse
-                                                                                  .FromPersons(success.Value)),
-                                                                       none => Ok(PersonListResponse.FromPersons([])),
-                                                                       notFound => NotFound());
+                                                                  Ok(PersonListResponse
+                                                                         .FromPersons(success.Value)),
+                                                              none => Ok(PersonListResponse.FromPersons([])),
+                                                              notFound => NotFound());
     }
-    
+
     [HttpGet("{id:int}/favourites")]
     [ProducesResponseType<PersonListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -138,10 +138,35 @@ public sealed class PersonController(
                       notFound => { logger.LogError("Person was not found"); });
 
         return result.Match<ActionResult<PersonListResponse>>(success =>
-                                                                           Ok(PersonListResponse
-                                                                                  .FromPersons(success.Value)),
-                                                                       none => Ok(PersonListResponse.FromPersons([])),
-                                                                       notFound => NotFound());
+                                                                  Ok(PersonListResponse
+                                                                         .FromPersons(success.Value)),
+                                                              none => Ok(PersonListResponse.FromPersons([])),
+                                                              notFound => NotFound());
+    }
+
+    [HttpGet("{id:int}/horses")]
+    [ProducesResponseType<HorseListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<List<HorseListResponse>>> GetHorses([FromRoute] int id)
+    {
+        if (id <= 0)
+        {
+            logger.LogError("Bad request, Id is invalid");
+
+            return BadRequest();
+        }
+
+        OneOf<Success<IReadOnlyCollection<Horse>>, None, NotFound> result = await personService.GetOwnedHorsesAsync(id);
+
+        result.Switch(success => { logger.LogInformation("Successfully got list of Horses"); },
+                      none => { logger.LogInformation("List of Horses was found empty"); },
+                      notFound => { logger.LogError("Person was not found"); });
+
+        return result.Match<ActionResult<List<HorseListResponse>>>(success =>
+                                                                       Ok(HorseListResponse.FromHorses(success.Value)),
+                                                                   none => Ok(PersonListResponse.FromPersons([])),
+                                                                   notFound => NotFound());
     }
 }
 
@@ -180,11 +205,12 @@ public sealed class NameDataDto
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
 
-    public static NameDataDto FromData(NameData data) => new()
-    {
-        FirstName = data.FirstName, 
-        LastName = data.LastName
-    };
+    public static NameDataDto FromData(NameData data) =>
+        new()
+        {
+            FirstName = data.FirstName,
+            LastName = data.LastName
+        };
 }
 
 public sealed class AddressDto
@@ -206,8 +232,8 @@ public sealed class AddressDto
     public static AddressDto FromAddress(Address address) =>
         new()
         {
-            Street = address.Street, 
-            HouseNumber = address.HouseNumber, 
+            Street = address.Street,
+            HouseNumber = address.HouseNumber,
             // es wird auf city navigiert. repository muss city inkludieren
             CityName = address.City.Name,
             PLZ = address.City.PLZ
@@ -222,11 +248,12 @@ public sealed class PersonDto
     public string? Email { get; set; }
 
     public static PersonDto FromPerson(Person entity) =>
-        new() {
+        new()
+        {
             Id = entity.Id,
-            FirstName = entity.FirstName, 
-            LastName = entity.LastName, 
-            Email = entity.Email 
+            FirstName = entity.FirstName,
+            LastName = entity.LastName,
+            Email = entity.Email
         };
 }
 
@@ -236,6 +263,39 @@ public sealed class PersonListResponse
 
     public static PersonListResponse FromPersons(IEnumerable<Person> entities) =>
         new() { Persons = entities.Select(PersonDto.FromPerson) };
+}
+
+public sealed class HorseDto
+{
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public LocalDate DateOfBirth { get; set; }
+    public decimal Weight { get; set; }
+    public decimal Height { get; set; }
+    public string Gender { get; set; } = null!;
+    public string BreedName { get; set; } = null!;
+    public int AddressId { get; set; }
+
+    public static HorseDto FromHorse(Horse horse) =>
+        new()
+        {
+            Id = horse.Id,
+            Name = horse.Name,
+            DateOfBirth = horse.DateOfBirth,
+            Weight = horse.Weight,
+            Height = horse.Height,
+            Gender = horse.Gender.ToString(),
+            BreedName = horse.Breed.Name,
+            AddressId = horse.AddressId
+        };
+}
+
+public sealed class HorseListResponse
+{
+    public required IEnumerable<HorseDto> Horses { get; set; }
+
+    public static HorseListResponse FromHorses(IEnumerable<Horse> entities) =>
+        new() { Horses = entities.Select(HorseDto.FromHorse) };
 }
 
 public sealed class EquestrianBasicDto
