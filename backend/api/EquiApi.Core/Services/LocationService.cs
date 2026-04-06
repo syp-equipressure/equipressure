@@ -25,7 +25,7 @@ public class LocationService(IUnitOfWork uow) : ILocationService
 {
     public async ValueTask<GetCityAsyncResult> GetCityAsync(int? length, string? nameFilter)
     {
-        var res = await uow.LocationRepository.GetCityAsync(length, nameFilter, true);
+        var res = await uow.LocationRepository.GetCitiesAsync(length, nameFilter, true);
 
         return res.Any()
             ? new Success<IReadOnlyCollection<City>>(res)
