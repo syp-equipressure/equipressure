@@ -26,12 +26,15 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Id is invalid");
+            logger.LogError("Bad request, Id is invalid");
 
             return BadRequest();
         }
 
         OneOf<Success<EquestrianBasicData>, NotFound> result = await personService.GetPersonAsEquestrianByIdAsync(id);
+
+        result.Switch(success => { logger.LogInformation("Successfully got Equestrian"); },
+                      notFound => { logger.LogError("Equestrian was not found"); });
 
         return result.Match<ActionResult<EquestrianBasicDto>>(success =>
                                                                   Ok(EquestrianBasicDto
@@ -46,13 +49,39 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
+            logger.LogError("Bad request, Id is invalid");
+
             return BadRequest();
         }
 
         OneOf<Success<NameData>, NotFound> result = await personService.GetNameByIdAsync(id);
 
+        result.Switch(success => { logger.LogInformation("Successfully got Person"); },
+                      notFound => { logger.LogError("Person was not found"); });
+        
         return result.Match<ActionResult<NameDataDto>>(success => Ok(NameDataDto.FromData(success.Value)),
                                                        notFound => NotFound());
+    }
+
+    [HttpGet("{id:int}/address")]
+    [ProducesResponseType<AddressDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<AddressDto>> GetAddress([FromRoute] int id)
+    {
+        if (id <= 0)
+        {
+            logger.LogError("Bad request, Id is invalid");
+
+            return BadRequest();
+        }
+
+        OneOf<Success<Address>, NotFound> result = await personService.GetPersonAddressAsync(id);
+
+        result.Switch(success => { logger.LogInformation("Successfully got Address"); },
+                      notFound => { logger.LogError("Address was not found"); });
+        
+        return result.Match<ActionResult<AddressDto>>(success => Ok(AddressDto.FromAddress(success.Value)),
+                                                      notFound => NotFound());
     }
 }
 
@@ -91,6 +120,30 @@ public sealed class NameDataDto
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
     public static NameDataDto FromData(NameData data) => new() { FirstName = data.FirstName, LastName = data.LastName };
+}
+
+public sealed class AddressDto
+{
+    public string? Street { get; set; }
+    public int? HouseNumber { get; set; }
+    public required string CityName { get; set; }
+    public required string PLZ { get; set; }
+
+    public sealed class Validator : AbstractValidator<AddressDto>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.CityName).NotEmpty();
+            RuleFor(x => x.PLZ).NotEmpty();
+        }
+    }
+
+    public static AddressDto FromAddress(Address address) =>
+        new()
+        {
+            Street = address.Street, HouseNumber = address.HouseNumber, CityName = address.City.Name,
+            PLZ = address.City.PLZ
+        };
 }
 
 public sealed class EquestrianBasicDto
