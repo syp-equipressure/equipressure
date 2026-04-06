@@ -24,6 +24,7 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<ActionResult<EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
     {
+        // check, ob die id überhaupt sinn macht (muss positiv sein)
         if (id <= 0)
         {
             logger.LogError("Bad request, Id is invalid");
@@ -31,11 +32,14 @@ public sealed class PersonController(
             return BadRequest();
         }
 
+        // liefert entweder success oder notfound
         OneOf<Success<EquestrianBasicData>, NotFound> result = await personService.GetPersonAsEquestrianByIdAsync(id);
 
+        // switchen beim logging für die verschiedenen cases
         result.Switch(success => { logger.LogInformation("Successfully got Equestrian"); },
                       notFound => { logger.LogError("Equestrian was not found"); });
 
+        // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
         return result.Match<ActionResult<EquestrianBasicDto>>(success =>
                                                                   Ok(EquestrianBasicDto
                                                                          .FromEquestrianBasicData(success.Value, id)),
@@ -90,7 +94,7 @@ public sealed class PersonController(
     [ProducesResponseType<PersonListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<IReadOnlyCollection<Person>>> GetContacts([FromRoute] int id)
+    public async ValueTask<ActionResult<PersonListResponse>> GetContacts([FromRoute] int id)
     {
         if (id <= 0)
         {
@@ -99,20 +103,46 @@ public sealed class PersonController(
             return BadRequest();
         }
 
+        // hier liefern wir entweder eine liste, none oder notfound
         OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetContactsAsync(id);
 
         result.Switch(success => { logger.LogInformation("Successfully got list of Contacts"); },
                       none => { logger.LogInformation("List of Contacts was found empty"); },
                       notFound => { logger.LogError("Person was not found"); });
 
-        return result.Match<ActionResult<IReadOnlyCollection<Person>>>(success =>
+        // bei none einfach eine leere liste zurückgeben
+        return result.Match<ActionResult<PersonListResponse>>(success =>
                                                                            Ok(PersonListResponse
                                                                                   .FromPersons(success.Value)),
                                                                        none => Ok(PersonListResponse.FromPersons([])),
                                                                        notFound => NotFound());
     }
     
-    
+    [HttpGet("{id:int}/favourites")]
+    [ProducesResponseType<PersonListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<PersonListResponse>> GetFavourites([FromRoute] int id)
+    {
+        if (id <= 0)
+        {
+            logger.LogError("Bad request, Id is invalid");
+
+            return BadRequest();
+        }
+
+        OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetFavouritesAsync(id);
+
+        result.Switch(success => { logger.LogInformation("Successfully got list of Favourites"); },
+                      none => { logger.LogInformation("List of Favourites was found empty"); },
+                      notFound => { logger.LogError("Person was not found"); });
+
+        return result.Match<ActionResult<PersonListResponse>>(success =>
+                                                                           Ok(PersonListResponse
+                                                                                  .FromPersons(success.Value)),
+                                                                       none => Ok(PersonListResponse.FromPersons([])),
+                                                                       notFound => NotFound());
+    }
 }
 
 public sealed class AddPersonRequest()
@@ -150,7 +180,11 @@ public sealed class NameDataDto
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
 
-    public static NameDataDto FromData(NameData data) => new() { FirstName = data.FirstName, LastName = data.LastName };
+    public static NameDataDto FromData(NameData data) => new()
+    {
+        FirstName = data.FirstName, 
+        LastName = data.LastName
+    };
 }
 
 public sealed class AddressDto
@@ -172,7 +206,10 @@ public sealed class AddressDto
     public static AddressDto FromAddress(Address address) =>
         new()
         {
-            Street = address.Street, HouseNumber = address.HouseNumber, CityName = address.City.Name,
+            Street = address.Street, 
+            HouseNumber = address.HouseNumber, 
+            // es wird auf city navigiert. repository muss city inkludieren
+            CityName = address.City.Name,
             PLZ = address.City.PLZ
         };
 }
@@ -185,7 +222,12 @@ public sealed class PersonDto
     public string? Email { get; set; }
 
     public static PersonDto FromPerson(Person entity) =>
-        new() { Id = entity.Id, FirstName = entity.FirstName, LastName = entity.LastName, Email = entity.Email };
+        new() {
+            Id = entity.Id,
+            FirstName = entity.FirstName, 
+            LastName = entity.LastName, 
+            Email = entity.Email 
+        };
 }
 
 public sealed class PersonListResponse
