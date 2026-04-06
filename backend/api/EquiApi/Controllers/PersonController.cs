@@ -267,27 +267,56 @@ public sealed class PersonController(
             = await personService.UpdatePersonAsync(personEntity);
 
         result.Switch(async success =>
-                      {
-                          logger.LogInformation("Successfully updated person");
-                          await transaction.CommitAsync();
-                      }, async notFound =>
-                      {
-                          logger.LogError("person not found.");
-                          await transaction.RollbackAsync();
-                      }, async invalidData =>
-                      {
-                          logger.LogError("data in invalid format.");
-                          await transaction.RollbackAsync();
-                      }, async conflict =>
-                      {
-                          logger.LogError("email already exists.");
-                          await transaction.RollbackAsync();
-                      });
-        
+        {
+            logger.LogInformation("Successfully updated person");
+            await transaction.CommitAsync();
+        }, async notFound =>
+        {
+            logger.LogError("person not found.");
+            await transaction.RollbackAsync();
+        }, async invalidData =>
+        {
+            logger.LogError("data in invalid format.");
+            await transaction.RollbackAsync();
+        }, async conflict =>
+        {
+            logger.LogError("email already exists.");
+            await transaction.RollbackAsync();
+        });
+
         return result.Match<ActionResult>(success => NoContent(),
                                           notFound => NotFound(),
                                           invalid => BadRequest(),
                                           conflict => Conflict());
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> DeletePerson([FromRoute] int id)
+    {
+        await transaction.BeginTransactionAsync();
+        if (id <= 0)
+        {
+            logger.LogError("Bad request, Id is invalid");
+
+            return BadRequest();
+        }
+
+        OneOf<Success, NotFound> result = await personService.DeletePersonAsync(id);
+
+        result.Switch(async success =>
+        {
+            logger.LogInformation("Successfully deleted person");
+            await transaction.CommitAsync();
+        }, async notFound =>
+        {
+            logger.LogError("person not found.");
+            await transaction.RollbackAsync();
+        });
+
+        return result.Match<IActionResult>(success => NoContent(),
+                                           notFound => NotFound());
     }
 }
 
