@@ -11,7 +11,7 @@ namespace EquiApi.Controllers;
 public sealed class DeviceController(IDeviceService deviceService, 
                               ILogger<DeviceController> logger) : BaseController
 {
-    [HttpGet("/:{userId:int}")]
+    [HttpGet("/{userId:int}")]
     [ProducesResponseType<DeviceListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -30,6 +30,41 @@ public sealed class DeviceController(IDeviceService deviceService,
                                                                                 .FromDeviceList(success.Value)),
                                                               notFound => NotFound());
     }
+    
+    [HttpGet("{deviceId:int}/owner")]
+    [ProducesResponseType<PersonDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async ValueTask<ActionResult<PersonDto>> GetOwnerByDeviceId([FromRoute] int deviceId)
+    {
+        if (deviceId < 0)
+        {
+            logger.LogWarning("deviceId {deviceId} has to be a valid number", deviceId);
+            return BadRequest();
+        }
+
+        var result = await deviceService.GetOwnerOfDevice(deviceId);
+
+        return result.Match<ActionResult<PersonDto>>(
+                                                     success => Ok(PersonDto.FromPerson(success.Value)),
+                                                     notFound => NotFound(),
+                                                     noOwner =>
+                                                     {
+                                                         logger.LogWarning("Device {deviceId} has no owner", noOwner.deviceId);
+                                                         return UnprocessableEntity();
+                                                     });
+    }
+
+    
+    
+}
+
+
+
+public sealed record DeviceDto(int Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
+{
+    public static DeviceDto FromDevice(MeasurementDevice device) =>
+        new(device.Id, device.CategoryId, device.Owner, device.Users);
 }
 
 public sealed record DeviceListResponse(IEnumerable<DeviceDto> Devices)
@@ -38,8 +73,14 @@ public sealed record DeviceListResponse(IEnumerable<DeviceDto> Devices)
         new(devices.Select(d => DeviceDto.FromDevice(d)));
 }
 
-public sealed record DeviceDto(int Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
+public sealed record PersonDto(int Id, string FirstName, string LastName)
 {
-    public static DeviceDto FromDevice(MeasurementDevice device) =>
-        new(device.Id, device.CategoryId, device.Owner, device.Users);
+    public static PersonDto FromPerson(Person person) =>
+        new(person.Id, person.FirstName, person.LastName);
+}
+
+public sealed record PersonListResponse(IEnumerable<PersonDto> Users)
+{
+    public static PersonListResponse FromPersonList(IReadOnlyCollection<Person> persons) =>
+        new(persons.Select(PersonDto.FromPerson));
 }
