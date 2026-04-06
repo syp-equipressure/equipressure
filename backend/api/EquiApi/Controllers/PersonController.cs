@@ -196,7 +196,7 @@ public sealed class PersonController(
     }
 
     [HttpPost]
-    [ProducesResponseType<AddPersonRequest>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<ActionResult> CreatePerson([FromBody] AddPersonRequest request)
@@ -230,6 +230,62 @@ public sealed class PersonController(
         });
 
         return result.Match<ActionResult>(success => Created(),
+                                          invalid => BadRequest(),
+                                          conflict => Conflict());
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult> UpdatePerson([FromRoute] int id,
+                                                      [FromBody] UpdatePersonRequest request)
+    {
+        await transaction.BeginTransactionAsync();
+        if (id != request.Id)
+        {
+            logger.LogError("id doesnt match request id");
+
+            return BadRequest();
+        }
+
+        var personEntity = new Person
+        {
+            Id = request.Id,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Height = request.Height,
+            Weight = request.Weight,
+            DateOfBirth = request.DateOfBirth,
+            Email = request.Email,
+            WebsiteLink = request.WebsiteLink,
+            Description = request.Description
+        };
+
+        OneOf<Success<Person>, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
+            = await personService.UpdatePersonAsync(personEntity);
+
+        result.Switch(async success =>
+                      {
+                          logger.LogInformation("Successfully updated person");
+                          await transaction.CommitAsync();
+                      }, async notFound =>
+                      {
+                          logger.LogError("person not found.");
+                          await transaction.RollbackAsync();
+                      }, async invalidData =>
+                      {
+                          logger.LogError("data in invalid format.");
+                          await transaction.RollbackAsync();
+                      }, async conflict =>
+                      {
+                          logger.LogError("email already exists.");
+                          await transaction.RollbackAsync();
+                      });
+        
+        return result.Match<ActionResult>(success => NoContent(),
+                                          notFound => NotFound(),
                                           invalid => BadRequest(),
                                           conflict => Conflict());
     }
@@ -390,6 +446,34 @@ public sealed class DeviceListResponse
 
     public static DeviceListResponse FromDevices(IEnumerable<MeasurementDevice> entities) =>
         new() { Devices = entities.Select(MeasurementDeviceDto.FromDevice) };
+}
+
+public sealed class UpdatePersonRequest
+{
+    public int Id { get; set; }
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
+    public decimal Height { get; set; }
+    public decimal Weight { get; set; }
+    public LocalDate DateOfBirth { get; set; }
+    public string? Email { get; set; }
+    public string? WebsiteLink { get; set; }
+    public string? Description { get; set; }
+
+    public sealed class Validator : AbstractValidator<UpdatePersonRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Id).NotEmpty();
+            RuleFor(x => x.FirstName).NotEmpty();
+            RuleFor(x => x.LastName).NotEmpty();
+            RuleFor(x => x.Height).GreaterThan(0);
+            RuleFor(x => x.Weight).GreaterThan(0);
+            RuleFor(x => x.DateOfBirth).LessThan(LocalDate.FromDateTime(DateTime.Today));
+            RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
+                                 .WithMessage("Email must contain '@' and a '.' after it");
+        }
+    }
 }
 
 public sealed class EquestrianBasicDto
