@@ -29,7 +29,7 @@ public interface IPersonRepository
 }
 
 internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
-                              DbSet<AccountRole> rolesSet) : IPersonRepository
+                                     DbSet<AccountRole> rolesSet) : IPersonRepository
 {
     private IQueryable<Person> Persons => personSet;
     

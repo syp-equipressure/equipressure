@@ -7,31 +7,37 @@ using FluentValidation;
 using Library.Core;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
+using OneOf;
+using OneOf.Types;
 
 namespace EquiApi.Controllers;
 
 [Route("api/persons")]
 public sealed class PersonController(
-    /*ITransactionProvider transaction,*/
-    IPersonService personService /*,
-    ILogger<PersonController> logger*/) : BaseController
+    ITransactionProvider transaction,
+    IPersonService personService,
+    ILogger<PersonController> logger) : BaseController
 {
-    /* [HttpGet]
-    [Route("{id:int}/isEquestrian")]
+    [HttpGet("{id:int}")]
     [ProducesResponseType<EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<ActionResult<EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
     {
-        var result = await personService.GetPersonAsEquestrianByIdAsync(id);
+        if (id <= 0)
+        {
+            logger.LogError("Id is invalid");
 
-        return
-            result.Match<ActionResult<EquestrianBasicDto>>(success =>
-                                                               Ok(EquestrianBasicDto
-                                                                      .FromEquestrianBasicData(success.Value, id)),
-                                                           notFound => NotFound());
-    } */
-    
-    
+            return BadRequest();
+        }
+
+        OneOf<Success<EquestrianBasicData>, NotFound> result = await personService.GetPersonAsEquestrianByIdAsync(id);
+
+        return result.Match<ActionResult<EquestrianBasicDto>>(success =>
+                                                                  Ok(EquestrianBasicDto
+                                                                         .FromEquestrianBasicData(success.Value, id)),
+                                                              notFound => NotFound());
+    }
 }
 
 public sealed class AddPersonRequest()
@@ -55,17 +61,20 @@ public sealed class AddPersonRequest()
             RuleFor(x => x.LastName).NotEmpty();
             RuleFor(x => x.Height).GreaterThan(0);
             RuleFor(x => x.Weight).GreaterThan(0);
-            RuleFor(x => x.DateOfBirth)
-                .NotNull()
-                .LessThan(LocalDate.FromDateTime(DateTime.Today));
-            RuleFor(x => x.Email)
-                .Matches(@"^[^@]+@[^@]+\.[^@]+$")
-                .When(x => !string.IsNullOrEmpty(x.Email))
-                .WithMessage("Email must contain '@' and a '.' after it");
+            RuleFor(x => x.DateOfBirth).NotNull().LessThan(LocalDate.FromDateTime(DateTime.Today));
+            RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
+                                 .WithMessage("Email must contain '@' and a '.' after it");
             RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == "Equestrian");
             RuleFor(x => x.Description).Empty().When(x => x.Role.Name == "Equestrian");
         }
     }
+}
+
+public sealed class NameDataDto
+{
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
+    public static NameDataDto FromData(NameData data) => new() { FirstName = data.FirstName, LastName = data.LastName };
 }
 
 public sealed class EquestrianBasicDto

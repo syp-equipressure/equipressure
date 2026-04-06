@@ -1,4 +1,4 @@
-@BaseUrl = http://localhost:5200/equipressure/api
+@BaseUrl = http://localhost:5200/api
 
 ### Person Endpoints
 @personId = 1
