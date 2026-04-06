@@ -38,6 +38,22 @@ public sealed class PersonController(
                                                                          .FromEquestrianBasicData(success.Value, id)),
                                                               notFound => NotFound());
     }
+
+    [HttpGet("{id:int}/profile-data")]
+    [ProducesResponseType<NameDataDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<NameDataDto>> GetProfileData([FromRoute] int id)
+    {
+        if (id <= 0)
+        {
+            return BadRequest();
+        }
+
+        OneOf<Success<NameData>, NotFound> result = await personService.GetNameByIdAsync(id);
+
+        return result.Match<ActionResult<NameDataDto>>(success => Ok(NameDataDto.FromData(success.Value)),
+                                                       notFound => NotFound());
+    }
 }
 
 public sealed class AddPersonRequest()
