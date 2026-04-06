@@ -45,6 +45,7 @@ public sealed class PersonController(
     [HttpGet("{id:int}/profile-data")]
     [ProducesResponseType<NameDataDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<ActionResult<NameDataDto>> GetProfileData([FromRoute] int id)
     {
         if (id <= 0)
@@ -58,7 +59,7 @@ public sealed class PersonController(
 
         result.Switch(success => { logger.LogInformation("Successfully got Person"); },
                       notFound => { logger.LogError("Person was not found"); });
-        
+
         return result.Match<ActionResult<NameDataDto>>(success => Ok(NameDataDto.FromData(success.Value)),
                                                        notFound => NotFound());
     }
@@ -66,6 +67,7 @@ public sealed class PersonController(
     [HttpGet("{id:int}/address")]
     [ProducesResponseType<AddressDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<ActionResult<AddressDto>> GetAddress([FromRoute] int id)
     {
         if (id <= 0)
@@ -79,10 +81,38 @@ public sealed class PersonController(
 
         result.Switch(success => { logger.LogInformation("Successfully got Address"); },
                       notFound => { logger.LogError("Address was not found"); });
-        
+
         return result.Match<ActionResult<AddressDto>>(success => Ok(AddressDto.FromAddress(success.Value)),
                                                       notFound => NotFound());
     }
+
+    [HttpGet("{id:int}/contacts")]
+    [ProducesResponseType<PersonListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<IReadOnlyCollection<Person>>> GetContacts([FromRoute] int id)
+    {
+        if (id <= 0)
+        {
+            logger.LogError("Bad request, Id is invalid");
+
+            return BadRequest();
+        }
+
+        OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetContactsAsync(id);
+
+        result.Switch(success => { logger.LogInformation("Successfully got list of Contacts"); },
+                      none => { logger.LogInformation("List of Contacts was found empty"); },
+                      notFound => { logger.LogError("Person was not found"); });
+
+        return result.Match<ActionResult<IReadOnlyCollection<Person>>>(success =>
+                                                                           Ok(PersonListResponse
+                                                                                  .FromPersons(success.Value)),
+                                                                       none => Ok(PersonListResponse.FromPersons([])),
+                                                                       notFound => NotFound());
+    }
+    
+    
 }
 
 public sealed class AddPersonRequest()
@@ -119,6 +149,7 @@ public sealed class NameDataDto
 {
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
+
     public static NameDataDto FromData(NameData data) => new() { FirstName = data.FirstName, LastName = data.LastName };
 }
 
@@ -144,6 +175,25 @@ public sealed class AddressDto
             Street = address.Street, HouseNumber = address.HouseNumber, CityName = address.City.Name,
             PLZ = address.City.PLZ
         };
+}
+
+public sealed class PersonDto
+{
+    public int Id { get; set; }
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
+    public string? Email { get; set; }
+
+    public static PersonDto FromPerson(Person entity) =>
+        new() { Id = entity.Id, FirstName = entity.FirstName, LastName = entity.LastName, Email = entity.Email };
+}
+
+public sealed class PersonListResponse
+{
+    public required IEnumerable<PersonDto> Persons { get; set; }
+
+    public static PersonListResponse FromPersons(IEnumerable<Person> entities) =>
+        new() { Persons = entities.Select(PersonDto.FromPerson) };
 }
 
 public sealed class EquestrianBasicDto
