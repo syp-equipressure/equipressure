@@ -3,6 +3,7 @@ using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Repositories;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
+using EquiPressure.Core.Service;
 using FluentValidation;
 using Library.Core;
 using Microsoft.AspNetCore.Mvc;
@@ -181,7 +182,7 @@ public sealed class PersonController(
 
             return BadRequest();
         }
-        
+
         OneOf<Success<List<MeasurementDevice>>, None, NotFound> result = await personService.GetAllDevicesAsync(id);
 
         result.Switch(success => { logger.LogInformation("Successfully got list of Devices"); },
@@ -192,6 +193,45 @@ public sealed class PersonController(
                                                                   Ok(DeviceListResponse.FromDevices(success.Value)),
                                                               none => Ok(DeviceListResponse.FromDevices([])),
                                                               notFound => NotFound());
+    }
+
+    [HttpPost]
+    [ProducesResponseType<AddPersonRequest>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult> CreatePerson([FromBody] AddPersonRequest request)
+    {
+        await transaction.BeginTransactionAsync();
+        var addressEntity = new Address
+        {
+            Street = request.Address.Street,
+            HouseNumber = request.Address.HouseNumber,
+            CityId = request.Address.CityId
+        };
+
+        OneOf<Success<Person>, IBaseService.InvalidData, IBaseService.Conflict> result
+            = await personService.AddPersonAsync(request.FirstName, request.LastName, request.Height,
+                                                 request.Weight, request.DateOfBirth, request.Email,
+                                                 request.WebsiteLink, request.Description, addressEntity,
+                                                 request.Role);
+
+        result.Switch(async success =>
+        {
+            logger.LogInformation("Successfully added person");
+            await transaction.CommitAsync();
+        }, async invalidData =>
+        {
+            logger.LogError("data in incorrect format.");
+            await transaction.RollbackAsync();
+        }, async conflict =>
+        {
+            logger.LogError("email already exists.");
+            await transaction.RollbackAsync();
+        });
+
+        return result.Match<ActionResult>(success => Created(),
+                                          invalid => BadRequest(),
+                                          conflict => Conflict());
     }
 }
 
