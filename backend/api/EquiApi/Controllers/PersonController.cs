@@ -148,7 +148,7 @@ public sealed class PersonController(
     [ProducesResponseType<HorseListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<List<HorseListResponse>>> GetHorses([FromRoute] int id)
+    public async ValueTask<ActionResult<HorseListResponse>> GetHorses([FromRoute] int id)
     {
         if (id <= 0)
         {
@@ -163,10 +163,35 @@ public sealed class PersonController(
                       none => { logger.LogInformation("List of Horses was found empty"); },
                       notFound => { logger.LogError("Person was not found"); });
 
-        return result.Match<ActionResult<List<HorseListResponse>>>(success =>
-                                                                       Ok(HorseListResponse.FromHorses(success.Value)),
-                                                                   none => Ok(PersonListResponse.FromPersons([])),
-                                                                   notFound => NotFound());
+        return result.Match<ActionResult<HorseListResponse>>(success =>
+                                                                 Ok(HorseListResponse.FromHorses(success.Value)),
+                                                             none => Ok(PersonListResponse.FromPersons([])),
+                                                             notFound => NotFound());
+    }
+
+    [HttpGet("{id:int}/devices")]
+    [ProducesResponseType<DeviceListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<DeviceListResponse>> GetDevices([FromRoute] int id)
+    {
+        if (id <= 0)
+        {
+            logger.LogError("Bad request, Id is invalid");
+
+            return BadRequest();
+        }
+        
+        OneOf<Success<List<MeasurementDevice>>, None, NotFound> result = await personService.GetAllDevicesAsync(id);
+
+        result.Switch(success => { logger.LogInformation("Successfully got list of Devices"); },
+                      none => { logger.LogInformation("List of Devices was found empty"); },
+                      notFound => { logger.LogError("Person was not found"); });
+
+        return result.Match<ActionResult<DeviceListResponse>>(success =>
+                                                                  Ok(DeviceListResponse.FromDevices(success.Value)),
+                                                              none => Ok(DeviceListResponse.FromDevices([])),
+                                                              notFound => NotFound());
     }
 }
 
@@ -296,6 +321,35 @@ public sealed class HorseListResponse
 
     public static HorseListResponse FromHorses(IEnumerable<Horse> entities) =>
         new() { Horses = entities.Select(HorseDto.FromHorse) };
+}
+
+public sealed class MeasurementDeviceDto
+{
+    public int Id { get; set; }
+    public int OwnerId { get; set; }
+    public required string OwnerName { get; set; }
+    public required string CategoryName { get; set; }
+    public int AllowedUsersCount { get; set; }
+    public List<string> AuthorizedUserNames { get; set; } = [];
+
+    public static MeasurementDeviceDto FromDevice(MeasurementDevice device) =>
+        new()
+        {
+            Id = device.Id,
+            OwnerId = device.OwnerId,
+            OwnerName = $"{device.Owner.FirstName} {device.Owner.LastName}",
+            CategoryName = device.Category.Name,
+            AllowedUsersCount = device.Category.NumOfAllowedPeople,
+            AuthorizedUserNames = device.Users.Select(u => $"{u.User.FirstName} {u.User.LastName}").ToList()
+        };
+}
+
+public sealed class DeviceListResponse
+{
+    public required IEnumerable<MeasurementDeviceDto> Devices { get; set; }
+
+    public static DeviceListResponse FromDevices(IEnumerable<MeasurementDevice> entities) =>
+        new() { Devices = entities.Select(MeasurementDeviceDto.FromDevice) };
 }
 
 public sealed class EquestrianBasicDto
