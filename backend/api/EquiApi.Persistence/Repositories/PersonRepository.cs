@@ -11,22 +11,25 @@ public interface IPersonRepository
     public ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
     public ValueTask<NameData?> GetNameByIdAsync(int id, bool tracking);
     public ValueTask<bool> PersonExists(int id, bool tracking);
+    public ValueTask<bool> PersonWithEmailExists(string email, bool tracking);
+    public ValueTask<bool> RoleExists(AccountRole role);
+
+    public ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId, bool tracking);
     
     public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking);
-    public ValueTask<bool> RoleExists(AccountRole role);
     public Person AddPerson(string firstName, string lastName, decimal height,
                                                           decimal weight, LocalDate dateOfBirth, string? email, 
                                                           string? websiteLink, string? description, Address address,
                                                           AccountRole role);
     public void UpdatePerson(Person person);
-    public void RemovePerson(Person person);
+    public void RemovePerson(Person person); 
 }
 
 internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
-                              DbSet<AccountRole> rolesSet) : IPersonRepository
+                                     DbSet<AccountRole> rolesSet) : IPersonRepository
 {
     private IQueryable<Person> Persons => personSet;
     
@@ -164,6 +167,24 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
     }
 
     /// <summary>
+    /// checks if a person with the given email exists
+    /// </summary>
+    /// <param name="email"></param>
+    /// <param name="tracking"></param>
+    /// <returns>true if exists false if not</returns>
+    public async ValueTask<bool> PersonWithEmailExists(string email, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        return await source.AnyAsync(p => p.Email == email);
+    }
+
+    public async ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId, bool tracking)
+    {
+        var source = tracking ? Persons : PersonsNoTracking;
+        return await source.AnyAsync(p => p.Email == personEmail && p.Id != personId);
+    }
+
+    /// <summary>
     /// returns all persons that are marked as favourites for the given person
     /// </summary>
     /// <param name="id"></param>
@@ -244,7 +265,21 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
                            .SelectMany(p => p.uDevice.Concat(p.oDevice))
                            .ToListAsync();
     }
-
+    
+    /// <summary>
+    /// Creates a new person in the system and assigns a role.
+    /// </summary>
+    /// <param name="firstName">The person's first name</param>
+    /// <param name="lastName">The person's last name.</param>
+    /// <param name="height">Body height in cm.</param>
+    /// <param name="weight">Body weight in kg.</param>
+    /// <param name="dateOfBirth">Date of birth</param>
+    /// <param name="email">Unique email address</param>
+    /// <param name="websiteLink">Optional URL for professional profiles</param>
+    /// <param name="description">Optional bio or service description.</param>
+    /// <param name="address">The <see cref="Address"/> entity to be linked with this person.</param>
+    /// <param name="role">The <see cref="AccountRole"/> assigned to this user</param>
+    /// <returns>The newly created <see cref="Person"/> entity</returns>
     public Person AddPerson(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
                             string? email, string? websiteLink, string? description,
                             Address address, AccountRole role)
@@ -274,11 +309,19 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
         return person;
     }
 
+    /// <summary>
+    /// Updates an existing person's information in the database.
+    /// </summary>
+    /// <param name="person">The person entity containing the updated property values.</param>
     public void UpdatePerson(Person person)
     {
-        throw new NotImplementedException();
+        personSet.Update(person);
     }
 
+    /// <summary>
+    /// Removes a person and their associated role assignments from the database.
+    /// </summary>
+    /// <param name="person">The person entity to be deleted.</param>
     public void RemovePerson(Person person)
     {
         personSet.Remove(person);
