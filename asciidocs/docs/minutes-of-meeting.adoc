@@ -1350,3 +1350,133 @@ a| Wireframe Sattler-App
 | 07.04.2026
 
 |===
+
+== 2026-04-07
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-04-07
+
+|Dauer
+|08:00 bis 09:05
+|===
+====
+
+=== Besprochenes
+* Sattler-Wireframe
+* TYP Pitch Finale
+
+==== TYP Pitch
+* Pferde Grafik gefällt Prof. Hammer nicht; kann man besser machen
+* wir sollen Piktogramme für Pferde, Cowboy und Sattel generieren lassen
+* Grafik ist unverständlich; wir müssen Pferde in Relation zur Fläche setzen
+** macht sonst keinen Sinn weil kleines Land halt dann ausschaut als hätts weniger Markt, obwohls einfach kleiner ist
+* Equipressure Schriftzug gefällt ihm nicht
+** zwischen dem I und dem P gehört ein kleines Kästchen/Diamant damit man sich nicht verliest
+* wir sollen Bild von Sophie Grüneis Bild reingeben
+
+==== Sattler Wireframe
+* ohne Kameraset fortfahren Button sollte wsl nicht ausgegraut sein
+** wirkt als könnte man nicht draufklicken
+* EquiPressure-Kamera-Set zuammenschreiben
+* Grafik damit Sattler versteht was Kamera Set ist
+** rechts von Text die Grafik
+** Link für Kamera-Set Kauf einbauen ist gut
+* Prof. Hammer hasst Infoboxen jetzt
+* Kunden visualisieren:
+** Liste die nach mehreren Kriterien suchbar ist
+** Namen, wie weit entfernt oder so
+** wenn man auf Kunden drückt sieht man die Pferde die er hat
+* Registrierungsinstanz für Sattler
+** Sattlerdatenbank (haben wir im Datenmodell mit Rollen)
+* Anfragen Überschrift gleich wie Kunden Kontakte Überschrift
+* Sophie fragen ob wir maximale Anfrageanzahl haben wollen 
+** ob es eine Branche ist die 100 Anfragen und 1 Auftrag bekommen oder ob aus Anfragen fast immer Aufträge entstehen
+* Wir müssen mit Leuten aus der Branche reden und nicht mit Mentoren die nur glauben zu wissen wie es ist
+* Such- oder Filterfunktion im Chat
+** nach Name vom Kunden und vlt auch vom Pferd das geschickt worden ist?
+* warum zieht sich farbschme nicht ganz durch ... lila ton bei messung auf einmal anders
+* Kameras sind anderes Projekt; zusätzliche Anforderung für später
+** wir sollen Sophie kommunizieren dass es bis jetzt noch nicht gibt und dass das später dazukommt
+
+==== Backend
+* wir sollen feature scopes klein halten 
+* nach 1 oder spätestens 2 Wochen müssen wir mergen damit die feature branches nicht auseinander driften
+* wir müssen cherry picken
+* bevor wir zum Arbeiten anfangen immer rebasen vom backend oder dev
+* wir sollen jedes Mal wenn wir mergen auf einen anderen branch einen pull request machen
+* reviews starten bei pull requests
+** Kommentare bei Files schreiben und start a review drucken
+** dann muss der andere nochmal anschauen und sagen dass das deshalb gemacht worden ist oder er sagt ist ein Fehler und nochmal machen
+* jeder Issue sollte ein pull request und dann eine review sein
+** also jede User Story mit Dod
+
+* Retroperspektive
+** dauert eine Stunde 
+* psychisch im Team besser werden
+* sagen was uns an den anderen stöhrt und was uns an den anderen gut gefällt
+* wenn wir nicht zusammenkommen brauchen wir einen Moderator
+* "Was in Las Vegas passiert, bleibt in Las Vegas"
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger, Dallinger, Silnovic
+a| Backend weiterarbeiten
+| 21.04.2026
+
+| Grasauer, Music
+a| Sattler-Wireframe
+| 21.04.2026
+
+|===
