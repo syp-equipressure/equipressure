@@ -26,7 +26,7 @@ public sealed class DeviceController(IDeviceService deviceService,
         
         var result = await deviceService.GetDevicesFromUserIdAsync(userId);
         
-        return result.Match<ActionResult<DeviceListResponse>>(success => Ok(DeviceListResponse
+        return result.Match<ActionResult<DeviceListResponse>>(success => Ok(DeviceListResponse1
                                                                                 .FromDeviceList(success.Value)),
                                                               notFound => NotFound());
     }
@@ -70,7 +70,7 @@ public sealed class DeviceController(IDeviceService deviceService,
         var result = await deviceService.GetUsersOfDevice(deviceId);
 
         return result.Match<ActionResult<PersonListResponse>>(
-                                                              success => Ok(PersonListResponse.FromPersonList(success.Value)),
+                                                              success => Ok(PersonListResponse1.FromPersonList(success.Value)),
                                                               notFound => NotFound(),
                                                               noUsers =>
                                                               {
@@ -89,20 +89,20 @@ public sealed record DeviceDto(int Id, int CategoryId, Person Owner, List<Device
         new(device.Id, device.CategoryId, device.Owner, device.Users);
 }
 
-public sealed record DeviceListResponse(IEnumerable<DeviceDto> Devices)
+public sealed record DeviceListResponse1(IEnumerable<DeviceDto> Devices)
 {
-    public static DeviceListResponse FromDeviceList(IReadOnlyCollection<MeasurementDevice> devices) =>
+    public static DeviceListResponse1 FromDeviceList(IReadOnlyCollection<MeasurementDevice> devices) =>
         new(devices.Select(d => DeviceDto.FromDevice(d)));
 }
 
-public sealed record PersonDto(int Id, string FirstName, string LastName)
+public sealed record PersonDto1(int Id, string FirstName, string LastName)
 {
-    public static PersonDto FromPerson(Person person) =>
+    public static PersonDto1 FromPerson(Person person) =>
         new(person.Id, person.FirstName, person.LastName);
 }
 
-public sealed record PersonListResponse(IEnumerable<PersonDto> Users)
+public sealed record PersonListResponse1(IEnumerable<PersonDto> Users)
 {
-    public static PersonListResponse FromPersonList(IReadOnlyCollection<Person> persons) =>
+    public static PersonListResponse1 FromPersonList(IReadOnlyCollection<Person> persons) =>
         new(persons.Select(PersonDto.FromPerson));
 }
