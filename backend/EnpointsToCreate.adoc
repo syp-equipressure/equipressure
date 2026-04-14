@@ -34,24 +34,37 @@ Personen:
 
 Geräte:
 
-* /devices/:personId => alle Geräte einer Person
-* /devices/:id => Gerät mit der id :id
-* /devices/:id/owner => Besitzer des Gerätes (Person)
-* /devices/:id/users => alle Personen eines Geräts
+* GET /devices/:personId => alle Geräte einer Person
+* GET /devices/:id => Gerät mit der id :id
+* GET /devices/:id/owner => Besitzer des Gerätes (Person)
+* GET /devices/:id/users => alle Personen eines Geräts
+* POST /devices => neues Device hinzufügen
+* PUT /devices/:id => neuen User zu Gerät hinzufügen/löschen
 
 Pferde: 
 
-* /horses => alle Pferde
+* /horses/:personId => alle Pferde einer bestimmten Person
 * /horses/:id => Pferd mit id :id
 * /horses/:id/saddles => alle Sättel eines Pferdes
 * /horses/:id/persons => Reitbeteiligungen + Owner
 ** Owner entweder an erster Stelle oder eigener Endpoint für Owner
 ** eventuell /horses/:id/owner
+* /horses/:id/hidden/persons => Hidden user
 
-Messungen: 
+Messungen:
+(mg.. measurementgroup)
 
-* /measurementgroups => alle Messungsgruppen
-* /measurementgoups/:id/measurements => Tabelle Measurement
+* /measurementgroups/:horseId => Alle Messungsgruppen eines Pferdes
+* /measurementgroups/:mgId/measurements => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/average => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/min => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/max => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/:mId => Eine Messung aus einer Messungsgruppe
+* /measurementgroups/:mgId
+
++
+
+
 * /measurementgroups/:id/measurements/:id => ein Measurement aus Tabelle Measurement
 * /measurementgroups/:id/measurements/:id/measurementData/:id => ein MeasurementData aus Tabelle MeasurementData
 
