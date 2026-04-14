@@ -201,6 +201,18 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
              .HasForeignKey(mg => mg.HorseId)
              .OnDelete(DeleteBehavior.Cascade);
 
+        horse.HasMany(h => h.HorseBreeds)
+             .WithOne(h => h.Horse)
+             .HasForeignKey(h => h.HorseId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region HorseBreed
+
+        var horseBreed = mb.Entity<HorseBreed>();
+        horseBreed.HasKey(hb => new { hb.HorseId, hb.BreedId });
+
         #endregion
 
         #region Breed
@@ -209,7 +221,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         breed.HasKey(b => b.Id);
         breed.Property(b => b.Id).ValueGeneratedOnAdd();
 
-        breed.HasMany(b => b.Horses)
+        breed.HasMany(b => b.HorseBreeds)
              .WithOne(h => h.Breed)
              .HasForeignKey(h => h.BreedId)
              .OnDelete(DeleteBehavior.Cascade);
@@ -358,8 +370,8 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
         var measurement = mb.Entity<Measurement>();
         measurement.HasKey(m => m.Id);
-        measurement.Property(m => m.Id).ValueGeneratedOnAdd();
         measurement.HasIndex(m => m.GroupId);
+        measurement.HasIndex(m => new { m.GroupId, m.Pace, m.Hand }).IsUnique();
 
         measurement.HasMany(m => m.MeasurementDates)
                    .WithOne(m => m.Measurement)
