@@ -22,6 +22,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
     // Horse DbSets
     public DbSet<Horse> Horses { get; set; }
+    public DbSet<HorseBreed> HorseBreeds { get; set; }
     public DbSet<Breed> Breeds { get; set; }
 
     // Device DbSets
