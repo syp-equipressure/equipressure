@@ -238,11 +238,30 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
             return new IBaseService.Conflict();
         }
 
-        var person = uow.PersonRepository.AddPerson(firstName, lastName, height, weight, dateOfBirth,
-                                                    email, websiteLink, description, address, role);
+        var person = new Person
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            Height = height,
+            Weight = weight,
+            DateOfBirth = dateOfBirth,
+            Email = email,
+            WebsiteLink = websiteLink,
+            Description = description,
+            Address = address,
+            Roles = new List<PersonRoleAssignment>()
+        };
 
+        person.Roles.Add(new PersonRoleAssignment
+        {
+            PersonId = person.Id,
+            RoleId = role.Id,
+            Person = person,
+            Role = role
+        });
+
+        uow.PersonRepository.AddPerson(person);
         await uow.SaveChangesAsync();
-
         return new Success<Person>(person);
     }
 
@@ -272,8 +291,9 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
         {
             return new IBaseService.Conflict();
         }
+        
+        
 
-        uow.PersonRepository.UpdatePerson(person);
         await uow.SaveChangesAsync();
 
         return new Success<Person>(person);
@@ -299,5 +319,6 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
         uow.PersonRepository.RemovePerson(person);
         await uow.SaveChangesAsync();
 
-        return new Success();    }
+        return new Success();
+    }
 }
