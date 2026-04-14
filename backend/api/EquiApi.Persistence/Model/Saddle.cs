@@ -18,6 +18,8 @@ public class SaddleCategory
 {
     public int Id { get; set; }
     public required string Name { get; set; }
+    // TODO: Ask Flora what this is supposed to do; you can always just select the count via sql
+    public int Counter { get; set; }
     
     public List<Saddle> Saddles { get; set; } = [];
 }

@@ -6,9 +6,9 @@ namespace EquiApi.Persistence.Repositories;
 public interface IPersonRepository
 {
     public ValueTask<Person?> GetPersonById(int id, bool tracking);
-    public ValueTask<EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking);
+    public ValueTask<EquestrianMinimalData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking);
     public ValueTask<Address?> GetPersonAddressAsync(int id, bool tracking);
-    public ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
+    public ValueTask<SaddlerMinimalData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
     public ValueTask<NameData?> GetNameByIdAsync(int id, bool tracking);
     public ValueTask<bool> PersonExists(int id, bool tracking);
     
@@ -55,7 +55,7 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
     /// <param name="id"></param>
     /// <param name="tracking"></param>
     /// <returns>Minimal Data for an equestrian if existing</returns>
-    public async ValueTask<EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking)
+    public async ValueTask<EquestrianMinimalData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking)
     {
         IQueryable<PersonRoleAssignment> source = tracking ? PersonRoleAssignments : PersonRoleAssignmentsNoTracking;
         return await source.Include(pra => pra.Person)
@@ -64,7 +64,7 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
                                  .Include(pra => pra.Role)
                                  .Where(pra => pra.Role.Name.ToLower() == "equestrian")
                                  .Where(pra => pra.PersonId == id)
-                                 .Select(pra => new EquestrianBasicData
+                                 .Select(pra => new EquestrianMinimalData
                                              (
                                               pra.Person.FirstName,
                                               pra.Person.LastName,
@@ -104,7 +104,7 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
     /// <param name="equestrianId"></param>
     /// <param name="tracking"></param>
     /// <returns>minimal data for the saddler if found</returns>
-    public async ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking)
+    public async ValueTask<SaddlerMinimalData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking)
     {
         var source = tracking ? PersonRoleAssignments : PersonRoleAssignmentsNoTracking;
         return await  source
@@ -118,10 +118,10 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
                                    .Where(pra => pra.PersonId == saddlerId)
                                    .Select(pra => new { pra.Person, 
                                                rel = (pra.Person.Relationships.Where(r => 
-                                                   (r.EquestrianId == saddlerId
-                                                    && r.SaddlerId == equestrianId) 
-                                                   || (r.EquestrianId == equestrianId && r.SaddlerId == saddlerId)))})
-                                   .Select(p => new SaddlerBasicData
+                                                   (r.Person1Id == saddlerId
+                                                    && r.Person2Id == equestrianId) 
+                                                   || (r.Person1Id == equestrianId && r.Person2Id == saddlerId)))})
+                                   .Select(p => new SaddlerMinimalData
                                                (
                                                 p.Person.FirstName,
                                                 p.Person.LastName,
@@ -285,10 +285,10 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
     }
 }
 
-public record EquestrianBasicData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
+public record EquestrianMinimalData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
                                     string PLZ, string Email, decimal Height, decimal Weight);
                                     
-public record SaddlerBasicData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
+public record SaddlerMinimalData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
                                  string PLZ, string? Link, string? Description, bool isFavourite);
                                  
 public record NameData(string FirstName, string LastName);

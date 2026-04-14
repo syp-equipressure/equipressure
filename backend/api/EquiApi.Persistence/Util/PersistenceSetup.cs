@@ -29,8 +29,7 @@ public static class PersistenceSetup
                                  options => options
                                             .UseNodaTime()
                                             .MigrationsHistoryTable(MigrationHistoryTable,
-                                                                    DatabaseContext.SchemaName)
-                                            .MigrationsAssembly("EquiApi.Persistence"))
+                                                                    DatabaseContext.SchemaName))
                       .ConfigureWarnings(warnings =>
                                              warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
 
