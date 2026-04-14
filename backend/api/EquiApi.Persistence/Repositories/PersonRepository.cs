@@ -20,11 +20,7 @@ public interface IPersonRepository
     public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int id, bool tracking);
     public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking);
-    public Person AddPerson(string firstName, string lastName, decimal height,
-                                                          decimal weight, LocalDate dateOfBirth, string? email, 
-                                                          string? websiteLink, string? description, Address address,
-                                                          AccountRole role);
-    public void UpdatePerson(Person person);
+    public void AddPerson(Person person);
     public void RemovePerson(Person person); 
 }
 
@@ -269,55 +265,12 @@ internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRole
     /// <summary>
     /// Creates a new person in the system and assigns a role.
     /// </summary>
-    /// <param name="firstName">The person's first name</param>
-    /// <param name="lastName">The person's last name.</param>
-    /// <param name="height">Body height in cm.</param>
-    /// <param name="weight">Body weight in kg.</param>
-    /// <param name="dateOfBirth">Date of birth</param>
-    /// <param name="email">Unique email address</param>
-    /// <param name="websiteLink">Optional URL for professional profiles</param>
-    /// <param name="description">Optional bio or service description.</param>
-    /// <param name="address">The <see cref="Address"/> entity to be linked with this person.</param>
-    /// <param name="role">The <see cref="AccountRole"/> assigned to this user</param>
-    /// <returns>The newly created <see cref="Person"/> entity</returns>
-    public Person AddPerson(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
-                            string? email, string? websiteLink, string? description,
-                            Address address, AccountRole role)
+    /// <param name="person">The person object to add</param>
+    public void AddPerson(Person person)
     {
-        var person = new Person
-        {
-            Address = address,
-            DateOfBirth = dateOfBirth,
-            Email = email,
-            FirstName = firstName,
-            Height = height,
-            LastName = lastName,
-            WebsiteLink = websiteLink,
-            Weight = weight,
-            Description = description
-        };
-        
-        var personRoleAssignent = new PersonRoleAssignment
-        {
-            Person = person,
-            Role = role
-        };
-        
         personSet.Add(person);
-        personRoleSet.Add(personRoleAssignent);
-        
-        return person;
     }
-
-    /// <summary>
-    /// Updates an existing person's information in the database.
-    /// </summary>
-    /// <param name="person">The person entity containing the updated property values.</param>
-    public void UpdatePerson(Person person)
-    {
-        personSet.Update(person);
-    }
-
+    
     /// <summary>
     /// Removes a person and their associated role assignments from the database.
     /// </summary>
