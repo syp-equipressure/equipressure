@@ -32,6 +32,9 @@ Personen:
 ** könnte eventuell boolean liefern ob Person Owner ist
 * /persons/:id/horses => alle Pferde einer Person
 
+Locations:
+
+
 Geräte:
 
 * GET /devices/:personId => alle Geräte einer Person
@@ -60,15 +63,9 @@ Messungen:
 * /measurementgroups/:mgId/measurements/min => Alle Messungen aus einer Gruppe
 * /measurementgroups/:mgId/measurements/max => Alle Messungen aus einer Gruppe
 * /measurementgroups/:mgId/measurements/:mId => Eine Messung aus einer Messungsgruppe
-* /measurementgroups/:mgId
-
-+
-
-
-* /measurementgroups/:id/measurements/:id => ein Measurement aus Tabelle Measurement
-* /measurementgroups/:id/measurements/:id/measurementData/:id => ein MeasurementData aus Tabelle MeasurementData
+* /measurementgroups/:mgId/measurements/:mId/measurementData/ => Alle Messdaten aus einer Messung
+* /measurementgroups/:mgId/measurements/:mId/measurementData/:dId => Ein Messdatum aus einer Messung nach id
 
 == Fragen an die Professoren 
-* Braucht man immer eine endpoint für "get all"
 * Herr Professor Haslinger fragen, ob eigener Endpunkt nötig ist für roles bzw perons/:id/roles
 * Könnte /horses/:id/owner sinnvoll sein? Oder string/int für name/id im Pferd selber
