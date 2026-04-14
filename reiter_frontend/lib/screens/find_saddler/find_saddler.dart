@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -31,6 +32,8 @@ class _FindSaddlerState extends State<FindSaddler> {
   bool _showSearch = false;
   bool _isSatelliteView = false;
   bool _showFavoritesList = false;
+  bool _showListView = true;
+  Horse? _referenceHorse;
   String _searchQuery = '';
   Set<String> _selectedBrands = {};
 
@@ -53,6 +56,20 @@ class _FindSaddlerState extends State<FindSaddler> {
     setState(() {
       _saddlers = saddlers;
       _horses = horses;
+      // If a previously selected reference horse no longer exists, drop it.
+      if (_referenceHorse != null && !horses.any((h) => h.id == _referenceHorse!.id)) {
+        _referenceHorse = null;
+      }
+      // Default to the first horse with a stable location so distances can
+      // be calculated as soon as the screen opens.
+      if (_referenceHorse == null) {
+        for (final h in horses) {
+          if (h.hasStableLocation) {
+            _referenceHorse = h;
+            break;
+          }
+        }
+      }
       _isLoading = false;
     });
   }
@@ -89,6 +106,44 @@ class _FindSaddlerState extends State<FindSaddler> {
   List<Saddler> get _favoriteSaddlers {
     return _saddlers.where((s) => s.isFavorite).toList();
   }
+
+  // Saddlers filtered + sorted by distance from the reference horse's stable.
+  List<Saddler> get _saddlersByDistance {
+    final list = _filteredSaddlers.where((s) => s.hasLocation).toList();
+    list.sort((a, b) {
+      final da = _distanceFromReferenceHorse(a);
+      final db = _distanceFromReferenceHorse(b);
+      return da.compareTo(db);
+    });
+    return list;
+  }
+
+  LatLng? get _referenceLocation {
+    final h = _referenceHorse;
+    if (h == null || !h.hasStableLocation) return null;
+    return LatLng(h.stableLatitude!, h.stableLongitude!);
+  }
+
+  double _distanceFromReferenceHorse(Saddler s) {
+    final ref = _referenceLocation;
+    if (ref == null || !s.hasLocation) return double.infinity;
+    return _haversineKm(ref, LatLng(s.latitude!, s.longitude!));
+  }
+
+  double _haversineKm(LatLng a, LatLng b) {
+    const earthRadiusKm = 6371.0;
+    final dLat = _degToRad(b.latitude - a.latitude);
+    final dLon = _degToRad(b.longitude - a.longitude);
+    final lat1 = _degToRad(a.latitude);
+    final lat2 = _degToRad(b.latitude);
+
+    final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.sin(dLon / 2) * math.sin(dLon / 2) * math.cos(lat1) * math.cos(lat2);
+    final c = 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
+    return earthRadiusKm * c;
+  }
+
+  double _degToRad(double deg) => deg * (math.pi / 180.0);
 
   // Group horses by stable location
   Map<String, List<Horse>> get _horsesGroupedByLocation {
@@ -159,6 +214,24 @@ class _FindSaddlerState extends State<FindSaddler> {
   void _toggleMapType() {
     setState(() {
       _isSatelliteView = !_isSatelliteView;
+    });
+  }
+
+  void _setViewMode(bool showList) {
+    if (_showListView == showList) return;
+    setState(() {
+      _showListView = showList;
+      _showSearch = false;
+      if (showList) {
+        _selectedSaddler = null;
+        _selectedHorses = null;
+      }
+    });
+  }
+
+  void _setReferenceHorse(Horse? horse) {
+    setState(() {
+      _referenceHorse = horse;
     });
   }
 
@@ -314,18 +387,375 @@ class _FindSaddlerState extends State<FindSaddler> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Stack(
+          : Column(
               children: [
-                _buildMap(),
-                _buildSearchHeader(),
-                if (_showSearch) _buildSearchDropdown(),
-                _buildTopRightButtons(),
-                _buildBottomLeftButtons(),
-                if (_selectedSaddler != null) _buildSaddlerPopup(),
-                if (_selectedHorses != null) _buildHorsesPopup(),
-                if (_showFavoritesList) _buildFavoritesList(),
+                _buildViewToggle(),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      if (_showListView) _buildListView() else _buildMap(),
+                      _buildSearchHeader(),
+                      if (_showSearch) _buildSearchDropdown(),
+                      _buildTopRightButtons(),
+                      if (!_showListView) _buildBottomLeftButtons(),
+                      if (!_showListView && _selectedSaddler != null) _buildSaddlerPopup(),
+                      if (!_showListView && _selectedHorses != null) _buildHorsesPopup(),
+                      if (_showFavoritesList) _buildFavoritesList(),
+                    ],
+                  ),
+                ),
               ],
             ),
+    );
+  }
+
+  Widget _buildViewToggle() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            Expanded(child: _buildViewToggleTab(label: 'Karte', icon: Icons.map, selected: !_showListView, onTap: () => _setViewMode(false))),
+            Expanded(child: _buildViewToggleTab(label: 'Liste', icon: Icons.view_list, selected: _showListView, onTap: () => _setViewMode(true))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewToggleTab({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: selected ? const Color(0xFF6B4C9A) : Colors.grey[600],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? const Color(0xFF6B4C9A) : Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListView() {
+    final saddlers = _saddlersByDistance;
+    final horsesWithStable = _horses.where((h) => h.hasStableLocation).toList();
+
+    return Container(
+      color: Colors.grey[50],
+      child: Column(
+        children: [
+          // Top spacer so the floating search header (positioned at top: 16,
+          // height ~48) does not overlap the horse picker.
+          const SizedBox(height: 72),
+          _buildHorsePicker(horsesWithStable),
+          Expanded(
+            child: saddlers.isEmpty
+                ? _buildEmptyListPlaceholder()
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: saddlers.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final saddler = saddlers[index];
+                      return _buildSaddlerListCard(saddler);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyListPlaceholder() {
+    final hasReference = _referenceLocation != null;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasReference ? Icons.search_off : Icons.pets,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            hasReference
+                ? 'Keine Sattler*innen gefunden'
+                : 'Wähle ein Pferd mit Stalladresse,\num Sattler*innen in der Nähe zu sehen',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHorsePicker(List<Horse> horsesWithStable) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B4C9A).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                FontAwesomeIcons.horseHead,
+                size: 16,
+                color: Color(0xFF6B4C9A),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Entfernung ab',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  if (horsesWithStable.isEmpty)
+                    Text(
+                      'Kein Pferd mit Stalladresse',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isDense: true,
+                        value: _referenceHorse?.id,
+                        icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                        items: horsesWithStable.map((h) {
+                          return DropdownMenuItem<String>(
+                            value: h.id,
+                            child: Text(
+                              h.stableCity != null
+                                  ? '${h.name} · ${h.stableCity}'
+                                  : h.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (id) {
+                          if (id == null) return;
+                          final picked = horsesWithStable.firstWhere((h) => h.id == id);
+                          _setReferenceHorse(picked);
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaddlerListCard(Saddler saddler) {
+    final distance = _distanceFromReferenceHorse(saddler);
+    final distanceLabel = distance.isFinite
+        ? (distance < 10 ? '${distance.toStringAsFixed(1)} km' : '${distance.round()} km')
+        : '—';
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _openProfile(saddler),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAvatar(saddler, radius: 26),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            saddler.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _toggleFavorite(saddler),
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Icon(
+                              saddler.isFavorite ? Icons.star : Icons.star_border,
+                              color: saddler.isFavorite ? Colors.amber : Colors.grey[400],
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (saddler.city != null) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.place, size: 13, color: Colors.grey[500]),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              saddler.city!,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6B4C9A).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.near_me,
+                                size: 12,
+                                color: Color(0xFF6B4C9A),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                distanceLabel,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF6B4C9A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (saddler.allBrands || saddler.brands.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              saddler.allBrands
+                                  ? 'Alle Marken'
+                                  : saddler.brands.take(2).join(' · '),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -453,11 +883,13 @@ class _FindSaddlerState extends State<FindSaddler> {
             isActive: _showFavoritesList,
           ),
           const SizedBox(height: 8),
-          _buildSmallButton(
-            icon: _isSatelliteView ? Icons.map : Icons.satellite_alt,
-            onTap: _toggleMapType,
-          ),
-          const SizedBox(height: 8),
+          if (!_showListView) ...[
+            _buildSmallButton(
+              icon: _isSatelliteView ? Icons.map : Icons.satellite_alt,
+              onTap: _toggleMapType,
+            ),
+            const SizedBox(height: 8),
+          ],
           Stack(
             clipBehavior: Clip.none,
             children: [
