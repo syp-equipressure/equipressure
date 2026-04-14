@@ -266,7 +266,8 @@ public sealed class PersonController(
         OneOf<Success<Person>, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
             = await personService.UpdatePersonAsync(request.Id, request.FirstName, request.LastName, request.Height,
                                                     request.Weight, request.DateOfBirth, request.Email,
-                                                    request.WebsiteLink, request.Description, request.Address, request.RoleAssignments);
+                                                    request.WebsiteLink, request.Description, request.Address,
+                                                    request.RoleAssignments);
 
         result.Switch(async success =>
         {
@@ -425,7 +426,7 @@ public sealed class HorseDto
     public decimal Weight { get; set; }
     public decimal Height { get; set; }
     public string Gender { get; set; } = null!;
-    public string BreedName { get; set; } = null!;
+    public List<string> BreedNames { get; set; } = null!;
     public int AddressId { get; set; }
 
     public static HorseDto FromHorse(Horse horse) =>
@@ -437,7 +438,7 @@ public sealed class HorseDto
             Weight = horse.Weight,
             Height = horse.Height,
             Gender = horse.Gender.ToString(),
-            BreedName = horse.Breed.Name,
+            BreedNames = horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(),
             AddressId = horse.AddressId
         };
 }
