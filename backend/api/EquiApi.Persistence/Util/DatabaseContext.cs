@@ -9,9 +9,9 @@ namespace EquiApi.Persistence.Util;
 public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbContext(options)
 {
     public const string SchemaName = "EquiPressure";
-    
+
     public DbSet<Rocket> Rockets { get; set; }
-    
+
     // Person DbSets
     public DbSet<Person> Persons { get; set; }
     public DbSet<PersonRelationship> PersonRelationships { get; set; }
@@ -22,8 +22,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
     // Horse DbSets
     public DbSet<Horse> Horses { get; set; }
-    public DbSet<HorseBreed> HorseBreeds { get; set; }
-
     public DbSet<Breed> Breeds { get; set; }
 
     // Device DbSets
@@ -82,7 +80,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         rocket.HasKey(r => r.Id);
         rocket.Property(r => r.Id).ValueGeneratedOnAdd();
     }
-    
+
     /// <summary>
     /// Configure the Person Objects
     /// An index for the person consisting of the firstname and the lastname exists
@@ -103,16 +101,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         person.HasIndex(p => new { p.FirstName, p.LastName });
         person.HasIndex(p => p.Email).IsUnique();
         person.HasIndex(p => p.DateOfBirth);
-
-        person.HasMany(p => p.Relationships)
-              .WithOne(ps => ps.Person1)
-              .HasForeignKey(ps => ps.Person1Id)
-              .OnDelete(DeleteBehavior.Cascade);
-
-        person.HasMany(p => p.Relationships)
-              .WithOne(pr => pr.Person2)
-              .HasForeignKey(pr => pr.Person2Id)
-              .OnDelete(DeleteBehavior.Cascade);
 
         person.HasMany(p => p.Roles)
               .WithOne(pra => pra.Person)
@@ -150,7 +138,18 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         #region personRelation
 
         var personRelation = mb.Entity<PersonRelationship>();
-        personRelation.HasKey(p => new { p.Person1Id, p.Person2Id });
+        personRelation.HasKey(p => new { Person1Id = p.EquestrianId, Person2Id = p.SaddlerId });
+
+        // Configure the self-referencing relationship properly
+        personRelation.HasOne(pr => pr.Equestrian)
+                      .WithMany() // Don't use the Relationships navigation here
+                      .HasForeignKey(pr => pr.EquestrianId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+        personRelation.HasOne(pr => pr.Saddler)
+                      .WithMany(p => p.Relationships) // Use Relationships only once
+                      .HasForeignKey(pr => pr.SaddlerId)
+                      .OnDelete(DeleteBehavior.Restrict); // Use Restrict to avoid cascade cycles
 
         #endregion
 
@@ -186,16 +185,10 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         horse.Property(h => h.Gender)
              .HasConversion(new EnumToStringConverter<HorseGender>());
         horse.HasIndex(h => h.Name);
-        horse.HasIndex(h => h.Address);
 
         horse.HasMany(h => h.Persons)
              .WithOne(ph => ph.Horse)
              .HasForeignKey(ph => ph.HorseId)
-             .OnDelete(DeleteBehavior.Cascade);
-
-        horse.HasMany(h => h.HorseBreeds)
-             .WithOne(hb => hb.Horse)
-             .HasForeignKey(hb => hb.HorseId)
              .OnDelete(DeleteBehavior.Cascade);
 
         horse.HasMany(h => h.Saddles)
@@ -216,17 +209,10 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         breed.HasKey(b => b.Id);
         breed.Property(b => b.Id).ValueGeneratedOnAdd();
 
-        breed.HasMany(b => b.HorseBreeds)
-             .WithOne(hb => hb.Breed)
-             .HasForeignKey(hb => hb.BreedId)
+        breed.HasMany(b => b.Horses)
+             .WithOne(h => h.Breed)
+             .HasForeignKey(h => h.BreedId)
              .OnDelete(DeleteBehavior.Cascade);
-
-        #endregion
-
-        #region HorseBreed
-
-        var horseBreed = mb.Entity<HorseBreed>();
-        horseBreed.HasKey(hb => new { hb.HorseId, hb.BreedId });
 
         #endregion
     }
