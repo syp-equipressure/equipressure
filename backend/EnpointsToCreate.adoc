@@ -32,30 +32,40 @@ Personen:
 ** könnte eventuell boolean liefern ob Person Owner ist
 * /persons/:id/horses => alle Pferde einer Person
 
+Locations:
+
+
 Geräte:
 
-* /devices => alle existierende Geräte
-* /devices/:id => Gerät mit der id :id
-* /devices/:id/owner => Besitzer des Gerätes (Person)
-* /devices/:id/users => alle Personen eines Geräts
+* GET /devices/:personId => alle Geräte einer Person
+* GET /devices/:id => Gerät mit der id :id
+* GET /devices/:id/owner => Besitzer des Gerätes (Person)
+* GET /devices/:id/users => alle Personen eines Geräts
+* POST /devices => neues Device hinzufügen
+* PUT /devices/:id => neuen User zu Gerät hinzufügen/löschen
 
 Pferde: 
 
-* /horses => alle Pferde
+* /horses/:personId => alle Pferde einer bestimmten Person
 * /horses/:id => Pferd mit id :id
 * /horses/:id/saddles => alle Sättel eines Pferdes
 * /horses/:id/persons => Reitbeteiligungen + Owner
 ** Owner entweder an erster Stelle oder eigener Endpoint für Owner
 ** eventuell /horses/:id/owner
+* /horses/:id/hidden/persons => Hidden user
 
-Messungen: 
+Messungen:
+(mg.. measurementgroup)
 
-* /measurementgroups => alle Messungsgruppen
-* /measurementgoups/:id/measurements => Tabelle Measurement
-* /measurementgroups/:id/measurements/:id => ein Measurement aus Tabelle Measurement
-* /measurementgroups/:id/measurements/:id/measurementData/:id => ein MeasurementData aus Tabelle MeasurementData
+* /measurementgroups/:horseId => Alle Messungsgruppen eines Pferdes
+* /measurementgroups/:mgId/measurements => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/average => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/min => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/max => Alle Messungen aus einer Gruppe
+* /measurementgroups/:mgId/measurements/:mId => Eine Messung aus einer Messungsgruppe
+* /measurementgroups/:mgId/measurements/:mId/measurementData/ => Alle Messdaten aus einer Messung
+* /measurementgroups/:mgId/measurements/:mId/measurementData/:dId => Ein Messdatum aus einer Messung nach id
 
 == Fragen an die Professoren 
-* Braucht man immer eine endpoint für "get all"
 * Herr Professor Haslinger fragen, ob eigener Endpunkt nötig ist für roles bzw perons/:id/roles
 * Könnte /horses/:id/owner sinnvoll sein? Oder string/int für name/id im Pferd selber
