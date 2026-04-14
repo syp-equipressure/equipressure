@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EquiApi.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class MigrationFix : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,8 +36,7 @@ namespace EquiApi.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Counter = table.Column<int>(type: "integer", nullable: false)
+                    Name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -98,8 +97,7 @@ namespace EquiApi.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Counter = table.Column<int>(type: "integer", nullable: false)
+                    Name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -141,7 +139,8 @@ namespace EquiApi.Persistence.Migrations
                     Weight = table.Column<decimal>(type: "numeric", nullable: false),
                     Height = table.Column<decimal>(type: "numeric", nullable: false),
                     Gender = table.Column<string>(type: "text", nullable: false),
-                    AddressId = table.Column<int>(type: "integer", nullable: false)
+                    AddressId = table.Column<int>(type: "integer", nullable: false),
+                    BreedId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -153,6 +152,13 @@ namespace EquiApi.Persistence.Migrations
                         principalTable: "Address",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Horse_Breed_BreedId",
+                        column: x => x.BreedId,
+                        principalSchema: "EquiPressure",
+                        principalTable: "Breed",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -182,33 +188,6 @@ namespace EquiApi.Persistence.Migrations
                         principalTable: "Address",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "HorseBreed",
-                schema: "EquiPressure",
-                columns: table => new
-                {
-                    BreedId = table.Column<int>(type: "integer", nullable: false),
-                    HorseId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HorseBreed", x => new { x.HorseId, x.BreedId });
-                    table.ForeignKey(
-                        name: "FK_HorseBreed_Breed_BreedId",
-                        column: x => x.BreedId,
-                        principalSchema: "EquiPressure",
-                        principalTable: "Breed",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_HorseBreed_Horse_HorseId",
-                        column: x => x.HorseId,
-                        principalSchema: "EquiPressure",
-                        principalTable: "Horse",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -551,16 +530,16 @@ namespace EquiApi.Persistence.Migrations
                 column: "AddressId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Horse_BreedId",
+                schema: "EquiPressure",
+                table: "Horse",
+                column: "BreedId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Horse_Name",
                 schema: "EquiPressure",
                 table: "Horse",
                 column: "Name");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_HorseBreed_BreedId",
-                schema: "EquiPressure",
-                table: "HorseBreed",
-                column: "BreedId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Measurement_GroupId",
@@ -686,10 +665,6 @@ namespace EquiApi.Persistence.Migrations
                 schema: "EquiPressure");
 
             migrationBuilder.DropTable(
-                name: "HorseBreed",
-                schema: "EquiPressure");
-
-            migrationBuilder.DropTable(
                 name: "MeasurementData",
                 schema: "EquiPressure");
 
@@ -711,10 +686,6 @@ namespace EquiApi.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Rocket",
-                schema: "EquiPressure");
-
-            migrationBuilder.DropTable(
-                name: "Breed",
                 schema: "EquiPressure");
 
             migrationBuilder.DropTable(
@@ -759,6 +730,10 @@ namespace EquiApi.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Address",
+                schema: "EquiPressure");
+
+            migrationBuilder.DropTable(
+                name: "Breed",
                 schema: "EquiPressure");
 
             migrationBuilder.DropTable(

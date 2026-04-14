@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EquiApi.Persistence.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260210153102_Initial")]
-    partial class Initial
+    [Migration("20260414072836_MigrationFix")]
+    partial class MigrationFix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -74,9 +74,6 @@ namespace EquiApi.Persistence.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Counter")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -156,6 +153,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("AddressId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("BreedId")
+                        .HasColumnType("integer");
+
                     b.Property<LocalDate>("DateOfBirth")
                         .HasColumnType("date");
 
@@ -177,24 +177,11 @@ namespace EquiApi.Persistence.Migrations
 
                     b.HasIndex("AddressId");
 
+                    b.HasIndex("BreedId");
+
                     b.HasIndex("Name");
 
                     b.ToTable("Horse", "EquiPressure");
-                });
-
-            modelBuilder.Entity("EquiApi.Persistence.Model.HorseBreed", b =>
-                {
-                    b.Property<int>("HorseId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("BreedId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("HorseId", "BreedId");
-
-                    b.HasIndex("BreedId");
-
-                    b.ToTable("HorseBreed", "EquiPressure");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Measurement", b =>
@@ -523,9 +510,6 @@ namespace EquiApi.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Counter")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -573,26 +557,15 @@ namespace EquiApi.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
-                    b.Navigation("Address");
-                });
-
-            modelBuilder.Entity("EquiApi.Persistence.Model.HorseBreed", b =>
-                {
                     b.HasOne("EquiApi.Persistence.Model.Breed", "Breed")
-                        .WithMany("HorseBreeds")
+                        .WithMany("Horses")
                         .HasForeignKey("BreedId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EquiApi.Persistence.Model.Horse", "Horse")
-                        .WithMany("HorseBreeds")
-                        .HasForeignKey("HorseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Address");
 
                     b.Navigation("Breed");
-
-                    b.Navigation("Horse");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Measurement", b =>
@@ -802,7 +775,7 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Breed", b =>
                 {
-                    b.Navigation("HorseBreeds");
+                    b.Navigation("Horses");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.City", b =>
@@ -817,8 +790,6 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Horse", b =>
                 {
-                    b.Navigation("HorseBreeds");
-
                     b.Navigation("MeasurementGroups");
 
                     b.Navigation("Persons");

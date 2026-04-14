@@ -13,5 +13,6 @@ public static class CoreSetup
         services.AddSingleton<IClock>(SystemClock.Instance);
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IPersonService, PersonService>();
+        services.AddScoped<IRocketService, RocketService>();
     }
 }
