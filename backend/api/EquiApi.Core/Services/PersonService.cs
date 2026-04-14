@@ -45,7 +45,12 @@ public interface IPersonService
                                                           string? websiteLink, string? description, Address address,
                                                           AccountRole role);
 
-    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(Person person);
+    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int id, string? firstName, string? lastName,
+                                                                      decimal? height, decimal? weight,
+                                                                      LocalDate? dateOfBirth,
+                                                                      string? email, string? websiteLink,
+                                                                      string? description, Address? address,
+                                                                      List<PersonRoleAssignment>? roles);
     public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id);
 }
 
@@ -268,34 +273,97 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
     /// <summary>
     /// Updates the information for an existing person.
     /// </summary>
-    /// <param name="person">The person entity containing updated values.</param>
+    /// <param name="id">The person id to be updated</param>
+    /// <param name="firstName">The new person firstname that we maybe update</param>
+    /// <param name="lastName">The new person lastname that we maybe update</param>
+    /// <param name="height">The new person height that we maybe update</param>
+    /// <param name="weight">The new person weight that we maybe update</param>
+    /// <param name="dateOfBirth">The new person dob that we maybe update</param>
+    /// <param name="email">The new person email that we maybe update</param>
+    /// <param name="websiteLink">The new person websiteLink that we maybe update</param>
+    /// <param name="description">The new person description that we maybe update</param>
+    /// <param name="address">The new person address object that we maybe update</param>
+    /// <param name="roles">The new person roles that we maybe update</param>
     /// <returns>
     /// A <see cref="Success{Person}"/> if updated, 
     /// <see cref="NotFound"/> if the person does not exist, 
     /// <see cref="IBaseService.InvalidData"/> for invalid field values, 
     /// or <see cref="IBaseService.Conflict"/> if the new email is claimed by another user.
     /// </returns>
-    public async ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(Person person)
+    public async ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int id, string? firstName, string? lastName, 
+                                                                      decimal? height, decimal? weight, LocalDate? dateOfBirth,
+                                                                      string? email, string? websiteLink, 
+                                                                      string? description, Address? address, List<PersonRoleAssignment>? roles)
     {
-        if (!await uow.PersonRepository.PersonExists(person.Id, true))
+        var person = await uow.PersonRepository.GetPersonById(id, true);
+        
+        if (person is null)
         {
             return new NotFound();
         }
 
-        if (person.Height <= 0 || person.Weight <= 0 || person.DateOfBirth >= dateTimeProvider.GetCurrentDate())
+        if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate())
         {
             return new IBaseService.InvalidData();
         }
 
-        if (person.Email != null && await uow.PersonRepository.IsEmailTakenByAnotherUser(person.Email, person.Id, true))
+        if (email != null && await uow.PersonRepository.IsEmailTakenByAnotherUser(email, id, true))
         {
             return new IBaseService.Conflict();
         }
+
+        if (firstName is not null)
+        {
+            person.FirstName = firstName;
+        }
         
+        if (lastName is not null)
+        {
+            person.LastName = lastName;
+        }
         
+        if (height.HasValue)
+        {
+            person.Height = height.Value;
+        }
+        
+        if (weight.HasValue)
+        {
+            person.Weight = weight.Value;
+        }
+        
+        if (dateOfBirth.HasValue)
+        {
+            person.DateOfBirth = dateOfBirth.Value;
+        }
+        
+        if (email is not null)
+        {
+            person.Email = email;
+        }
+        
+        if (websiteLink is not null)
+        {
+            person.WebsiteLink = websiteLink;
+        }
+
+        if (description is not null)
+        {
+            person.Description = description;
+        }
+
+        if (address is not null)
+        {
+            person.AddressId = address.Id;
+            person.Address = address;
+        }
+        
+        if (roles is not null && roles.Count > 0)
+        {
+            person.Roles = roles;
+        }
 
         await uow.SaveChangesAsync();
-
         return new Success<Person>(person);
     }
 

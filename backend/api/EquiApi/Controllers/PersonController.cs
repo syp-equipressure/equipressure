@@ -264,7 +264,9 @@ public sealed class PersonController(
         };
 
         OneOf<Success<Person>, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
-            = await personService.UpdatePersonAsync(personEntity);
+            = await personService.UpdatePersonAsync(request.Id, request.FirstName, request.LastName, request.Height,
+                                                    request.Weight, request.DateOfBirth, request.Email,
+                                                    request.WebsiteLink, request.Description, request.Address, request.RoleAssignments);
 
         result.Switch(async success =>
         {
@@ -488,6 +490,8 @@ public sealed class UpdatePersonRequest
     public string? Email { get; set; }
     public string? WebsiteLink { get; set; }
     public string? Description { get; set; }
+    public Address? Address { get; set; }
+    public List<PersonRoleAssignment>? RoleAssignments { get; set; }
 
     public sealed class Validator : AbstractValidator<UpdatePersonRequest>
     {
