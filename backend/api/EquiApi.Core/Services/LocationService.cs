@@ -15,32 +15,54 @@ using AddAddressAsyncResult
 
 public interface ILocationService
 {
+    // TODO: xml doc
     public ValueTask<GetCityAsyncResult> GetCityAsync(int? length, string? nameFilter);
 
     public ValueTask<AddAddressAsyncResult> AddAddressAsync(string? street, int? houseNumber
                                                             , string cityName, string plz);
 }
 
-public class LocationService(IUnitOfWork uow) : ILocationService
+public class LocationService(IUnitOfWork uow, ILogger<LocationService> logger) : ILocationService
 {
     public async ValueTask<GetCityAsyncResult> GetCityAsync(int? length, string? nameFilter)
     {
-        var res = await uow.LocationRepository.GetCityAsync(length, nameFilter, true);
+        IReadOnlyCollection<City> res = await uow.LocationRepository.GetCityAsync(length, nameFilter);
 
-        return res.Any()
-            ? new Success<IReadOnlyCollection<City>>(res)
-            : new Error();
+        if (!res.Any())
+        {
+            // wieso error??
+            logger.LogWarning("no cities");
+
+            return new Error();
+        }
+
+        logger.LogInformation("list of cities");
+
+        return new Success<IReadOnlyCollection<City>>(res);
     }
 
     public async ValueTask<AddAddressAsyncResult> AddAddressAsync(string? street, int? houseNumber,
                                                                   string cityName, string plz)
     {
-        var city = await uow.LocationRepository.CityExists(cityName, plz, false) 
-                   ?? uow.LocationRepository.AddCityAsync(cityName, plz);
+        var newCity = new City
+        {
+            PLZ = plz,
+            Name = cityName
+        };
 
-        var address = await uow.LocationRepository.AddressExists(street, houseNumber, false) 
-                      ?? uow.LocationRepository.AddAddressAsync(street, houseNumber, city);
+        var newAddress = new Address
+        {
+            Street = street,
+            HouseNumber = houseNumber,
+            CityId = newCity.Id,
+            City = newCity
+        };
 
-        return new Success<Address>(address);
+        uow.LocationRepository.AddCity(newCity);
+        uow.LocationRepository.AddAddress(newAddress);
+        await uow.SaveChangesAsync();
+        
+        logger.LogInformation("Successfully added Address");
+        return new Success<Address>(newAddress);
     }
 }
