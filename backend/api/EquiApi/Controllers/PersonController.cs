@@ -10,6 +10,8 @@ using OneOf.Types;
 
 namespace EquiApi.Controllers;
 
+// TODO: xml documentation
+// TODO: CreatedAtAction verwenden!
 [Route("api/persons")]
 public sealed class PersonController(
     ITransactionProvider transaction,
@@ -25,23 +27,17 @@ public sealed class PersonController(
         // check, ob die id überhaupt sinn macht (muss positiv sein)
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         // liefert entweder success oder notfound
         OneOf<Success<EquestrianBasicData>, NotFound> result = await personService.GetPersonAsEquestrianByIdAsync(id);
 
-        // switchen beim logging für die verschiedenen cases
-        result.Switch(success => { logger.LogInformation("Successfully got Equestrian"); },
-                      notFound => { logger.LogError("Equestrian was not found"); });
-
         // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
         return result.Match<ActionResult<DataTransfer.EquestrianBasicDto>>(success =>
                                                                                Ok(DataTransfer.EquestrianBasicDto
-                                                                                   .FromEquestrianBasicData(success
-                                                                                       .Value, id)),
+                                                                                        .FromEquestrianBasicData(success
+                                                                                                 .Value, id)),
                                                                            notFound => NotFound());
     }
 
@@ -53,15 +49,10 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         OneOf<Success<NameData>, NotFound> result = await personService.GetNameByIdAsync(id);
-
-        result.Switch(success => { logger.LogInformation("Successfully got Person"); },
-                      notFound => { logger.LogError("Person was not found"); });
 
         return result.Match<ActionResult<DataTransfer.NameDataDto>>(success =>
                                                                         Ok(DataTransfer.NameDataDto
@@ -69,7 +60,7 @@ public sealed class PersonController(
                                                                     notFound => NotFound());
     }
 
-    [HttpGet("{id:int}/address")]
+    [HttpGet("{id:int}/location")]
     [ProducesResponseType<DataTransfer.AddressDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -77,15 +68,10 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         OneOf<Success<Address>, NotFound> result = await personService.GetPersonAddressAsync(id);
-
-        result.Switch(success => { logger.LogInformation("Successfully got Address"); },
-                      notFound => { logger.LogError("Address was not found"); });
 
         return result.Match<ActionResult<DataTransfer.AddressDto>>(success =>
                                                                        Ok(DataTransfer.AddressDto
@@ -101,24 +87,18 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         // hier liefern wir entweder eine liste, none oder notfound
         OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetContactsAsync(id);
 
-        result.Switch(success => { logger.LogInformation("Successfully got list of Contacts"); },
-                      none => { logger.LogInformation("List of Contacts was found empty"); },
-                      notFound => { logger.LogError("Person was not found"); });
-
         // bei none einfach eine leere liste zurückgeben
         return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
                                                                                Ok(DataTransfer.PersonListResponse
-                                                                                   .FromPersons(success.Value)),
+                                                                                        .FromPersons(success.Value)),
                                                                            none => Ok(DataTransfer.PersonListResponse
-                                                                               .FromPersons([])),
+                                                                                    .FromPersons([])),
                                                                            notFound => NotFound());
     }
 
@@ -130,22 +110,16 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetFavouritesAsync(id);
 
-        result.Switch(success => { logger.LogInformation("Successfully got list of Favourites"); },
-                      none => { logger.LogInformation("List of Favourites was found empty"); },
-                      notFound => { logger.LogError("Person was not found"); });
-
         return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
                                                                                Ok(DataTransfer.PersonListResponse
-                                                                                   .FromPersons(success.Value)),
+                                                                                        .FromPersons(success.Value)),
                                                                            none => Ok(DataTransfer.PersonListResponse
-                                                                               .FromPersons([])),
+                                                                                    .FromPersons([])),
                                                                            notFound => NotFound());
     }
 
@@ -157,22 +131,16 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         OneOf<Success<IReadOnlyCollection<Horse>>, None, NotFound> result = await personService.GetOwnedHorsesAsync(id);
 
-        result.Switch(success => { logger.LogInformation("Successfully got list of Horses"); },
-                      none => { logger.LogInformation("List of Horses was found empty"); },
-                      notFound => { logger.LogError("Person was not found"); });
-
         return result.Match<ActionResult<DataTransfer.HorseListResponse>>(success =>
                                                                               Ok(DataTransfer.HorseListResponse
-                                                                                  .FromHorses(success.Value)),
+                                                                                       .FromHorses(success.Value)),
                                                                           none => Ok(DataTransfer.PersonListResponse
-                                                                              .FromPersons([])),
+                                                                                   .FromPersons([])),
                                                                           notFound => NotFound());
     }
 
@@ -184,22 +152,16 @@ public sealed class PersonController(
     {
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
         OneOf<Success<List<MeasurementDevice>>, None, NotFound> result = await personService.GetAllDevicesAsync(id);
 
-        result.Switch(success => { logger.LogInformation("Successfully got list of Devices"); },
-                      none => { logger.LogInformation("List of Devices was found empty"); },
-                      notFound => { logger.LogError("Person was not found"); });
-
         return result.Match<ActionResult<DataTransfer.DeviceListResponse>>(success =>
                                                                                Ok(DataTransfer.DeviceListResponse
-                                                                                   .FromDevices(success.Value)),
+                                                                                        .FromDevices(success.Value)),
                                                                            none => Ok(DataTransfer.DeviceListResponse
-                                                                               .FromDevices([])),
+                                                                                    .FromDevices([])),
                                                                            notFound => NotFound());
     }
 
@@ -207,33 +169,49 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult> CreatePerson([FromBody] DataTransfer.AddPersonRequest request)
+    public async ValueTask<IActionResult> CreatePerson([FromBody] DataTransfer.AddPersonRequest request)
     {
-        await transaction.BeginTransactionAsync();
-
-        OneOf<Success<Person>, IBaseService.InvalidData, IBaseService.Conflict> result
-            = await personService.AddPersonAsync(request.FirstName, request.LastName, request.Height,
-                                                 request.Weight, request.DateOfBirth, request.Email,
-                                                 request.WebsiteLink, request.Description, request.Address,
-                                                 request.Role);
-
-        result.Switch(async success =>
+        if (!ValidateRequest<DataTransfer.AddPersonRequest.Validator, DataTransfer.AddPersonRequest>(request))
         {
-            logger.LogInformation("Successfully added person");
-            await transaction.CommitAsync();
-        }, async invalidData =>
+            return BadRequest();
+        }
+
+        try
         {
-            logger.LogError("data in incorrect format.");
+            await transaction.BeginTransactionAsync();
+
+            OneOf<Success<Person>, IBaseService.InvalidData, IBaseService.Conflict> result
+                = await personService.AddPersonAsync(request.FirstName, request.LastName, request.Height,
+                                                     request.Weight, request.DateOfBirth, request.Email,
+                                                     request.WebsiteLink, request.Description, request.Address,
+                                                     request.Role);
+
+            return await result.Match<ValueTask<ActionResult>>(async success =>
+                                                               {
+                                                                   await transaction.CommitAsync();
+
+                                                                   return Created();
+                                                               },
+                                                               async invalid =>
+                                                               {
+                                                                   await transaction.RollbackAsync();
+
+                                                                   return BadRequest();
+                                                               },
+                                                               async conflict =>
+                                                               {
+                                                                   await transaction.RollbackAsync();
+
+                                                                   return Conflict();
+                                                               });
+        }
+        catch (Exception)
+        {
             await transaction.RollbackAsync();
-        }, async conflict =>
-        {
-            logger.LogError("email already exists.");
-            await transaction.RollbackAsync();
-        });
+            logger.LogError("Error adding Person");
 
-        return result.Match<ActionResult>(success => Created(),
-                                          invalid => BadRequest(),
-                                          conflict => Conflict());
+            return Problem();
+        }
     }
 
     [HttpPut("{id:int}")]
@@ -241,44 +219,57 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult> UpdatePerson([FromRoute] int id,
+    public async ValueTask<IActionResult> UpdatePerson([FromRoute] int id,
                                                       [FromBody] DataTransfer.UpdatePersonRequest request)
     {
-        await transaction.BeginTransactionAsync();
-        if (id != request.Id)
+        if (id <= 0 || id != request.Id ||
+            !ValidateRequest<DataTransfer.UpdatePersonRequest.Validator, DataTransfer.UpdatePersonRequest>(request))
         {
-            logger.LogError("id doesnt match request id");
-
             return BadRequest();
         }
 
-        OneOf<Success<Person>, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
-            = await personService.UpdatePersonAsync(request.Id, request.FirstName, request.LastName, request.Height,
-                                                    request.Weight, request.DateOfBirth, request.Email,
-                                                    request.WebsiteLink, request.Description, request.Address, request.RoleAssignments);
+        try
+        {
+            await transaction.BeginTransactionAsync();
 
-        result.Switch(async success =>
-        {
-            logger.LogInformation("Successfully updated person");
-            await transaction.CommitAsync();
-        }, async notFound =>
-        {
-            logger.LogError("person not found.");
-            await transaction.RollbackAsync();
-        }, async invalidData =>
-        {
-            logger.LogError("data in invalid format.");
-            await transaction.RollbackAsync();
-        }, async conflict =>
-        {
-            logger.LogError("email already exists.");
-            await transaction.RollbackAsync();
-        });
+            OneOf<Success, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
+                = await personService.UpdatePersonAsync(request.Id, request.FirstName, request.LastName, request.Height,
+                                                        request.Weight, request.DateOfBirth, request.Email,
+                                                        request.WebsiteLink, request.Description, request.Address,
+                                                        request.RoleAssignments);
 
-        return result.Match<ActionResult>(success => NoContent(),
-                                          notFound => NotFound(),
-                                          invalid => BadRequest(),
-                                          conflict => Conflict());
+            return await result.Match<ValueTask<ActionResult>>(async success =>
+                                                               {
+                                                                   await transaction.CommitAsync();
+
+                                                                   return NoContent();
+                                                               },
+                                                               async notFound =>
+                                                               {
+                                                                   await transaction.RollbackAsync();
+
+                                                                   return NotFound();
+                                                               },
+                                                               async invalid =>
+                                                               {
+                                                                   await transaction.RollbackAsync();
+
+                                                                   return BadRequest();
+                                                               },
+                                                               async conflict =>
+                                                               {
+                                                                   await transaction.RollbackAsync();
+
+                                                                   return Conflict();
+                                                               });
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError("Error updating person");
+
+            return Problem();
+        }
     }
 
     [HttpDelete("{id:int}")]
@@ -286,27 +277,37 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<IActionResult> DeletePerson([FromRoute] int id)
     {
-        await transaction.BeginTransactionAsync();
         if (id <= 0)
         {
-            logger.LogError("Bad request, Id is invalid");
-
             return BadRequest();
         }
 
-        OneOf<Success, NotFound> result = await personService.DeletePersonAsync(id);
+        try
+        {
+            await transaction.BeginTransactionAsync();
 
-        result.Switch(async success =>
+            OneOf<Success, NotFound> result = await personService.DeletePersonAsync(id);
+
+            return await result.Match<ValueTask<IActionResult>>(async success =>
+                                                                {
+                                                                    await transaction.CommitAsync();
+
+                                                                    return NoContent();
+                                                                },
+                                                                async notFound =>
+                                                                {
+                                                                    await transaction.RollbackAsync();
+
+                                                                    return NotFound();
+                                                                });
+        }
+        catch (Exception)
         {
-            logger.LogInformation("Successfully deleted person");
-            await transaction.CommitAsync();
-        }, async notFound =>
-        {
-            logger.LogError("person not found.");
             await transaction.RollbackAsync();
-        });
 
-        return result.Match<IActionResult>(success => NoContent(),
-                                           notFound => NotFound());
+            logger.LogError("Error removing Person");
+
+            return Problem();
+        }
     }
 }

@@ -25,170 +25,78 @@ using GetAllDevicesAsyncResult
 using AddPersonAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Person>, IBaseService.InvalidData, IBaseService.Conflict>;
 using UpdatePersonAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.NotFound, IBaseService.InvalidData, IBaseService.Conflict>;
+    = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound, IBaseService.InvalidData, IBaseService.Conflict>;
 using DeletePersonAsyncResult
     = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound>;
 
 public interface IPersonService
 {
-    public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id);
-    public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id);
-    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
-    public ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id);
-    public ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id);
-    public ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id);
-    public ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id);
-    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId);
-
-    public ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
-                                                          decimal weight, LocalDate dateOfBirth, string? email,
-                                                          string? websiteLink, string? description, Address address,
-                                                          AccountRole role);
-
-    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int id, string? firstName, string? lastName,
-                                                                      decimal? height, decimal? weight,
-                                                                      LocalDate? dateOfBirth,
-                                                                      string? email, string? websiteLink,
-                                                                      string? description, Address? address,
-                                                                      List<PersonRoleAssignment>? roles);
-    public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id);
-}
-
-public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) : IPersonService
-{
     /// <summary>
     /// Retrieves the data of a person formatted for an equestrian user view.
     /// </summary>
-    /// <param name="id">The id of the person.</param>
+    /// <param name="personId">The id of the person.</param>
     /// <returns>
     /// A <see cref="Success{EquestrianBasicData}"/> containing the data, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int id)
-    {
-        var result = await uow.PersonRepository.GetPersonAsEquestrianByIdAsync(id, false);
-
-        return result != null
-            ? new Success<EquestrianBasicData>(result)
-            : new NotFound();
-    }
-
+    public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int personId);
+    
     /// <summary>
     /// Retrieves the specific address for a person.
     /// </summary>
-    /// <param name="id">The id of the person.</param>
+    /// <param name="personId">The id of the person.</param>
     /// <returns>
     /// A <see cref="Success{Address}"/> containing the address, 
     /// or <see cref="NotFound"/> if the person or their address is missing.
     /// </returns>
-    public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int id)
-    {
-        var result = await uow.PersonRepository.GetPersonAddressAsync(id, false);
-
-        return result != null
-            ? new Success<Address>(result)
-            : new NotFound();
-    }
-
-    public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(
-        int saddlerId, int equestrianId)
-    {
-        if (!await uow.PersonRepository.PersonExists(equestrianId, false))
-        {
-            return new IBaseService.InvalidData();
-        }
-
-        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId
-                                                                            , false);
-
-        return result != null
-            ? new Success<SaddlerBasicData>(result)
-            : new NotFound();
-    }
-
+    public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId);
+    
+    // TODO: xml doc
+    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
+    
     /// <summary>
     /// Retrieves the First and Last name for a person.
     /// </summary>
-    /// <param name="id">The id of the person.</param>
+    /// <param name="personId">The id of the person.</param>
     /// <returns>
     /// A <see cref="Success{NameData}"/> if found,
     /// or <see cref="NotFound"/> if the ID is unknown.
     /// </returns>
-    public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int id)
-    {
-        var result = await uow.PersonRepository.GetNameByIdAsync(id, false);
-
-        return result != null
-            ? new Success<NameData>(result)
-            : new NotFound();
-    }
-
+    public ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId);
+    
     /// <summary>
     /// Retrieves the list of persons marked as favorites by the specified user.
     /// </summary>
-    /// <param name="id">The id of the perosn</param>
+    /// <param name="personId">The id of the perosn</param>
     /// <returns>
     /// A collection of <see cref="Person"/> entities,
     /// <see cref="None"/> if the collection is empty, 
     /// or <see cref="NotFound"/> if the user does not exist.
     /// </returns>
-    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int id)
-    {
-        var personExists = await uow.PersonRepository.PersonExists(id, false);
-        if (!personExists)
-        {
-            return new NotFound();
-        }
-
-        var result = await uow.PersonRepository.GetFavouritesAsync(id, false);
-
-        return result.Count > 0 ? new Success<IReadOnlyCollection<Person>>(result) : new None();
-    }
-
+    public ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int personId);
+    
     /// <summary>
     /// Retrieves the list of contacts associated with the specified user.
     /// </summary>
-    /// <param name="id">The id of the person</param>
+    /// <param name="personId">The id of the person</param>
     /// <returns>
     /// A collection of <see cref="Person"/> entities,
     /// <see cref="None"/> if the collection is empty, 
     /// or <see cref="NotFound"/> if the user does not exist.
     /// </returns>
-    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int id)
-    {
-        var personExists = await uow.PersonRepository.PersonExists(id, false);
-        if (!personExists)
-        {
-            return new NotFound();
-        }
-
-        var result = await uow.PersonRepository.GetContactsAsync(id, false);
-
-        return result.Count > 0 ? new Success<IReadOnlyCollection<Person>>(result) : new None();
-    }
-
+    public ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int personId);
+    
     /// <summary>
     /// Retrieves all horses owned by the person.
     /// </summary>
-    /// <param name="id">The id of the person</param>
+    /// <param name="personId">The id of the person</param>
     /// <returns>
     /// A collection of <see cref="Horse"/> entities,
     /// <see cref="None"/> if the collection is empty,
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int id)
-    {
-        var personExists = await uow.PersonRepository.PersonExists(id, false);
-        if (!personExists)
-        {
-            return new NotFound();
-        }
-
-        var result = await uow.PersonRepository.GetOwnedHorsesAsync(id, false);
-
-        return result.Count > 0 ? new Success<IReadOnlyCollection<Horse>>(result) : new None();
-    }
-
+    public ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int personId);
+    
     /// <summary>
     /// Retrieves a list of all devices registered to a specific person.
     /// </summary>
@@ -198,17 +106,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
     /// <see cref="None"/> if no devices are registered, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public async ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId)
-    {
-        if (!await uow.PersonRepository.PersonExists(personId, false))
-        {
-            return new NotFound();
-        }
-
-        var result = await uow.PersonRepository.GetAllDevicesAsync(personId, false);
-
-        return result.Count > 0 ? new Success<List<MeasurementDevice>>(result.ToList()) : new None();
-    }
+    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId);
 
     /// <summary>
     /// Validates and registers a new person in the system with a specific role.
@@ -228,6 +126,207 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
     /// <see cref="IBaseService.InvalidData"/> if attributes are logically incorrect, 
     /// or <see cref="IBaseService.Conflict"/> if the provided email is already claimed by another user.
     /// </returns>
+    public ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
+                                                          decimal weight, LocalDate dateOfBirth, string? email,
+                                                          string? websiteLink, string? description, Address address,
+                                                          AccountRole role);
+
+    
+    /// <summary>
+    /// Updates the information for an existing person.
+    /// </summary>
+    /// <param name="personId">The person id to be updated</param>
+    /// <param name="firstName">The new person firstname that we maybe update</param>
+    /// <param name="lastName">The new person lastname that we maybe update</param>
+    /// <param name="height">The new person height that we maybe update</param>
+    /// <param name="weight">The new person weight that we maybe update</param>
+    /// <param name="dateOfBirth">The new person dob that we maybe update</param>
+    /// <param name="email">The new person email that we maybe update</param>
+    /// <param name="websiteLink">The new person websiteLink that we maybe update</param>
+    /// <param name="description">The new person description that we maybe update</param>
+    /// <param name="address">The new person address object that we maybe update</param>
+    /// <param name="roles">The new person roles that we maybe update</param>
+    /// <returns>
+    /// A <see cref="Success{Person}"/> if updated, 
+    /// <see cref="NotFound"/> if the person does not exist, 
+    /// <see cref="IBaseService.InvalidData"/> for invalid field values, 
+    /// or <see cref="IBaseService.Conflict"/> if the new email is claimed by another user.
+    /// </returns>
+    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int personId, string? firstName, string? lastName,
+                                                                      decimal? height, decimal? weight,
+                                                                      LocalDate? dateOfBirth,
+                                                                      string? email, string? websiteLink,
+                                                                      string? description, Address? address,
+                                                                      List<PersonRoleAssignment>? roles);
+    
+    /// <summary>
+    /// Removes a person from the system.
+    /// </summary>
+    /// <param name="personId">The id of the person.</param>
+    /// <returns>
+    /// A <see cref="Success"/> result if the deletion was successful; 
+    /// otherwise, a <see cref="NotFound"/> result.
+    /// </returns>
+    public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int personId);
+}
+
+public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, ILogger<PersonService> logger) : IPersonService
+{
+    public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int personId)
+    {
+        var result = await uow.PersonRepository.GetPersonAsEquestrianByIdAsync(personId);
+
+        if (result is null)
+        {
+            logger.LogWarning("Equestrian could not be found");
+
+            return new NotFound();
+        }
+        
+        logger.LogInformation("Equestrian successfully got");
+
+        return new Success<EquestrianBasicData>(result);
+    }
+    
+    public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId)
+    {
+        var result = await uow.PersonRepository.GetPersonAddressAsync(personId);
+
+        if (result is null)
+        {
+            logger.LogWarning("Address could not be found");
+
+            return new NotFound();
+        }
+        
+        logger.LogInformation("Address successfully got");
+
+        return new Success<Address>(result);
+    }
+
+    public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(
+        int saddlerId, int equestrianId)
+    {
+        // TODO: Fix return type, seperate notFounds for each person
+        if (!await uow.PersonRepository.PersonExists(equestrianId))
+        {
+            logger.LogWarning("Data is invalid");
+            return new IBaseService.InvalidData();
+        }
+
+        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
+
+        if (result is null)
+        {
+            logger.LogWarning("Saddler could not be found");
+            return new NotFound();
+        }
+
+        logger.LogInformation("Saddler successfully got");
+        return new Success<SaddlerBasicData>(result);
+    }
+
+    public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId)
+    {
+        var result = await uow.PersonRepository.GetNameByIdAsync(personId);
+
+        if (result is null)
+        {
+            logger.LogWarning("Person could not be found");
+            return new NotFound();
+        }
+        
+        logger.LogInformation("Name Data successfully got");
+
+        return new Success<NameData>(result);
+    }
+
+    
+    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int personId)
+    {
+        bool personExists = await uow.PersonRepository.PersonExists(personId);
+        if (!personExists)
+        {
+            logger.LogWarning("Person could not be found");
+            return new NotFound();
+        }
+
+        IReadOnlyCollection<Person> result = await uow.PersonRepository.GetFavouritesAsync(personId);
+
+        if (result.Count <= 0)
+        {
+            logger.LogWarning("List of Favourites is empty");
+            return new None();
+        }
+        
+        logger.LogInformation("List of Favourites successfully got");
+        return new Success<IReadOnlyCollection<Person>>(result);
+    }
+    
+    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int personId)
+    {
+        bool personExists = await uow.PersonRepository.PersonExists(personId);
+        if (!personExists)
+        {
+            logger.LogWarning("Person could not be found");
+
+            return new NotFound();
+        }
+
+        IReadOnlyCollection<Person> result = await uow.PersonRepository.GetContactsAsync(personId);
+
+        if (result.Count <= 0)
+        {
+            logger.LogWarning("List of Contacts is empty");
+            return new None();
+        }
+        
+        logger.LogInformation("List of Contacts successfully got");
+        return new Success<IReadOnlyCollection<Person>>(result);
+        
+    }
+    
+    public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int personId)
+    {
+        bool personExists = await uow.PersonRepository.PersonExists(personId);
+        if (!personExists)
+        {
+            logger.LogWarning("Person could not be found");
+            return new NotFound();
+        }
+
+        IReadOnlyCollection<Horse> result = await uow.PersonRepository.GetOwnedHorsesAsync(personId);
+
+        if (result.Count <= 0)
+        {
+            logger.LogWarning("List of owned Horses is empty");
+            return new None();
+        }
+        
+        logger.LogInformation("List of owned Horses successfully got");
+        return new Success<IReadOnlyCollection<Horse>>(result);
+    }
+    
+    public async ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId)
+    {
+        if (!await uow.PersonRepository.PersonExists(personId))
+        {
+            logger.LogWarning("Person could not be found");
+            return new NotFound();
+        }
+
+        IReadOnlyCollection<MeasurementDevice> result = await uow.PersonRepository.GetAllDevicesAsync(personId);
+
+        if (result.Count <= 0)
+        {
+            logger.LogWarning("List of Devices is empty");
+            return new None();
+        }
+        
+        logger.LogInformation("List of Devices successfully got");
+        return new Success<List<MeasurementDevice>>(result.ToList());    
+    }
+    
     public async ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
                                                                 decimal weight, LocalDate dateOfBirth,
                                                                 string? email, string? websiteLink, string? description,
@@ -235,11 +334,13 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
     {
         if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate())
         {
+            logger.LogWarning("Data is invalid");
             return new IBaseService.InvalidData();
         }
 
-        if (email != null && await uow.PersonRepository.PersonWithEmailExists(email, true))
+        if (email != null && await uow.PersonRepository.PersonWithEmailExists(email))
         {
+            logger.LogWarning("Person with Email already exists");
             return new IBaseService.Conflict();
         }
 
@@ -267,48 +368,33 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
 
         uow.PersonRepository.AddPerson(person);
         await uow.SaveChangesAsync();
+        logger.LogInformation("Person successfully added");
         return new Success<Person>(person);
     }
-
-    /// <summary>
-    /// Updates the information for an existing person.
-    /// </summary>
-    /// <param name="id">The person id to be updated</param>
-    /// <param name="firstName">The new person firstname that we maybe update</param>
-    /// <param name="lastName">The new person lastname that we maybe update</param>
-    /// <param name="height">The new person height that we maybe update</param>
-    /// <param name="weight">The new person weight that we maybe update</param>
-    /// <param name="dateOfBirth">The new person dob that we maybe update</param>
-    /// <param name="email">The new person email that we maybe update</param>
-    /// <param name="websiteLink">The new person websiteLink that we maybe update</param>
-    /// <param name="description">The new person description that we maybe update</param>
-    /// <param name="address">The new person address object that we maybe update</param>
-    /// <param name="roles">The new person roles that we maybe update</param>
-    /// <returns>
-    /// A <see cref="Success{Person}"/> if updated, 
-    /// <see cref="NotFound"/> if the person does not exist, 
-    /// <see cref="IBaseService.InvalidData"/> for invalid field values, 
-    /// or <see cref="IBaseService.Conflict"/> if the new email is claimed by another user.
-    /// </returns>
-    public async ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int id, string? firstName, string? lastName, 
+    
+    public async ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int personId, string? firstName, string? lastName, 
                                                                       decimal? height, decimal? weight, LocalDate? dateOfBirth,
                                                                       string? email, string? websiteLink, 
                                                                       string? description, Address? address, List<PersonRoleAssignment>? roles)
     {
-        var person = await uow.PersonRepository.GetPersonById(id, true);
+        var person = await uow.PersonRepository.GetPersonById(personId);
         
         if (person is null)
         {
+            logger.LogWarning("Person could not be found");
             return new NotFound();
         }
 
         if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate())
         {
+            logger.LogWarning("invalid data");
             return new IBaseService.InvalidData();
         }
 
-        if (email != null && await uow.PersonRepository.IsEmailTakenByAnotherUser(email, id, true))
+        if (email != null && await uow.PersonRepository.IsEmailTakenByAnotherUser(email, personId))
         {
+            logger.LogWarning("email is already taken by another user");
+
             return new IBaseService.Conflict();
         }
 
@@ -364,29 +450,23 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider) 
         }
 
         await uow.SaveChangesAsync();
-        return new Success<Person>(person);
+        logger.LogInformation("Person successfully updated");
+        return new Success();
     }
-
-    /// <summary>
-    /// Removes a person from the system.
-    /// </summary>
-    /// <param name="id">The id of the person.</param>
-    /// <returns>
-    /// A <see cref="Success"/> result if the deletion was successful; 
-    /// otherwise, a <see cref="NotFound"/> result.
-    /// </returns>
-    public async ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id)
+    
+    public async ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int personId)
     {
-        var person = await uow.PersonRepository.GetPersonById(id, true);
+        var person = await uow.PersonRepository.GetPersonById(personId);
 
         if (person == null)
         {
+            logger.LogWarning("Person could not be found");
             return new NotFound();
         }
 
         uow.PersonRepository.RemovePerson(person);
         await uow.SaveChangesAsync();
-
+        logger.LogInformation("Person successfully removed");
         return new Success();
     }
 }

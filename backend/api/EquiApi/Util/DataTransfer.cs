@@ -160,6 +160,6 @@ public class DataTransfer
     {
         public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data, int id) =>
             new(id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
-                data.Description, data.isFavourite);
+                data.Description, data.IsFavourite);
     }
 }
