@@ -40,7 +40,8 @@ public sealed class PersonController(
         // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
         return result.Match<ActionResult<DataTransfer.EquestrianBasicDto>>(success =>
                                                                                Ok(DataTransfer.EquestrianBasicDto
-                                                                                   .FromEquestrianBasicData(success.Value, id)),
+                                                                                   .FromEquestrianBasicData(success
+                                                                                       .Value, id)),
                                                                            notFound => NotFound());
     }
 
@@ -62,7 +63,9 @@ public sealed class PersonController(
         result.Switch(success => { logger.LogInformation("Successfully got Person"); },
                       notFound => { logger.LogError("Person was not found"); });
 
-        return result.Match<ActionResult<DataTransfer.NameDataDto>>(success => Ok(DataTransfer.NameDataDto.FromData(success.Value)),
+        return result.Match<ActionResult<DataTransfer.NameDataDto>>(success =>
+                                                                        Ok(DataTransfer.NameDataDto
+                                                                               .FromData(success.Value)),
                                                                     notFound => NotFound());
     }
 
@@ -84,7 +87,9 @@ public sealed class PersonController(
         result.Switch(success => { logger.LogInformation("Successfully got Address"); },
                       notFound => { logger.LogError("Address was not found"); });
 
-        return result.Match<ActionResult<DataTransfer.AddressDto>>(success => Ok(DataTransfer.AddressDto.FromAddress(success.Value)),
+        return result.Match<ActionResult<DataTransfer.AddressDto>>(success =>
+                                                                       Ok(DataTransfer.AddressDto
+                                                                              .FromAddress(success.Value)),
                                                                    notFound => NotFound());
     }
 
@@ -112,7 +117,8 @@ public sealed class PersonController(
         return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
                                                                                Ok(DataTransfer.PersonListResponse
                                                                                    .FromPersons(success.Value)),
-                                                                           none => Ok(DataTransfer.PersonListResponse.FromPersons([])),
+                                                                           none => Ok(DataTransfer.PersonListResponse
+                                                                               .FromPersons([])),
                                                                            notFound => NotFound());
     }
 
@@ -138,7 +144,8 @@ public sealed class PersonController(
         return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
                                                                                Ok(DataTransfer.PersonListResponse
                                                                                    .FromPersons(success.Value)),
-                                                                           none => Ok(DataTransfer.PersonListResponse.FromPersons([])),
+                                                                           none => Ok(DataTransfer.PersonListResponse
+                                                                               .FromPersons([])),
                                                                            notFound => NotFound());
     }
 
@@ -162,8 +169,10 @@ public sealed class PersonController(
                       notFound => { logger.LogError("Person was not found"); });
 
         return result.Match<ActionResult<DataTransfer.HorseListResponse>>(success =>
-                                                                              Ok(DataTransfer.HorseListResponse.FromHorses(success.Value)),
-                                                                          none => Ok(DataTransfer.PersonListResponse.FromPersons([])),
+                                                                              Ok(DataTransfer.HorseListResponse
+                                                                                  .FromHorses(success.Value)),
+                                                                          none => Ok(DataTransfer.PersonListResponse
+                                                                              .FromPersons([])),
                                                                           notFound => NotFound());
     }
 
@@ -187,8 +196,10 @@ public sealed class PersonController(
                       notFound => { logger.LogError("Person was not found"); });
 
         return result.Match<ActionResult<DataTransfer.DeviceListResponse>>(success =>
-                                                                               Ok(DataTransfer.DeviceListResponse.FromDevices(success.Value)),
-                                                                           none => Ok(DataTransfer.DeviceListResponse.FromDevices([])),
+                                                                               Ok(DataTransfer.DeviceListResponse
+                                                                                   .FromDevices(success.Value)),
+                                                                           none => Ok(DataTransfer.DeviceListResponse
+                                                                               .FromDevices([])),
                                                                            notFound => NotFound());
     }
 
@@ -247,21 +258,10 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        var personEntity = new Person
-        {
-            Id = request.Id,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Height = request.Height,
-            Weight = request.Weight,
-            DateOfBirth = request.DateOfBirth,
-            Email = request.Email,
-            WebsiteLink = request.WebsiteLink,
-            Description = request.Description
-        };
-
         OneOf<Success<Person>, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
-            = await personService.UpdatePersonAsync(personEntity);
+            = await personService.UpdatePersonAsync(request.Id, request.FirstName, request.LastName, request.Height,
+                                                    request.Weight, request.DateOfBirth, request.Email,
+                                                    request.WebsiteLink, request.Description, request.Address, request.RoleAssignments);
 
         result.Switch(async success =>
         {

@@ -67,29 +67,20 @@ public class DataTransfer
             new(persons.Select(PersonDto.FromPerson));
     }
 
-    public sealed class HorseDto
+    public sealed record HorseDto(
+        int Id,
+        string Name,
+        LocalDate DateOfBirth,
+        decimal Weight,
+        decimal Height,
+        string Gender,
+        string BreedName,
+        int AddressId)
     {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-        public LocalDate DateOfBirth { get; set; }
-        public decimal Weight { get; set; }
-        public decimal Height { get; set; }
-        public string Gender { get; set; } = null!;
-        public string BreedName { get; set; } = null!;
-        public int AddressId { get; set; }
-
         public static HorseDto FromHorse(Horse horse) =>
-            new()
-            {
-                Id = horse.Id,
-                Name = horse.Name,
-                DateOfBirth = horse.DateOfBirth,
-                Weight = horse.Weight,
-                Height = horse.Height,
-                Gender = horse.Gender.ToString(),
-                BreedName = horse.Breed.Name,
-                AddressId = horse.AddressId
-            };
+            // TODO: muss gefixt werden (horse breed name)
+            new(horse.Id, horse.Name, horse.DateOfBirth, horse.Weight, horse.Height, horse.Gender.ToString(),
+                horse.HorseBreeds.Last().Breed.Name, horse.AddressId);
     }
 
     public sealed record HorseListResponse(IEnumerable<HorseDto> Horses)
@@ -109,18 +100,19 @@ public class DataTransfer
             new(devices.Select(MeasurementDeviceDto.FromDevice));
     }
 
-    public sealed class UpdatePersonRequest
+    public sealed record UpdatePersonRequest(
+        int Id,
+        string? FirstName,
+        string? LastName,
+        decimal? Height,
+        decimal? Weight,
+        LocalDate? DateOfBirth,
+        string? Email,
+        string? WebsiteLink,
+        string? Description,
+        Address? Address,
+        List<PersonRoleAssignment>? RoleAssignments)
     {
-        public int Id { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public decimal Height { get; set; }
-        public decimal Weight { get; set; }
-        public LocalDate DateOfBirth { get; set; }
-        public string? Email { get; set; }
-        public string? WebsiteLink { get; set; }
-        public string? Description { get; set; }
-
         public sealed class Validator : AbstractValidator<UpdatePersonRequest>
         {
             public Validator()
@@ -137,61 +129,37 @@ public class DataTransfer
         }
     }
 
-    public sealed class EquestrianBasicDto
+    public sealed record EquestrianBasicDto(
+        int Id,
+        string FirstName,
+        string LastName,
+        decimal Height,
+        decimal Weight,
+        string? Email,
+        string? Street,
+        int? HouseNumber,
+        string? City,
+        string? PLZ)
     {
-        public int Id { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public decimal Height { get; set; }
-        public decimal Weight { get; set; }
-        public string? Email { get; set; }
-        public string? Street { get; set; }
-        public int? HouseNumber { get; set; }
-        public string? City { get; set; }
-        public string? PLZ { get; set; }
-
         public static EquestrianBasicDto FromEquestrianBasicData(EquestrianBasicData data, int id) =>
-            new()
-            {
-                Id = id,
-                FirstName = data.FirstName,
-                LastName = data.LastName,
-                Height = data.Height,
-                Weight = data.Weight,
-                Email = data.Email,
-                Street = data.Street,
-                HouseNumber = data.HouseNumber,
-                City = data.City,
-                PLZ = data.PLZ
-            };
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street, data.HouseNumber,
+                data.City, data.PLZ);
     }
 
-    public sealed class SaddlerBasicDto
+    public sealed record SaddlerBasicDto(
+        int Id,
+        string FirstName,
+        string LastName,
+        string? Street,
+        int? HouseNumber,
+        string? City,
+        string? PLZ,
+        string? Link,
+        string? Description,
+        bool IsFavourite)
     {
-        public int Id { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public string? Street { get; set; }
-        public int? HouseNumber { get; set; }
-        public required string City { get; set; }
-        public required string PLZ { get; set; }
-        public string? Link { get; set; }
-        public string? Description { get; set; }
-        public bool IsFavourite { get; set; }
-
         public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data, int id) =>
-            new()
-            {
-                Id = id,
-                FirstName = data.FirstName,
-                LastName = data.LastName,
-                Street = data.Street,
-                HouseNumber = data.HouseNumber,
-                City = data.City,
-                PLZ = data.PLZ,
-                Link = data.Link,
-                Description = data.Description,
-                IsFavourite = data.isFavourite
-            };
+            new(id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+                data.Description, data.isFavourite);
     }
 }
