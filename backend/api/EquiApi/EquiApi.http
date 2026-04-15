@@ -12,7 +12,7 @@ GET {{BaseUrl}}/persons/{{personId}}
 GET {{BaseUrl}}/persons/{{personId}}/profile-data
 
 ### 3. Adresse einer Person abrufen
-GET {{BaseUrl}}/persons/{{personId}}/address
+GET {{BaseUrl}}/persons/{{personId}}/location
 
 ### 4. Kontakte einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/contacts
@@ -20,8 +20,8 @@ GET {{BaseUrl}}/persons/{{personId}}/contacts
 ### 5. Favoriten einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/favourites
 
-### 6. Alle Sattler mit Adresse (Alle Personen mit Rolle 'Sattler')
-GET {{BaseUrl}}/persons/saddlers
+### 6. Alle Sattler mit Adresse (Person_Id, Name und location)
+GET {{BaseUrl}}/persons/saddlers/locations
 
 ### 7. Alle Pferde einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/horses
@@ -58,3 +58,26 @@ Content-Type: application/json
 
 ### 11. Person löschen
 DELETE {{BaseUrl}}/persons/{{personId}}
+
+### 12. Alle Pferde einer Person abrufen (mit PferdeId, Location und Profilbild einer Person)
+GET {{BaseUrl}}/persons/{{personId}}/horses/locations
+
+### 13. eine Location hinzufügen
+POST {{BaseUrl}}/locations
+Content-Type: application/json
+
+{
+    "street": "Hausstraße",
+    "houseNumber": 12,
+    "cityName": "Traun",
+    "plz": "4050"
+}
+
+### 14. eine Location hinzufügen (strasse optional)
+POST {{BaseUrl}}/locations
+Content-Type: application/json
+
+{
+    "cityName": "Traun",
+    "plz": "4050"
+}
