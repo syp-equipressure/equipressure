@@ -210,17 +210,11 @@ public sealed class PersonController(
     public async ValueTask<ActionResult> CreatePerson([FromBody] DataTransfer.AddPersonRequest request)
     {
         await transaction.BeginTransactionAsync();
-        var addressEntity = new Address
-        {
-            Street = request.Address.Street,
-            HouseNumber = request.Address.HouseNumber,
-            CityId = request.Address.CityId
-        };
 
         OneOf<Success<Person>, IBaseService.InvalidData, IBaseService.Conflict> result
             = await personService.AddPersonAsync(request.FirstName, request.LastName, request.Height,
                                                  request.Weight, request.DateOfBirth, request.Email,
-                                                 request.WebsiteLink, request.Description, addressEntity,
+                                                 request.WebsiteLink, request.Description, request.Address,
                                                  request.Role);
 
         result.Switch(async success =>

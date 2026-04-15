@@ -74,13 +74,13 @@ public class DataTransfer
         decimal Weight,
         decimal Height,
         string Gender,
-        string BreedName,
+        List<string> BreedNames,
         int AddressId)
     {
         public static HorseDto FromHorse(Horse horse) =>
             // TODO: muss gefixt werden (horse breed name)
             new(horse.Id, horse.Name, horse.DateOfBirth, horse.Weight, horse.Height, horse.Gender.ToString(),
-                horse.HorseBreeds.Last().Breed.Name, horse.AddressId);
+                horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(), horse.AddressId);
     }
 
     public sealed record HorseListResponse(IEnumerable<HorseDto> Horses)
