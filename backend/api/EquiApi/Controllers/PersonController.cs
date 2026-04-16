@@ -12,13 +12,14 @@ namespace EquiApi.Controllers;
 
 // TODO: xml documentation
 // TODO: CreatedAtAction verwenden!
+// TODO: dto stimmen ned mit http requests, post!! put
 [Route("api/persons")]
 public sealed class PersonController(
     ITransactionProvider transaction,
     IPersonService personService,
     ILogger<PersonController> logger) : BaseController
 {
-    [HttpGet("{id:int}")]
+    [HttpGet("equestrians/{id:int}")]
     [ProducesResponseType<DataTransfer.EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -39,6 +40,29 @@ public sealed class PersonController(
                                                                                         .FromEquestrianBasicData(success
                                                                                                  .Value, id)),
                                                                            notFound => NotFound());
+    }
+
+    [HttpGet("equestrians/{equestrianId:int}/saddlers/{saddlerId:int}")]
+    [ProducesResponseType<DataTransfer.SaddlerBasicDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<DataTransfer.SaddlerBasicDto>> GetSaddlerById(
+        [FromRoute] int equestrianId, [FromRoute] int saddlerId)
+    {
+        if (equestrianId <= 0 || saddlerId <= 0)
+        {
+            return BadRequest();
+        }
+
+        OneOf<Success<SaddlerBasicData>, IBaseService.InvalidData, NotFound> result
+            = await personService.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
+
+        return result.Match<ActionResult<DataTransfer.SaddlerBasicDto>>(success =>
+                                                                            Ok(DataTransfer.SaddlerBasicDto
+                                                                                   .FromSaddlerBasicData(success
+                                                                                            .Value, saddlerId)),
+                                                                        invalidData => BadRequest(),
+                                                                        notFound => NotFound());
     }
 
     [HttpGet("{id:int}/profile-data")]
@@ -165,6 +189,15 @@ public sealed class PersonController(
                                                                            notFound => NotFound());
     }
 
+    [HttpGet("saddlers/locations")]
+    [ProducesResponseType<DataTransfer.DeviceListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<DataTransfer.DeviceListResponse>> GetSaddlersWithAddress()
+    {
+        //TODO:
+    }
+
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -220,7 +253,7 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<IActionResult> UpdatePerson([FromRoute] int id,
-                                                      [FromBody] DataTransfer.UpdatePersonRequest request)
+                                                       [FromBody] DataTransfer.UpdatePersonRequest request)
     {
         if (id <= 0 || id != request.Id ||
             !ValidateRequest<DataTransfer.UpdatePersonRequest.Validator, DataTransfer.UpdatePersonRequest>(request))

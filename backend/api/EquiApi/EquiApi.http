@@ -5,8 +5,11 @@
 @saddlerId = 2
 @equestrianId = 1
 
-### 1. Person abrufen
-GET {{BaseUrl}}/persons/{{personId}}
+### 1. Person (Equestrian) abrufen
+GET {{BaseUrl}}/persons/equestrians/{{personId}}
+
+### 1.2 Person (Saddler) abrufen
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/{{saddlerId}}
 
 ### 2. Person abrufen (minimale Daten)
 GET {{BaseUrl}}/persons/{{personId}}/profile-data
