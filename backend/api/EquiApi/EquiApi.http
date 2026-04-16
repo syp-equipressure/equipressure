@@ -24,7 +24,7 @@ GET {{BaseUrl}}/persons/{{personId}}/contacts
 GET {{BaseUrl}}/persons/{{personId}}/favourites
 
 ### 6. Alle Sattler mit Adresse (Person_Id, Name und location)
-GET {{BaseUrl}}/persons/saddlers/locations
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/locations
 
 ### 7. Alle Pferde einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/horses

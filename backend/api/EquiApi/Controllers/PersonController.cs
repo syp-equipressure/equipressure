@@ -59,8 +59,7 @@ public sealed class PersonController(
 
         return result.Match<ActionResult<DataTransfer.SaddlerBasicDto>>(success =>
                                                                             Ok(DataTransfer.SaddlerBasicDto
-                                                                                   .FromSaddlerBasicData(success
-                                                                                            .Value, saddlerId)),
+                                                                                   .FromSaddlerBasicData(success.Value)),
                                                                         invalidData => BadRequest(),
                                                                         notFound => NotFound());
     }
@@ -189,13 +188,35 @@ public sealed class PersonController(
                                                                            notFound => NotFound());
     }
 
-    [HttpGet("saddlers/locations")]
-    [ProducesResponseType<DataTransfer.DeviceListResponse>(StatusCodes.Status200OK)]
+    [HttpGet("equestrians/{equestrianId:int}/saddlers/locations")]
+    [ProducesResponseType<DataTransfer.SaddlersListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.DeviceListResponse>> GetSaddlersWithAddress()
+    public async ValueTask<ActionResult<DataTransfer.SaddlersListResponse>> GetSaddlersWithAddress(
+        [FromRoute] int equestrianId)
     {
-        //TODO:
+        if (equestrianId <= 0)
+        {
+            return BadRequest();
+        }
+
+        OneOf<Success<List<SaddlerBasicData>>, None, NotFound> result
+            = await personService.GetAllSaddlersAsync(equestrianId);
+
+        return result.Match<ActionResult<DataTransfer.SaddlersListResponse>>(success =>
+                                                                           {
+                                                                               var dtos = success.Value
+                                                                                   .Select(DataTransfer.SaddlerBasicDto
+                                                                                            .FromSaddlerBasicData)
+                                                                                   .ToList();
+
+                                                                               return Ok(new DataTransfer.
+                                                                                        SaddlersListResponse(dtos));
+                                                                           },
+                                                                           none =>
+                                                                               Ok(new DataTransfer.
+                                                                                        SaddlersListResponse([])),
+                                                                           notFound => NotFound());
     }
 
     [HttpPost]

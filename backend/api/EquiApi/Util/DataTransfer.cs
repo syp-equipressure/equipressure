@@ -152,14 +152,19 @@ public class DataTransfer
         string LastName,
         string? Street,
         int? HouseNumber,
-        string? City,
-        string? PLZ,
+        string City,
+        string PLZ,
         string? Link,
         string? Description,
         bool IsFavourite)
     {
-        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
+            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
                 data.Description, data.IsFavourite);
+    }
+
+    public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
+    {
+        public static SaddlersListResponse FromSaddlers(IEnumerable<SaddlerBasicDto> saddlers) => new(saddlers);
     }
 }
