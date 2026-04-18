@@ -4,7 +4,8 @@ class Horse {
   final String id;
   final String name;
   final File? image;
-  final String? imagePath; 
+  final String? imagePath;
+  final String? assetImage;
   final String breed;
   final String birthDate; // Format: DD.MM.YYYY
   final String weight;
@@ -24,6 +25,7 @@ class Horse {
     required this.name,
     this.image,
     this.imagePath,
+    this.assetImage,
     required this.breed,
     required this.birthDate,
     required this.weight,
@@ -36,6 +38,8 @@ class Horse {
     this.stableLatitude,
     this.stableLongitude,
   });
+
+  bool get hasImage => image != null || assetImage != null;
 
   bool get hasStableLocation => stableLatitude != null && stableLongitude != null;
 
@@ -97,6 +101,7 @@ class Horse {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       imagePath: json['imagePath'],
+      assetImage: json['assetImage'],
       image: json['imagePath'] != null ? File(json['imagePath']) : null,
       breed: json['breed'] ?? 'Unbekannt',
       birthDate: json['birthDate'] ?? '',
@@ -118,6 +123,7 @@ class Horse {
       'id': id,
       'name': name,
       'imagePath': imagePath ?? image?.path,
+      'assetImage': assetImage,
       'breed': breed,
       'birthDate': birthDate,
       'weight': weight,
@@ -138,6 +144,7 @@ class Horse {
     String? name,
     File? image,
     String? imagePath,
+    String? assetImage,
     String? breed,
     String? birthDate,
     String? weight,
@@ -155,6 +162,7 @@ class Horse {
       name: name ?? this.name,
       image: image ?? this.image,
       imagePath: imagePath ?? this.imagePath,
+      assetImage: assetImage ?? this.assetImage,
       breed: breed ?? this.breed,
       birthDate: birthDate ?? this.birthDate,
       weight: weight ?? this.weight,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:intl/intl.dart';
 
@@ -70,10 +71,7 @@ class MeasurementCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 _buildDetailRow(Icons.person_outline, measurement.rider),
                 const SizedBox(height: 8),
-                _buildDetailRow(
-                  Icons.airline_seat_individual_suite_outlined, 
-                  measurement.saddleName, 
-                ),
+                _buildSvgDetailRow('assets/icon/saddleIcon.svg', measurement.saddleName),
               ],
             ),
           ),
@@ -86,6 +84,29 @@ class MeasurementCard extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSvgDetailRow(String svgPath, String text) {
+    return Row(
+      children: [
+        SvgPicture.asset(
+          svgPath,
+          width: 16,
+          height: 16,
+          colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

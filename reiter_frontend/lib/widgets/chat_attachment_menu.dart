@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ChatAttachmentMenu extends StatelessWidget {
   final VoidCallback onFilesSelected;
@@ -52,7 +52,7 @@ class ChatAttachmentMenu extends StatelessWidget {
           ),
           _buildDivider(),
           _AttachmentMenuItem(
-            icon: FontAwesomeIcons.horseHead,
+            svgPath: 'assets/icon/horseIcon.svg',
             label: 'Pferde',
             onTap: onHorsesSelected,
           ),
@@ -70,12 +70,14 @@ class ChatAttachmentMenu extends StatelessWidget {
 }
 
 class _AttachmentMenuItem extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgPath;
   final String label;
   final VoidCallback onTap;
 
   const _AttachmentMenuItem({
-    required this.icon,
+    this.icon,
+    this.svgPath,
     required this.label,
     required this.onTap,
   });
@@ -88,11 +90,19 @@ class _AttachmentMenuItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 22,
-              color: Colors.grey[700],
-            ),
+            if (svgPath != null)
+              SvgPicture.asset(
+                svgPath!,
+                width: 22,
+                height: 22,
+                colorFilter: ColorFilter.mode(Colors.grey[700]!, BlendMode.srcIn),
+              )
+            else
+              Icon(
+                icon,
+                size: 22,
+                color: Colors.grey[700],
+              ),
             const SizedBox(width: 16),
             Text(
               label,

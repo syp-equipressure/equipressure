@@ -47,6 +47,9 @@ dependencies:
   flutter_map_cancellable_tile_provider: ^3.0.0
   latlong2: ^0.9.1
   url_launcher: ^6.2.5
+  flutter_map_heatmap: any 
+  pdf: ^3.11.3
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +79,10 @@ flutter:
     - assets/data/saddle.json
     - assets/data/chat.json
     - assets/data/saddlers.json
+    - assets/icon/horseIcon.svg
+    - assets/icon/saddleIcon.svg
+    - assets/data/pressure_device.json
+    - assets/horseImg/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
