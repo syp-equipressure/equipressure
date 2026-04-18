@@ -196,7 +196,18 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
                 isLink: true,
               ),
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+
+          // Brands
+          if (_saddler.allBrands || _saddler.brands.isNotEmpty) ...[
+            _buildInfoRow(
+              icon: Icons.sell_outlined,
+              label: _saddler.allBrands ? 'Alle Marken' : _saddler.brands.join(', '),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          const SizedBox(height: 8),
 
           // Description
           if (_saddler.description != null) ...[

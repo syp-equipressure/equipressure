@@ -365,6 +365,8 @@ class _ChatScreenState extends State<ChatScreen> {
         return ChatFileMessage(message: message);
       case MessageType.text:
         return _buildTextMessage(message);
+      case MessageType.profile:
+        throw UnimplementedError();
     }
   }
 

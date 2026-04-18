@@ -13,6 +13,8 @@ class Saddler {
   final String? email;
   final String? phone;
   final String? description;
+  final List<String> brands;
+  final bool allBrands;
   final bool isFavorite;
 
   Saddler({
@@ -30,6 +32,8 @@ class Saddler {
     this.email,
     this.phone,
     this.description,
+    this.brands = const [],
+    this.allBrands = false,
     this.isFavorite = false,
   });
 
@@ -70,6 +74,8 @@ class Saddler {
     String? email,
     String? phone,
     String? description,
+    List<String>? brands,
+    bool? allBrands,
     bool? isFavorite,
   }) {
     return Saddler(
@@ -87,6 +93,8 @@ class Saddler {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       description: description ?? this.description,
+      brands: brands ?? this.brands,
+      allBrands: allBrands ?? this.allBrands,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
@@ -107,6 +115,8 @@ class Saddler {
       email: json['email'],
       phone: json['phone'],
       description: json['description'],
+      brands: (json['brands'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      allBrands: json['allBrands'] ?? false,
       isFavorite: json['isFavorite'] ?? false,
     );
   }
@@ -127,6 +137,8 @@ class Saddler {
       'email': email,
       'phone': phone,
       'description': description,
+      'brands': brands,
+      'allBrands': allBrands,
       'isFavorite': isFavorite,
     };
   }

@@ -96,16 +96,23 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           height: 350,
                           fit: BoxFit.cover,
                         )
-                      : Container(
-                          width: double.infinity,
-                          height: 350,
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.image_outlined,
-                            size: 80,
-                            color: Colors.grey[500],
-                          ),
-                        ),
+                      : currentHorse.assetImage != null
+                          ? Image.asset(
+                              currentHorse.assetImage!,
+                              width: double.infinity,
+                              height: 350,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              width: double.infinity,
+                              height: 350,
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.image_outlined,
+                                size: 80,
+                                color: Colors.grey[500],
+                              ),
+                            ),
                   Positioned(
                     top: 16,
                     left: 16,
