@@ -117,6 +117,16 @@ class _FindSaddlerState extends State<FindSaddler> {
     return _saddlers.where((s) => s.isFavorite).toList();
   }
 
+  List<Horse> get _filteredHorses {
+    if (_searchQuery.isEmpty) return [];
+    
+    final query = _searchQuery.toLowerCase();
+    return _horses.where((h) =>
+      h.name.toLowerCase().contains(query) ||
+      (h.stableCity?.toLowerCase().contains(query) ?? false)
+    ).toList();
+  }
+
   // Saddlers filtered + sorted by distance from the reference horse's stable.
   List<Saddler> get _saddlersByDistance {
     final list = _filteredSaddlers.where((s) => s.hasLocation).toList();
@@ -288,7 +298,18 @@ class _FindSaddlerState extends State<FindSaddler> {
     ).then((_) => _loadData());
   }
 
+  void _openHorseProfile(Horse horse) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HorseProfileScreen(horse: horse),
+      ),
+    ).then((_) => _loadData());
+  }
+
   void _showBrandFilterSheet() {
+    String brandSearchQuery = '';
+    
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -297,7 +318,11 @@ class _FindSaddlerState extends State<FindSaddler> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final brands = _allBrands;
+            final allBrands = _allBrands;
+            final filteredBrands = allBrands
+                .where((brand) => brand.toLowerCase().contains(brandSearchQuery.toLowerCase()))
+                .toList();
+            
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               child: Column(
@@ -306,12 +331,34 @@ class _FindSaddlerState extends State<FindSaddler> {
                 children: [
                   const Text(
                     'Nach Sattelmarke filtern',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 40),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Marke suchen...',
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        isDense: true,
+                      ),
+                      style: const TextStyle(fontSize: 13),
+                      onChanged: (value) {
+                        setSheetState(() {
+                          brandSearchQuery = value;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
                       _buildChip(
                         'Alle',
@@ -321,7 +368,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                           setState(() => _selectedBrands = {});
                         },
                       ),
-                      ...brands.map((brand) => _buildChip(
+                      ...filteredBrands.map((brand) => _buildChip(
                         brand,
                         _selectedBrands.contains(brand),
                         onTap: () {
@@ -405,7 +452,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                     children: [
                       if (_showListView) _buildListView() else _buildMap(),
                       _buildSearchHeader(),
-                      if (_showSearch) _buildSearchDropdown(),
+                      if (!_showListView && _searchQuery.isNotEmpty) _buildSearchDropdown(),
                       _buildTopRightButtons(),
                       if (!_showListView) _buildBottomLeftButtons(),
                       if (!_showListView && _selectedSaddler != null) _buildSaddlerPopup(),
@@ -431,8 +478,8 @@ class _FindSaddlerState extends State<FindSaddler> {
         padding: const EdgeInsets.all(4),
         child: Row(
           children: [
-            Expanded(child: _buildViewToggleTab(label: 'Karte', icon: Icons.map, selected: !_showListView, onTap: () => _setViewMode(false))),
             Expanded(child: _buildViewToggleTab(label: 'Liste', icon: Icons.view_list, selected: _showListView, onTap: () => _setViewMode(true))),
+            Expanded(child: _buildViewToggleTab(label: 'Karte', icon: Icons.map, selected: !_showListView, onTap: () => _setViewMode(false))),
           ],
         ),
       ),
@@ -683,8 +730,8 @@ class _FindSaddlerState extends State<FindSaddler> {
                           child: Padding(
                             padding: const EdgeInsets.only(left: 6),
                             child: Icon(
-                              saddler.isFavorite ? Icons.star : Icons.star_border,
-                              color: saddler.isFavorite ? Colors.amber : Colors.grey[400],
+                              saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: saddler.isFavorite ? Colors.red : Colors.grey[400],
                               size: 22,
                             ),
                           ),
@@ -771,7 +818,7 @@ class _FindSaddlerState extends State<FindSaddler> {
 
   Widget _buildSearchHeader() {
     final hintText = _showListView 
-        ? 'Sattler*innen suchen ...'
+        ? 'Sattler*in suchen ...'
         : 'Sattler*innen oder Pferde suchen ...';
 
     return Positioned(
