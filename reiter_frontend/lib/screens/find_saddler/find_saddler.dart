@@ -4,12 +4,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/sidenav.dart';
 import '../../models/saddler.dart';
 import '../../models/horse.dart';
 import '../../services/saddler_service.dart';
 import '../../services/horse_service.dart';
 import 'saddler_profile_screen.dart';
+import '../horses/horse_profil_screen.dart';
 
 class FindSaddler extends StatefulWidget {
   const FindSaddler({super.key});
@@ -22,6 +24,7 @@ class _FindSaddlerState extends State<FindSaddler> {
   final SaddlerService _saddlerService = SaddlerService();
   final HorseService _horseService = HorseService();
   final MapController _mapController = MapController();
+  late TextEditingController _searchController;
 
   List<Saddler> _saddlers = [];
   List<Horse> _horses = [];
@@ -43,7 +46,14 @@ class _FindSaddlerState extends State<FindSaddler> {
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -231,52 +241,64 @@ class _FindSaddlerState extends State<FindSaddler> {
   }
 
   Widget _buildSearchHeader() {
+    final hintText = _showListView 
+        ? 'Sattler*innen suchen ...'
+        : 'Sattler*innen oder Pferde suchen ...';
+
     return Positioned(
       top: 16,
       left: 16,
-      right: 110,
-      child: GestureDetector(
-        onTap: _toggleSearch,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+      right: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: hintText,
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _searchQuery.isEmpty ? 'Sattler*in finden' : _searchQuery,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _searchQuery.isEmpty ? Colors.grey[600] : Colors.black,
-                  ),
-                ),
-              ),
-              Icon(
-                _showSearch ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                color: Colors.grey[600],
-              ),
-            ],
-          ),
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
         ),
       ),
     );
   }
 
   Widget _buildSearchDropdown() {
+    final filteredHorses = _filteredHorses;
+    final filteredSaddlers = _filteredSaddlers;
+    final totalResults = filteredHorses.length + filteredSaddlers.length;
+
     return Positioned(
       top: 70,
       left: 16,
-      right: 110,
+      right: 16,
       child: Container(
         constraints: const BoxConstraints(maxHeight: 300),
         decoration: BoxDecoration(
@@ -290,67 +312,100 @@ class _FindSaddlerState extends State<FindSaddler> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: TextField(
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Suchen...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+        child: totalResults == 0
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    'Keine Treffer gefunden',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
+              )
+            : ListView(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
-                itemCount: _filteredSaddlers.length,
-                itemBuilder: (context, index) {
-                  final saddler = _filteredSaddlers[index];
-                  return ListTile(
-                    leading: _buildSmallAvatar(saddler),
-                    title: Text(saddler.name),
-                    subtitle: Text(saddler.city ?? ''),
-                    trailing: saddler.isFavorite
-                        ? const Icon(Icons.star, color: Colors.amber, size: 20)
-                        : null,
-                    onTap: () {
-                      _selectSaddler(saddler);
-                      _closeSearch();
-                    },
-                  );
-                },
+                children: [
+                  // Horses section
+                  if (filteredHorses.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Text(
+                        'Pferde',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                    ...filteredHorses.map((horse) => ListTile(
+                      leading: SvgPicture.asset(
+                        'assets/icon/horseIcon.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                      ),
+                      title: Text(horse.name),
+                      subtitle: Text(horse.stableCity ?? 'Stall'),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      onTap: () {
+                        // Find all horses at the same location
+                        final groupKey = '${horse.stableLatitude},${horse.stableLongitude}';
+                        final horsesAtLocation = _horsesGroupedByLocation[groupKey] ?? [horse];
+                        _selectHorses(horsesAtLocation);
+                        _closeSearch();
+                      },
+                    )),
+                  ],
+                  // Saddlers section
+                  if (filteredSaddlers.isNotEmpty) ...[
+                    if (filteredHorses.isNotEmpty)
+                      const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Text(
+                        'Sattler*innen',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                    ...filteredSaddlers.map((saddler) => ListTile(
+                      leading: _buildSmallAvatar(saddler),
+                      title: Text(saddler.name),
+                      subtitle: Text(saddler.city ?? ''),
+                      trailing: saddler.isFavorite
+                          ? const Icon(Icons.favorite, color: Colors.red, size: 20)
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      onTap: () {
+                        _selectSaddler(saddler);
+                        _closeSearch();
+                      },
+                    )),
+                  ],
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
   Widget _buildTopRightButtons() {
     return Positioned(
-      top: 16,
+      top: 72,
       right: 16,
       child: Column(
         children: [
           // Favorites list toggle
           _buildSmallButton(
-            icon: _showFavoritesList ? Icons.star : Icons.star_border,
-            color: _showFavoritesList ? Colors.amber : Colors.grey[700]!,
+            icon: _showFavoritesList ? Icons.favorite : Icons.favorite_border,
+            color: _showFavoritesList ? Colors.red : Colors.grey[700]!,
             onTap: _toggleFavoritesList,
             isActive: _showFavoritesList,
           ),
@@ -726,8 +781,8 @@ class _FindSaddlerState extends State<FindSaddler> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       child: Icon(
-                        saddler.isFavorite ? Icons.star : Icons.star_border,
-                        color: saddler.isFavorite ? Colors.amber : Colors.grey[400],
+                        saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: saddler.isFavorite ? Colors.red : Colors.grey[400],
                         size: 28,
                       ),
                     ),
@@ -770,8 +825,13 @@ class _FindSaddlerState extends State<FindSaddler> {
 
   Widget _buildHorsesPopup() {
     final horses = _selectedHorses!;
-    final stableName = horses.first.stableStreet ?? 'Stall';
-    final stableLocation = '${horses.first.stablePostalCode ?? ''} ${horses.first.stableCity ?? ''}'.trim();
+    final first = horses.first;
+    
+    // Build full address
+    final streetWithNumber = first.stableHouseNumber != null
+        ? '${first.stableStreet ?? 'Stall'} ${first.stableHouseNumber}'
+        : (first.stableStreet ?? 'Stall');
+    final stableLocation = '${first.stablePostalCode ?? ''} ${first.stableCity ?? ''}'.trim();
 
     return Positioned(
       bottom: 24,
@@ -824,7 +884,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          stableName,
+                          streetWithNumber,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -870,7 +930,7 @@ class _FindSaddlerState extends State<FindSaddler> {
 
   Widget _buildFavoritesList() {
     return Positioned(
-      top: 70,
+      top: 130,
       right: 16,
       child: Container(
         width: 280,
@@ -901,7 +961,7 @@ class _FindSaddlerState extends State<FindSaddler> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 24),
+                  const Icon(Icons.favorite, color: Colors.red, size: 24),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
@@ -926,7 +986,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.star_border, size: 48, color: Colors.grey[300]),
+                    Icon(Icons.favorite_border, size: 48, color: Colors.grey[300]),
                     const SizedBox(height: 12),
                     Text(
                       'Keine Favoriten',
@@ -938,7 +998,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tippe auf den Stern bei einem\nSattler, um ihn hinzuzufügen',
+                      'Tippe auf das Herz bei einem\nSattler, um ihn hinzuzufügen',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey[400],
@@ -1009,9 +1069,11 @@ class _FindSaddlerState extends State<FindSaddler> {
   }
 
   Widget _buildHorseListItem(Horse horse) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+    return InkWell(
+      onTap: () => _openHorseProfile(horse),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
         children: [
           // Horse avatar
           Container(
@@ -1060,6 +1122,7 @@ class _FindSaddlerState extends State<FindSaddler> {
             size: 20,
           ),
         ],
+      ),
       ),
     );
   }
