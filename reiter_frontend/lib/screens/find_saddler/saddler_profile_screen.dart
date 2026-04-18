@@ -106,8 +106,8 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _saddler.isFavorite ? Icons.star : Icons.star_border,
-              color: _saddler.isFavorite ? Colors.amber : Colors.grey[600],
+              _saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: _saddler.isFavorite ? Colors.red : Colors.grey[600],
             ),
             onPressed: _toggleFavorite,
           ),
