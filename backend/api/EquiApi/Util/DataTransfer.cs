@@ -78,7 +78,6 @@ public class DataTransfer
         int AddressId)
     {
         public static HorseDto FromHorse(Horse horse) =>
-            // TODO: muss gefixt werden (horse breed name)
             new(horse.Id, horse.Name, horse.DateOfBirth, horse.Weight, horse.Height, horse.Gender.ToString(),
                 horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(), horse.AddressId);
     }

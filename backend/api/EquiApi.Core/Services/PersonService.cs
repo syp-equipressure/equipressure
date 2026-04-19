@@ -108,7 +108,7 @@ public interface IPersonService
     /// <see cref="None"/> if no devices are registered, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId);
+    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesByPersonAsync(int personId);
 
     /// <summary>
     /// Retrieves a list of all saddlers with their address
@@ -329,7 +329,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success<IReadOnlyCollection<Horse>>(result);
     }
 
-    public async ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId)
+    public async ValueTask<GetAllDevicesAsyncResult> GetAllDevicesByPersonAsync(int personId)
     {
         if (!await uow.PersonRepository.PersonExists(personId))
         {
@@ -395,6 +395,13 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new IBaseService.Conflict();
         }
 
+        if (role.Name == "Equestrian" && !(websiteLink is null && description is null))
+        {
+            logger.LogWarning("Person with Role Equestrian cannot be added with websitelink and description");
+            // TODO: eventuell anderer Return type
+            return new IBaseService.Conflict();
+        }
+
         var person = new Person
         {
             FirstName = firstName,
@@ -440,7 +447,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new NotFound();
         }
 
-        if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate())
+        if (height is <= 0 || weight is <= 0 || (dateOfBirth.HasValue && dateOfBirth >= dateTimeProvider.GetCurrentDate()))
         {
             logger.LogWarning("invalid data");
 

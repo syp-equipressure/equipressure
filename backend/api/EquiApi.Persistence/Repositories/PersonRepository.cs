@@ -284,12 +284,16 @@ internal sealed class PersonRepository(
                                                         pr.Person.Address.City.PLZ,
                                                         pr.Person.WebsiteLink,
                                                         pr.Person.Description,
+                                                        // wir müssen isFavourite setzen und deshalb machen wir die anfrage pro reiter
+                                                        // wir überprüfen ob der sattler ein favorit des reiters ist und setzen den wert true ode rfalse dementsprechend
                                                         pr.Person.Relationships
                                                           .Where(r => r.EquestrianId == equestrianId)
                                                           .Select(r => r.IsFavourite)
                                                           .FirstOrDefault()))
                      .OrderBy(p => p.LastName)
                      .ToListAsync();
+        
+        //resultat: eine liste von sattlern personalisiert für einen reiter 
     }
 
     public void AddPerson(Person person)

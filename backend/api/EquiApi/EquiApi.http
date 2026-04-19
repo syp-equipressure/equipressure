@@ -45,18 +45,14 @@ Content-Type: application/json
 }
 
 ### 10. Person aktualisieren
-PUT {{BaseUrl}}/persons/{{personId}}
+PATCH {{BaseUrl}}/persons/{{personId}}
 Content-Type: application/json
 
 {
     "id": {{personId}},
     "firstName": "Max",
     "lastName": "Mustermann-Update",
-    "height": 182.0,
-    "weight": 74.5,
-    "dateOfBirth": "1995-05-20",
-    "email": "max.neu@reiter.at",
-    "addressId": 1
+    "height": 182.0
 }
 
 ### 11. Person löschen

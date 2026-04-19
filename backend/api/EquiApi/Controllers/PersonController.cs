@@ -178,7 +178,7 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        OneOf<Success<List<MeasurementDevice>>, None, NotFound> result = await personService.GetAllDevicesAsync(id);
+        OneOf<Success<List<MeasurementDevice>>, None, NotFound> result = await personService.GetAllDevicesByPersonAsync(id);
 
         return result.Match<ActionResult<DataTransfer.DeviceListResponse>>(success =>
                                                                                Ok(DataTransfer.DeviceListResponse
@@ -268,7 +268,7 @@ public sealed class PersonController(
         }
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPatch("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
