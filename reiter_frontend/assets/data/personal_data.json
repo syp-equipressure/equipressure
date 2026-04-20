@@ -1,0 +1,12 @@
+{
+  "user": {
+    "id": "user_1",
+    "name": "Max Mustermann",
+    "imageUrl": "https://www.pferd-aktuell.de/ausbildung/ausbildung-des-reiters/ausbildung-des-reiters",
+    "birthDate": "01.01.2000",
+    "address": "Musterstraße 1\n 1111 Musterdorf",
+    "email": "maxmuster@muster.com",
+    "height": "11cm",
+    "weight": "11kg"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "groups": [
+    {
+      "deviceId": "device_1",
+      "members": [
+        {
+          "id": "member_1",
+          "name": "Du",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=member1",
+          "isCurrentUser": true,
+          "isOwner": true
+        },
+        {
+          "id": "member_2",
+          "name": "Flora Dellinger",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=flora",
+          "isCurrentUser": false,
+          "isOwner": false
+        },
+        {
+          "id": "member_3",
+          "name": "Katharina Einzl",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=katharina",
+          "isCurrentUser": false,
+          "isOwner": false
+        },
+        {
+          "id": "member_4",
+          "name": "Lejla Music",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=lejla",
+          "isCurrentUser": false,
+          "isOwner": false
+        },
+        {
+          "id": "member_5",
+          "name": "Christoph Pfeiffer",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=christoph",
+          "isCurrentUser": false,
+          "isOwner": false
+        }
+      ]
+    },
+    {
+      "deviceId": "device_2",
+      "members": [
+        {
+          "id": "member_6",
+          "name": "Flora",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=flora2",
+          "isCurrentUser": false,
+          "isOwner": true
+        },
+        {
+          "id": "member_1",
+          "name": "Du",
+          "imageUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=member1",
+          "isCurrentUser": true,
+          "isOwner": false
+        }
+      ]
+    }
+  ]
+}
