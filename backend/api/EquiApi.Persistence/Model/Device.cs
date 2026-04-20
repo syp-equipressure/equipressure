@@ -20,6 +20,7 @@ public class DeviceCategory
     public int Id { get; set; }
     // TODO: Ask if that is the real meaning behind thsi
     public int NumOfAllowedPeople { get; set; }
+    // TODO: enum for name?
     public required string Name { get; set; }
 
     public List<MeasurementDevice> Devices = [];
