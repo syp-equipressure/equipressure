@@ -1480,3 +1480,132 @@ a| Sattler-Wireframe
 | 21.04.2026
 
 |===
+
+== 2026-04-21
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-04-21
+
+|Dauer
+|08:00 bis 09:07
+|===
+====
+
+=== Besprochenes
+* Sattler Wireframe
+* Datenmodell
+* Frontend
+* Backend Pull Requests
+* Video TYP Pitch
+
+==== Datenmodell
+* in der Sattler App hinterlegen ob das ein eigenes Pferd oder ein Kundenpferd ist
+** Dummy-Kunde der ich bin damit man selbst sein Kunde ist und wir nicht mehr Aufwand mit den eigenen Pferden haben
+* Rolle: 
+** wenn es nicht dynamisch mehr oder weniger wird und keine anderen Anwendungen drauf zugreifen müssen kann es ein Enum sein
+** wir brauchen dann m..m von Rolle zu Sattler nicht mehr, weil Sattler eh nur Desktopversion hat
+
+==== Pull Requests
+* wir machen das sehr gut mit den ausdiskutieren bei der Code Review
+* Kathi ist der Inder in der Abteilung die die Tests machen muss
+
+==== Reiter Frontend
+* Bei der Liste sollte auch stehen: Entfernung ab Standort
+** wir sollen live standort holen können weil da intuitiv ist und wenn man seinen live Standort nicht teilen will ist die Option halt ausgegraut oder so
+* wenn man von Liste auf Karte geht sollte das Pferd das man in der Liste ausgewählt hat als Standort ausgewählt sein
+** Zoom auf der Karte sollte größer sein, so dass man mindestens 2 Sattler in der Nähe sieht
+* Wir sollen uns eine Liste von Sattler von der Wirtschaftskammer holen damit wir bei denen dann anfragen können
+* Nächstes Jahr sollen wir uns einen Dritten reinholen (Sattler) der noch nichts mit dem Produkt zu tun hat 
+** der bekommt dann eine verbilligte Version dafür dass er uns Feedback gibt
+
+==== Sattler Wireframe
+* Rechnungslogik im Backend einbauen
+* Bezahlt gehört in die Auftragshistorie
+* Suchfeld auf "Suche nach Kunde oder Pferd..." ändern
+* "Kund*innen" auf "Kundenansicht" ändern
+* "Neue Kund*in" auf "Neu" oder "Neu anlegen"
+* Auch in der Tabelle statt "Name" "Kunde" schreiben
+* Bei Sitzungen muss dabei stehen für welches Pferd die sind
+* "Offen" ist sprachlich ganz schlecht, wir müssen klar sagen dass es finanziell offen ist; "Offene Honorare"
+* Wir wollen den Umsatz im Jahr wissen; wie viel ist noch nicht bezahlt und wie viel hat er uns schon gezahlt
+* Rechnungen fehlen im Datenmodell
+** überlegen ob wir Rechnungen wirklich haben wollen 
+** evtl overfeaturing; Kunden werden schon eigene Buchhaltungssoftware haben 
+** kann man später noch einbauen wenn wir schon laufende Software machen und die Sattler dann noch extra zahlen sollen
+* auf Kunde einigen nicht Klient
+
+==== Video TYP Pitch
+* das E im Logo findet Prof. Hammer passt optisch nicht rein
+** das E größer machen und ins Kinn einbauen oder das Pferd dann kleiner machen
+* wir sollen eine Domäne finden für unser Projekt (z.B. equipressure.com)
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger, Dallinger, Silnovic
+a| Backend weiterarbeiten
+| 05.05.2026
+
+| Grasauer, Music
+a| Sattler-Wireframe
+| 05.05.2026
+
+| Grasauer, Music
+a| Frontend Reiter
+| 05.05.2026
+
+| Music
+a| Logo überarbeiten
+| 05.05.2026
+|===
