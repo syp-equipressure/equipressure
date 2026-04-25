@@ -128,6 +128,24 @@ public class DataTransfer
             }
         }
     }
+    
+    public sealed record AddLocationRequest(
+        string Street,
+        int HouseNumber,
+        string CityName,
+        string PLZ)
+    {
+        public sealed class Validator : AbstractValidator<AddLocationRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.Street).NotEmpty();
+                RuleFor(x => x.HouseNumber).GreaterThan(0);
+                RuleFor(x => x.CityName).NotEmpty();
+                RuleFor(x => x.PLZ).NotEmpty();
+            }
+        }
+    }
 
     public sealed record EquestrianBasicDto(
         int Id,
@@ -158,9 +176,9 @@ public class DataTransfer
         string? Description,
         bool IsFavourite)
     {
-        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
-                data.Description, data.IsFavourite);
+        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data, int id) =>
+            new(id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+                data.Description, data.isFavourite);
     }
 
     public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
