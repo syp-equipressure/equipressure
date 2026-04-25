@@ -1,6 +1,7 @@
 ﻿using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Repositories;
 using FluentValidation;
+using NodaTime;
 
 namespace EquiApi.Util;
 
@@ -78,7 +79,6 @@ public class DataTransfer
         int AddressId)
     {
         public static HorseDto FromHorse(Horse horse) =>
-            // TODO: muss gefixt werden (horse breed name)
             new(horse.Id, horse.Name, horse.DateOfBirth, horse.Weight, horse.Height, horse.Gender.ToString(),
                 horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(), horse.AddressId);
     }
@@ -152,31 +152,19 @@ public class DataTransfer
         string LastName,
         string? Street,
         int? HouseNumber,
-        string? City,
-        string? PLZ,
+        string City,
+        string PLZ,
         string? Link,
         string? Description,
         bool IsFavourite)
     {
-        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
+            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
                 data.Description, data.IsFavourite);
     }
 
-    public sealed record LocationDto(int Id, string? Street, int? HouseNumber, string PLZ, string CityName)
+    public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
     {
-        public static LocationDto FromLocation(Address address) =>
-            new(address.Id, address.Street, address.HouseNumber, address.City.PLZ, address.City.Name);
-    }
-    
-    public sealed record AddLocationRequest(string? Street, int? HouseNumber, string PLZ, string CityName)
-    {
-        public sealed class Validator : AbstractValidator<AddLocationRequest>
-        {
-            public Validator()
-            {
-                
-            }
-        }
+        public static SaddlersListResponse FromSaddlers(IEnumerable<SaddlerBasicDto> saddlers) => new(saddlers);
     }
 }
