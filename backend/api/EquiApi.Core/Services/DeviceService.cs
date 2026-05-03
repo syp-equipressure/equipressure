@@ -26,8 +26,8 @@ public interface IDeviceService
     public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(int deviceId);
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(int deviceId);
 
-    public record NoOwnerFound(int deviceId);
-    public record NoUsersFound(int deviceId);
+    public record NoOwnerFound(int DeviceId);
+    public record NoUsersFound(int DeviceId);
 }
 
 public class DeviceService(IUnitOfWork uow) : IDeviceService
