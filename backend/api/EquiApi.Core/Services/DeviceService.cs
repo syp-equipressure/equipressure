@@ -40,7 +40,7 @@ public interface IDeviceService
     public record NoUsersFound(int DeviceId);
 }
 
-public class DeviceService(IUnitOfWork uow) : IDeviceService
+public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDeviceService
 {
     public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId)
@@ -48,6 +48,7 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
         var user = await uow.PersonRepository.GetPersonById(userId);
         if (user == null)
         {
+            logger.LogWarning("User {UserId} not found", userId);
             return new NotFound();
         }
         
@@ -60,13 +61,18 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
         var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
         if (!exists)
         {
+            logger.LogWarning("Device {DeviceId} not found", deviceId);
             return new NotFound();
         }
         
         var owner = await uow.DeviceRepository.GetOwnerOfDeviceAsync(deviceId);
         return owner.Match<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>>(success => 
              new Success<Person>(success),
-                    notFound => new IDeviceService.NoOwnerFound(deviceId));
+                    notFound =>
+                    {
+                        logger.LogWarning("No owner registered for device {DeviceId}", deviceId);
+                        return new IDeviceService.NoOwnerFound(deviceId);
+                    });
     }
 
     public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>> 
@@ -75,6 +81,7 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
         var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
         if (!exists)
         {
+            logger.LogWarning("Device {DeviceId} not found", deviceId);
             return new NotFound();
         }
         
@@ -82,7 +89,10 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
 
         return users.Match<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>>(
              success => new Success<IReadOnlyCollection<Person>>(success),
-             notFound => new IDeviceService.NoUsersFound(deviceId)
-             );
+             notFound =>
+             {
+                 logger.LogWarning("No users registered for device {DeviceId}", deviceId);
+                 return new IDeviceService.NoUsersFound(deviceId);
+             });
     }
 }
