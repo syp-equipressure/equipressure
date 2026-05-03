@@ -5,6 +5,11 @@ namespace EquiApi.Persistence.Repositories;
 
 public interface IHorseRepository
 {
+    /// <summary>
+    /// Gets all horses who have an owner with the id
+    /// </summary>
+    /// <param name="userId">the id the owner should have</param>
+    /// <returns>a list of horses who have the given ownerId</returns>
     public ValueTask<IReadOnlyCollection<Horse>> GetAllHorsesOfUserAsync(int userId);
     public ValueTask<Horse> GetHorseByIdAsync(int horseId);
 }
