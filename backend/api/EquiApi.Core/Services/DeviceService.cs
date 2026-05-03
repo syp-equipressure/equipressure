@@ -36,6 +36,10 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(int deviceId);
 
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(int ownerId, int categoryId);
+    public void AddUserToDevice(int userId, int deviceId);
+    public void RemoveUserFromDevice(int userId, int deviceId);
+
     public record NoOwnerFound(int DeviceId);
     public record NoUsersFound(int DeviceId);
 }
@@ -94,5 +98,41 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
                  logger.LogWarning("No users registered for device {DeviceId}", deviceId);
                  return new IDeviceService.NoUsersFound(deviceId);
              });
+    }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(int ownerId, int categoryId)
+    {
+        if (!(await uow.PersonRepository.PersonExists(ownerId)))
+        {
+            logger.LogWarning("Person with id {id} could not be found", ownerId);
+            return new NotFound();
+        }
+
+        if (!(await uow.DeviceRepository.CategoryExists(categoryId)))
+        {
+            logger.LogWarning("Category with id {id} could not be found", categoryId);
+            return new NotFound();
+        }
+
+        var device = new MeasurementDevice
+        {
+            OwnerId = ownerId,
+            CategoryId = categoryId
+        };
+
+        uow.DeviceRepository.AddDevice(device);
+        await uow.SaveChangesAsync();
+
+        return new Success<MeasurementDevice>(device);
+    }
+
+    public void AddUserToDevice(int userId, int deviceId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void RemoveUserFromDevice(int userId, int deviceId)
+    {
+        throw new NotImplementedException();
     }
 }

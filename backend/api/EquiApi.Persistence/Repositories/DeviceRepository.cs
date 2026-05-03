@@ -40,9 +40,11 @@ public interface IDeviceRepository
     public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId);
     
     public void AddDevice(MeasurementDevice device);
+    public ValueTask<bool> CategoryExists(int categoryId);
+
 }
 
-public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceRepository
+public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCategory> categories) : IDeviceRepository
 {
     
     public async ValueTask<bool> DeviceExistsAsync(int deviceId)
@@ -94,4 +96,7 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceReposit
     {
         devices.Add(device);
     }
+
+    public async ValueTask<bool> CategoryExists(int categoryId)
+    => await categories.AnyAsync(c => c.Id == categoryId);
 }
