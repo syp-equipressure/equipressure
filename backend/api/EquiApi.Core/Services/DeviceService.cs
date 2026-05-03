@@ -25,7 +25,7 @@ public interface IDeviceService
     /// the person object who is the owner, notFound if the deviceId does not exist and
     /// NoOwnerFound if there is no owner registered
     /// </returns>
-    public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(int deviceId);
+    public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(string deviceId);
     /// <summary>
     /// gets all the users of a specific device
     /// </summary>
@@ -34,14 +34,14 @@ public interface IDeviceService
     ///a list of all the person objects which are registered for the device or a notFound if the device with the id does
     /// not exist or a NoUsersFound if there are no Users registered for the device
     /// </returns>
-    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(int deviceId);
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(string deviceId);
 
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, int categoryId);
-    public void AddUserToDevice(int userId, int deviceId);
-    public void RemoveUserFromDevice(int userId, int deviceId);
+    public void AddUserToDevice(int userId, string deviceId);
+    public void RemoveUserFromDevice(int userId, string deviceId);
 
-    public record NoOwnerFound(int DeviceId);
-    public record NoUsersFound(int DeviceId);
+    public record NoOwnerFound(string DeviceId);
+    public record NoUsersFound(string DeviceId);
 }
 
 public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDeviceService
@@ -60,7 +60,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         return new Success<IReadOnlyCollection<MeasurementDevice>>(devices);
     }
 
-    public async ValueTask<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>> GetOwnerOfDevice(int deviceId)
+    public async ValueTask<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>> GetOwnerOfDevice(string deviceId)
     {
         var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
         if (!exists)
@@ -80,7 +80,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
     }
 
     public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>> 
-        GetUsersOfDevice(int deviceId)
+        GetUsersOfDevice(string deviceId)
     {
         var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
         if (!exists)
@@ -128,12 +128,12 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         return new Success<MeasurementDevice>(device);
     }
 
-    public void AddUserToDevice(int userId, int deviceId)
+    public void AddUserToDevice(int userId, string deviceId)
     {
         throw new NotImplementedException();
     }
 
-    public void RemoveUserFromDevice(int userId, int deviceId)
+    public void RemoveUserFromDevice(int userId, string deviceId)
     {
         throw new NotImplementedException();
     }

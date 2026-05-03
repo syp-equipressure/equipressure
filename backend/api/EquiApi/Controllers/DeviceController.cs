@@ -29,13 +29,13 @@ public sealed class DeviceController(IDeviceService deviceService,
                                                                            notFound => NotFound());
     }
     
-    [HttpGet("{deviceId:int}/owner")]
+    [HttpGet("{deviceId}/owner")]
     [ProducesResponseType<DataTransfer.PersonDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-    public async ValueTask<ActionResult<DataTransfer.PersonDto>> GetOwnerByDeviceId([FromRoute] int deviceId)
+    public async ValueTask<ActionResult<DataTransfer.PersonDto>> GetOwnerByDeviceId([FromRoute] string deviceId)
     {
-        if (deviceId < 0)
+        if (string.IsNullOrWhiteSpace(deviceId))
         {
             logger.LogWarning("deviceId {deviceId} has to be a valid number", deviceId);
             return BadRequest();
@@ -53,13 +53,13 @@ public sealed class DeviceController(IDeviceService deviceService,
                                                                   });
     }
 
-    [HttpGet("{deviceId:int}/users")]
+    [HttpGet("{deviceId}/users")]
     [ProducesResponseType<DataTransfer.PersonListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-    public async ValueTask<ActionResult<DataTransfer.PersonListResponse>> GetUsersByDeviceId([FromRoute] int deviceId)
+    public async ValueTask<ActionResult<DataTransfer.PersonListResponse>> GetUsersByDeviceId([FromRoute] string deviceId)
     {
-        if (deviceId < 0)
+        if (string.IsNullOrWhiteSpace(deviceId))
         {
             logger.LogWarning("deviceId {deviceId} has to be a valid number", deviceId);
             return BadRequest();

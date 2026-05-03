@@ -87,7 +87,7 @@ public class DataTransfer
         public static HorseListResponse FromHorses(IEnumerable<Horse> horses) => new(horses.Select(HorseDto.FromHorse));
     }
 
-    public sealed record MeasurementDeviceDto(int Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
+    public sealed record MeasurementDeviceDto(string Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
     {
         public static MeasurementDeviceDto FromDevice(MeasurementDevice device) =>
             new(device.Id, device.CategoryId, device.Owner, device.Users);
