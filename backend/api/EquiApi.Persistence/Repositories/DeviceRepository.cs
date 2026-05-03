@@ -38,7 +38,8 @@ public interface IDeviceRepository
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the list of person objects or a notfound if there are none</returns>
     public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId);
-
+    
+    public void AddDevice(MeasurementDevice device);
 }
 
 public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceRepository
@@ -87,5 +88,10 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices) : IDeviceReposit
         }
 
         return res;
+    }
+
+    public void AddDevice(MeasurementDevice device)
+    {
+        devices.Add(device);
     }
 }
