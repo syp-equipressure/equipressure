@@ -2,8 +2,6 @@
 using EquiApi.Persistence.Model;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
-using OneOf;
-using OneOf.Types;
 
 namespace EquiApi.Controllers;
 
@@ -50,7 +48,7 @@ public sealed class DeviceController(IDeviceService deviceService,
                                                                   notFound => NotFound(),
                                                                   noOwner =>
                                                                   {
-                                                                      logger.LogWarning("Device {deviceId} has no owner", noOwner.deviceId);
+                                                                      logger.LogWarning("Device {deviceId} has no owner", noOwner.DeviceId);
                                                                       return UnprocessableEntity();
                                                                   });
     }
@@ -74,7 +72,7 @@ public sealed class DeviceController(IDeviceService deviceService,
                                                                            notFound => NotFound(),
                                                                            noUsers =>
                                                                            {
-                                                                               logger.LogWarning("Device {deviceId} has no assigned users", noUsers.deviceId);
+                                                                               logger.LogWarning("Device {deviceId} has no assigned users", noUsers.DeviceId);
                                                                                return UnprocessableEntity();
                                                                            });
     }
