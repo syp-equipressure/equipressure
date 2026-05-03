@@ -8,6 +8,9 @@ namespace EquiApi.Controllers;
 public class HorseController(IHorseService service, ILogger<HorseController> logger) : BaseController
 {
     [HttpGet("{personId:int}")]
+    [ProducesResponseType<DataTransfer.HorseListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<DataTransfer.HorseListResponse>> GetHorsesOfPerson([FromRoute] int personId)
     {
         if (personId < 0)
