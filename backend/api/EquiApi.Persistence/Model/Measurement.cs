@@ -47,7 +47,7 @@ public class MeasurementData
     public int Id { get; set; }
     public required string Data { get; set; }
     public Instant Timestamp { get; set; }
-    
+
     public int MeasurementId { get; set; }
     public Measurement Measurement { get; set; } = null!;
 }

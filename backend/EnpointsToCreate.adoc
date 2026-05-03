@@ -24,38 +24,58 @@
 
 Personen:
 
-* /persons => alle Personen
-* /persons/:id => Person mit id :id
-* /persons/:id/contacts => Kontakte einer Person
-* /persons/:id/favourites => Favourisierte Sattler einer Person
-* /persons/:id/devices => alle Geräte einer Person
+* GET /persons => alle Personen
+* GET /persons/:id => Person mit id :id
+* GET /persons/:id/contacts => Kontakte einer Person
+* GET /persons/:id/favourites => Favourisierte Sattler einer Person
+* GET /persons/:id/devices => alle Geräte einer Person
 ** könnte eventuell boolean liefern ob Person Owner ist
-* /persons/:id/horses => alle Pferde einer Person
+* GET /persons/:id/horses => alle Pferde einer Person
+* GET /persons/saddlers/locations => alle Sattler mit Person_Id, Name und location
+* GET /persons/:id/horses/locations => alle Pferde mit Pferde_Id, Location, Profilbild einer Person
+* GET /persons/:id/location => Location einer Person mit id :id
+
+Locations:
+* POST /locations => add a location
 
 Geräte:
 
-* /devices/:personId => alle Geräte einer Person
-* /devices/:id => Gerät mit der id :id
-* /devices/:id/owner => Besitzer des Gerätes (Person)
-* /devices/:id/users => alle Personen eines Geräts
+* GET /devices/:personId => alle Geräte einer Person
+* GET /devices/:id => Gerät mit der id :id
+* GET /devices/:id/owner => Besitzer des Gerätes (Person)
+* GET /devices/:id/users => alle Personen eines Geräts
+* POST /devices => neues Device hinzufügen
+* PUT /devices/:id => neuen User zu Gerät hinzufügen/löschen
+* DELETE /devices/:id => Gerät mit einer id: löschen
+* PATCH /devices/:id/owner => neuen Besitzer festlegen
 
 Pferde: 
 
-* /horses => alle Pferde
-* /horses/:id => Pferd mit id :id
-* /horses/:id/saddles => alle Sättel eines Pferdes
-* /horses/:id/persons => Reitbeteiligungen + Owner
+* GET /horses/:personId => alle Pferde einer bestimmten Person
+* GET /horses/:id => Pferd mit id :id
+* GET /horses/:id/saddles => alle Sättel eines Pferdes
+* GET /horses/:id/persons => Reitbeteiligungen + Owner
 ** Owner entweder an erster Stelle oder eigener Endpoint für Owner
 ** eventuell /horses/:id/owner
+* GET /horses/:id/hidden/persons => Hidden user
 
-Messungen: 
+Messungen:
+(mg.. measurementgroup)
 
-* /measurementgroups => alle Messungsgruppen
-* /measurementgoups/:id/measurements => Tabelle Measurement
-* /measurementgroups/:id/measurements/:id => ein Measurement aus Tabelle Measurement
-* /measurementgroups/:id/measurements/:id/measurementData/:id => ein MeasurementData aus Tabelle MeasurementData
+* GET /measurementgroups/:horseId => Alle Messungsgruppen eines Pferdes
+** minimale Daten: Datum, Person die durchgeführt hat, Sattel mit dem durchgeführt wurde
+* GET /measurementgroups/:mgId => Detailansicht für eine Messungsgruppe
+** alle Daten: Pferd (mit Name, Rasse, Alter, Gewicht), Reiter (mit Name, Größe, Gewicht), Sattel, Datum, Notizen
+* GET /measurementgroups/:mgId/measurements => Alle Messungen aus einer Gruppe
+* GET /measurementgroups/:mgId/measurements/average?pace=&hand= => Durchschnitt aller Messungen einer Gruppe
+** query paramter: pace/Gangart und Hand optional filtern könnena
+* GET /measurementgroups/:mgId/measurements/min?pace=&hand= => Minimum aller Messungen einer Gruppe
+* GET /measurementgroups/:mgId/measurements/max?pace=&hand= => Maximum aller Messungen einer Gruppe
+* GET /measurementgroups/:mgId/measurements?pace=&hand= => Eine Messung aus einer Messungsgruppe
+** wir suchen nicht mehr nach TeilmessungsId sondern filtern nach pace und hand, da sie eindeuting sein müssen
+* GET /measurementgroups/:mgId/measurements/:mId/measurementData/ => Alle Messdaten aus einer Messung; alle Daten für alle Timestamps
+* GET /measurementgroups/:mgId/measurements/:mId/measurementData/:dId => Ein Messdatum aus einer Messung nach id; alle Daten für ein Timestamp
 
 == Fragen an die Professoren 
-* Braucht man immer eine endpoint für "get all"
 * Herr Professor Haslinger fragen, ob eigener Endpunkt nötig ist für roles bzw perons/:id/roles
 * Könnte /horses/:id/owner sinnvoll sein? Oder string/int für name/id im Pferd selber

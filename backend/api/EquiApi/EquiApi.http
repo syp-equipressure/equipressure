@@ -1,27 +1,82 @@
-@Host = http://localhost:5200
+@BaseUrl = http://localhost:5200/api
 
-# Execute in order for variables (with IDs) to work correctly
+### Person Endpoints
+@personId = 1
+@saddlerId = 2
+@equestrianId = 1
 
-### Add rocket
-POST {{Host}}/api/rockets
+### 1. Person (Equestrian) abrufen
+GET {{BaseUrl}}/persons/equestrians/{{personId}}
+
+### 1.2 Person (Saddler) abrufen
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/{{saddlerId}}
+
+### 2. Person abrufen (minimale Daten)
+GET {{BaseUrl}}/persons/{{personId}}/profile-data
+
+### 3. Adresse einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/location
+
+### 4. Kontakte einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/contacts
+
+### 5. Favoriten einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/favourites
+
+### 6. Alle Sattler mit Adresse (Person_Id, Name und location)
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/locations
+
+### 7. Alle Pferde einer Person abrufen
+GET {{BaseUrl}}/persons/{{personId}}/horses
+
+### 8. Alle Geräte einer Person abrufen (inkl. Owner-Info)
+GET {{BaseUrl}}/persons/{{personId}}/devices
+
+### 9. Neue Person anlegen
+POST {{BaseUrl}}/persons
 Content-Type: application/json
 
 {
-    "modelName": "Ariane 5",
-    "manufacturer": "Arianespace",
-    "maxThrust": "13700000",
-    "payloadDeltaV": "205800000"
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "dateOfBirth": "1995-05-20",
+    "email": "max@reiter.at",
+    "addressId": 1
 }
 
-> {%
-    client.global.set("rocketId", response.body.id);
-%}
+### 10. Person aktualisieren
+PATCH {{BaseUrl}}/persons/{{personId}}
+Content-Type: application/json
 
-### Get rocket by ID
-GET {{Host}}/api/rockets/{{rocketId}}
+{
+    "id": {{personId}},
+    "firstName": "Max",
+    "lastName": "Mustermann-Update",
+    "height": 182.0
+}
 
-### Get all rockets
-GET {{Host}}/api/rockets
+### 11. Person löschen
+DELETE {{BaseUrl}}/persons/{{personId}}
 
-### Delete rocket
-DELETE {{Host}}/api/rockets/{{rocketId}}
+### 12. Alle Pferde einer Person abrufen (mit PferdeId, Location und Profilbild einer Person)
+GET {{BaseUrl}}/persons/{{personId}}/horses/locations
+
+### 13. eine Location hinzufügen
+POST {{BaseUrl}}/locations
+Content-Type: application/json
+
+{
+    "street": "Hausstraße",
+    "houseNumber": 12,
+    "cityName": "Traun",
+    "plz": "4050"
+}
+
+### 14. eine Location hinzufügen (strasse optional)
+POST {{BaseUrl}}/locations
+Content-Type: application/json
+
+{
+    "cityName": "Traun",
+    "plz": "4050"
+}
