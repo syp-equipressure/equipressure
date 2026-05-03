@@ -9,7 +9,7 @@ namespace EquiApi.Controllers;
 public sealed class DeviceController(IDeviceService deviceService, 
                               ILogger<DeviceController> logger) : BaseController
 {
-    [HttpGet("/{userId:int}")]
+    [HttpGet("{userId:int}")]
     [ProducesResponseType<DataTransfer.DeviceListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
