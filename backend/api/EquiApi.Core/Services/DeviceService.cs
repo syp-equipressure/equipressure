@@ -8,22 +8,32 @@ namespace EquiApi.Core.Services;
 public interface IDeviceService
 {
     /// <summary>
-    /// Gibt alle devices eines bestimmten users zurück
+    /// returns all devices of a specific user
     /// </summary>
-    /// <param name="userId"> Id des users dessen Geräte wir haben wollen </param>
+    /// <param name="userId">id of the user</param>
     /// <returns>
-    /// NotFound -> wenn der user nicht gefunden wurde
-    /// Success -> eine Liste der Devices (auch wenn keine vorhanden sind)
+    /// returns a list of all devices or a not found if there are none
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId);
     
     /// <summary>
-    /// Gibt die Person die als Owner eines gewissen Geräts angegeben wurde mit
+    /// returns the owner of a specific user
     /// </summary>
-    /// <param name="deviceId"></param>
-    /// <returns></returns>
+    /// <param name="deviceId">id of the device</param>
+    /// <returns>
+    /// the person object who is the owner, notFound if the deviceId does not exist and
+    /// NoOwnerFound if there is no owner registered
+    /// </returns>
     public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(int deviceId);
+    /// <summary>
+    /// gets all the users of a specific device
+    /// </summary>
+    /// <param name="deviceId">the id of the device</param>
+    /// <returns>
+    ///a list of all the person objects which are registered for the device or a notFound if the device with the id does
+    /// not exist or a NoUsersFound if there are no Users registered for the device
+    /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(int deviceId);
 
     public record NoOwnerFound(int DeviceId);
