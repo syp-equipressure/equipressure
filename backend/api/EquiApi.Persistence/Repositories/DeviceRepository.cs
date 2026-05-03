@@ -12,14 +12,14 @@ public interface IDeviceRepository
     /// </summary>
     /// <param name="deviceId">id of the device</param>
     /// <returns>true if it exists false if not</returns>
-    public ValueTask<bool> DeviceExistsAsync(int deviceId);
+    public ValueTask<bool> DeviceExistsAsync(string deviceId);
     
     /// <summary>
     /// Gets a device by its id
     /// </summary>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>The measurementDevice if it exists</returns>
-    public ValueTask<MeasurementDevice?> GetDeviceByIdAsync(int deviceId);
+    public ValueTask<MeasurementDevice?> GetDeviceByIdAsync(string deviceId);
     /// <summary>
     /// Gets all devices of a user
     /// </summary>
@@ -31,13 +31,13 @@ public interface IDeviceRepository
     /// </summary>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the person object of the owner or a notFound if there is no Owner</returns>
-    public ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(int deviceId);
+    public ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(string deviceId);
     /// <summary>
     /// Gets all the people which are subscribed on a specific device
     /// </summary>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the list of person objects or a notfound if there are none</returns>
-    public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId);
+    public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(string deviceId);
     
     public void AddDevice(MeasurementDevice device);
     public ValueTask<bool> CategoryExists(int categoryId);
@@ -47,10 +47,10 @@ public interface IDeviceRepository
 public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCategory> categories) : IDeviceRepository
 {
     
-    public async ValueTask<bool> DeviceExistsAsync(int deviceId)
+    public async ValueTask<bool> DeviceExistsAsync(string deviceId)
     => await devices.AnyAsync(d => d.Id == deviceId);
 
-    public async ValueTask<MeasurementDevice?> GetDeviceByIdAsync(int deviceId)
+    public async ValueTask<MeasurementDevice?> GetDeviceByIdAsync(string deviceId)
         =>  await devices.FirstOrDefaultAsync(d => d.Id == deviceId);
     
     
@@ -60,7 +60,7 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
                          .Where(d => d.Users.Any(u => u.UserId == userId)).ToListAsync();
     }
 
-    public async ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(int deviceId)
+    public async ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(string deviceId)
     {
         var result =  await devices.Include(d => d.Owner)
                             .Where(d => d.Id == deviceId)
@@ -72,7 +72,7 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
         return result;
     }
 
-    public async ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(int deviceId)
+    public async ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(string deviceId)
     {
         var result = await devices.Include(d => d.Users)
                                   .ThenInclude(u => u.User)
@@ -99,4 +99,6 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
 
     public async ValueTask<bool> CategoryExists(int categoryId)
     => await categories.AnyAsync(c => c.Id == categoryId);
+    public async ValueTask<bool> DeviceExists(string deviceId)
+        => await devices.AnyAsync(c => c.Id == deviceId);
 }

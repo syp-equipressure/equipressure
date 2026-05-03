@@ -36,7 +36,7 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(int deviceId);
 
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(int ownerId, int categoryId);
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, int categoryId);
     public void AddUserToDevice(int userId, int deviceId);
     public void RemoveUserFromDevice(int userId, int deviceId);
 
@@ -100,7 +100,8 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
              });
     }
 
-    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(int ownerId, int categoryId)
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, 
+        int categoryId)
     {
         if (!(await uow.PersonRepository.PersonExists(ownerId)))
         {
@@ -116,6 +117,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
 
         var device = new MeasurementDevice
         {
+            Id = deviceId,
             OwnerId = ownerId,
             CategoryId = categoryId
         };
