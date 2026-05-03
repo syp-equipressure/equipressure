@@ -14,5 +14,6 @@ public static class CoreSetup
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IRocketService, RocketService>();
+        services.AddScoped<IHorseService, HorseService>();
     }
 }

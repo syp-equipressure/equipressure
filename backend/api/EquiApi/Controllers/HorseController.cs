@@ -1,6 +1,26 @@
-﻿namespace EquiApi.Controllers;
+﻿using EquiApi.Core.Services;
+using EquiApi.Util;
+using Microsoft.AspNetCore.Mvc;
 
-public class HorseController
+namespace EquiApi.Controllers;
+
+[Microsoft.AspNetCore.Components.Route("api/horses")]
+public class HorseController(IHorseService service, ILogger<HorseController> logger) : BaseController
 {
-    
+    [HttpGet("{personId:int}")]
+    public async ValueTask<ActionResult<DataTransfer.HorseListResponse>> GetHorsesOfPerson([FromRoute] int personId)
+    {
+        if (personId < 0)
+        {
+            logger.LogWarning("personId: {id} was not valid", personId);
+            return BadRequest();
+        }
+
+        var res = await service.GetAllHorsesOfPersonAsync(personId);
+
+        return res.Match<ActionResult<DataTransfer.HorseListResponse>>(success => Ok(success),
+                                                                       notFound => NotFound());
+    }
 }
+
+
