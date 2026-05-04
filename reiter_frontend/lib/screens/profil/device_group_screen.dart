@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
-import 'package:reiterappfrontend/services/data_service.dart';
+import 'package:reiterappfrontend/services/person_service.dart';
 
 class DeviceGroupScreen extends StatefulWidget {
   final String deviceId;
@@ -22,7 +22,7 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
   @override
   void initState() {
     super.initState();
-    _membersFuture = DataService.loadGroupMembers(widget.deviceId);
+    _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
   }
 
   @override

@@ -3,7 +3,7 @@ import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/screens/profil/personal_data_screen.dart';
 import 'package:reiterappfrontend/screens/profil/devices_screen.dart';
-import 'package:reiterappfrontend/services/data_service.dart';
+import 'package:reiterappfrontend/services/person_service.dart';
 
 class ProfilScreen extends StatelessWidget {
   const ProfilScreen({super.key});
@@ -12,8 +12,8 @@ class ProfilScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: Future.wait([
-        DataService.loadUserData(),
-        DataService.loadDevices(),
+        PersonService.loadUserData(),
+        PersonService.loadDevices(),
       ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
