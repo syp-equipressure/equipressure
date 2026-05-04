@@ -16,6 +16,7 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId);
+    
     /// <summary>
     /// returns the owner of a specific user
     /// </summary>
@@ -25,6 +26,7 @@ public interface IDeviceService
     /// NoOwnerFound if there is no owner registered
     /// </returns>
     public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(string deviceId);
+    
     /// <summary>
     /// gets all the users of a specific device
     /// </summary>
@@ -35,6 +37,7 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice
         (string deviceId);
+    
     /// <summary>
     /// Adds a new Device
     /// </summary>
@@ -44,6 +47,7 @@ public interface IDeviceService
     /// <returns>the added device or notFound if one of the parameters is non-existent</returns>
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync
         (string deviceId, int ownerId, int categoryId);
+    
     /// <summary>
     /// Adds a User to a device
     /// </summary>
@@ -55,6 +59,7 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooManyUsers>> AddUserToDevice
         (int userId, string deviceId);
+    
     /// <summary>
     /// Removes a User from a device
     /// </summary>
