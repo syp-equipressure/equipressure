@@ -29,7 +29,11 @@ public sealed class DeviceController(
 
         return result.Match<ActionResult<DataTransfer.DeviceListResponse>>(success => Ok(DataTransfer.DeviceListResponse
                                                                                .FromDevices(success.Value)),
-                                                                           notFound => NotFound());
+                                                                           notFound =>
+                                                                           {
+                                                                               logger.LogWarning("No devices found for userId {userId}", userId);
+                                                                               return NotFound();
+                                                                           });
     }
 
     [HttpGet("{deviceId}/owner")]
@@ -52,7 +56,11 @@ public sealed class DeviceController(
                 .Match<
                     ActionResult<DataTransfer.PersonDto>>(success =>
                                                               Ok(DataTransfer.PersonDto.FromPerson(success.Value)),
-                                                          notFound => NotFound(),
+                                                          notFound =>
+                                                          {
+                                                              logger.LogWarning("Device {deviceId} not found", deviceId);
+                                                              return NotFound();
+                                                          },
                                                           noOwner =>
                                                           {
                                                               logger.LogWarning("Device {deviceId} has no owner",
@@ -85,7 +93,11 @@ public sealed class DeviceController(
                         DataTransfer.PersonListResponse>>(success =>
                                                               Ok(DataTransfer.PersonListResponse
                                                                              .FromPersons(success.Value)),
-                                                          notFound => NotFound(),
+                                                          notFound =>
+                                                          {
+                                                              logger.LogWarning("Device {deviceId} not found", deviceId);
+                                                              return NotFound();
+                                                          },
                                                           noUsers =>
                                                           {
                                                               logger
@@ -116,21 +128,25 @@ public sealed class DeviceController(
 
             return await result.Match<ValueTask<IActionResult>>(async success =>
                                                                 {
+                                                                    logger.LogInformation("Device {id} successfully added", request.DeviceId);
                                                                     await transaction.CommitAsync();
 
                                                                     return Created();
                                                                 },
                                                                 async notFound =>
                                                                 {
+                                                                    logger.LogWarning("CreateDevice failed — owner or category not found for DeviceId" +
+                                                                         " {deviceId}, OwnerId {ownerId}, CategoryId {categoryId}",
+                                                                         request.DeviceId, request.OwnerId, request.CategoryId);
                                                                     await transaction.RollbackAsync();
 
                                                                     return NotFound();
                                                                 });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Error adding Device");
+            logger.LogError(ex, "Error adding Device {deviceId}", request.DeviceId);
 
             return Problem();
         }
@@ -146,6 +162,7 @@ public sealed class DeviceController(
     {
         if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
         {
+            logger.LogWarning("AddUserToDevice called with invalid arguments: deviceId {deviceId}, userId {userId}", deviceId, userId);
             return BadRequest();
         }
 
@@ -158,6 +175,7 @@ public sealed class DeviceController(
 
             return await result.Match<ValueTask<IActionResult>>(async success =>
                                                                 {
+                                                                    logger.LogInformation("User {uId} successfully added to device {dId}", userId, deviceId);
                                                                     await transaction.CommitAsync();
 
                                                                     return Created();
@@ -165,20 +183,21 @@ public sealed class DeviceController(
                                                                 async notFound =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-
+                                                                    logger.LogWarning("AddUserToDevice failed — device or user not found: deviceId {deviceId}, userId {userId}", deviceId, userId);
                                                                     return NotFound();
                                                                 },
                                                                 async tooManyUsers =>
                                                                 {
                                                                     await transaction.RollbackAsync();
+                                                                    logger.LogWarning("AddUserToDevice failed — too many users assigned to device {deviceId}", deviceId);
 
                                                                     return Conflict();
                                                                 });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Error adding User to Device");
+            logger.LogError(ex, "Error adding User {userId} to Device {deviceId}", userId, deviceId);
 
             return Problem();
         }
@@ -194,6 +213,7 @@ public sealed class DeviceController(
     {
         if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
         {
+            logger.LogWarning("RemoveUserFromDevice called with invalid arguments: deviceId {deviceId}, userId {userId}", deviceId, userId);
             return BadRequest();
         }
 
@@ -207,32 +227,33 @@ public sealed class DeviceController(
             return await result.Match<ValueTask<IActionResult>>(async success =>
                                                                 {
                                                                     await transaction.CommitAsync();
-
+                                                                    logger.LogInformation("User {uId} successfully removed from device {dId}", userId, deviceId);
                                                                     return Ok();
                                                                 },
                                                                 async notFound =>
                                                                 {
                                                                     await transaction.RollbackAsync();
+                                                                    logger.LogWarning("RemoveUserFromDevice failed — device or user not found: deviceId {deviceId}, userId {userId}", deviceId, userId);
 
                                                                     return NotFound();
                                                                 },
                                                                 async tooLittleUsers =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-
+                                                                    logger.LogWarning("RemoveUserFromDevice failed — device {deviceId} would have too few users after removal", deviceId);
                                                                     return Conflict();
                                                                 },
                                                                 async ownerCantBeDeleted =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-
+                                                                    logger.LogWarning("RemoveUserFromDevice failed — user {userId} is the owner of device {deviceId} and cannot be removed", userId, deviceId);
                                                                     return Conflict();
                                                                 });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Error removing User from Device");
+            logger.LogError(ex, "Error removing User {userId} from Device {deviceId}", userId, deviceId);
 
             return Problem();
         }

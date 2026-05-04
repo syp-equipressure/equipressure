@@ -41,10 +41,10 @@ public interface IDeviceService
     /// <summary>
     /// Adds a new Device
     /// </summary>
-    /// <param name="deviceId"></param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <param name="ownerId"></param>
     /// <param name="categoryId"></param>
-    /// <returns>the added device or notFound if one of the parameters is non-existent</returns>
+    /// <returns>the added device or notFound if one of the corresponding objects to the given ids does not exist</returns>
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync
         (string deviceId, int ownerId, int categoryId);
     
@@ -203,14 +203,18 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
 
         if (device.Category.NumOfAllowedPeople > device.Users.Count + 1)
         {
+            logger.LogWarning("Device {id} would pass the limited number of users {allowedPeople}"
+                              , deviceId, device.Category.NumOfAllowedPeople);
             return new IDeviceService.TooManyUsers();
         }
 
-        var dU = await uow.DeviceRepository.GetDeviceUserEntryAsync(deviceId, userId);
-        if (dU is null)
+        var dU = new DeviceUser
         {
-            return new NotFound();
-        }
+            DeviceId = deviceId,
+            UserId = userId
+        };
+        
+        
         device.Users.Add(dU);
         await uow.SaveChangesAsync();
         logger.LogInformation("User {id} has been successfully added to device {dId}", userId, deviceId);
@@ -236,19 +240,22 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
 
         if (device.Users.Count - 1 < 1)
         {
+            logger.LogWarning("user cant be deleted since its the only user left for {deviceId}", deviceId);
+            
             return new IDeviceService.TooLittleUsers();
         }
 
         if (userId == device.OwnerId)
         {
+            logger.LogWarning("Owner cant be deleted from device {deviceId}", deviceId);
             return new IDeviceService.OwnerCantBeDeleted();
         }
         
-        var dU = new DeviceUser
+        var dU = await uow.DeviceRepository.GetDeviceUserEntryAsync(deviceId, userId);
+        if (dU is null)
         {
-            DeviceId = deviceId,
-            UserId = userId
-        };
+            return new NotFound();
+        }
         device.Users.Remove(dU);
         await uow.SaveChangesAsync();
         logger.LogInformation("User {id} has been successfully removed from device {dId}", userId, deviceId);
