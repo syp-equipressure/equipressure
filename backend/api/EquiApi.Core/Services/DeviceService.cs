@@ -100,13 +100,13 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         }
         
         var owner = await uow.DeviceRepository.GetOwnerOfDeviceAsync(deviceId);
-        return owner.Match<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>>(success => 
-             new Success<Person>(success),
-                    notFound =>
-                    {
-                        logger.LogWarning("No owner registered for device {DeviceId}", deviceId);
-                        return new IDeviceService.NoOwnerFound(deviceId);
-                    });
+        if (owner is null)
+        { 
+            logger.LogWarning("No owner registered for device {DeviceId}", deviceId);
+            return new IDeviceService.NoOwnerFound(deviceId);
+        }
+
+        return new Success<Person>(owner);
     }
 
     public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>> 
@@ -119,15 +119,15 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
         
-        var users = await uow.DeviceRepository.GetPersonOfDeviceAsync(deviceId);
+        var users = await uow.DeviceRepository.GetPersonsOfDeviceAsync(deviceId);
 
-        return users.Match<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>>(
-             success => new Success<IReadOnlyCollection<Person>>(success),
-             notFound =>
-             {
-                 logger.LogWarning("No users registered for device {DeviceId}", deviceId);
-                 return new IDeviceService.NoUsersFound(deviceId);
-             });
+        if (users.Count < 1)
+        {
+            logger.LogWarning("No users registered for device {DeviceId}", deviceId);
+            return new IDeviceService.NoUsersFound(deviceId);
+        }
+
+        return new Success<IReadOnlyCollection<Person>>(users);
     }
 
     public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, 
