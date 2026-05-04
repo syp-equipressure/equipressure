@@ -65,6 +65,12 @@ public interface IDeviceRepository
     /// <returns>true if its found false if not</returns>
     public ValueTask<bool> CategoryExists(int categoryId);
 
+    /// <summary>
+    /// checks if a device with the given id exists
+    /// </summary>
+    /// <param name="deviceId"></param>
+    /// <returns>true if its found otherwise false</returns>
+    public ValueTask<bool> DeviceExists(string deviceId);
 }
 
 public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCategory> categories) : IDeviceRepository
@@ -112,8 +118,10 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
     }
 
     public async ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId) 
-        => await devices.Include(d => d.Users).SelectMany(d => d.Users)
-                        .FirstOrDefaultAsync(du => du.DeviceId == deviceId && du.UserId == userId);
+        => await devices.Include(d => d.Users)
+                        .Where(d => d.Id == deviceId)
+                        .SelectMany(d => d.Users)
+                        .FirstOrDefaultAsync(du => du.UserId == userId);
 
     public async ValueTask<bool> CategoryExists(int categoryId)
     => await categories.AnyAsync(c => c.Id == categoryId);
