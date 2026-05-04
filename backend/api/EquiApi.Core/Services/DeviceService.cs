@@ -152,21 +152,52 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         {
             return new IDeviceService.TooManyUsers();
         }
+
+        var dU = await uow.DeviceRepository.GetDeviceUserEntry(deviceId, userId);
+        if (dU is null)
+        {
+            return new NotFound();
+        }
+        device.Users.Remove(dU);
+        await uow.SaveChangesAsync();
+
+        return new Success<MeasurementDevice>(device);
+    }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooLittleUsers, 
+        IDeviceService.OwnerCantBeDeleted>> RemoveUserFromDevice(int userId, string deviceId)
+    {
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            logger.LogWarning("Device with id {id} could not be found", deviceId);
+            return new NotFound();
+        }
+
+        if (!await uow.PersonRepository.PersonExists(userId))
+        {
+            logger.LogWarning("User with id {id} could not be found", userId);
+            return new NotFound();
+        }
+
+        if (device.Users.Count - 1 < 1)
+        {
+            return new IDeviceService.TooLittleUsers();
+        }
+
+        if (userId == device.OwnerId)
+        {
+            return new IDeviceService.OwnerCantBeDeleted();
+        }
         
         var dU = new DeviceUser
         {
             DeviceId = deviceId,
             UserId = userId
         };
-        device.Users.Add(dU);
+        device.Users.Remove(dU);
         await uow.SaveChangesAsync();
 
         return new Success<MeasurementDevice>(device);
-    }
-
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooLittleUsers, 
-        IDeviceService.OwnerCantBeDeleted>> RemoveUserFromDevice(int userId, string deviceId)
-    {
-        throw new NotImplementedException();
     }
 }

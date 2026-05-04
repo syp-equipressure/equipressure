@@ -133,13 +133,13 @@ public sealed class DeviceController(
         }
     }
 
-    [HttpPost("{deviceId}/{userId:int}")]
+    [HttpPost("{deviceId}/add/{userId:int}")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<IActionResult> AddUserToDevice([FromRoute] string deviceId,
-                                                          [FromBody] int userId)
+                                                          [FromRoute] int userId)
     {
         if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
         {
@@ -180,4 +180,57 @@ public sealed class DeviceController(
             return Problem();
         }
     }
+    [HttpDelete("{deviceId}/remove/{userId:int}")]
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+[ProducesResponseType(StatusCodes.Status409Conflict)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+public async ValueTask<IActionResult> RemoveUserFromDevice([FromRoute] string deviceId,
+                                                           [FromRoute] int userId)
+{
+    if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
+    {
+        return BadRequest();
+    }
+
+    try
+    {
+        await transaction.BeginTransactionAsync();
+
+        var result
+            = await deviceService.RemoveUserFromDevice(userId, deviceId);
+
+        return await result.Match<ValueTask<IActionResult>>(async success =>
+                                                            {
+                                                                await transaction.CommitAsync();
+
+                                                                return Ok();
+                                                            },
+                                                            async notFound =>
+                                                            {
+                                                                await transaction.RollbackAsync();
+
+                                                                return NotFound();
+                                                            },
+                                                            async tooLittleUsers =>
+                                                            {
+                                                                await transaction.RollbackAsync();
+
+                                                                return Conflict();
+                                                            },
+                                                            async ownerCantBeDeleted =>
+                                                            {
+                                                                await transaction.RollbackAsync();
+
+                                                                return Conflict();
+                                                            });
+    }
+    catch (Exception)
+    {
+        await transaction.RollbackAsync();
+        logger.LogError("Error removing User from Device");
+
+        return Problem();
+    }
+}
 }

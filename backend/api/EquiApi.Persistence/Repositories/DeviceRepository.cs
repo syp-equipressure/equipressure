@@ -38,6 +38,8 @@ public interface IDeviceRepository
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the list of person objects or a notfound if there are none</returns>
     public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(string deviceId);
+
+    public ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId);
     
     public void AddDevice(MeasurementDevice device);
     public ValueTask<bool> CategoryExists(int categoryId);
@@ -98,6 +100,10 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
     {
         devices.Add(device);
     }
+
+    public async ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId) 
+        => await devices.Include(d => d.Users).SelectMany(d => d.Users)
+                        .FirstOrDefaultAsync(du => du.DeviceId == deviceId && du.UserId == userId);
 
     public async ValueTask<bool> CategoryExists(int categoryId)
     => await categories.AnyAsync(c => c.Id == categoryId);
