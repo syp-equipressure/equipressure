@@ -24,6 +24,25 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
         return res.Match<ActionResult<DataTransfer.HorseListResponse>>(success => Ok(success),
                                                                        notFound => NotFound());
     }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType<DataTransfer.HorseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<DataTransfer.HorseDto>> GetById([FromRoute] int id)
+    {
+        if (id < 0)
+        {
+            logger.LogWarning("id: {id} was not valid", id);
+        }
+
+        var res = await service.GetHorseByIdAsync(id);
+
+        return res.Match<ActionResult<DataTransfer.HorseDto>>(ok => DataTransfer.HorseDto.FromHorse(ok),
+                                                              _ => NotFound());
+    }
+    
+    
 }
 
 
