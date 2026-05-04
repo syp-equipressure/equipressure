@@ -55,7 +55,16 @@ public interface IPersonService
     /// </returns>
     public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId);
 
-    // TODO: xml doc
+    /// <summary>
+    /// Retrieves the specific Saddler
+    /// </summary>
+    /// <param name="saddlerId">The id of the saddler.</param>
+    /// <param name="equestrianId">The id of the equestrian.</param>
+    /// <returns>
+    /// A <see cref="Success{Saddler}"/> containing the Saddler Basic Data,
+    /// <see cref="IBaseService.InvalidData"/> Invalid Ids
+    /// or <see cref="NotFound"/> if the person(s) are not found.
+    /// </returns>
     public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
 
     /// <summary>

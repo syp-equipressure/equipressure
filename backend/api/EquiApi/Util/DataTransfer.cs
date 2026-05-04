@@ -100,7 +100,6 @@ public class DataTransfer
     }
 
     public sealed record UpdatePersonRequest(
-        int Id,
         string? FirstName,
         string? LastName,
         decimal? Height,
@@ -116,7 +115,6 @@ public class DataTransfer
         {
             public Validator()
             {
-                RuleFor(x => x.Id).NotEmpty();
                 RuleFor(x => x.FirstName).NotEmpty();
                 RuleFor(x => x.LastName).NotEmpty();
                 RuleFor(x => x.Height).GreaterThan(0);

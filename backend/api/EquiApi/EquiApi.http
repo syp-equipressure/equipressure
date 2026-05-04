@@ -23,16 +23,22 @@ GET {{BaseUrl}}/persons/{{personId}}/contacts
 ### 5. Favoriten einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/favourites
 
-### 6. Alle Sattler mit Adresse (Person_Id, Name und location)
-GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/locations
+### 6. Alle Sattler mit Adresse
+GET {{BaseUrl}}/persons/saddlers
 
-### 7. Alle Pferde einer Person abrufen
+### 7. Alle Sattler Favoriten mit Adresse
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/favourites
+
+### 8. Alle Sattler Kontakte mit Adresse
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/contacts
+
+### 9. Alle Pferde einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/horses
 
-### 8. Alle Geräte einer Person abrufen (inkl. Owner-Info)
+### 10. Alle Geräte einer Person abrufen (inkl. Owner-Info)
 GET {{BaseUrl}}/persons/{{personId}}/devices
 
-### 9. Neue Person anlegen
+### 11. Neue Person anlegen
 POST {{BaseUrl}}/persons
 Content-Type: application/json
 
@@ -44,24 +50,23 @@ Content-Type: application/json
     "addressId": 1
 }
 
-### 10. Person aktualisieren
+### 12. Person aktualisieren
 PATCH {{BaseUrl}}/persons/{{personId}}
 Content-Type: application/json
 
 {
-    "id": {{personId}},
     "firstName": "Max",
     "lastName": "Mustermann-Update",
     "height": 182.0
 }
 
-### 11. Person löschen
+### 13. Person löschen
 DELETE {{BaseUrl}}/persons/{{personId}}
 
-### 12. Alle Pferde einer Person abrufen (mit PferdeId, Location und Profilbild einer Person)
+### 14. Alle Pferde einer Person abrufen (mit PferdeId, Location und Profilbild einer Person)
 GET {{BaseUrl}}/persons/{{personId}}/horses/locations
 
-### 13. eine Location hinzufügen
+### 15. eine Location hinzufügen
 POST {{BaseUrl}}/locations
 Content-Type: application/json
 
@@ -72,7 +77,7 @@ Content-Type: application/json
     "plz": "4050"
 }
 
-### 14. eine Location hinzufügen (strasse optional)
+### 16. eine Location hinzufügen (strasse optional)
 POST {{BaseUrl}}/locations
 Content-Type: application/json
 
