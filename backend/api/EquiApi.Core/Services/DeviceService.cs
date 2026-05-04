@@ -72,10 +72,31 @@ public interface IDeviceService
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooLittleUsers, OwnerCantBeDeleted>> 
         RemoveUserFromDevice(int userId, string deviceId);
 
+    /// <summary>
+    /// Thrown when no Owner was found -> repo sent back null
+    /// </summary>
+    /// <param name="DeviceId"></param>
     public record NoOwnerFound(string DeviceId);
+    
+    /// <summary>
+    /// thrown when the list of users is < 1
+    /// </summary>
+    /// <param name="DeviceId"></param>
     public record NoUsersFound(string DeviceId);
+    
+    /// <summary>
+    /// thrown if there are too little users in order to delete one. There has to be at least one user incl owner
+    /// </summary>
     public record TooLittleUsers();
+    
+    /// <summary>
+    /// thrown when the given number of users from the devicecategory is passed when adding one user 
+    /// </summary>
     public record TooManyUsers();
+    
+    /// <summary>
+    /// thrown if someone tries to delete the owner of a device
+    /// </summary>
     public record OwnerCantBeDeleted();
 }
 
