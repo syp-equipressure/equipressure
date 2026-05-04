@@ -22,6 +22,8 @@ using GetOwnedHorsesAsyncResult
 using GetAllDevicesAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetAllSaddlersAsyncResult
+    = OneOf.OneOf<OneOf.Types.Success<List<SaddlerBasicData>>, OneOf.Types.None>;
+using GetAllSaddlersOfEquestrianAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<List<SaddlerBasicData>>, OneOf.Types.None, OneOf.Types.NotFound>;
 // TODO: why would we get a InvalidData if we only check the data in the controller?
 using AddPersonAsyncResult
@@ -118,7 +120,27 @@ public interface IPersonService
     /// <see cref="None"/> if no saddlers exist, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync(int equestrianId);
+    public ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync();
+    
+    /// <summary>
+    /// Retrieves a list of all favourites of an equestrian that are saddlers + their address
+    /// </summary>
+    /// <returns>
+    /// A <see cref="Success{List}"/> of saddlers, 
+    /// <see cref="None"/> if no saddlers exist, 
+    /// or <see cref="NotFound"/> if the person does not exist.
+    /// </returns>
+    public ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerFavouritesAsync(int equestrianId);
+    
+    /// <summary>
+    /// Retrieves a list of all contacts of an equestrian that are saddlers + their address
+    /// </summary>
+    /// <returns>
+    /// A <see cref="Success{List}"/> of saddlers, 
+    /// <see cref="None"/> if no saddlers exist, 
+    /// or <see cref="NotFound"/> if the person does not exist.
+    /// </returns>
+    public ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId);
 
     /// <summary>
     /// Validates and registers a new person in the system with a specific role.
@@ -352,27 +374,64 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success<List<MeasurementDevice>>(result.ToList());
     }
 
-    public async ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync(int equestrianId)
+    public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerFavouritesAsync(int equestrianId)
     {
         bool personExists = await uow.PersonRepository.PersonExists(equestrianId);
 
         if (!personExists)
         {
-            logger.LogWarning("equestrian could not be found");
-
+            logger.LogWarning("equestrian doesnt exist");
             return new NotFound();
         }
-
+        
         IReadOnlyCollection<SaddlerBasicData> saddlers
-            = await uow.PersonRepository.GetAllSaddlersByEquestrianIdAsync(equestrianId);
+            = await uow.PersonRepository.GetAllSaddlerFavouritesOfEquestrian(equestrianId);
 
         if (saddlers.Count <= 0)
         {
             logger.LogWarning("List of saddlers is empty");
-
             return new None();
         }
 
+        logger.LogInformation("Successfully got list of saddlers");
+        return new Success<List<SaddlerBasicData>>(saddlers.ToList());
+    }
+
+    public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId)
+    {
+        bool personExists = await uow.PersonRepository.PersonExists(equestrianId);
+
+        if (!personExists)
+        {
+            logger.LogWarning("equestrian doesnt exist");
+            return new NotFound();
+        }
+        
+        IReadOnlyCollection<SaddlerBasicData> saddlers
+            = await uow.PersonRepository.GetAllSaddlerContactsOfEquestrian(equestrianId);
+
+        if (saddlers.Count <= 0)
+        {
+            logger.LogWarning("List of saddlers is empty");
+            return new None();
+        }
+
+        logger.LogInformation("Successfully got list of saddlers");
+        return new Success<List<SaddlerBasicData>>(saddlers.ToList());
+    }
+
+    public async ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync()
+    {
+        IReadOnlyCollection<SaddlerBasicData> saddlers
+            = await uow.PersonRepository.GetAllSaddlers();
+
+        if (saddlers.Count <= 0)
+        {
+            logger.LogWarning("List of saddlers is empty");
+            return new None();
+        }
+
+        logger.LogInformation("Successfully got list of saddlers");
         return new Success<List<SaddlerBasicData>>(saddlers.ToList());
     }
 
