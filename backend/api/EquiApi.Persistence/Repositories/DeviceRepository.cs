@@ -17,7 +17,7 @@ public interface IDeviceRepository
     /// <summary>
     /// Gets a device by its id
     /// </summary>
-    /// <param name="deviceId">the id of the device</param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <returns>The measurementDevice if it exists</returns>
     public ValueTask<MeasurementDevice?> GetDeviceByIdAsync(string deviceId);
     
@@ -31,14 +31,14 @@ public interface IDeviceRepository
     /// <summary>
     /// Gets the owner of a device
     /// </summary>
-    /// <param name="deviceId">the id of the device</param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <returns>the person object of the owner or a notFound if there is no Owner</returns>
     public ValueTask<Person?> GetOwnerOfDeviceAsync(string deviceId);
     
     /// <summary>
     /// Gets all the people which are subscribed on a specific device incl. Owner
     /// </summary>
-    /// <param name="deviceId">the id of the device</param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <returns>the list of person objects or a notfound if there are none</returns>
     public ValueTask<IReadOnlyCollection<Person>> GetPersonsOfDeviceAsync(string deviceId);
 
@@ -47,7 +47,7 @@ public interface IDeviceRepository
     /// DeviceUser: object which has all the users of a device in it because users and devices
     /// have an m to n relationship
     /// </summary>
-    /// <param name="deviceId"></param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <param name="userId"></param>
     /// <see cref="DeviceUser">
     /// <returns>A Device User Entry if it exists</returns>

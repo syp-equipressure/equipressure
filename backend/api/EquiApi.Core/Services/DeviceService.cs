@@ -20,7 +20,7 @@ public interface IDeviceService
     /// <summary>
     /// returns the owner of a specific user
     /// </summary>
-    /// <param name="deviceId">id of the device</param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <returns>
     /// the person object who is the owner, notFound if the deviceId does not exist and
     /// NoOwnerFound if there is no owner registered
@@ -52,7 +52,7 @@ public interface IDeviceService
     /// Adds a User to a device
     /// </summary>
     /// <param name="userId"></param>
-    /// <param name="deviceId"></param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <returns>
     /// the newly updated device or notFound if the user or the device doesn't exist or tooManyUsers
     /// if the count of users conflicts with the category
@@ -64,7 +64,7 @@ public interface IDeviceService
     /// Removes a User from a device
     /// </summary>
     /// <param name="userId"></param>
-    /// <param name="deviceId"></param>
+    /// <param name="deviceId">serial number of the device</param>
     /// <returns>
     /// the newly updated device or notFound if the user or the device doesn't exist or  TooLittleUsers
     /// if there would be only one user left or OwnerCantBeDeleted if the user you want to delete is the owner
@@ -75,13 +75,13 @@ public interface IDeviceService
     /// <summary>
     /// returned when no Owner was found -> repo sent back null
     /// </summary>
-    /// <param name="DeviceId"></param>
+    /// <param name="DeviceId">serial number of the device</param>
     public record NoOwnerFound(string DeviceId);
     
     /// <summary>
     /// returned when the list of users is < 1
     /// </summary>
-    /// <param name="DeviceId"></param>
+    /// <param name="DeviceId">serial number of the device</param>
     public record NoUsersFound(string DeviceId);
     
     /// <summary>
