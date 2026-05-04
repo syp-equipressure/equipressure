@@ -130,8 +130,8 @@ public class DataTransfer
     }
     
     public sealed record AddLocationRequest(
-        string Street,
-        int HouseNumber,
+        string? Street,
+        int? HouseNumber,
         string CityName,
         string PLZ)
     {
@@ -184,5 +184,10 @@ public class DataTransfer
     public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
     {
         public static SaddlersListResponse FromSaddlers(IEnumerable<SaddlerBasicDto> saddlers) => new(saddlers);
+    }
+    
+    public sealed record CityDto(string Name, string PLZ)
+    {
+        public static CityDto FromCity(City city) => new(city.Name, city.PLZ);
     }
 }
