@@ -20,27 +20,32 @@ public interface IDeviceRepository
     /// <param name="deviceId">the id of the device</param>
     /// <returns>The measurementDevice if it exists</returns>
     public ValueTask<MeasurementDevice?> GetDeviceByIdAsync(string deviceId);
+    
     /// <summary>
     /// Gets all devices of a user
     /// </summary>
     /// <param name="userId">the id of the user</param>
     /// <returns>a list of the devices of the user</returns>
     public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetDevicesFromUserIdAsync(int userId);
+    
     /// <summary>
     /// Gets the owner of a device
     /// </summary>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the person object of the owner or a notFound if there is no Owner</returns>
-    public ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(string deviceId);
+    public ValueTask<Person?> GetOwnerOfDeviceAsync(string deviceId);
+    
     /// <summary>
     /// Gets all the people which are subscribed on a specific device
     /// </summary>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the list of person objects or a notfound if there are none</returns>
-    public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(string deviceId);
+    public ValueTask<IReadOnlyCollection<Person>> GetPersonsOfDeviceAsync(string deviceId);
 
     /// <summary>
-    /// Gets the device user entry with the device and user id
+    /// Gets the DeviceUser entry by its id
+    /// DeviceUser: object which has all the users of a device in it because users and devices
+    /// have an m to n relationship
     /// </summary>
     /// <param name="deviceId"></param>
     /// <param name="userId"></param>
@@ -70,19 +75,15 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
                          .Where(d => d.Users.Any(u => u.UserId == userId)).ToListAsync();
     }
 
-    public async ValueTask<OneOf<Person, NotFound>> GetOwnerOfDeviceAsync(string deviceId)
+    public async ValueTask<Person?> GetOwnerOfDeviceAsync(string deviceId)
     {
-        var result =  await devices.Include(d => d.Owner)
+        return  await devices.Include(d => d.Owner)
                             .Where(d => d.Id == deviceId)
                             .Select(d => d.Owner).FirstOrDefaultAsync();
-        if (result == null)
-        {
-            return new NotFound();
-        }
-        return result;
     }
 
-    public async ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(string deviceId)
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetPersonsOfDeviceAsync(string deviceId)
     {
         var result = await devices.Include(d => d.Users)
                                   .ThenInclude(u => u.User)
@@ -90,16 +91,9 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
                                   .Select(d => d.Users.Select(u => u.User).FirstOrDefault())
                                   .ToListAsync();
         
-        var res = result.Where(p => p != null)
+        return result.Where(p => p != null)
                         .Cast<Person>()
                         .ToList();
-
-        if (res.Count < 0)
-        {
-            return  new NotFound();
-        }
-
-        return res;
     }
 
     public void AddDevice(MeasurementDevice device)
