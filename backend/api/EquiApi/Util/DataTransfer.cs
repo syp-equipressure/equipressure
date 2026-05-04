@@ -79,6 +79,19 @@ public class DataTransfer
             }
         }
     }
+    public sealed record AddUserToDeviceRequest(int UserId, string DeviceId)
+    {
+        public class Validator : AbstractValidator<AddUserToDeviceRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.UserId)
+                    .GreaterThan(0);
+                RuleFor(x => x.DeviceId)
+                    .NotEmpty();
+            }
+        }
+    }
 
     public sealed record HorseDto(
         int Id,

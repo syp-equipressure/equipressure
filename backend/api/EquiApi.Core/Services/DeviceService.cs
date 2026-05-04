@@ -132,10 +132,36 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         return new Success<MeasurementDevice>(device);
     }
 
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>> 
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>> 
         AddUserToDevice(int userId, string deviceId)
     {
-        throw new NotImplementedException();
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            logger.LogWarning("Device with id {id} could not be found", deviceId);
+            return new NotFound();
+        }
+
+        if (!await uow.PersonRepository.PersonExists(userId))
+        {
+            logger.LogWarning("User with id {id} could not be found", userId);
+            return new NotFound();
+        }
+
+        if (device.Category.NumOfAllowedPeople > device.Users.Count + 1)
+        {
+            return new IDeviceService.TooManyUsers();
+        }
+        
+        var dU = new DeviceUser
+        {
+            DeviceId = deviceId,
+            UserId = userId
+        };
+        device.Users.Add(dU);
+        await uow.SaveChangesAsync();
+
+        return new Success<MeasurementDevice>(device);
     }
 
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooLittleUsers, 

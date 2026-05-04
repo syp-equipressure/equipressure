@@ -51,7 +51,9 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
     => await devices.AnyAsync(d => d.Id == deviceId);
 
     public async ValueTask<MeasurementDevice?> GetDeviceByIdAsync(string deviceId)
-        =>  await devices.FirstOrDefaultAsync(d => d.Id == deviceId);
+        =>  await devices.Include(d => d.Users)
+                         .Include(d => d.Category)
+                         .FirstOrDefaultAsync(d => d.Id == deviceId);
     
     
     public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetDevicesFromUserIdAsync(int userId)
