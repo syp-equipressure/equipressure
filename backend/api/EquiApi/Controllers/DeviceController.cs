@@ -1,13 +1,16 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Persistence.Model;
+using EquiApi.Persistence.Util;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
 
 [Route("api/devices")]
-public sealed class DeviceController(IDeviceService deviceService, 
-                              ILogger<DeviceController> logger) : BaseController
+public sealed class DeviceController(
+    IDeviceService deviceService, 
+    ITransactionProvider transaction,
+    ILogger<DeviceController> logger) : BaseController
 {
     [HttpGet("{userId:int}")]
     [ProducesResponseType<DataTransfer.DeviceListResponse>(StatusCodes.Status200OK)]
@@ -75,6 +78,46 @@ public sealed class DeviceController(IDeviceService deviceService,
                                                                                logger.LogWarning("Device {deviceId} has no assigned users", noUsers.DeviceId);
                                                                                return UnprocessableEntity();
                                                                            });
+    }
+    
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<IActionResult> CreateDevice([FromBody] DataTransfer.AddDeviceRequest request)
+    {
+        if (!ValidateRequest<DataTransfer.AddDeviceRequest.Validator, DataTransfer.AddDeviceRequest>(request))
+        {
+            return BadRequest();
+        }
+
+        try
+        {
+            await transaction.BeginTransactionAsync();
+
+            var result
+                = await deviceService.AddDeviceAsync(request.DeviceId, request.OwnerId, request.CategoryId);
+
+            return await result.Match<ValueTask<IActionResult>>(async success =>
+                                                                {
+                                                                    await transaction.CommitAsync();
+
+                                                                    return Created();
+                                                                },
+                                                                async notFound =>
+                                                                {
+                                                                    await transaction.RollbackAsync();
+
+                                                                    return NotFound();
+                                                                });
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError("Error adding Device");
+
+            return Problem();
+        }
     }
     
 }

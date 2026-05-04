@@ -66,6 +66,19 @@ public class DataTransfer
         public static PersonListResponse FromPersons(IEnumerable<Person> persons) =>
             new(persons.Select(PersonDto.FromPerson));
     }
+    
+    public sealed record AddDeviceRequest(string DeviceId, int OwnerId, int CategoryId)
+    {
+        public class Validator : AbstractValidator<AddDeviceRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.DeviceId).NotEmpty();
+                RuleFor(x => x.OwnerId).GreaterThan(0);
+                RuleFor(x => x.CategoryId).GreaterThan(0);
+            }
+        }
+    }
 
     public sealed record HorseDto(
         int Id,
@@ -98,6 +111,7 @@ public class DataTransfer
         public static DeviceListResponse FromDevices(IEnumerable<MeasurementDevice> devices) =>
             new(devices.Select(MeasurementDeviceDto.FromDevice));
     }
+    
 
     public sealed record UpdatePersonRequest(
         int Id,

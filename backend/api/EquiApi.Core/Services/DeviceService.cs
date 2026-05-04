@@ -37,11 +37,15 @@ public interface IDeviceService
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(string deviceId);
 
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, int categoryId);
-    public void AddUserToDevice(int userId, string deviceId);
-    public void RemoveUserFromDevice(int userId, string deviceId);
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooManyUsers>> AddUserToDevice(int userId, string deviceId);
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooLittleUsers, OwnerCantBeDeleted>> 
+        RemoveUserFromDevice(int userId, string deviceId);
 
     public record NoOwnerFound(string DeviceId);
     public record NoUsersFound(string DeviceId);
+    public record TooLittleUsers();
+    public record TooManyUsers();
+    public record OwnerCantBeDeleted();
 }
 
 public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDeviceService
@@ -128,12 +132,14 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         return new Success<MeasurementDevice>(device);
     }
 
-    public void AddUserToDevice(int userId, string deviceId)
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>> 
+        AddUserToDevice(int userId, string deviceId)
     {
         throw new NotImplementedException();
     }
 
-    public void RemoveUserFromDevice(int userId, string deviceId)
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooLittleUsers, 
+        IDeviceService.OwnerCantBeDeleted>> RemoveUserFromDevice(int userId, string deviceId)
     {
         throw new NotImplementedException();
     }
