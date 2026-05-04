@@ -29,8 +29,8 @@ public class DataTransfer
                 RuleFor(x => x.DateOfBirth).NotNull().LessThan(LocalDate.FromDateTime(DateTime.Today));
                 RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
                                      .WithMessage("Email must contain '@' and a '.' after it");
-                RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == "Equestrian");
-                RuleFor(x => x.Description).Empty().When(x => x.Role.Name == "Equestrian");
+                RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == RoleName.Equestrian);
+                RuleFor(x => x.Description).Empty().When(x => x.Role.Name == RoleName.Equestrian);
             }
         }
     }

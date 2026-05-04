@@ -147,7 +147,7 @@ internal sealed class PersonRepository(
                                   .ThenInclude(p => p.Address)
                                   .ThenInclude(a => a.City)
                                   .Include(pra => pra.Role)
-                                  .Where(pra => pra.Role.Name.ToLower() == "equestrian")
+                                  .Where(pra => pra.Role.Name == RoleName.Equestrian)
                                   .Where(pra => pra.PersonId == personId)
                                   .Select(pra => new EquestrianBasicData(pra.Person.FirstName,
                                                                          pra.Person.LastName,
@@ -181,7 +181,7 @@ internal sealed class PersonRepository(
                      .Include(pra => pra.Person)
                      .ThenInclude(p => p.Relationships)
                      .Include(pra => pra.Role)
-                     .Where(pra => pra.Role.Name.ToLower() == "saddler")
+                     .Where(pra => pra.Role.Name == RoleName.Saddler)
                      .Where(pra => pra.PersonId == saddlerId)
                      .Select(pra => new
                      {
@@ -261,7 +261,7 @@ internal sealed class PersonRepository(
 
     public async ValueTask<bool> RoleExists(AccountRole role)
     {
-        return await rolesSet.AnyAsync(r => r.Name.ToLower() == role.Name.ToLower() && r.Id == role.Id);
+        return await rolesSet.AnyAsync(r => r.Name == role.Name && r.Id == role.Id);
     }
 
     public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId)
@@ -286,7 +286,7 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
                      .ThenInclude(a => a.City)
-                     .Where(pr => pr.Role.Name == "saddler")
+                     .Where(pr => pr.Role.Name == RoleName.Saddler)
                      .Select(pr => new SaddlerBasicData(pr.PersonId,
                                                         pr.Person.FirstName,
                                                         pr.Person.LastName,
@@ -307,7 +307,7 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
                      .ThenInclude(a => a.City)
-                     .Where(pr => pr.Role.Name == "saddler" &&
+                     .Where(pr => pr.Role.Name == RoleName.Saddler &&
                                   pr.Person.Relationships.Any(r => r.IsFavourite && r.EquestrianId == equestrianId))
                      .Select(pr => new SaddlerBasicData(pr.PersonId,
                                                         pr.Person.FirstName,
@@ -329,7 +329,7 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
                      .ThenInclude(a => a.City)
-                     .Where(pr => pr.Role.Name == "saddler" &&
+                     .Where(pr => pr.Role.Name == RoleName.Saddler &&
                                   pr.Person.Relationships.Any(r => r.IsContact && r.EquestrianId == equestrianId))
                      .Select(pr => new SaddlerBasicData(pr.PersonId,
                                                         pr.Person.FirstName,

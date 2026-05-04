@@ -463,7 +463,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new IBaseService.Conflict();
         }
 
-        if (role.Name == "Equestrian" && !(websiteLink is null && description is null))
+        if (role.Name == RoleName.Equestrian && !(websiteLink is null && description is null))
         {
             logger.LogWarning("Person with Role Equestrian cannot be added with websitelink and description");
             // TODO: eventuell anderer Return type
