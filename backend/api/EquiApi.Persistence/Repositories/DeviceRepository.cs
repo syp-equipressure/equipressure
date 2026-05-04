@@ -36,7 +36,7 @@ public interface IDeviceRepository
     public ValueTask<Person?> GetOwnerOfDeviceAsync(string deviceId);
     
     /// <summary>
-    /// Gets all the people which are subscribed on a specific device
+    /// Gets all the people which are subscribed on a specific device incl. Owner
     /// </summary>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the list of person objects or a notfound if there are none</returns>
