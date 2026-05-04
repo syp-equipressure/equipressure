@@ -52,7 +52,17 @@ public interface IDeviceRepository
     /// <returns>A Device User Entry if it exists</returns>
     public ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId);
     
+    /// <summary>
+    /// Adds a device to the dbset
+    /// </summary>
+    /// <param name="device">the device that should be added</param>
     public void AddDevice(MeasurementDevice device);
+    
+    /// <summary>
+    /// checks if a category exists by the id
+    /// </summary>
+    /// <param name="categoryId"></param>
+    /// <returns>true if its found false if not</returns>
     public ValueTask<bool> CategoryExists(int categoryId);
 
 }
