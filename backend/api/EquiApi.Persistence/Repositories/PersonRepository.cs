@@ -101,9 +101,22 @@ public interface IPersonRepository
     /// <summary>
     /// returns all saddlers with their address
     /// </summary>
-    /// <param name="equestrianId">the id of equestriant</param>
     /// <returns>list of saddlers</returns>
-    public ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlersByEquestrianIdAsync(int equestrianId);
+    public ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlers();
+
+    /// <summary>
+    /// returns all saddlers that is a favourite of an equestrian + their address
+    /// </summary>
+    /// <param name="equestrianId">the id of equestrian</param>
+    /// <returns>list of saddlers</returns>
+    public ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlerFavouritesOfEquestrian(int equestrianId);
+
+    /// <summary>
+    /// returns all saddlers that is a contact of an equestrian + their address
+    /// </summary>
+    /// <param name="equestrianId">the id of equestrian</param>
+    /// <returns>list of saddlers</returns>
+    public ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlerContactsOfEquestrian(int equestrianId);
 
     /// <summary>
     /// Creates a new person in the system and assigns a role.
@@ -187,8 +200,7 @@ internal sealed class PersonRepository(
                                                        p.Person.Address.City.Name,
                                                        p.Person.Address.City.PLZ,
                                                        p.Person.WebsiteLink,
-                                                       p.Person.Description,
-                                                       p.rel.Select(r => r.IsFavourite).FirstOrDefault()))
+                                                       p.Person.Description))
                      .AsNoTracking()
                      .FirstOrDefaultAsync();
     }
@@ -267,7 +279,7 @@ internal sealed class PersonRepository(
                               .ToListAsync();
     }
 
-    public async ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlersByEquestrianIdAsync(int equestrianId)
+    public async ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlers()
     {
         return await personRoleSet
                      .Include(pr => pr.Role)
@@ -283,17 +295,53 @@ internal sealed class PersonRepository(
                                                         pr.Person.Address.City.Name,
                                                         pr.Person.Address.City.PLZ,
                                                         pr.Person.WebsiteLink,
-                                                        pr.Person.Description,
-                                                        // wir müssen isFavourite setzen und deshalb machen wir die anfrage pro reiter
-                                                        // wir überprüfen ob der sattler ein favorit des reiters ist und setzen den wert true ode rfalse dementsprechend
-                                                        pr.Person.Relationships
-                                                          .Where(r => r.EquestrianId == equestrianId)
-                                                          .Select(r => r.IsFavourite)
-                                                          .FirstOrDefault()))
+                                                        pr.Person.Description))
                      .OrderBy(p => p.LastName)
                      .ToListAsync();
-        
-        //resultat: eine liste von sattlern personalisiert für einen reiter 
+    }
+
+    public async ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlerFavouritesOfEquestrian(int equestrianId)
+    {
+        return await personRoleSet
+                     .Include(pr => pr.Role)
+                     .Include(pr => pr.Person)
+                     .ThenInclude(p => p.Address)
+                     .ThenInclude(a => a.City)
+                     .Where(pr => pr.Role.Name == "saddler" &&
+                                  pr.Person.Relationships.Any(r => r.IsFavourite && r.EquestrianId == equestrianId))
+                     .Select(pr => new SaddlerBasicData(pr.PersonId,
+                                                        pr.Person.FirstName,
+                                                        pr.Person.LastName,
+                                                        pr.Person.Address.Street,
+                                                        pr.Person.Address.HouseNumber,
+                                                        pr.Person.Address.City.Name,
+                                                        pr.Person.Address.City.PLZ,
+                                                        pr.Person.WebsiteLink,
+                                                        pr.Person.Description))
+                     .OrderBy(p => p.LastName)
+                     .ToListAsync();
+    }
+
+    public async ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlerContactsOfEquestrian(int equestrianId)
+    {
+        return await personRoleSet
+                     .Include(pr => pr.Role)
+                     .Include(pr => pr.Person)
+                     .ThenInclude(p => p.Address)
+                     .ThenInclude(a => a.City)
+                     .Where(pr => pr.Role.Name == "saddler" &&
+                                  pr.Person.Relationships.Any(r => r.IsContact && r.EquestrianId == equestrianId))
+                     .Select(pr => new SaddlerBasicData(pr.PersonId,
+                                                        pr.Person.FirstName,
+                                                        pr.Person.LastName,
+                                                        pr.Person.Address.Street,
+                                                        pr.Person.Address.HouseNumber,
+                                                        pr.Person.Address.City.Name,
+                                                        pr.Person.Address.City.PLZ,
+                                                        pr.Person.WebsiteLink,
+                                                        pr.Person.Description))
+                     .OrderBy(p => p.LastName)
+                     .ToListAsync();
     }
 
     public void AddPerson(Person person)
@@ -327,7 +375,6 @@ public record SaddlerBasicData(
     string City,
     string PLZ,
     string? Link,
-    string? Description,
-    bool IsFavourite);
+    string? Description);
 
 public record NameData(string FirstName, string LastName);
