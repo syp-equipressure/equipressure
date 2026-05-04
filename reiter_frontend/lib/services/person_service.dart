@@ -3,8 +3,29 @@ import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
 
+/// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert
+/// (400/404/409). Schaut so aus dass aufrufende Screens unterscheiden können
+/// ob "nicht gefunden", "konflikt" oder "ungültig".
+class PersonApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  PersonApiException(this.statusCode, this.message);
+
+  bool get isNotFound => statusCode == 404;
+  bool get isConflict => statusCode == 409;
+  bool get isBadRequest => statusCode == 400;
+
+  @override
+  String toString() => 'PersonApiException($statusCode): $message';
+}
+
 class PersonService {
   static const String baseUrl = 'http://localhost:5200/api';
+  static const Duration _timeout = Duration(seconds: 10);
+  static const Map<String, String> _jsonHeaders = {
+    'Content-Type': 'application/json',
+  };
 
   // Singleton
   static final PersonService _instance = PersonService._internal();
@@ -13,399 +34,313 @@ class PersonService {
 
   List<Person>? _cachedPersons;
 
-  // 1. Person (Equestrian) abrufen
+  // ---------------------------------------------------------------------------
+  // Helper
+  // ---------------------------------------------------------------------------
+
+  /// Extrahiert die Liste aus einer *ListResponse. Backend liefert z.B.
+  /// `{ "persons": [...] }`, `{ "horses": [...] }`, `{ "devices": [...] }`,
+  /// `{ "saddlers": [...] }`. Welcher Key genau verwendet wird hängt von den
+  /// DTO-Records ab — daher pragmatisch: ersten List-Wert im Objekt nehmen.
+  /// Falls Backend doch raw List liefert, ebenfalls korrekt parsen.
+  static List<Map<String, dynamic>> _extractList(dynamic decoded) {
+    if (decoded is List) {
+      return decoded.cast<Map<String, dynamic>>();
+    }
+    if (decoded is Map<String, dynamic>) {
+      for (final value in decoded.values) {
+        if (value is List) {
+          return value.cast<Map<String, dynamic>>();
+        }
+      }
+      return const [];
+    }
+    return const [];
+  }
+
+  static Never _throwForStatus(http.Response r, String action) {
+    throw PersonApiException(
+      r.statusCode,
+      'Failed to $action: HTTP ${r.statusCode}',
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 1. GET /persons/equestrians/{id}
+  // ---------------------------------------------------------------------------
   static Future<Map<String, dynamic>> getEquestrian(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/equestrians/$personId');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+    final url = Uri.parse('$baseUrl/persons/equestrians/$personId');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to load equestrian: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading equestrian: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
+    _throwForStatus(response, 'load equestrian');
   }
 
-  // 1.2 Person (Saddler) abrufen
-  static Future<Map<String, dynamic>> getSaddler(String equestrianId, String saddlerId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/equestrians/$equestrianId/saddlers/$saddlerId');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 2. GET /persons/equestrians/{equestrianId}/saddlers/{saddlerId}
+  // ---------------------------------------------------------------------------
+  static Future<Map<String, dynamic>> getSaddler(
+    String equestrianId,
+    String saddlerId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/persons/equestrians/$equestrianId/saddlers/$saddlerId',
+    );
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to load saddler: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading saddler: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
+    _throwForStatus(response, 'load saddler');
   }
 
-  // 2. Person abrufen (minimale Daten)
-  static Future<Map<String, dynamic>> loadPersonProfileData(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/profile-data');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 3. GET /persons/{id}/profile-data  (NameDataDto)
+  // ---------------------------------------------------------------------------
+  static Future<Map<String, dynamic>> loadPersonProfileData(
+    String personId,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/profile-data');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to load person profile data: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person profile data: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
+    _throwForStatus(response, 'load person profile data');
   }
 
-  // 3. Adresse einer Person abrufen
-  static Future<Map<String, dynamic>> loadPersonLocation(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/location');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 4. GET /persons/{id}/location  (AddressDto)
+  // ---------------------------------------------------------------------------
+  static Future<Map<String, dynamic>> loadPersonLocation(
+    String personId,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/location');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to load person location: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person location: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
+    _throwForStatus(response, 'load person location');
   }
 
-  // 4. Kontakte einer Person abrufen
-  static Future<List<Map<String, dynamic>>> loadPersonContacts(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/contacts');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 5. GET /persons/{id}/contacts  (PersonListResponse)
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> loadPersonContacts(
+    String personId,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/contacts');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load person contacts: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person contacts: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    _throwForStatus(response, 'load person contacts');
   }
 
-  // 5. Favoriten einer Person abrufen
-  static Future<List<Map<String, dynamic>>> loadPersonFavourites(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/favourites');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 6. GET /persons/{id}/favourites  (PersonListResponse)
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> loadPersonFavourites(
+    String personId,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/favourites');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load person favourites: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person favourites: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    _throwForStatus(response, 'load person favourites');
   }
 
-  // 6. Alle Sattler mit Adresse
-  static Future<List<Map<String, dynamic>>> getSaddlersWithLocations(String equestrianId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/equestrians/$equestrianId/saddlers/locations');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 7. GET /persons/{id}/horses  (HorseListResponse)
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> loadPersonHorses(
+    String personId,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/horses');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load saddlers with locations: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading saddlers with locations: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    _throwForStatus(response, 'load person horses');
   }
 
-  // 7. Alle Pferde einer Person abrufen
-  static Future<List<Map<String, dynamic>>> loadPersonHorses(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/horses');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 8. GET /persons/{id}/devices  (DeviceListResponse)
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> loadPersonDevices(
+    String personId,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/devices');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load person horses: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person horses: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    _throwForStatus(response, 'load person devices');
   }
 
-  // 8. Alle Geräte einer Person abrufen
-  static Future<List<Map<String, dynamic>>> loadPersonDevices(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/devices');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 9. GET /persons/equestrians/{equestrianId}/saddlers/locations
+  //    (SaddlersListResponse)
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> getSaddlersWithLocations(
+    String equestrianId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/persons/equestrians/$equestrianId/saddlers/locations',
+    );
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load person devices: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person devices: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    _throwForStatus(response, 'load saddlers with locations');
   }
 
-  // 9. Neue Person anlegen
-  static Future<Map<String, dynamic>> addPersonData(Map<String, dynamic> personData) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(personData),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 10. POST /persons  (AddPersonRequest)
+  //     Backend liefert 201 Created OHNE body, 400 oder 409.
+  // ---------------------------------------------------------------------------
+  static Future<void> addPersonData(Map<String, dynamic> personData) async {
+    final url = Uri.parse('$baseUrl/persons');
+    final response = await http
+        .post(url, headers: _jsonHeaders, body: jsonEncode(personData))
+        .timeout(_timeout);
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to add person: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error adding person: $e');
+    if (response.statusCode == 201) {
+      return;
     }
+    _throwForStatus(response, 'add person');
   }
 
-  // 10. Person aktualisieren
-  static Future<Map<String, dynamic>> updatePerson(String personId, Map<String, dynamic> personData) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId');
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(personData),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 11. PATCH /persons/{id}  (UpdatePersonRequest)
+  //     Backend prüft: id (route) == request.Id (body)! Body muss also id
+  //     enthalten. 204 No Content bei Erfolg, 400/404/409 bei Fehler.
+  // ---------------------------------------------------------------------------
+  static Future<void> updatePerson(
+    String personId,
+    Map<String, dynamic> personData,
+  ) async {
+    final url = Uri.parse('$baseUrl/persons/$personId');
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to update person: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error updating person: $e');
+    // Sicherstellen dass id im body mit der route id matched, sonst 400.
+    final body = Map<String, dynamic>.from(personData);
+    body['id'] = int.tryParse(personId) ?? personId;
+
+    final response = await http
+        .patch(url, headers: _jsonHeaders, body: jsonEncode(body))
+        .timeout(_timeout);
+
+    if (response.statusCode == 204) {
+      return;
     }
+    _throwForStatus(response, 'update person');
   }
 
-  // 11. Person löschen
+  // ---------------------------------------------------------------------------
+  // 12. DELETE /persons/{id}
+  //     Backend liefert 204 oder 404.
+  // ---------------------------------------------------------------------------
   static Future<void> deletePerson(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId');
-      final response = await http.delete(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+    final url = Uri.parse('$baseUrl/persons/$personId');
+    final response = await http.delete(url).timeout(_timeout);
 
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to delete person: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error deleting person: $e');
+    if (response.statusCode == 204) {
+      return;
     }
+    _throwForStatus(response, 'delete person');
   }
 
-  // 12. Alle Pferde einer Person abrufen (mit Standort)
-  static Future<List<Map<String, dynamic>>> loadPersonHorsesWithLocations(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/horses/locations');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // Hilfsmethoden für Screens — diese Endpoints sind NICHT im PersonController
+  // dokumentiert und gehören vermutlich in eigene Services. Vorerst hier
+  // belassen damit existierende Screens nicht brechen.
+  // TODO: in passende Services verschieben sobald Backend-Endpoints klar sind.
+  // ---------------------------------------------------------------------------
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load person horses with locations: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person horses with locations: $e');
-    }
-  }
-
-  // 13. Location hinzufügen
-  static Future<Map<String, dynamic>> addLocation(Map<String, dynamic> locationData) async {
-    try {
-      final url = Uri.parse('$baseUrl/locations');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(locationData),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to add location: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error adding location: $e');
-    }
-  }
-
-  // Zusätzliche Hilfsmethoden für die Screens
-  
-  // Lädt Gruppenmitglieder für ein Gerät (delegiert zu DeviceService)
   static Future<List<GroupMember>> loadGroupMembers(String deviceId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId/members');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+    final url = Uri.parse('$baseUrl/devices/$deviceId/members');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-        final membersList = jsonData['members'] as List? ?? [];
-        return membersList
-            .map((member) => GroupMember.fromJson(member as Map<String, dynamic>))
-            .toList();
-      } else if (response.statusCode == 404) {
-        return [];
-      } else {
-        throw Exception('Failed to load group members: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading group members: $e');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      final membersList = jsonData['members'] as List? ?? [];
+      return membersList
+          .map((m) => GroupMember.fromJson(m as Map<String, dynamic>))
+          .toList();
     }
+    if (response.statusCode == 404) {
+      return [];
+    }
+    _throwForStatus(response, 'load group members');
   }
 
-  // Lädt aktuelle User Data
   static Future<Map<String, dynamic>> loadUserData() async {
-    try {
-      final url = Uri.parse('$baseUrl/users/current');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+    final url = Uri.parse('$baseUrl/users/current');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to load user data: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading user data: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
+    _throwForStatus(response, 'load user data');
   }
 
-  // Lädt Geräte des aktuellen Users
   static Future<List<Map<String, dynamic>>> loadDevices() async {
-    try {
-      final url = Uri.parse('$baseUrl/users/current/devices');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+    final url = Uri.parse('$baseUrl/users/current/devices');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load devices: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading devices: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    _throwForStatus(response, 'load devices');
   }
 
-  // Instanzmethoden für bestehende Screens
+  // ---------------------------------------------------------------------------
+  // Instanzmethoden für bestehende Screens.
+  // Achtung: GET /persons (Liste aller Personen) existiert NICHT im aktuellen
+  // PersonController. `getPersons` und `getNextId` werden daher fehlschlagen
+  // sobald das Backend live ist. Sind hier nur weil sie von new_measurement.dart
+  // verwendet werden.
+  // TODO: mit Backend abklären wie eine Personenliste geladen werden soll.
+  // ---------------------------------------------------------------------------
 
-  /// Lädt Personen aus der API
   Future<List<Person>> getPersons() async {
     if (_cachedPersons != null) {
       return _cachedPersons!;
     }
 
-    try {
-      final url = Uri.parse('$baseUrl/persons');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+    final url = Uri.parse('$baseUrl/persons');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _cachedPersons = data.map((json) => Person.fromJson(json as Map<String, dynamic>)).toList();
-        return _cachedPersons!;
-      } else {
-        throw Exception('Failed to load persons: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading persons: $e');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      _cachedPersons = data
+          .map((json) => Person.fromJson(json as Map<String, dynamic>))
+          .toList();
+      return _cachedPersons!;
     }
+    _throwForStatus(response, 'load persons');
   }
 
-  /// Gibt die nächste verfügbare Person ID zurück
   Future<int> getNextId() async {
     final persons = await getPersons();
     if (persons.isEmpty) return 1;
     return persons.map((p) => p.id).reduce((a, b) => a > b ? a : b) + 1;
   }
 
-  /// Fügt eine Person hinzu
   Future<void> addPerson(Person person) async {
-    try {
-      await addPersonData(person.toJson());
-      _cachedPersons = null; // Cache invalidieren
-    } catch (e) {
-      throw Exception('Error adding person: $e');
-    }
+    await addPersonData(person.toJson());
+    _cachedPersons = null; // Cache invalidieren
   }
 
-  /// Cache leeren
   void clearCache() {
     _cachedPersons = null;
   }
