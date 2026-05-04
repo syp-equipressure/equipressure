@@ -16,7 +16,6 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId);
-    
     /// <summary>
     /// returns the owner of a specific user
     /// </summary>
@@ -34,10 +33,37 @@ public interface IDeviceService
     ///a list of all the person objects which are registered for the device or a notFound if the device with the id does
     /// not exist or a NoUsersFound if there are no Users registered for the device
     /// </returns>
-    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice(string deviceId);
-
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, int categoryId);
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooManyUsers>> AddUserToDevice(int userId, string deviceId);
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice
+        (string deviceId);
+    /// <summary>
+    /// Adds a new Device
+    /// </summary>
+    /// <param name="deviceId"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="categoryId"></param>
+    /// <returns>the added device or notFound if one of the parameters is non-existent</returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync
+        (string deviceId, int ownerId, int categoryId);
+    /// <summary>
+    /// Adds a User to a device
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="deviceId"></param>
+    /// <returns>
+    /// the newly updated device or notFound if the user or the device doesn't exist or tooManyUsers
+    /// if the count of users conflicts with the category
+    /// </returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooManyUsers>> AddUserToDevice
+        (int userId, string deviceId);
+    /// <summary>
+    /// Removes a User from a device
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="deviceId"></param>
+    /// <returns>
+    /// the newly updated device or notFound if the user or the device doesn't exist or  TooLittleUsers
+    /// if there would be only one user left or OwnerCantBeDeleted if the user you want to delete is the owner
+    /// </returns>
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooLittleUsers, OwnerCantBeDeleted>> 
         RemoveUserFromDevice(int userId, string deviceId);
 
@@ -128,6 +154,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
 
         uow.DeviceRepository.AddDevice(device);
         await uow.SaveChangesAsync();
+        logger.LogInformation("User {id} has been successfully added with the owner {oId}", deviceId, ownerId);
 
         return new Success<MeasurementDevice>(device);
     }
@@ -158,8 +185,9 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         {
             return new NotFound();
         }
-        device.Users.Remove(dU);
+        device.Users.Add(dU);
         await uow.SaveChangesAsync();
+        logger.LogInformation("User {id} has been successfully added to device {dId}", userId, deviceId);
 
         return new Success<MeasurementDevice>(device);
     }
@@ -197,6 +225,8 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         };
         device.Users.Remove(dU);
         await uow.SaveChangesAsync();
+        logger.LogInformation("User {id} has been successfully removed from device {dId}", userId, deviceId);
+        
 
         return new Success<MeasurementDevice>(device);
     }

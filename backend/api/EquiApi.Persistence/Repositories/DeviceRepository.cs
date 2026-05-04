@@ -39,6 +39,12 @@ public interface IDeviceRepository
     /// <returns>the list of person objects or a notfound if there are none</returns>
     public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetPersonOfDeviceAsync(string deviceId);
 
+    /// <summary>
+    /// Gets the device user entry with the device and user id
+    /// </summary>
+    /// <param name="deviceId"></param>
+    /// <param name="userId"></param>
+    /// <returns>A Device User Entry if it exists</returns>
     public ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId);
     
     public void AddDevice(MeasurementDevice device);
