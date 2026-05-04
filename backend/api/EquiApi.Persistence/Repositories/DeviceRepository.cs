@@ -49,6 +49,7 @@ public interface IDeviceRepository
     /// </summary>
     /// <param name="deviceId"></param>
     /// <param name="userId"></param>
+    /// <see cref="DeviceUser">
     /// <returns>A Device User Entry if it exists</returns>
     public ValueTask<DeviceUser?> GetDeviceUserEntryAsync(string deviceId, int userId);
     
