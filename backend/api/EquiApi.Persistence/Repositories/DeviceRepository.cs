@@ -50,7 +50,7 @@ public interface IDeviceRepository
     /// <param name="deviceId"></param>
     /// <param name="userId"></param>
     /// <returns>A Device User Entry if it exists</returns>
-    public ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId);
+    public ValueTask<DeviceUser?> GetDeviceUserEntryAsync(string deviceId, int userId);
     
     /// <summary>
     /// Adds a device to the dbset
@@ -63,19 +63,11 @@ public interface IDeviceRepository
     /// </summary>
     /// <param name="categoryId"></param>
     /// <returns>true if its found false if not</returns>
-    public ValueTask<bool> CategoryExists(int categoryId);
-
-    /// <summary>
-    /// checks if a device with the given id exists
-    /// </summary>
-    /// <param name="deviceId"></param>
-    /// <returns>true if its found otherwise false</returns>
-    public ValueTask<bool> DeviceExists(string deviceId);
+    public ValueTask<bool> CategoryExistsAsync(int categoryId);
 }
 
 public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCategory> categories) : IDeviceRepository
 {
-    
     public async ValueTask<bool> DeviceExistsAsync(string deviceId)
     => await devices.AnyAsync(d => d.Id == deviceId);
 
@@ -117,14 +109,12 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
         devices.Add(device);
     }
 
-    public async ValueTask<DeviceUser?> GetDeviceUserEntry(string deviceId, int userId) 
+    public async ValueTask<DeviceUser?> GetDeviceUserEntryAsync(string deviceId, int userId) 
         => await devices.Include(d => d.Users)
                         .Where(d => d.Id == deviceId)
                         .SelectMany(d => d.Users)
                         .FirstOrDefaultAsync(du => du.UserId == userId);
 
-    public async ValueTask<bool> CategoryExists(int categoryId)
+    public async ValueTask<bool> CategoryExistsAsync(int categoryId)
     => await categories.AnyAsync(c => c.Id == categoryId);
-    public async ValueTask<bool> DeviceExists(string deviceId)
-        => await devices.AnyAsync(c => c.Id == deviceId);
 }

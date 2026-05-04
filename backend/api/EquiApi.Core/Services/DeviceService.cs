@@ -139,7 +139,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
 
-        if (!(await uow.DeviceRepository.CategoryExists(categoryId)))
+        if (!(await uow.DeviceRepository.CategoryExistsAsync(categoryId)))
         {
             logger.LogWarning("Category with id {id} could not be found", categoryId);
             return new NotFound();
@@ -180,7 +180,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new IDeviceService.TooManyUsers();
         }
 
-        var dU = await uow.DeviceRepository.GetDeviceUserEntry(deviceId, userId);
+        var dU = await uow.DeviceRepository.GetDeviceUserEntryAsync(deviceId, userId);
         if (dU is null)
         {
             return new NotFound();
