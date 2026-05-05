@@ -36,10 +36,10 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
 
         MeasurementDevice device = new MeasurementDevice()
         {
-            Id = 1,
+            Id = "AB13CH",
             OwnerId = owner.Id,
             CategoryId = 1,
-            Users = new List<DeviceUser>([new DeviceUser() { DeviceId = 1, UserId = 1 }]),
+            Users = new List<DeviceUser>([new DeviceUser() { DeviceId = "AB13CH", UserId = 1 }]),
         };
 
         await ModifyDatabaseContentAsync(async ctx =>
@@ -57,7 +57,7 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
         
         content.Should().NotBeNull();
         content.Devices.Should().NotBeEmpty().And.HaveCount(1);
-        content.Devices.Should().ContainSingle(d => d.Id == 1
+        content.Devices.Should().ContainSingle(d => d.Id == "AB13CH"
                                                     && d.Owner == owner
                                                     && d.CategoryId == 1
                                                     && d.DeviceUser.Count == 1);
