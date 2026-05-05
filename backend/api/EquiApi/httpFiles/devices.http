@@ -1,1 +1,19 @@
 @BaseUrl = http://localhost:5200/api/devices
+
+### Device Endpoints
+@deviceId = "A1B2C3"
+@userId = 1
+
+### Create Device 
+POST {{BaseUrl}}
+Content-Type: application/json
+
+{
+    "DeviceId": "A1B2C3",
+    "OwnerId": 1, 
+    "CategoryId": 1
+}
+
+### 1. Get all devices by id
+GET {{BaseUrl}}/persons/equestrians/{{userId}}
+
