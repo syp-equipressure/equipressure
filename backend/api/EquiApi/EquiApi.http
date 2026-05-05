@@ -80,3 +80,7 @@ Content-Type: application/json
     "cityName": "Traun",
     "plz": "4050"
 }
+
+
+### 15. Alle Pferde eines users
+GET {{BaseUrl}}/horses/1
