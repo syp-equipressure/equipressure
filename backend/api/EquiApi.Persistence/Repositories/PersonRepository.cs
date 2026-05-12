@@ -5,333 +5,329 @@ namespace EquiApi.Persistence.Repositories;
 
 public interface IPersonRepository
 {
-    public ValueTask<Person?> GetPersonById(int id, bool tracking);
-    public ValueTask<EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking);
-    public ValueTask<Address?> GetPersonAddressAsync(int id, bool tracking);
-    public ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking);
-    public ValueTask<NameData?> GetNameByIdAsync(int id, bool tracking);
-    public ValueTask<bool> PersonExists(int id, bool tracking);
-    public ValueTask<bool> PersonWithEmailExists(string email, bool tracking);
-    public ValueTask<bool> RoleExists(AccountRole role);
-
-    public ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId, bool tracking);
-    
-    public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int id, bool tracking);
-    public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id, bool tracking);
-    public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int id, bool tracking);
-    public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking);
-    public Person AddPerson(string firstName, string lastName, decimal height,
-                                                          decimal weight, LocalDate dateOfBirth, string? email, 
-                                                          string? websiteLink, string? description, Address address,
-                                                          AccountRole role);
-    public void UpdatePerson(Person person);
-    public void RemovePerson(Person person); 
-}
-
-internal sealed class PersonRepository(DbSet<Person> personSet, DbSet<PersonRoleAssignment> personRoleSet,
-                                     DbSet<AccountRole> rolesSet) : IPersonRepository
-{
-    private IQueryable<Person> Persons => personSet;
-    
-    private IQueryable<Person> PersonsNoTracking => Persons.AsNoTracking();
-    private IQueryable<PersonRoleAssignment> PersonRoleAssignments => personRoleSet;
-    private IQueryable<PersonRoleAssignment> PersonRoleAssignmentsNoTracking => PersonRoleAssignments.AsNoTracking();
-    private IQueryable<AccountRole> Roles => rolesSet;
-    private IQueryable<AccountRole> RolesNoTracking => Roles.AsNoTracking();
-
-
     /// <summary>
     /// returns a person with the given id
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personId">the id of person we want to get</param>
     /// <returns>a person</returns>
-    public async ValueTask<Person?> GetPersonById(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source.Where(p => p.Id == id).FirstOrDefaultAsync();
-    }
-    
+    public ValueTask<Person?> GetPersonById(int personId);
+
     /// <summary>
     /// searches for an equestrian with the given id
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personId">the id of equestrian we want to get</param>
     /// <returns>Minimal Data for an equestrian if existing</returns>
-    public async ValueTask<EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int id, bool tracking)
-    {
-        IQueryable<PersonRoleAssignment> source = tracking ? PersonRoleAssignments : PersonRoleAssignmentsNoTracking;
-        return await source.Include(pra => pra.Person)
-                                 .ThenInclude(p => p.Address)
-                                 .ThenInclude(a => a.City)
-                                 .Include(pra => pra.Role)
-                                 .Where(pra => pra.Role.Name.ToLower() == "equestrian")
-                                 .Where(pra => pra.PersonId == id)
-                                 .Select(pra => new EquestrianBasicData
-                                             (
-                                              pra.Person.FirstName,
-                                              pra.Person.LastName,
-                                              pra.Person.Address.Street,
-                                              pra.Person.Address.HouseNumber,
-                                              pra.Person.Address.City.Name,
-                                              pra.Person.Address.City.PLZ,
-                                              pra.Person.Email!,
-                                              pra.Person.Height,
-                                              pra.Person.Weight
-                                      
-                                             ))
-                                 .FirstOrDefaultAsync();
-    }
+    public ValueTask<EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int personId);
 
     /// <summary>
     /// searches for the address of a person with the given id
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personId">the id of person we want to get</param>
     /// <returns>the address if it exists or at least the city</returns>
-    public async ValueTask<Address?> GetPersonAddressAsync(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source.Include(p => p.Address)
-                                 .ThenInclude(a => a.City)
-                                 .Where(p => p.Id == id)
-                                 .Select(p => p.Address)
-                                 .FirstOrDefaultAsync();
-        
-    }
+    public ValueTask<Address?> GetPersonAddressAsync(int personId);
 
     /// <summary>
     /// searches for a saddler with the given id
     /// </summary>
-    /// <param name="saddlerId"></param>
-    /// <param name="equestrianId"></param>
-    /// <param name="tracking"></param>
+    /// <param name="saddlerId">the id of saddler we want to get</param>
+    /// <param name="equestrianId">the id of equestrian we want to check</param>
     /// <returns>minimal data for the saddler if found</returns>
-    public async ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId, bool tracking)
-    {
-        var source = tracking ? PersonRoleAssignments : PersonRoleAssignmentsNoTracking;
-        return await  source
-                                   .Include(pra => pra.Person)
-                                   .ThenInclude(p => p.Address)
-                                   .ThenInclude(a => a.City)
-                                   .Include(pra => pra.Person)
-                                   .ThenInclude(p => p.Relationships)
-                                   .Include(pra => pra.Role)
-                                   .Where(pra => pra.Role.Name.ToLower() == "saddler")
-                                   .Where(pra => pra.PersonId == saddlerId)
-                                   .Select(pra => new { pra.Person, 
-                                               rel = (pra.Person.Relationships.Where(r => 
-                                                   (r.EquestrianId == saddlerId
-                                                    && r.SaddlerId == equestrianId) 
-                                                   || (r.EquestrianId == equestrianId && r.SaddlerId == saddlerId)))})
-                                   .Select(p => new SaddlerBasicData
-                                               (
-                                                p.Person.FirstName,
-                                                p.Person.LastName,
-                                                p.Person.Address.Street,
-                                                p.Person.Address.HouseNumber,
-                                                p.Person.Address.City.Name,
-                                                p.Person.Address.City.PLZ,
-                                                p.Person.WebsiteLink,
-                                                p.Person.Description,
-                                                p.rel.Select(r => r.IsFavourite).FirstOrDefault()
-                                               ))
-                                   .FirstOrDefaultAsync();
-    }
+    public ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
 
     /// <summary>
     /// returns the firstname and lastname of a person with the given id
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personId">the id of person we want to get</param>
     /// <returns>firstname and lastname</returns>
-    public async ValueTask<NameData?> GetNameByIdAsync(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source
-                                  .Where(p => p.Id == id)
-                                  .Select(p => new NameData(p.FirstName, p.LastName))
-                                  .FirstOrDefaultAsync();
-    }
+    public ValueTask<NameData?> GetNameByIdAsync(int personId);
 
     /// <summary>
     /// checks if a person with the given id exists
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personId">the id of person we want to check</param>
     /// <returns>true if exists false if not</returns>
-    public async ValueTask<bool> PersonExists(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source.AnyAsync(p => p.Id == id);
-    }
+    public ValueTask<bool> PersonExists(int personId);
 
     /// <summary>
     /// checks if a person with the given email exists
     /// </summary>
-    /// <param name="email"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personEmail">the email of person we want to check</param>
     /// <returns>true if exists false if not</returns>
-    public async ValueTask<bool> PersonWithEmailExists(string email, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source.AnyAsync(p => p.Email == email);
-    }
-
-    public async ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source.AnyAsync(p => p.Email == personEmail && p.Id != personId);
-    }
-
-    /// <summary>
-    /// returns all persons that are marked as favourites for the given person
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
-    /// <returns>all favourites of a person</returns>
-    public async ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source
-                                  .Include(p => p.Relationships)
-                                  .Where(p => p.Id == id)
-                                  .Where(p => p.Relationships.All(r => r.IsFavourite))
-                                  .ToListAsync();
-    }
-
-    /// <summary>
-    /// returns all persons that are marked as contacts for the given person
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
-    /// <returns>all contacts of a Person</returns>
-    public async ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source
-                                  .Include(p => p.Relationships)
-                                  .Where(p => p.Id == id)
-                                  .Where(p => p.Relationships.All(r => r.IsContact))
-                                  .ToListAsync();
-    }
-
-    /// <summary>
-    /// returns all horses that are owned by the person with the given id
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="tracking"></param>
-    /// <returns>a list of the owned horses</returns>
-    public async ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int id, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        return await source.Include(p => p.Horses)
-                           .ThenInclude(ph => ph.Horse)
-                                  .Where(p => p.Horses.Any(p => p.PersonId == id && p.IsOwner))
-                                  .SelectMany(p => p.Horses.Select(ph => ph.Horse))
-                                  .ToListAsync();
-    }
+    public ValueTask<bool> PersonWithEmailExists(string personEmail);
 
     /// <summary>
     /// checks if a role with the given role exists
     /// </summary>
-    /// <param name="role"></param>
+    /// <param name="role">the role we want to check</param>
     /// <returns>true if exists, false if not</returns>
-    public async ValueTask<bool> RoleExists(AccountRole role)
-    {
-        var source = RolesNoTracking;
-        return await source.AnyAsync(r => r.Name.ToLower() == role.Name.ToLower() && r.Id == role.Id);
-    }
-    
+    public ValueTask<bool> RoleExists(AccountRole role);
+
+    /// <summary>
+    /// checks if an email by a certain person is taken by another person
+    /// </summary>
+    /// <param name="personEmail">email of person </param>
+    /// <param name="personId">id of perso</param>
+    /// <returns>true if taken, false if not</returns>
+    public ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId);
+
+    /// <summary>
+    /// returns all persons that are marked as favourites for the given person
+    /// </summary>
+    /// <param name="personId">the id of person we want to get</param>
+    /// <returns>all favourites of a person</returns>
+    public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int personId);
+
+    /// <summary>
+    /// returns all persons that are marked as contacts for the given person
+    /// </summary>
+    /// <param name="personId">the id of person we want to get</param>
+    /// <returns>all contacts of a Person</returns>
+    public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int personId);
+
+    /// <summary>
+    /// returns all horses that are owned by the person with the given id
+    /// </summary>
+    /// <param name="personId">the id of person we want to get</param>
+    /// <returns>a list of the owned horses</returns>
+    public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int personId);
+
     /// <summary>
     /// returns all devices that belong to the person with the given id
     /// </summary>
-    /// <param name="personId"></param>
-    /// <param name="tracking"></param>
+    /// <param name="personId">the id of person we want to get</param>
     /// <returns>list of devices</returns>
-    public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId, bool tracking)
-    {
-        var source = tracking ? Persons : PersonsNoTracking;
-        
+    public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId);
 
-        return await source.Include(p => p.UserDevices)
-                           .ThenInclude(ud => ud.Device)
-                           .Include(p => p.OwnerDevices)
-                           .Select(p => new
-                           {
-                               uDevice = p.UserDevices.Select(ud => ud.Device),
-                               oDevice = p.OwnerDevices
-                           })
-                           .SelectMany(p => p.uDevice.Concat(p.oDevice))
-                           .ToListAsync();
-    }
-    
+    /// <summary>
+    /// returns all saddlers with their address
+    /// </summary>
+    /// <param name="equestrianId">the id of equestriant</param>
+    /// <returns>list of saddlers</returns>
+    public ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlersByEquestrianIdAsync(int equestrianId);
+
     /// <summary>
     /// Creates a new person in the system and assigns a role.
     /// </summary>
-    /// <param name="firstName">The person's first name</param>
-    /// <param name="lastName">The person's last name.</param>
-    /// <param name="height">Body height in cm.</param>
-    /// <param name="weight">Body weight in kg.</param>
-    /// <param name="dateOfBirth">Date of birth</param>
-    /// <param name="email">Unique email address</param>
-    /// <param name="websiteLink">Optional URL for professional profiles</param>
-    /// <param name="description">Optional bio or service description.</param>
-    /// <param name="address">The <see cref="Address"/> entity to be linked with this person.</param>
-    /// <param name="role">The <see cref="AccountRole"/> assigned to this user</param>
-    /// <returns>The newly created <see cref="Person"/> entity</returns>
-    public Person AddPerson(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
-                            string? email, string? websiteLink, string? description,
-                            Address address, AccountRole role)
-    {
-        var person = new Person
-        {
-            Address = address,
-            DateOfBirth = dateOfBirth,
-            Email = email,
-            FirstName = firstName,
-            Height = height,
-            LastName = lastName,
-            WebsiteLink = websiteLink,
-            Weight = weight,
-            Description = description
-        };
-        
-        var personRoleAssignent = new PersonRoleAssignment
-        {
-            Person = person,
-            Role = role
-        };
-        
-        personSet.Add(person);
-        personRoleSet.Add(personRoleAssignent);
-        
-        return person;
-    }
-
-    /// <summary>
-    /// Updates an existing person's information in the database.
-    /// </summary>
-    /// <param name="person">The person entity containing the updated property values.</param>
-    public void UpdatePerson(Person person)
-    {
-        personSet.Update(person);
-    }
+    /// <param name="person">The person object to add</param>
+    public void AddPerson(Person person);
 
     /// <summary>
     /// Removes a person and their associated role assignments from the database.
     /// </summary>
     /// <param name="person">The person entity to be deleted.</param>
+    public void RemovePerson(Person person);
+}
+
+internal sealed class PersonRepository(
+    DbSet<Person> personSet,
+    DbSet<PersonRoleAssignment> personRoleSet,
+    DbSet<AccountRole> rolesSet) : IPersonRepository
+{
+    public async ValueTask<Person?> GetPersonById(int personId)
+    {
+        return await personSet.Where(p => p.Id == personId).FirstOrDefaultAsync();
+    }
+
+    public async ValueTask<EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int personId)
+    {
+        return await personRoleSet.Include(pra => pra.Person)
+                                  .ThenInclude(p => p.Address)
+                                  .ThenInclude(a => a.City)
+                                  .Include(pra => pra.Role)
+                                  .Where(pra => pra.Role.Name.ToLower() == "equestrian")
+                                  .Where(pra => pra.PersonId == personId)
+                                  .Select(pra => new EquestrianBasicData(pra.Person.FirstName,
+                                                                         pra.Person.LastName,
+                                                                         pra.Person.Address.Street,
+                                                                         pra.Person.Address.HouseNumber,
+                                                                         pra.Person.Address.City.Name,
+                                                                         pra.Person.Address.City.PLZ,
+                                                                         pra.Person.Email!,
+                                                                         pra.Person.Height,
+                                                                         pra.Person.Weight))
+                                  .AsNoTracking()
+                                  .FirstOrDefaultAsync();
+    }
+
+    public async ValueTask<Address?> GetPersonAddressAsync(int personId)
+    {
+        return await personSet.Include(p => p.Address)
+                              .ThenInclude(a => a.City)
+                              .Where(p => p.Id == personId)
+                              .Select(p => p.Address)
+                              .AsNoTracking()
+                              .FirstOrDefaultAsync();
+    }
+
+    public async ValueTask<SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId)
+    {
+        return await personRoleSet
+                     .Include(pra => pra.Person)
+                     .ThenInclude(p => p.Address)
+                     .ThenInclude(a => a.City)
+                     .Include(pra => pra.Person)
+                     .ThenInclude(p => p.Relationships)
+                     .Include(pra => pra.Role)
+                     .Where(pra => pra.Role.Name.ToLower() == "saddler")
+                     .Where(pra => pra.PersonId == saddlerId)
+                     .Select(pra => new
+                     {
+                         pra.Person,
+                         rel = (pra.Person.Relationships.Where(r =>
+                                                                   (r.EquestrianId == saddlerId
+                                                                    && r.SaddlerId == equestrianId)
+                                                                   || (r.EquestrianId == equestrianId &&
+                                                                       r.SaddlerId == saddlerId)))
+                     })
+                     .Select(p => new SaddlerBasicData(p.Person.Id,
+                                                       p.Person.FirstName,
+                                                       p.Person.LastName,
+                                                       p.Person.Address.Street,
+                                                       p.Person.Address.HouseNumber,
+                                                       p.Person.Address.City.Name,
+                                                       p.Person.Address.City.PLZ,
+                                                       p.Person.WebsiteLink,
+                                                       p.Person.Description,
+                                                       p.rel.Select(r => r.IsFavourite).FirstOrDefault()))
+                     .AsNoTracking()
+                     .FirstOrDefaultAsync();
+    }
+
+    public async ValueTask<NameData?> GetNameByIdAsync(int personId)
+    {
+        return await personSet
+                     .Where(p => p.Id == personId)
+                     .Select(p => new NameData(p.FirstName, p.LastName))
+                     .AsNoTracking()
+                     .FirstOrDefaultAsync();
+    }
+
+    public async ValueTask<bool> PersonExists(int personId)
+    {
+        return await personSet.AnyAsync(p => p.Id == personId);
+    }
+
+    public async ValueTask<bool> PersonWithEmailExists(string personEmail)
+    {
+        return await personSet.AnyAsync(p => p.Email == personEmail);
+    }
+
+    public async ValueTask<bool> IsEmailTakenByAnotherUser(string personEmail, int personId)
+    {
+        return await personSet.AnyAsync(p => p.Email == personEmail && p.Id != personId);
+    }
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int personId)
+    {
+        return await personSet
+                     .Include(p => p.Relationships)
+                     .Where(p => p.Id == personId)
+                     .Where(p => p.Relationships.All(r => r.IsFavourite))
+                     .AsNoTracking()
+                     .ToListAsync();
+    }
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int personId)
+    {
+        return await personSet
+                     .Include(p => p.Relationships)
+                     .Where(p => p.Id == personId)
+                     .Where(p => p.Relationships.All(r => r.IsContact))
+                     .AsNoTracking()
+                     .ToListAsync();
+    }
+
+    public async ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int personId)
+    {
+        return await personSet.Include(p => p.Horses)
+                              .ThenInclude(ph => ph.Horse)
+                              .Where(p => p.Horses.Any(p => p.PersonId == personId && p.IsOwner))
+                              .SelectMany(p => p.Horses.Select(ph => ph.Horse))
+                              .AsNoTracking()
+                              .ToListAsync();
+    }
+
+    public async ValueTask<bool> RoleExists(AccountRole role)
+    {
+        return await rolesSet.AnyAsync(r => r.Name.ToLower() == role.Name.ToLower() && r.Id == role.Id);
+    }
+
+    public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId)
+    {
+        return await personSet.Include(p => p.UserDevices)
+                              .ThenInclude(ud => ud.Device)
+                              .Include(p => p.OwnerDevices)
+                              .Select(p => new
+                              {
+                                  uDevice = p.UserDevices.Select(ud => ud.Device),
+                                  oDevice = p.OwnerDevices
+                              })
+                              .SelectMany(p => p.uDevice.Concat(p.oDevice))
+                              .AsNoTracking()
+                              .ToListAsync();
+    }
+
+    public async ValueTask<IReadOnlyCollection<SaddlerBasicData>> GetAllSaddlersByEquestrianIdAsync(int equestrianId)
+    {
+        return await personRoleSet
+                     .Include(pr => pr.Role)
+                     .Include(pr => pr.Person)
+                     .ThenInclude(p => p.Address)
+                     .ThenInclude(a => a.City)
+                     .Where(pr => pr.Role.Name == "saddler")
+                     .Select(pr => new SaddlerBasicData(pr.PersonId,
+                                                        pr.Person.FirstName,
+                                                        pr.Person.LastName,
+                                                        pr.Person.Address.Street,
+                                                        pr.Person.Address.HouseNumber,
+                                                        pr.Person.Address.City.Name,
+                                                        pr.Person.Address.City.PLZ,
+                                                        pr.Person.WebsiteLink,
+                                                        pr.Person.Description,
+                                                        // wir müssen isFavourite setzen und deshalb machen wir die anfrage pro reiter
+                                                        // wir überprüfen ob der sattler ein favorit des reiters ist und setzen den wert true ode rfalse dementsprechend
+                                                        pr.Person.Relationships
+                                                          .Where(r => r.EquestrianId == equestrianId)
+                                                          .Select(r => r.IsFavourite)
+                                                          .FirstOrDefault()))
+                     .OrderBy(p => p.LastName)
+                     .ToListAsync();
+        
+        //resultat: eine liste von sattlern personalisiert für einen reiter 
+    }
+
+    public void AddPerson(Person person)
+    {
+        personSet.Add(person);
+    }
+
     public void RemovePerson(Person person)
     {
         personSet.Remove(person);
     }
 }
 
-public record EquestrianBasicData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
-                                    string PLZ, string Email, decimal Height, decimal Weight);
-                                    
-public record SaddlerBasicData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
-                                 string PLZ, string? Link, string? Description, bool isFavourite);
-                                 
+public record EquestrianBasicData(
+    string FirstName,
+    string LastName,
+    string? Street,
+    int? HouseNumber,
+    string City,
+    string PLZ,
+    string Email,
+    decimal Height,
+    decimal Weight);
+
+public record SaddlerBasicData(
+    int Id,
+    string FirstName,
+    string LastName,
+    string? Street,
+    int? HouseNumber,
+    string City,
+    string PLZ,
+    string? Link,
+    string? Description,
+    bool IsFavourite);
+
 public record NameData(string FirstName, string LastName);

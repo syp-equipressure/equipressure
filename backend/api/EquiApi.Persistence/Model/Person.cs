@@ -43,6 +43,7 @@ public class PersonRelationship
 public class AccountRole
 {
     public int Id { get; set; }
+    // TODO: enum for roleName?
     public required string Name { get; set; }
 
     public List<PersonRoleAssignment> RoleAssignments { get; set; } = [];
