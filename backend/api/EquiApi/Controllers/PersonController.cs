@@ -40,29 +40,6 @@ public sealed class PersonController(
                                                                            notFound => NotFound());
     }
 
-    [HttpGet("equestrians/{equestrianId:int}/saddlers/{saddlerId:int}")]
-    [ProducesResponseType<DataTransfer.SaddlerBasicDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlerBasicDto>> GetSaddlerById(
-        [FromRoute] int equestrianId, [FromRoute] int saddlerId)
-    {
-        if (equestrianId <= 0 || saddlerId <= 0)
-        {
-            return BadRequest();
-        }
-
-        OneOf<Success<SaddlerBasicData>, IBaseService.InvalidData, NotFound> result
-            = await personService.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
-
-        return result.Match<ActionResult<DataTransfer.SaddlerBasicDto>>(success =>
-                                                                            Ok(DataTransfer.SaddlerBasicDto
-                                                                                   .FromSaddlerBasicData(success
-                                                                                       .Value)),
-                                                                        invalidData => BadRequest(),
-                                                                        notFound => NotFound());
-    }
-
     [HttpGet("{id:int}/profile-data")]
     [ProducesResponseType<DataTransfer.NameDataDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
