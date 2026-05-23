@@ -1,6 +1,6 @@
 ﻿using NodaTime.Extensions;
 
-namespace Library.Core;
+namespace EquiApi.Persistence.Util;
 
 public interface IDateTimeProvider
 {

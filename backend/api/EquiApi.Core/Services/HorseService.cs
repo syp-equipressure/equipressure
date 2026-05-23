@@ -2,7 +2,6 @@
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using EquiPressure.Core.Service;
-using Library.Core;
 using OneOf;
 using OneOf.Types;
 
