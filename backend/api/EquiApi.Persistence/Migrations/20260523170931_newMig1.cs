@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EquiApi.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class newMigs : Migration
+    public partial class newMig1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,6 +30,22 @@ namespace EquiApi.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Address",
+                schema: "EquiPressure",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    AddressName = table.Column<string>(type: "text", nullable: true),
+                    PLZ = table.Column<string>(type: "text", nullable: false),
+                    CityName = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Address", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Breed",
                 schema: "EquiPressure",
                 columns: table => new
@@ -41,21 +57,6 @@ namespace EquiApi.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Breed", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "City",
-                schema: "EquiPressure",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    PLZ = table.Column<string>(type: "text", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_City", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -102,29 +103,6 @@ namespace EquiApi.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SaddleCategory", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Address",
-                schema: "EquiPressure",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Street = table.Column<string>(type: "text", nullable: true),
-                    HouseNumber = table.Column<int>(type: "integer", nullable: true),
-                    CityId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Address", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Address_City_CityId",
-                        column: x => x.CityId,
-                        principalSchema: "EquiPressure",
-                        principalTable: "City",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -524,18 +502,6 @@ namespace EquiApi.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Address_CityId",
-                schema: "EquiPressure",
-                table: "Address",
-                column: "CityId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_City_PLZ_Name",
-                schema: "EquiPressure",
-                table: "City",
-                columns: new[] { "PLZ", "Name" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_DeviceUser_UserId",
                 schema: "EquiPressure",
                 table: "DeviceUser",
@@ -763,10 +729,6 @@ namespace EquiApi.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Address",
-                schema: "EquiPressure");
-
-            migrationBuilder.DropTable(
-                name: "City",
                 schema: "EquiPressure");
         }
     }

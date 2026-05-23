@@ -132,16 +132,14 @@ internal sealed class PersonRepository(
     {
         return await personRoleSet.Include(pra => pra.Person)
                                   .ThenInclude(p => p.Address)
-                                  .ThenInclude(a => a.City)
                                   .Include(pra => pra.Role)
                                   .Where(pra => pra.Role.Name.ToLower() == "equestrian")
                                   .Where(pra => pra.PersonId == personId)
                                   .Select(pra => new EquestrianBasicData(pra.Person.FirstName,
                                                                          pra.Person.LastName,
-                                                                         pra.Person.Address.Street,
-                                                                         pra.Person.Address.HouseNumber,
-                                                                         pra.Person.Address.City.Name,
-                                                                         pra.Person.Address.City.PLZ,
+                                                                         pra.Person.Address.AddressName,
+                                                                         pra.Person.Address.CityName,
+                                                                         pra.Person.Address.PLZ,
                                                                          pra.Person.Email!,
                                                                          pra.Person.Height,
                                                                          pra.Person.Weight))
@@ -152,7 +150,6 @@ internal sealed class PersonRepository(
     public async ValueTask<Address?> GetPersonAddressAsync(int personId)
     {
         return await personSet.Include(p => p.Address)
-                              .ThenInclude(a => a.City)
                               .Where(p => p.Id == personId)
                               .Select(p => p.Address)
                               .AsNoTracking()
@@ -164,7 +161,6 @@ internal sealed class PersonRepository(
         return await personRoleSet
                      .Include(pra => pra.Person)
                      .ThenInclude(p => p.Address)
-                     .ThenInclude(a => a.City)
                      .Include(pra => pra.Person)
                      .ThenInclude(p => p.Relationships)
                      .Include(pra => pra.Role)
@@ -182,10 +178,9 @@ internal sealed class PersonRepository(
                      .Select(p => new SaddlerBasicData(p.Person.Id,
                                                        p.Person.FirstName,
                                                        p.Person.LastName,
-                                                       p.Person.Address.Street,
-                                                       p.Person.Address.HouseNumber,
-                                                       p.Person.Address.City.Name,
-                                                       p.Person.Address.City.PLZ,
+                                                       p.Person.Address.AddressName,
+                                                       p.Person.Address.CityName,
+                                                       p.Person.Address.PLZ,
                                                        p.Person.WebsiteLink,
                                                        p.Person.Description,
                                                        p.rel.Select(r => r.IsFavourite).FirstOrDefault()))
@@ -273,15 +268,13 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Role)
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
-                     .ThenInclude(a => a.City)
                      .Where(pr => pr.Role.Name == "saddler")
                      .Select(pr => new SaddlerBasicData(pr.PersonId,
                                                         pr.Person.FirstName,
                                                         pr.Person.LastName,
-                                                        pr.Person.Address.Street,
-                                                        pr.Person.Address.HouseNumber,
-                                                        pr.Person.Address.City.Name,
-                                                        pr.Person.Address.City.PLZ,
+                                                        pr.Person.Address.AddressName,
+                                                        pr.Person.Address.CityName,
+                                                        pr.Person.Address.PLZ,
                                                         pr.Person.WebsiteLink,
                                                         pr.Person.Description,
                                                         // wir müssen isFavourite setzen und deshalb machen wir die anfrage pro reiter
@@ -310,9 +303,8 @@ internal sealed class PersonRepository(
 public record EquestrianBasicData(
     string FirstName,
     string LastName,
-    string? Street,
-    int? HouseNumber,
-    string City,
+    string? AddressName,
+    string CityName,
     string PLZ,
     string Email,
     decimal Height,
@@ -322,9 +314,8 @@ public record SaddlerBasicData(
     int Id,
     string FirstName,
     string LastName,
-    string? Street,
-    int? HouseNumber,
-    string City,
+    string? AddressName,
+    string CityName,
     string PLZ,
     string? Link,
     string? Description,

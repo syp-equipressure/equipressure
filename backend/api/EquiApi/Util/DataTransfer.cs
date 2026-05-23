@@ -40,7 +40,7 @@ public class DataTransfer
         public static NameDataDto FromData(NameData data) => new(data.FirstName, data.LastName);
     }
 
-    public sealed record AddressDto(string? Street, int? HouseNumber, string CityName, string PLZ)
+    public sealed record AddressDto(string? Address, string CityName, string PLZ)
     {
         public sealed class Validator : AbstractValidator<AddressDto>
         {
@@ -52,7 +52,7 @@ public class DataTransfer
         }
 
         public static AddressDto FromAddress(Address address) =>
-            new(address.Street, address.HouseNumber, address.City.Name, address.City.PLZ);
+            new(address.AddressName, address.CityName, address.PLZ);
     }
 
     public sealed record PersonDto(int Id, string FirstName, string LastName, string? Email)
@@ -162,30 +162,28 @@ public class DataTransfer
         decimal Height,
         decimal Weight,
         string? Email,
-        string? Street,
-        int? HouseNumber,
-        string? City,
+        string? AddressName,
+        string? CityName,
         string? PLZ)
     {
         public static EquestrianBasicDto FromEquestrianBasicData(EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street, data.HouseNumber,
-                data.City, data.PLZ);
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.AddressName,
+                data.CityName, data.PLZ);
     }
 
     public sealed record SaddlerBasicDto(
         int Id,
         string FirstName,
         string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
+        string? AddressName,
+        string CityName,
         string PLZ,
         string? Link,
         string? Description,
         bool IsFavourite)
     {
         public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+            new(data.Id, data.FirstName, data.LastName, data.AddressName, data.CityName, data.PLZ, data.Link,
                 data.Description, data.IsFavourite);
     }
 
