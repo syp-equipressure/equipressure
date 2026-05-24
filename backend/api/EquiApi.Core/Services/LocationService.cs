@@ -18,7 +18,7 @@ public interface ILocationService
     public ValueTask<AddAddressAsyncResult> AddAddressAsync(string? addressName, string plz, string cityName);
 }
 
-public class LocationService(IUnitOfWork uow) : ILocationService
+public class LocationService(IUnitOfWork uow, ILogger<LocationService> logger) : ILocationService
 {
     public async ValueTask<GetCitiesAsyncResult> GetCitiesAsync(int? length, string? nameFilter)
     {
@@ -31,6 +31,7 @@ public class LocationService(IUnitOfWork uow) : ILocationService
 
     public async ValueTask<AddAddressAsyncResult> AddAddressAsync(string? addressName, string plz, string cityName)
     {
+
         var address = await uow.LocationRepository.AddressExists(addressName, plz, cityName, false)
                       ?? uow.LocationRepository.AddAddress(addressName, plz, cityName);
 

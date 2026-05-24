@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EquiApi.Persistence.Repositories;
 
+/// <summary>
+/// Provides direct data access to location entities, including cities and addresses.
+/// </summary>
 public interface ILocationRepository
 {
     public ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter, bool tracking);
@@ -63,6 +66,7 @@ public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
             CityName = cityName
         };
         addressSet.Add(address);
-        return address;
     }
+
 }
+

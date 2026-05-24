@@ -1,6 +1,8 @@
 ﻿using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Repositories;
 using FluentValidation;
+using NodaTime;
+
 
 namespace EquiApi.Util;
 
@@ -41,6 +43,7 @@ public class DataTransfer
     }
 
     public sealed record AddressDto(string? Address, string CityName, string PLZ)
+      
     {
         public sealed class Validator : AbstractValidator<AddressDto>
         {
@@ -52,6 +55,7 @@ public class DataTransfer
         }
 
         public static AddressDto FromAddress(Address address) =>
+
             new(address.AddressName, address.CityName, address.PLZ);
     }
 
@@ -114,6 +118,7 @@ public class DataTransfer
     }
 
     public sealed record MeasurementDeviceDto(string Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
+
     {
         public static MeasurementDeviceDto FromDevice(MeasurementDevice device) =>
             new(device.Id, device.CategoryId, device.Owner, device.Users);
@@ -124,7 +129,6 @@ public class DataTransfer
         public static DeviceListResponse FromDevices(IEnumerable<MeasurementDevice> devices) =>
             new(devices.Select(MeasurementDeviceDto.FromDevice));
     }
-    
 
     public sealed record UpdatePersonRequest(
         int Id,
@@ -151,6 +155,24 @@ public class DataTransfer
                 RuleFor(x => x.DateOfBirth).LessThan(LocalDate.FromDateTime(DateTime.Today));
                 RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
                                      .WithMessage("Email must contain '@' and a '.' after it");
+            }
+        }
+    }
+
+    public sealed record AddLocationRequest(
+        string? Street,
+        int? HouseNumber,
+        string CityName,
+        string PLZ)
+    {
+        public sealed class Validator : AbstractValidator<AddLocationRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.Street).NotEmpty();
+                RuleFor(x => x.HouseNumber).GreaterThan(0);
+                RuleFor(x => x.CityName).NotEmpty();
+                RuleFor(x => x.PLZ).NotEmpty();
             }
         }
     }
