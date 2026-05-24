@@ -9,8 +9,8 @@ namespace EquiApi.Persistence.Repositories;
 public interface ILocationRepository
 {
     public ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter, bool tracking);
-    public ValueTask<Address?> AddressExists(string? addressName, string plz, string cityName, bool tracking);
-    public Address AddAddress(string? addressName, string plz, string cityName);
+    public ValueTask<bool> AddressExists(string? addressName, string plz, string cityName);
+    public void AddAddress(Address address);
 }
 
 public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
@@ -47,24 +47,16 @@ public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
         return await result.Select(r => r.Representative).ToListAsync();
     }
 
-    public async ValueTask<Address?> AddressExists(string? addressName, string plz, string cityName, bool tracking)
+    public async ValueTask<bool> AddressExists(string? addressName, string plz, string cityName)
     {
-        var source = tracking ? AddressesNoTracking : Addresses;
-
-        return await source.FirstOrDefaultAsync(a =>
+        return await AddressesNoTracking.AnyAsync(a =>
             a.CityName.ToLower() == cityName.ToLower() &&
             a.PLZ.ToLower() == plz.ToLower() &&
             a.AddressName == addressName);
     }
 
-    public Address AddAddress(string? addressName, string plz, string cityName)
+    public void AddAddress(Address address)
     {
-        var address = new Address
-        {
-            AddressName = addressName,
-            PLZ = plz,
-            CityName = cityName
-        };
         addressSet.Add(address);
     }
 
