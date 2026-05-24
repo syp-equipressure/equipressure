@@ -1,4 +1,4 @@
-﻿using EquiApi.Core.Services;
+using EquiApi.Core.Services;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
 
