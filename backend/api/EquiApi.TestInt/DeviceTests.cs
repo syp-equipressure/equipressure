@@ -145,4 +145,46 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
     }
 
 
+    [Fact]
+    public async ValueTask CreateDevice_Success()
+    {
+        var (owner, _, category, _) = await SeedDefaultDataAsync();
+
+        var request = new DataTransfer.AddDeviceRequest("NEW-01", owner.Id, category.Id);
+ 
+        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+    
+    [Fact]
+    public async ValueTask CreateDevice_OwnerNotFound()
+    {
+        await SeedDefaultDataAsync();
+        var request = new DataTransfer.AddDeviceRequest("NEW-02", 9999, 1);
+ 
+        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+    [Fact]
+    public async ValueTask CreateDevice_CategoryNotFound()
+    {
+        await SeedDefaultDataAsync();
+        var request = new DataTransfer.AddDeviceRequest("NEW-02", 1, 9999);
+ 
+        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask CreateDevice_InvalidRequest_BadRequest()
+    {
+        await SeedDefaultDataAsync();
+        var request = new DataTransfer.AddDeviceRequest
+        ( string.Empty, 1, 1);
+ 
+        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+
 }
