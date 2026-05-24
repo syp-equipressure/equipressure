@@ -27,10 +27,10 @@ GET {{BaseUrl}}/persons/{{personId}}/favourites
 GET {{BaseUrl}}/persons/saddlers
 
 ### 7. Alle Sattler Favoriten mit Adresse
-GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/favourites
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/favourites
 
 ### 8. Alle Sattler Kontakte mit Adresse
-GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/contacts
+GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/contacts
 
 ### 9. Alle Pferde einer Person abrufen
 GET {{BaseUrl}}/persons/{{personId}}/horses

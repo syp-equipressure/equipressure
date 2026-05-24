@@ -22,7 +22,7 @@ public class DeviceService(IUnitOfWork uow) : IDeviceService
     public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId)
     {
-        var user = await uow.PersonRepository.GetPersonById(userId);
+        var user = await uow.PersonRepository.GetPersonByIdAsync(userId);
         if (user == null)
         {
             return new NotFound();
