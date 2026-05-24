@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EquiApi.Persistence.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260414140007_UniqueConstraintMeasurement")]
-    partial class UniqueConstraintMeasurement
+    [Migration("20260523170931_newMig1")]
+    partial class newMig1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,18 +51,18 @@ namespace EquiApi.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CityId")
-                        .HasColumnType("integer");
+                    b.Property<string>("AddressName")
+                        .HasColumnType("text");
 
-                    b.Property<int?>("HouseNumber")
-                        .HasColumnType("integer");
+                    b.Property<string>("CityName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<string>("Street")
+                    b.Property<string>("PLZ")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CityId");
 
                     b.ToTable("Address", "EquiPressure");
                 });
@@ -82,29 +82,6 @@ namespace EquiApi.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Breed", "EquiPressure");
-                });
-
-            modelBuilder.Entity("EquiApi.Persistence.Model.City", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PLZ")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PLZ", "Name");
-
-                    b.ToTable("City", "EquiPressure");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>
@@ -129,8 +106,8 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceUser", b =>
                 {
-                    b.Property<int>("DeviceId")
-                        .HasColumnType("integer");
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("text");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -151,9 +128,6 @@ namespace EquiApi.Persistence.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AddressId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("BreedId")
                         .HasColumnType("integer");
 
                     b.Property<LocalDate>("DateOfBirth")
@@ -177,11 +151,24 @@ namespace EquiApi.Persistence.Migrations
 
                     b.HasIndex("AddressId");
 
-                    b.HasIndex("BreedId");
-
                     b.HasIndex("Name");
 
                     b.ToTable("Horse", "EquiPressure");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.HorseBreed", b =>
+                {
+                    b.Property<int>("HorseId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BreedId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("HorseId", "BreedId");
+
+                    b.HasIndex("BreedId");
+
+                    b.ToTable("HorseBreed", "EquiPressure");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Measurement", b =>
@@ -243,11 +230,9 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.MeasurementDevice", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("text");
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
@@ -290,8 +275,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<LocalDate>("Date")
                         .HasColumnType("date");
 
-                    b.Property<int>("DeviceId")
-                        .HasColumnType("integer");
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("HorseId")
                         .HasColumnType("integer");
@@ -522,17 +508,6 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("SaddleCategory", "EquiPressure");
                 });
 
-            modelBuilder.Entity("EquiApi.Persistence.Model.Address", b =>
-                {
-                    b.HasOne("EquiApi.Persistence.Model.City", "City")
-                        .WithMany("Addresses")
-                        .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
-
-                    b.Navigation("City");
-                });
-
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceUser", b =>
                 {
                     b.HasOne("EquiApi.Persistence.Model.MeasurementDevice", "Device")
@@ -560,15 +535,26 @@ namespace EquiApi.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
+                    b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.HorseBreed", b =>
+                {
                     b.HasOne("EquiApi.Persistence.Model.Breed", "Breed")
-                        .WithMany("Horses")
+                        .WithMany("HorseBreeds")
                         .HasForeignKey("BreedId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Address");
+                    b.HasOne("EquiApi.Persistence.Model.Horse", "Horse")
+                        .WithMany("HorseBreeds")
+                        .HasForeignKey("HorseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Breed");
+
+                    b.Navigation("Horse");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Measurement", b =>
@@ -778,12 +764,7 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Breed", b =>
                 {
-                    b.Navigation("Horses");
-                });
-
-            modelBuilder.Entity("EquiApi.Persistence.Model.City", b =>
-                {
-                    b.Navigation("Addresses");
+                    b.Navigation("HorseBreeds");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>
@@ -793,6 +774,8 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Horse", b =>
                 {
+                    b.Navigation("HorseBreeds");
+
                     b.Navigation("MeasurementGroups");
 
                     b.Navigation("Persons");

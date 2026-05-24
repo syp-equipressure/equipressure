@@ -8,84 +8,65 @@ namespace EquiApi.Persistence.Repositories;
 /// </summary>
 public interface ILocationRepository
 {
-    /// <summary>
-    /// Retrieves a collection of cities, optionally filtered by name and limited by a maximum count.
-    /// </summary>
-    /// <param name="length">The maximum number of city records to return.</param>
-    /// <param name="nameFilter">The string to filter city names by.</param>
-    /// <returns>A collection of <see cref="City"/> entities.</returns>
-    public ValueTask<IReadOnlyCollection<City>> GetCityAsync(int? length, string? nameFilter);
-
-    /// <summary>
-    /// Checks if an address with the specified street and house number already exists in the database.
-    /// </summary>
-    /// <param name="street">The name of the street to check.</param>
-    /// <param name="houseNumber">The house number to check.</param>
-    /// <returns>The <see cref="Address"/> entity if found; otherwise, <see langword="null"/>.</returns>
-    public ValueTask<Address?> AddressExists(string? street, int? houseNumber);
-
-    /// <summary>
-    /// Checks if a city with the specified name and postal code already exists in the database.
-    /// </summary>
-    /// <param name="name">The name of the city to check.</param>
-    /// <param name="plz">The postal code of the city to check.</param>
-    /// <returns>The <see cref="City"/> entity if found; otherwise, <see langword="null"/>.</returns>
-    public ValueTask<City?> CityExists(string name, string plz);
-
-    /// <summary>
-    /// adds a new address entity.
-    /// </summary>
-    /// <param name="address">The address entity to add.</param>
-    public void AddAddress(Address address);
-
-    /// <summary>
-    /// adds a new city entity.
-    /// </summary>
-    /// <param name="city">The city entity to add.</param>
-    public void AddCity(City city);
+    public ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter, bool tracking);
+    public ValueTask<Address?> AddressExists(string? addressName, string plz, string cityName, bool tracking);
+    public Address AddAddress(string? addressName, string plz, string cityName);
 }
 
-public class LocationRepository(DbSet<Address> addressSet, DbSet<City> citySet) : ILocationRepository
+public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
 {
-    public async ValueTask<IReadOnlyCollection<City>> GetCityAsync(int? length, string? nameFilter)
+    private IQueryable<Address> Addresses => addressSet;
+    private IQueryable<Address> AddressesNoTracking => Addresses.AsNoTracking();
+
+    public async ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter, bool tracking)
     {
-        var result = addressSet
-                     .GroupBy(a => a.City)
-                     .Select(g => new
-                     {
-                         city = g.Key,
-                         count = g.Sum(a => a.Persons.Count)
-                     });
+        var source = tracking ? AddressesNoTracking : Addresses;
+
+        var result = source
+            .GroupBy(a => new { a.CityName, Plz = a.PLZ })
+            .Select(g => new
+            {
+                CityName = g.Key.CityName,
+                Plz = g.Key.Plz,
+                Count = g.Sum(a => a.Persons.Count + a.Horses.Count),
+                Representative = g.First()
+            });
+
         if (nameFilter != null)
         {
-            result = result.Where(g => g.city.Name.ToLower()
-                                        .Contains(nameFilter.ToLower()));
+            result = result.Where(g => g.CityName.ToLower().Contains(nameFilter.ToLower()));
         }
 
-        result = result.OrderBy(r => r.count);
+        result = result.OrderBy(r => r.Count);
 
         if (length != null)
         {
             result = result.Take(length.Value);
         }
 
-        return await result.Select(r => r.city).ToListAsync();
+        return await result.Select(r => r.Representative).ToListAsync();
     }
 
-    public async ValueTask<Address?> AddressExists(string? street, int? houseNumber) =>
-        await addressSet.FirstOrDefaultAsync(a => a.Street == street && a.HouseNumber == houseNumber);
-
-    public async ValueTask<City?> CityExists(string name, string plz) =>
-        await citySet.FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower() &&
-                                               c.PLZ.ToLower() == plz.ToLower());
-
-    public void AddAddress(Address address)
+    public async ValueTask<Address?> AddressExists(string? addressName, string plz, string cityName, bool tracking)
     {
+        var source = tracking ? AddressesNoTracking : Addresses;
+
+        return await source.FirstOrDefaultAsync(a =>
+            a.CityName.ToLower() == cityName.ToLower() &&
+            a.PLZ.ToLower() == plz.ToLower() &&
+            a.AddressName == addressName);
+    }
+
+    public Address AddAddress(string? addressName, string plz, string cityName)
+    {
+        var address = new Address
+        {
+            AddressName = addressName,
+            PLZ = plz,
+            CityName = cityName
+        };
         addressSet.Add(address);
     }
 
-    public void AddCity(City city)
-    {
-        citySet.Add(city);
-    }
 }
+
