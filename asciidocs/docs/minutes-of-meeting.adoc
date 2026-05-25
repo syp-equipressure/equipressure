@@ -1609,3 +1609,122 @@ a| Frontend Reiter
 a| Logo überarbeiten
 | 05.05.2026
 |===
+
+== 2026-05-05
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-05-05
+
+|Dauer
+|08:00 bis 08:40
+|===
+====
+
+=== Besprochenes
+* Pull Requests
+* Sattler Wireframe
+
+==== Sattler Wireframe
+* bei den Pferden ein zürück-Button
+* Scrollen vermeiden
+** 2 Zeilen ganz anzeigen (nicht abgeschnitten) und wenns 3 Zeilen werden muss man einen fetten Pfeil machen damit der User checkt dass es weitergeht
+* Die Pferde sollen dann sortiert sein (müssen wir im Backend machen)
+** nach Name/Alter/wie lange sinds bei mir/... eins aussuchen?
+* Messungen soll sich ein Spezialist anschauen (Meeting mit Sophie wäre wieder wichtig)
+** wenns irgendwie geht auf eine Seite bringen; außer es wird zu klein oder  zu blöd
+* bei Tabs Messungen und Notizen soll in Klammer die Anzahl an Messungen und Notizen stehen
+** so wie bei Chats und Anfragen für Kontinuität
+* Eigene nav tab für den Vergleich weil pro Messung machts keinen Sinn
+* bei Nachrichten soll stehen "Nachrichten für $Name von Sattler" für die Verkaufszeit damit wir uns dumme Fragen ersparen
+* Das Design bei den Messungen der Pferde soll dasselbe sein wie bei den Nachrichten
+** nicht einmal alles kantig und dann alles rund sondern eins aussuchen (Prof. Hammer gefällt das kantige besser)
+** Prof. Haslinger labert über Breadcrumbs
+* warum haben wir Unterscheidung zwischen Anfrage und Chat
+** wir sollten einfach alles als Chat und wenn ich die nicht will soll ich sie blockieren bzw löschen können
+** weil wir werden eh immer annehmen weil wir wissen wollen was er überhaupt will
+** wenn Sophie wirklich so etwas will sollen wir ein stummschalten oder ein blockieren später einbauen
+
+Wichtig: 
+* wir müssen jedes Mal lauffähiges Produkt haben beim Sprint
+* "Claude i brauch a github workflow file des ma meine pull requests guarded und meine artifakte baut"
+* wir brauchen a github actions wo ein Dockerfile rausfällt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger
+a| Endpunkte testen, Dokumentation schreiben
+| 26.05.2026
+
+| Dallinger, Silnovic
+a| Endpunkte implementieren
+| 26.05.2026
+
+| Einzenberger, Dallinger, Silnovic
+a| Datenmodell überarbeiten
+| 26.05.2026
+
+| Einzenberger, Dallinger
+a| Github Actions CI/CD Pipeline
+| 26.05.2026
+
+| Graßauer, Music
+a| Sattler-Wireframe
+| 26.05.2026
+
+| Graßauer, Music
+a| Reiter Frontend Schnittstelle machen
+| 26.05.2026
+
+|===
