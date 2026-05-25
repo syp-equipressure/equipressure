@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.20">
 <link rel="icon" type="image/png" href="themes/favicon.png">
-<title>Index page</title>
+<title>Befehle</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -435,6 +435,120 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <style>
+pre.rouge table td { padding: 5px; }
+pre.rouge table pre { margin: 0; }
+pre.rouge, pre.rouge .w {
+  color: #24292f;
+  background-color: #f6f8fa;
+}
+pre.rouge .k, pre.rouge .kd, pre.rouge .kn, pre.rouge .kp, pre.rouge .kr, pre.rouge .kt, pre.rouge .kv {
+  color: #cf222e;
+}
+pre.rouge .gr {
+  color: #f6f8fa;
+}
+pre.rouge .gd {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+pre.rouge .nb {
+  color: #953800;
+}
+pre.rouge .nc {
+  color: #953800;
+}
+pre.rouge .no {
+  color: #953800;
+}
+pre.rouge .nn {
+  color: #953800;
+}
+pre.rouge .sr {
+  color: #116329;
+}
+pre.rouge .na {
+  color: #116329;
+}
+pre.rouge .nt {
+  color: #116329;
+}
+pre.rouge .gi {
+  color: #116329;
+  background-color: #dafbe1;
+}
+pre.rouge .kc {
+  color: #0550ae;
+}
+pre.rouge .l, pre.rouge .ld, pre.rouge .m, pre.rouge .mb, pre.rouge .mf, pre.rouge .mh, pre.rouge .mi, pre.rouge .il, pre.rouge .mo, pre.rouge .mx {
+  color: #0550ae;
+}
+pre.rouge .sb {
+  color: #0550ae;
+}
+pre.rouge .bp {
+  color: #0550ae;
+}
+pre.rouge .ne {
+  color: #0550ae;
+}
+pre.rouge .nl {
+  color: #0550ae;
+}
+pre.rouge .py {
+  color: #0550ae;
+}
+pre.rouge .nv, pre.rouge .vc, pre.rouge .vg, pre.rouge .vi, pre.rouge .vm {
+  color: #0550ae;
+}
+pre.rouge .o, pre.rouge .ow {
+  color: #0550ae;
+}
+pre.rouge .gh {
+  color: #0550ae;
+  font-weight: bold;
+}
+pre.rouge .gu {
+  color: #0550ae;
+  font-weight: bold;
+}
+pre.rouge .s, pre.rouge .sa, pre.rouge .sc, pre.rouge .dl, pre.rouge .sd, pre.rouge .s2, pre.rouge .se, pre.rouge .sh, pre.rouge .sx, pre.rouge .s1, pre.rouge .ss {
+  color: #0a3069;
+}
+pre.rouge .nd {
+  color: #8250df;
+}
+pre.rouge .nf, pre.rouge .fm {
+  color: #8250df;
+}
+pre.rouge .err {
+  color: #f6f8fa;
+  background-color: #82071e;
+}
+pre.rouge .c, pre.rouge .ch, pre.rouge .cd, pre.rouge .cm, pre.rouge .cp, pre.rouge .cpf, pre.rouge .c1, pre.rouge .cs {
+  color: #6e7781;
+}
+pre.rouge .gl {
+  color: #6e7781;
+}
+pre.rouge .gt {
+  color: #6e7781;
+}
+pre.rouge .ni {
+  color: #24292f;
+}
+pre.rouge .si {
+  color: #24292f;
+}
+pre.rouge .ge {
+  color: #24292f;
+  font-style: italic;
+}
+pre.rouge .gs {
+  color: #24292f;
+  font-weight: bold;
+}
+</style>
+<style>
     pre.rouge .hll {
         background-color: #ffc;
         display: block;
@@ -444,14 +558,213 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
     }
 </style>
 </head>
-<body class="article">
+<body class="article toc2 toc-left">
 <div id="header">
-<h1>Index page</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_befehle">1. Befehle</a></li>
+<li><a href="#_commits">2. Commits</a>
+<ul class="sectlevel2">
+<li><a href="#_notation">2.1. Notation</a></li>
+</ul>
+</li>
+<li><a href="#_branches">3. Branches</a>
+<ul class="sectlevel2">
+<li><a href="#_notation_2">3.1. Notation</a></li>
+<li><a href="#_workflow">3.2. Workflow</a></li>
+<li><a href="#_bereits_bestehende_branches">3.3. Bereits bestehende Branches</a></li>
+</ul>
+</li>
+</ul>
+</div>
 </div>
 <div id="content">
+<div class="literalblock">
+<div class="content">
+<pre>= GIT</pre>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_befehle"><a class="anchor" href="#_befehle"></a>1. Befehle</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre># Develop feature
+$ git add .
+$ git commit -m "Add UI components"
+$ git push origin feature/frontend
+
+# Merge conflict
+$ git fetch
+$ git pull --rebase
+
+# Create merge request (mit Github CLI)
+$ git switch feature/backend
+$ gh pr create --base dev --title "Backend Feature" --body "Beschreibung"
+# oder
+$ gh pr create --base dev</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_commits"><a class="anchor" href="#_commits"></a>2. Commits</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>notation: nachricht #youtrack</p>
+</div>
+<div class="paragraph">
+<p>z.B. "feat: added a backend route #EP-01"</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>2.1. Notation</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>feat</strong>: a new feature is introduced with the changes</p>
+</li>
+<li>
+<p><strong>fix</strong>: a bug fix has occurred</p>
+</li>
+<li>
+<p><strong>chore</strong>: changes that do not relate to a fix or feature and don’t modify src or test files
+(for example updating dependencies)</p>
+</li>
+<li>
+<p><strong>refactor</strong>: refactored code that neither fixes a bug nor adds a feature</p>
+</li>
+<li>
+<p><strong>style</strong>: changes that do not affect the meaning of the code, likely related to code formatting such as white-space,
+missing semi-colons, and so on.</p>
+</li>
+<li>
+<p><strong>docs</strong>: updates to documentation such as a the README or other markdown files</p>
+</li>
+<li>
+<p><strong>test</strong>: including new or correcting previous tests</p>
+</li>
+<li>
+<p><strong>ci</strong> – continuous integration related</p>
+</li>
+<li>
+<p><strong>perf</strong> – performance improvements</p>
+</li>
+<li>
+<p><strong>build</strong> – changes that affect the build system or external dependencies</p>
+</li>
+<li>
+<p><strong>revert</strong> – reverts a previous commit</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_branches"><a class="anchor" href="#_branches"></a>3. Branches</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>3.1. Notation</h3>
+<div class="paragraph">
+<p>Für jedes neue Feature:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>feature/[name-des-features]</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_workflow"><a class="anchor" href="#_workflow"></a>3.2. Workflow</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/img.png" alt="img">
+<img src="images/git-simple.png" alt="git simple" width="694" height="422">
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Git Branch Structure (ASCII)</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="asciidoc">main
+├── dev
+│   ├── feature/backend
+│   └── feature/frontend
+│       ├── feature/sattler-app
+│       └── feature/reiter-app
+└── release/*</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bereits_bestehende_branches"><a class="anchor" href="#_bereits_bestehende_branches"></a>3.3. Bereits bestehende Branches</h3>
+<div class="ulist">
+<div class="title">main</div>
+<ul>
+<li>
+<p>nur Versionen, die man bereits veröffentlichen könnte</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<div class="title">dev</div>
+<ul>
+<li>
+<p>komplett abgeschlossene features aus backend und frontend</p>
+</li>
+<li>
+<p>dokumentation (keine gh-pages)</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<div class="title">gh-pages</div>
+<ul>
+<li>
+<p>NUR pushes für die gh-pages</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<div class="title">feature/backend</div>
+<ul>
+<li>
+<p>Ausgangspunkt aller backend features</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<div class="title">feature/frontend</div>
+<ul>
+<li>
+<p>Ausgangspunkt aller frontend features</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<div class="title">feature/sattler-app</div>
+<ul>
+<li>
+<p>geht vom feature/frontend aus</p>
+</li>
+<li>
+<p>alles was mit dem frontend der sattler app zu tun hat</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<div class="title">feature/reiter-app</div>
+<ul>
+<li>
+<p>geht vom feature/frontend aus</p>
+</li>
+<li>
+<p>alles was mit dem frontend der reiter app zu tun hat</p>
+</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 </div>
