@@ -1,4 +1,5 @@
-﻿using EquiApi.Persistence.Model;
+﻿using EquiApi.Core.Util;
+using EquiApi.Persistence.Model;
 using FluentValidation;
 
 namespace EquiApi.Util;
@@ -39,8 +40,6 @@ public class DataTransfer
                 RuleFor(x => x.Height).GreaterThan(0);
                 RuleFor(x => x.Weight).GreaterThan(0);
                 RuleFor(x => x.DateOfBirth).NotNull().LessThan(LocalDate.FromDateTime(DateTime.Today));
-                RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
-                                     .WithMessage("Email must contain '@' and a '.' after it");
                 RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == RoleName.Equestrian);
                 RuleFor(x => x.Description).Empty().When(x => x.Role.Name == RoleName.Equestrian);
             }
@@ -54,7 +53,7 @@ public class DataTransfer
     /// <param name="LastName">Last name of the person</param>
     public sealed record NameDataDto(string FirstName, string LastName)
     {
-        public static NameDataDto FromData(NameData data) => new(data.FirstName, data.LastName);
+        public static NameDataDto FromData(Helper.NameData data) => new(data.FirstName, data.LastName);
     }
     
     /// <summary>
@@ -201,97 +200,6 @@ public class DataTransfer
             }
         }
     }
-
     
-    /// <summary>
-    /// DTO for equestrian
-    /// </summary>
-    /// <param name="Id">Id of the person.</param>
-    /// <param name="FirstName">First name of the person.</param>
-    /// <param name="LastName">Last name of the person</param>
-    /// <param name="Height">Height of the person</param>
-    /// <param name="Weight">Weight of the person</param>
-    /// <param name="Email">optional email of the person</param>
-    /// <param name="Street">Street of the person</param>
-    /// <param name="HouseNumber">HouseNumber of the person</param>
-    /// <param name="City">City name of the person</param>
-    /// <param name="PLZ">PLZ of the person</param>
-    public sealed record EquestrianBasicDto(
-        int Id,
-        string FirstName,
-        string LastName,
-        decimal Height,
-        decimal Weight,
-        string? Email,
-        string? Street,
-        int? HouseNumber,
-        string? City,
-        string? PLZ)
-    {
-        public static EquestrianBasicDto FromEquestrianBasicData(EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street, data.HouseNumber,
-                data.City, data.PLZ);
-    }
-
-    /// <summary>
-    /// DTO for a saddler
-    /// </summary>
-    /// <param name="Id">Id of the person.</param>
-    /// <param name="FirstName">First name of the person.</param>
-    /// <param name="LastName">Last name of the person</param>
-    /// <param name="Link">optional websitelink but only allowed for saddlers</param>
-    /// <param name="Description">optional description but only for saddlers.</param>
-    /// <param name="Street">Street of the person</param>
-    /// <param name="HouseNumber">HouseNumber of the person</param>
-    /// <param name="City">City name of the person</param>
-    /// <param name="PLZ">PLZ of the person</param>
-    public sealed record SaddlerBasicDto(
-        int Id,
-        string FirstName,
-        string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
-        string PLZ,
-        string? Link,
-        string? Description)
-    {
-        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
-                data.Description);
-    }
-
-    /// <summary>
-    /// DTO that returns list of saddler dtos
-    /// </summary>
-    /// <param name="Saddlers">List of saddlers</param>
-    public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
-    {
-        public static SaddlersListResponse FromSaddlers(IEnumerable<SaddlerBasicDto> saddlers) => new(saddlers);
-    }
-    
-    public record EquestrianBasicData(
-        string FirstName,
-        string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
-        string PLZ,
-        string Email,
-        decimal Height,
-        decimal Weight);
-
-    public record SaddlerBasicData(
-        int Id,
-        string FirstName,
-        string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
-        string PLZ,
-        string? Link,
-        string? Description);
-
     public record NameData(string FirstName, string LastName);
-
 }

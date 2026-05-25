@@ -1,4 +1,5 @@
 ﻿using EquiApi.Core.Services;
+using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
@@ -17,10 +18,10 @@ public sealed class PersonController(
     ILogger<PersonController> logger) : BaseController
 {
     [HttpGet("equestrians/{id:int}")]
-    [ProducesResponseType<DataTransfer.EquestrianBasicDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Helper.EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
+    public async ValueTask<ActionResult<Helper.EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
     {
         // check, ob die id überhaupt sinn macht (muss positiv sein)
         if (id <= 0)
@@ -32,18 +33,18 @@ public sealed class PersonController(
         var result = await personService.GetPersonAsEquestrianByIdAsync(id);
         
         // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
-        return result.Match<ActionResult<DataTransfer.EquestrianBasicDto>>(success =>
-                                                                               Ok(DataTransfer.EquestrianBasicDto
+        return result.Match<ActionResult<Helper.EquestrianBasicDto>>(success =>
+                                                                               Ok(Helper.EquestrianBasicDto
                                                                                    .FromEquestrianBasicData(success
                                                                                        .Value, id)),
                                                                            notFound => NotFound());
     }
 
     [HttpGet("equestrians/{equestrianId:int}/saddlers/{saddlerId:int}")]
-    [ProducesResponseType<DataTransfer.SaddlerBasicDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Helper.SaddlerBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlerBasicDto>> GetSaddlerById(
+    public async ValueTask<ActionResult<Helper.SaddlerBasicDto>> GetSaddlerById(
         [FromRoute] int equestrianId, [FromRoute] int saddlerId)
     {
         if (equestrianId <= 0 || saddlerId <= 0)
@@ -53,8 +54,8 @@ public sealed class PersonController(
 
         var result = await personService.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
 
-        return result.Match<ActionResult<DataTransfer.SaddlerBasicDto>>(success =>
-                                                                            Ok(DataTransfer.SaddlerBasicDto
+        return result.Match<ActionResult<Helper.SaddlerBasicDto>>(success =>
+                                                                            Ok(Helper.SaddlerBasicDto
                                                                                    .FromSaddlerBasicData(success
                                                                                        .Value)),
                                                                         invalidData => BadRequest(),
@@ -187,33 +188,33 @@ public sealed class PersonController(
     }
 
     [HttpGet("persons/saddlers")]
-    [ProducesResponseType<DataTransfer.SaddlersListResponse>(StatusCodes.Status200OK)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlersListResponse>> GetSaddlersWithAddress()
+    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
+    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlersWithAddress()
     {
-        OneOf<Success<List<DataTransfer.SaddlerBasicData>>, None> result
+        OneOf<Success<List<Helper.SaddlerBasicData>>, None> result
             = await personService.GetAllSaddlersAsync();
 
-        return result.Match<ActionResult<DataTransfer.SaddlersListResponse>>(success =>
+        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
                                                                              {
                                                                                  var dtos = success.Value
-                                                                                     .Select(DataTransfer
+                                                                                     .Select(Helper
                                                                                          .SaddlerBasicDto
                                                                                          .FromSaddlerBasicData)
                                                                                      .ToList();
 
-                                                                                 return Ok(new DataTransfer.
+                                                                                 return Ok(new Helper.
                                                                                      SaddlersListResponse(dtos));
                                                                              },
                                                                              none =>
-                                                                                 Ok(new DataTransfer.
+                                                                                 Ok(new Helper.
                                                                                      SaddlersListResponse([])));
     }
 
     [HttpGet("persons/equestrians/{equestrianId:int}/favourites")]
-    [ProducesResponseType<DataTransfer.SaddlersListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlersListResponse>> GetSaddlerFavouritesWithAddress(
+    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlerFavouritesWithAddress(
         [FromRoute] int equestrianId)
     {
         if (equestrianId <= 0)
@@ -221,31 +222,31 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        OneOf<Success<List<DataTransfer.SaddlerBasicData>>, None, NotFound> result
+        OneOf<Success<List<Helper.SaddlerBasicData>>, None, NotFound> result
             = await personService.GetAllSaddlerFavouritesAsync(equestrianId);
 
-        return result.Match<ActionResult<DataTransfer.SaddlersListResponse>>(success =>
+        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
                                                                              {
                                                                                  var dtos = success.Value
-                                                                                     .Select(DataTransfer
+                                                                                     .Select(Helper
                                                                                          .SaddlerBasicDto
                                                                                          .FromSaddlerBasicData)
                                                                                      .ToList();
 
-                                                                                 return Ok(new DataTransfer.
+                                                                                 return Ok(new Helper.
                                                                                      SaddlersListResponse(dtos));
                                                                              },
                                                                              none =>
-                                                                                 Ok(new DataTransfer.
+                                                                                 Ok(new Helper.
                                                                                      SaddlersListResponse([])),
                                                                              notFound => NotFound());
     }
 
     [HttpGet("persons/equestrians/{equestrianId:int}/contacts")]
-    [ProducesResponseType<DataTransfer.SaddlersListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlersListResponse>> GetSaddlerContactsWithAddress(
+    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlerContactsWithAddress(
         [FromRoute] int equestrianId)
     {
         if (equestrianId <= 0)
@@ -253,22 +254,22 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        OneOf<Success<List<DataTransfer.SaddlerBasicData>>, None, NotFound> result
+        OneOf<Success<List<Helper.SaddlerBasicData>>, None, NotFound> result
             = await personService.GetAllSaddlerContactsAsync(equestrianId);
 
-        return result.Match<ActionResult<DataTransfer.SaddlersListResponse>>(success =>
+        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
                                                                              {
                                                                                  var dtos = success.Value
-                                                                                     .Select(DataTransfer
+                                                                                     .Select(Helper
                                                                                          .SaddlerBasicDto
                                                                                          .FromSaddlerBasicData)
                                                                                      .ToList();
 
-                                                                                 return Ok(new DataTransfer.
+                                                                                 return Ok(new Helper.
                                                                                      SaddlersListResponse(dtos));
                                                                              },
                                                                              none =>
-                                                                                 Ok(new DataTransfer.
+                                                                                 Ok(new Helper.
                                                                                      SaddlersListResponse([])),
                                                                              notFound => NotFound());
     }

@@ -1,8 +1,6 @@
 using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
-using EquiApi.Persistence.Repositories;
 using EquiApi.Persistence.Util;
-using EquiApi.Util;
 using EquiPressure.Core.Service;
 using Library.Core;
 using OneOf.Types;
@@ -10,13 +8,13 @@ using OneOf.Types;
 namespace EquiApi.Core.Services;
 
 using GetPersonAsEquestrianByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<DataTransfer.EquestrianBasicData>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Helper.EquestrianBasicData>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
 using GetPersonAsSaddlerByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<DataTransfer.SaddlerBasicData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Helper.SaddlerBasicData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
 using GetNameByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<DataTransfer.NameData>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Helper.NameData>, OneOf.Types.NotFound>;
 using GetFavouritesOrContactsAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Person>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetOwnedHorsesAsyncResult
@@ -24,9 +22,9 @@ using GetOwnedHorsesAsyncResult
 using GetAllDevicesAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetAllSaddlersAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<DataTransfer.SaddlerBasicData>>, OneOf.Types.None>;
+    = OneOf.OneOf<OneOf.Types.Success<List<Helper.SaddlerBasicData>>, OneOf.Types.None>;
 using GetAllSaddlersOfEquestrianAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<DataTransfer.SaddlerBasicData>>, OneOf.Types.None, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<List<Helper.SaddlerBasicData>>, OneOf.Types.None, OneOf.Types.NotFound>;
 // TODO: why would we get a InvalidData if we only check the data in the controller?
 using AddPersonAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Person>, IBaseService.InvalidData, IBaseService.Conflict>;
@@ -232,7 +230,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
         logger.LogInformation("Equestrian successfully got");
 
-        return new Success<DataTransfer.EquestrianBasicData>(result);
+        return new Success<Helper.EquestrianBasicData>(result);
     }
 
     public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId)
@@ -273,7 +271,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
         logger.LogInformation("Saddler successfully got");
 
-        return new Success<DataTransfer.SaddlerBasicData>(result);
+        return new Success<Helper.SaddlerBasicData>(result);
     }
 
     public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId)
@@ -289,7 +287,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
         logger.LogInformation("Name Data successfully got");
 
-        return new Success<DataTransfer.NameData>(result);
+        return new Success<Helper.NameData>(result);
     }
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int personId)
@@ -397,7 +395,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new NotFound();
         }
         
-        IReadOnlyCollection<DataTransfer.SaddlerBasicData> saddlers
+        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
             = await uow.PersonRepository.GetAllSaddlerFavouritesOfEquestrianAsync(equestrianId);
 
         if (saddlers.Count <= 0)
@@ -407,7 +405,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         }
 
         logger.LogInformation("Successfully got list of saddlers");
-        return new Success<List<DataTransfer.SaddlerBasicData>>(saddlers.ToList());
+        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
     }
 
     public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId)
@@ -420,7 +418,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new NotFound();
         }
         
-        IReadOnlyCollection<DataTransfer.SaddlerBasicData> saddlers
+        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
             = await uow.PersonRepository.GetAllSaddlerContactsOfEquestrianAsync(equestrianId);
 
         if (saddlers.Count <= 0)
@@ -430,12 +428,12 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         }
 
         logger.LogInformation("Successfully got list of saddlers");
-        return new Success<List<DataTransfer.SaddlerBasicData>>(saddlers.ToList());
+        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
     }
 
     public async ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync()
     {
-        IReadOnlyCollection<DataTransfer.SaddlerBasicData> saddlers
+        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
             = await uow.PersonRepository.GetAllSaddlersAsync();
 
         if (saddlers.Count <= 0)
@@ -445,7 +443,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         }
 
         logger.LogInformation("Successfully got list of saddlers");
-        return new Success<List<DataTransfer.SaddlerBasicData>>(saddlers.ToList());
+        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
     }
 
     public async ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,

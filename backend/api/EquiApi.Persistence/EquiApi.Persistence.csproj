@@ -13,6 +13,5 @@
     
     <ItemGroup>
         <ProjectReference Include="..\EquiApi.Shared\EquiApi.Shared.csproj"/>
-        <ProjectReference Include="..\EquiApi\EquiApi.csproj" />
     </ItemGroup>
 </Project>
