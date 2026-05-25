@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
@@ -283,24 +284,16 @@ class PersonService {
     _throwForStatus(response, 'load group members');
   }
 
+  // /users/current existiert noch nicht im Backend. Fallback auf lokale JSONs.
   static Future<Map<String, dynamic>> loadUserData() async {
-    final url = Uri.parse('$baseUrl/users/current');
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    }
-    _throwForStatus(response, 'load user data');
+    final raw = await rootBundle.loadString('assets/data/personal_data.json');
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return (decoded['user'] as Map<String, dynamic>?) ?? decoded;
   }
 
   static Future<List<Map<String, dynamic>>> loadDevices() async {
-    final url = Uri.parse('$baseUrl/users/current/devices');
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return _extractList(jsonDecode(response.body));
-    }
-    _throwForStatus(response, 'load devices');
+    final raw = await rootBundle.loadString('assets/data/devices.json');
+    return _extractList(jsonDecode(raw));
   }
 
   // ---------------------------------------------------------------------------
@@ -312,22 +305,19 @@ class PersonService {
   // TODO: mit Backend abklären wie eine Personenliste geladen werden soll.
   // ---------------------------------------------------------------------------
 
+  // Backend hat (noch) kein GET /api/persons (Liste). Solange das nicht da ist
+  // fallen wir auf die lokale user.json zurück, damit Screens nicht crashen.
   Future<List<Person>> getPersons() async {
     if (_cachedPersons != null) {
       return _cachedPersons!;
     }
 
-    final url = Uri.parse('$baseUrl/persons');
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      _cachedPersons = data
-          .map((json) => Person.fromJson(json as Map<String, dynamic>))
-          .toList();
-      return _cachedPersons!;
-    }
-    _throwForStatus(response, 'load persons');
+    final raw = await rootBundle.loadString('assets/data/user.json');
+    final List<dynamic> data = jsonDecode(raw);
+    _cachedPersons = data
+        .map((json) => Person.fromJson(json as Map<String, dynamic>))
+        .toList();
+    return _cachedPersons!;
   }
 
   Future<int> getNextId() async {
@@ -336,9 +326,11 @@ class PersonService {
     return persons.map((p) => p.id).reduce((a, b) => a > b ? a : b) + 1;
   }
 
+  // Solange das Backend kein Listing hat, halten wir Neuanlagen nur im
+  // In-Memory Cache. Wird beim App-Reload zurückgesetzt.
   Future<void> addPerson(Person person) async {
-    await addPersonData(person.toJson());
-    _cachedPersons = null; // Cache invalidieren
+    _cachedPersons ??= [];
+    _cachedPersons!.add(person);
   }
 
   void clearCache() {
