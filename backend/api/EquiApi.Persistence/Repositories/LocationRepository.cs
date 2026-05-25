@@ -1,5 +1,6 @@
 ﻿using EquiApi.Persistence.Model;
 using Microsoft.EntityFrameworkCore;
+using OneOf.Types;
 
 namespace EquiApi.Persistence.Repositories;
 
@@ -8,21 +9,40 @@ namespace EquiApi.Persistence.Repositories;
 /// </summary>
 public interface ILocationRepository
 {
-    public ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter, bool tracking);
+    /// <summary>
+    /// Retrieves a filtered list of cities/addresses.
+    /// </summary>
+    /// <param name="length">optional number of cities to return</param>
+    /// <param name="nameFilter">optional name filter for city name</param>
+    /// <returns>
+    /// <item><description><see cref="Success{T}"/> readonly collection of <see cref="Address"/> entities</description></item>
+    /// <item><description>or <see cref="NotFound"/> if no cities exist.</description></item>
+    /// </returns>
+    public ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter);
+    
+    /// <summary>
+    /// checks if address exists
+    /// </summary>
+    /// <param name="addressName">optional adressname</param>
+    /// <param name="plz">optional plz</param>
+    /// <param name="cityName">optional cityName</param>
+    /// <returns>
+    /// <item><description><see cref="bool"/> true if address exists, false otherwise</description></item>
+    /// </returns>
     public ValueTask<bool> AddressExists(string? addressName, string plz, string cityName);
+    
+    /// <summary>
+    /// adds address to addressset
+    /// </summary>
+    /// <param name="address">address entity to be added</param>
     public void AddAddress(Address address);
 }
 
 public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
-{
-    private IQueryable<Address> Addresses => addressSet;
-    private IQueryable<Address> AddressesNoTracking => Addresses.AsNoTracking();
-
-    public async ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter, bool tracking)
+{ 
+    public async ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter)
     {
-        var source = tracking ? AddressesNoTracking : Addresses;
-
-        var result = source
+        var result = addressSet
             .GroupBy(a => new { a.CityName, Plz = a.PLZ })
             .Select(g => new
             {
@@ -49,7 +69,7 @@ public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
 
     public async ValueTask<bool> AddressExists(string? addressName, string plz, string cityName)
     {
-        return await AddressesNoTracking.AnyAsync(a =>
+        return await addressSet.AsNoTracking().AnyAsync(a =>
             a.CityName.ToLower() == cityName.ToLower() &&
             a.PLZ.ToLower() == plz.ToLower() &&
             a.AddressName == addressName);
