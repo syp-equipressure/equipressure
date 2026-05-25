@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\EquiApi.Persistence\EquiApi.Persistence.csproj"/>
+        <InternalsVisibleTo Include="EquiApi.Test"/>
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="OneOf" Version="3.0.271"/>
+    </ItemGroup>
+
+</Project>

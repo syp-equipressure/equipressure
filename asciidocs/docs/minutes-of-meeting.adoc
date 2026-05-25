@@ -653,3 +653,1078 @@ a| Wireframe weiterarbeiten
 a| Techstack Folie
 | 23.12.2025
 |===
+
+
+== 2025-11-25
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2025-11-11
+
+|Dauer
+|08:30 bis 9:30
+|===
+====
+
+=== Besprochenes
+* Zeiten für einen Sprint angeben im Clockify
+* User Story angeben an der man gearbeitet hat (Clockify)
+** Zeitaufzeichnung für Sprint auch rein => immer der neue Start für einen Sprint
+* Datenmodell  hergezeigt
+* Technologie Stack: Angular, Flutter und Postgresql
+* Wireframe hergezeigt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Einzenberger
+a| User Stories ins Youtrak schreiben (Product Backlog) + 
+ mit Github Issues beschäftigen
+| 09.12.2025
+
+|Einzenberger
+a| PSP überarbeiten und digitalisieren; Gesamtstunden und Stunden die pro Teil reingesteckt werden überlegen
+| 09.12.2025
+
+|Graßauer
+a| am Wireframe weiterarbeiten +
+Einstiegsmaske mit QR-Code scannen erstellen, eine Maske für Pferde erstellen +
+Anzahl der bereits durchgeführten Messungen anzeigen beim Pferd
+| 09.12.2025
+
+|Dallinger
+a| Datenmodell mit Prof. Haslinger besprechen
+| 09.12.2025
+
+|Dallinger
+a| Projektantrag von Prof. Bauer unterschreiben lassen
+| 27.11.2025
+|===
+
+== 2025-12-23
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2025-12-23
+
+|Dauer
+|08:35 bis 09:30
+|===
+====
+
+=== Besprochenes
+
+*  haben eingelenkt, dass wir noch keine Dummy-Daten brauchen, weil wir noch nicht die Technologie dafür haben
+
+==== Wireframe
+
+* Rechtschreibfehler Messung "Gallopp"
+* weniger "Messung" bei Messunge starten Folie sondern andere Namen finden oder weglassen (Teilmessung, Messvorgang)
+
+==== TechStack
+
+* Pferd nach Links rücken und recht eine Legende machen mit Stichwort für wieso wir sie
+* github Sterne; OpenSource Projekte haben Sterne (wie viele Leute finden das gut)
+* Logo nicht verzerren
+
+==== Branches
+* Prof. Haslinger würde keine Unterbranches für frontend/backend machen, sondern nur dev und vom den gehen die features weg
+
+==== Frontend
+* Tutorial, wenn wir noch keine Pferde angeleget haben (Step 1, 2, 3..)
+** Schritt 1: Lege Pferd an, Schritt 2: Führe Messung durch, Schritt 3: Kontaktiere Sattler
+** Primitiv, aber als erster Input für neue Benutzer
+** ODER: Navigation (wie man es kennt von erstem Mal einloggen)
+** ODER: Nach dem Einloggen: "Herzlichen Glückwünsch zu ihrem Gerät" oder so "Nächste Schritte:"
+* Meine Pferde: yo (years old) ist Englisch obwohl restliche Daten Deutsch sind
+* wireframe herz ausfüllen
+
+==== Backend
+* all brauch ma nd unbedingt -> wenn mas nd brauchen brauch mas nd kontaktieren
+* über auth token geräte von einem user nehmen
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Graßauer, Music
+a| Wireframe anpassen an Wünsche
+| 20.01.2026
+
+| Dallinger, Einzenberger
+a| Endpunkte weiter definieren und Backend Programmierung anfangen
+| 20.01.2026
+|===
+
+== 2026-01-12
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Christoph
+| Fehleisen
+| 4AHBH
+
+| Jonas
+| Pfeiffer
+| 4AHBG
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|HBLA Lentia
+
+|Datum
+|Di. 2026-01-12
+
+|Dauer
+|15:15 bis 16:20
+|===
+====
+
+=== Besprochenes
+* Sattler*innen müssen angeben welche Sättel sie machen
+* Wireframe unseren Partnern gezeigt
+* BEIM NÄCHSTEN PITCH: erwähnen das Hauptklientel Reiter*innen sind
+* ca. 400 Sensoren sollen in einer Matte sein 
+
+=== Gespräch mit Mentor
+* Verkaufsmodell überlegen 
+** Social Media, etc
+** klare saubere Website über unser Produkt
+*** USP, warum heben wir uns ab, was machen wir besser als die anderen
+** wie verkaufen wir es; was kostet es
+* anschauen wie viele Sattler*innen dass es gibt in Österreich
+* nachforschen wo ich den geringsten Widerstand haben bei den Sattler*innen
+* Sattler*innen werden Bedenken haben
+
+Vorteile/Nachteile gehören noch ausgearbeitet
+
+=== Vorteile für Sattler*innen
+* gewinnen Kunden durch Kenntnis über App
+* manche Reiter*innen wissen vlt gar nicht dass es so eine Möglichkeit gibt, oder es ist ihnen zu teuer
+* weniger Aufwand im Vorhinein, weil Reiter*innen vorher schon Messungen durchgeführt haben
+
+=== Nachteile für Sattler*innen
+* keine Nachkontrolltermine
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Dallinger
+a| 20 Seiten Jugend Innovativ Antrag schreiben +
+ Anmeldung Think Your Product +
+ GitHub Rules erweitern +
+ Datenmodell anpassen
+| 20.01.2026
+
+| Dallinger, Graßauer
+a| Vorteile und Nachteile für Sattler*innen herausfiltern 
+| 20.01.2026
+
+| Graßauer
+a| Frontend: Messungsformular
+| 20.01.2026
+
+| Einzenberger
+a| Backend mit Minimal API weiterarbeiten + 
+ Techstack an Wünsche anpassen
+| 20.01.2026
+
+| Music
+a| Frontend: Login und Chat
+| 20.01.2026
+|===
+
+== 2026-01-20
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-01-20
+
+|Dauer
+|08:00 bis 09:10
+|===
+====
+
+=== Besprochenes
+
+* Wireframe
+* Frontend
+* Techstack-Folie
+* Business-Plan
+
+==== Zeitaufzeichnung
+* Zeitaufzeichnung mit User Stories verknüfen (# dazuschreiben)
+
+==== Wireframe
+* "Messung" wurde ausgetauscht -> passt jetzt
+* Buttons sind nicht gleich groß (optischer Unterschied tut weh)
+** wir sagen bei der Umsetzung wird das dann ausgebessert
+* Logik vom Wireframe durchbesprochen
+* Profil erstellen
+** mit Github fehlt anmelden fehlt noch
+** hinschreiben dass anmelden mit registrieren nicht möglich sein wird (weil wir ja keine Login verwalten wollen); soll klar kommuniziert sein mit dem Kunden
+** hinschreiben, warum wir Größe und Gewicht wissen wollen
+*** z.B. mit kleinem Fragezeichen mit popup oder so, wo man draufklicken kann
+** "Profil konfigurieren" auf "dein Profil konfigurieren"; damit keiner glaubt man konfiguriert z.B. das Pferd
+** Geschlecht speichern bzgl Anrede wenn wir Email verschicken etc. 
+** Email soll auch hingeschrieben werden; damit User sich auskennt mit welcher Email er angemeldet ist
+** Überlegen welche adresse wir wirklich speichern wollen (Wohnadresse User oder Standort vom Pferd)
+** Über Ort, PLZ, Straße ,... Überschrift "Adresse" schreiben, auch mit dem Fragezeichen (weil wir halt Adresse wollen um Sattler*innen in der Nähe zu finden)
+* nach dem Anmelden soll eine Email an den User geschickt werden mit den Daten die sie angegeben haben und einem Wilkommensgruß (mit Foto wo wir winken)
+* Sattel umbenennen soll darstellen mit post-it und gekrackel (Foto von Haslinger)
+* Pferd anlegen
+** Rasse soll ein Autocomplete Feld sein (damit werden Fehler vermieden und man kann trotzdem Mischling Rassen angegeben)
+** Überkategorie Warm-, Vollblut etc soll angegeben werden; Layout wie bei Sex mit auswählen
+* Karte
+** optional Adresse bei Pferde einschreiben und die dann in der Karte anzeigen (mit so kleinem Pferd Bild)
+*** optional, falls Besitzer Adresse der Pferde nicht angeben wollen
+** Besitzer, Pferde, Sattler mit Farbe unterscheiden
+* Profil 
+** alle persönlichen Daten weg; auch Name, Ort und so
+** statt "meine Geräte" "meine Satteldruckmessgeräte" oder so; für User die denken man kann mehrer Geräte oder so anmelden
+** "Gerätegruppe" irgendwie beschreiben; damit man versteht dass das die Leute sind, die auch mein Geräte verwenden
+** beschreiben was "Owner" heißt; hinschreiben dass man nur als Owner löschen kann
+** irgendwo soll man noch das Gerät weitergeben können (Besitzer übertragen können)
+* immer neben Überschriften kleine Hilfe Buttons (falls Menschen nach 5 Jahren das Gerät wieder benutzen und kein Plan mehr haben)
+
+==== TechStack
+* Sterne symbol dazutun
+
+==== Frontend
+* Pferd anlegen
+** bei Sex (is btw englisch digga) männlich oder weiblich hinschreiben für wen der Symbole nicht kennt
+** der Kontrast beim draufklicken größer machen oder genrell andere Farbe (pink oder so)
+* Konfirmation für Löschen
+* Neben Messungs-Namen einen Bleistift damit man die Messung umbennen kann
+* Lejla designed Icon für Sattel :)
+* bei Stockmaß und Gewicht Zahlen überprüfen
+** gewisses Stockmaß hat nur eine gewisse range für Gewicht und vice versa
+** dürfen keine negativen Werte haben und so
+* Chat angeschaut
+
+==== Datenbank
+* optionales Feld für die E-Mail, Name; weils auf den Provider drauf an kommt, ob wir sie speichern oder immer holen müssen
+* Rasse Tabelle damit wir Initialdaten haben für das Autocomplete
+* Tabelle dann auch für die Überkategorien (Warmblut und so) => Pferdetyp
+** Lena fragen, ob dass von der Rasse abgeleitet werden kann (dass es bei der Rasse mitgespeichert wird)
+* bei Rolle: isHidden Feld für Reitbeteiligungen bei Person oder Rolle
+* Kathi wäre immer noch für alles auf Englisch oder Deutsch umschreiben
+* PLZ kein Primärschlüssel
+* evtl die ganze Adresse herausziehen zusätlich zur City
+* Beziehung zwischen Gerät und Rolle (bin ich für dieses Gerät ein Owner, eine Reitbeteiligung)
+* Sättel auslagern und mit autocomplete machen wie bei Rasse
+
+==== Idee
+* wir könnten zu den Pferden nu de Adresse vom stall dazutun (optional) damit ma quasi sowohl de eigene Adresse als auch die vo de Pferden hat und ma zeigt dann alle auf da map an
+* überlegen wo wir KI anwenden können in unserem Projekt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Graßauer
+a| Wireframe an Wünsche anpassen
+ Frontend Design Wünsche anpassen
+| 03.02.2026
+
+| Music
+a| Karte im Frontend anpassen (Sattler finden generell)
+ Sattel Icon designen
+| 03.02.2026
+
+| Dallinger, Einzenberger
+a| EF Backend beginnen
+| 03.02.2026
+
+| Einzenberger
+a| Techstackfolien zusammenfassen
+| 03.02.2026
+
+| Dallinger
+a| Datenmodell anpassen
+| 03.02.2026
+|===
+
+== 2026-01-27
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+| Sophie
+| Grüneis
+| externer Partner
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|1AHIF, Raum 132
+
+|Datum
+|Di. 2026-01-27
+
+|Dauer
+|13:40 - 15:25
+|===
+====
+
+=== Besprochenes
+* Vorteile für Sattler*innen
+* Wireframes Abnahme
+
+==== Warum Sattler es annehmen
+* es gibt immer etwas zum Ausbessern
+** auch wenns nur ein Loch zum stopfen ist
+* weniger Reklamationsgründe (Reiter hat es schwarz auf weiß, dass alles passt)
+** rechtliche Absicherung (damit Sattler nicht für Tierarzt oder Physiokosten verklagt werden können)
+* wenn Messgerät in einem ganzen Stall ausprobiert wird, bekommen Sattler sehr viele neue Kunden
+** weil Reiter halt sagen, "Mah dei Sattler kommt doch eh boid, kau si der des bei mir a amoi anschauen"
+
+==== Wireframes
+* Adresse vom Reiter muss nicht verpflichtend sein 
+* evtl wenn man Stalladresse nicht angeben will, nur PLZ verpflichtend machen
+* Idee von Kathi: Sattler auch nach Namen suchen können (falls man vom hören einen kennt)
+* Vergleich zwischen 2 Bildern anzeigen (von März und September oder so)
+** falls uns fad wird (Zusatz für premium menschen)
+* für User so simpel wie möglich
+* drittes Geschlecht für kastrierte Pferde evtl
+
+==== Ideen
+* auf der Website anzeigen welche Sattler das haben 
+** falls es so Reitställe gibt die sich das nicht kaufen will
+* Verleihstellen auch anzeigen
+
+== 2026-02-03
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-02-03
+
+|Dauer
+|08:00 bis 08:35
+|===
+====
+
+=== Besprochenes
+
+* Wireframe
+* Frontend
+* Model Backend
+
+==== Wireframe
+* Wireframe ist abgeschlossen
+
+==== Frontend
+* Geschlecht farblich hinterlegt passt gut
+* Map
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Graßauer, Music
+a| Frontend weiterarbeiten
+| 03.03.2026
+
+| Dallinger
+a| Linq queries im Backend schreiben
+| 03.03.2026
+
+| Einzenberger
+a| Importer aus csv files für Datenbank schreiben
+| 03.03.2026
+
+| Einzenberger, Dallinger
+a| in WebAPI einlesen
+| 03.03.2026
+
+|===
+
+== 2026-03-10
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-03-10
+
+|Dauer
+|08:00 bis 08:38
+|===
+====
+
+=== Besprochenes
+* über Make your Product nachbesprochen
+* über Mentorenfeedback reden
+** Prof. Hammer hält es auch für nicht gut
+* anscheinend sobald man miteinander redet, dass man ein Projekt macht und dass dann umsetzt, ist man schon eine gesellschaft bürgerlichen Rechtes
+** deshalb aufpassen wen wir uns als Hilfe holen im Projekt (wir können nur Hr. Professor Haslinger vertrauen)
+* Bevor wir mit Sophie etwas unterschreiben sollen wir das von Vetrauten überprüfen lassen (Rechtsanwalt oder so)
+
+==== Feedback Frontend
+* Die Zeit bei Teilmessung darf kein Eingabefeld sein sondern einfach ein Text
+* die map soll nicht weg; wir sollen das verbinden und nicht weghauen (links die Liste und rechts wo man die Liste hat oder so)
+** wir sollen nicht auf Stefan hören (aber sie wollen uns nicht sagen wieso)#
+* Kathis Feedback: kinnan ma so a Gestaltungsding einfügen in der app für Farben uns so Sochen
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger, Dallinger
+a| Backend weiterarbeiten
+| 07.04.2026
+
+| Music, Graßauer
+a| Wireframe Sattler-App
+| 07.04.2026
+
+|===
+
+== 2026-04-07
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-04-07
+
+|Dauer
+|08:00 bis 09:05
+|===
+====
+
+=== Besprochenes
+* Sattler-Wireframe
+* TYP Pitch Finale
+
+==== TYP Pitch
+* Pferde Grafik gefällt Prof. Hammer nicht; kann man besser machen
+* wir sollen Piktogramme für Pferde, Cowboy und Sattel generieren lassen
+* Grafik ist unverständlich; wir müssen Pferde in Relation zur Fläche setzen
+** macht sonst keinen Sinn weil kleines Land halt dann ausschaut als hätts weniger Markt, obwohls einfach kleiner ist
+* Equipressure Schriftzug gefällt ihm nicht
+** zwischen dem I und dem P gehört ein kleines Kästchen/Diamant damit man sich nicht verliest
+* wir sollen Bild von Sophie Grüneis Bild reingeben
+
+==== Sattler Wireframe
+* ohne Kameraset fortfahren Button sollte wsl nicht ausgegraut sein
+** wirkt als könnte man nicht draufklicken
+* EquiPressure-Kamera-Set zuammenschreiben
+* Grafik damit Sattler versteht was Kamera Set ist
+** rechts von Text die Grafik
+** Link für Kamera-Set Kauf einbauen ist gut
+* Prof. Hammer hasst Infoboxen jetzt
+* Kunden visualisieren:
+** Liste die nach mehreren Kriterien suchbar ist
+** Namen, wie weit entfernt oder so
+** wenn man auf Kunden drückt sieht man die Pferde die er hat
+* Registrierungsinstanz für Sattler
+** Sattlerdatenbank (haben wir im Datenmodell mit Rollen)
+* Anfragen Überschrift gleich wie Kunden Kontakte Überschrift
+* Sophie fragen ob wir maximale Anfrageanzahl haben wollen 
+** ob es eine Branche ist die 100 Anfragen und 1 Auftrag bekommen oder ob aus Anfragen fast immer Aufträge entstehen
+* Wir müssen mit Leuten aus der Branche reden und nicht mit Mentoren die nur glauben zu wissen wie es ist
+* Such- oder Filterfunktion im Chat
+** nach Name vom Kunden und vlt auch vom Pferd das geschickt worden ist?
+* warum zieht sich farbschme nicht ganz durch ... lila ton bei messung auf einmal anders
+* Kameras sind anderes Projekt; zusätzliche Anforderung für später
+** wir sollen Sophie kommunizieren dass es bis jetzt noch nicht gibt und dass das später dazukommt
+
+==== Backend
+* wir sollen feature scopes klein halten 
+* nach 1 oder spätestens 2 Wochen müssen wir mergen damit die feature branches nicht auseinander driften
+* wir müssen cherry picken
+* bevor wir zum Arbeiten anfangen immer rebasen vom backend oder dev
+* wir sollen jedes Mal wenn wir mergen auf einen anderen branch einen pull request machen
+* reviews starten bei pull requests
+** Kommentare bei Files schreiben und start a review drucken
+** dann muss der andere nochmal anschauen und sagen dass das deshalb gemacht worden ist oder er sagt ist ein Fehler und nochmal machen
+* jeder Issue sollte ein pull request und dann eine review sein
+** also jede User Story mit Dod
+
+* Retroperspektive
+** dauert eine Stunde 
+* psychisch im Team besser werden
+* sagen was uns an den anderen stöhrt und was uns an den anderen gut gefällt
+* wenn wir nicht zusammenkommen brauchen wir einen Moderator
+* "Was in Las Vegas passiert, bleibt in Las Vegas"
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger, Dallinger, Silnovic
+a| Backend weiterarbeiten
+| 21.04.2026
+
+| Grasauer, Music
+a| Sattler-Wireframe
+| 21.04.2026
+
+|===
+
+== 2026-04-21
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-04-21
+
+|Dauer
+|08:00 bis 09:07
+|===
+====
+
+=== Besprochenes
+* Sattler Wireframe
+* Datenmodell
+* Frontend
+* Backend Pull Requests
+* Video TYP Pitch
+
+==== Datenmodell
+* in der Sattler App hinterlegen ob das ein eigenes Pferd oder ein Kundenpferd ist
+** Dummy-Kunde der ich bin damit man selbst sein Kunde ist und wir nicht mehr Aufwand mit den eigenen Pferden haben
+* Rolle: 
+** wenn es nicht dynamisch mehr oder weniger wird und keine anderen Anwendungen drauf zugreifen müssen kann es ein Enum sein
+** wir brauchen dann m..m von Rolle zu Sattler nicht mehr, weil Sattler eh nur Desktopversion hat
+
+==== Pull Requests
+* wir machen das sehr gut mit den ausdiskutieren bei der Code Review
+* Kathi ist der Inder in der Abteilung die die Tests machen muss
+
+==== Reiter Frontend
+* Bei der Liste sollte auch stehen: Entfernung ab Standort
+** wir sollen live standort holen können weil da intuitiv ist und wenn man seinen live Standort nicht teilen will ist die Option halt ausgegraut oder so
+* wenn man von Liste auf Karte geht sollte das Pferd das man in der Liste ausgewählt hat als Standort ausgewählt sein
+** Zoom auf der Karte sollte größer sein, so dass man mindestens 2 Sattler in der Nähe sieht
+* Wir sollen uns eine Liste von Sattler von der Wirtschaftskammer holen damit wir bei denen dann anfragen können
+* Nächstes Jahr sollen wir uns einen Dritten reinholen (Sattler) der noch nichts mit dem Produkt zu tun hat 
+** der bekommt dann eine verbilligte Version dafür dass er uns Feedback gibt
+
+==== Sattler Wireframe
+* Rechnungslogik im Backend einbauen
+* Bezahlt gehört in die Auftragshistorie
+* Suchfeld auf "Suche nach Kunde oder Pferd..." ändern
+* "Kund*innen" auf "Kundenansicht" ändern
+* "Neue Kund*in" auf "Neu" oder "Neu anlegen"
+* Auch in der Tabelle statt "Name" "Kunde" schreiben
+* Bei Sitzungen muss dabei stehen für welches Pferd die sind
+* "Offen" ist sprachlich ganz schlecht, wir müssen klar sagen dass es finanziell offen ist; "Offene Honorare"
+* Wir wollen den Umsatz im Jahr wissen; wie viel ist noch nicht bezahlt und wie viel hat er uns schon gezahlt
+* Rechnungen fehlen im Datenmodell
+** überlegen ob wir Rechnungen wirklich haben wollen 
+** evtl overfeaturing; Kunden werden schon eigene Buchhaltungssoftware haben 
+** kann man später noch einbauen wenn wir schon laufende Software machen und die Sattler dann noch extra zahlen sollen
+* auf Kunde einigen nicht Klient
+
+==== Video TYP Pitch
+* das E im Logo findet Prof. Hammer passt optisch nicht rein
+** das E größer machen und ins Kinn einbauen oder das Pferd dann kleiner machen
+* wir sollen eine Domäne finden für unser Projekt (z.B. equipressure.com)
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger, Dallinger, Silnovic
+a| Backend weiterarbeiten
+| 05.05.2026
+
+| Grasauer, Music
+a| Sattler-Wireframe
+| 05.05.2026
+
+| Grasauer, Music
+a| Frontend Reiter
+| 05.05.2026
+
+| Music
+a| Logo überarbeiten
+| 05.05.2026
+|===
+
+== 2026-05-05
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lena
+| Graßauer
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-05-05
+
+|Dauer
+|08:00 bis 08:40
+|===
+====
+
+=== Besprochenes
+* Pull Requests
+* Sattler Wireframe
+
+==== Sattler Wireframe
+* bei den Pferden ein zürück-Button
+* Scrollen vermeiden
+** 2 Zeilen ganz anzeigen (nicht abgeschnitten) und wenns 3 Zeilen werden muss man einen fetten Pfeil machen damit der User checkt dass es weitergeht
+* Die Pferde sollen dann sortiert sein (müssen wir im Backend machen)
+** nach Name/Alter/wie lange sinds bei mir/... eins aussuchen?
+* Messungen soll sich ein Spezialist anschauen (Meeting mit Sophie wäre wieder wichtig)
+** wenns irgendwie geht auf eine Seite bringen; außer es wird zu klein oder  zu blöd
+* bei Tabs Messungen und Notizen soll in Klammer die Anzahl an Messungen und Notizen stehen
+** so wie bei Chats und Anfragen für Kontinuität
+* Eigene nav tab für den Vergleich weil pro Messung machts keinen Sinn
+* bei Nachrichten soll stehen "Nachrichten für $Name von Sattler" für die Verkaufszeit damit wir uns dumme Fragen ersparen
+* Das Design bei den Messungen der Pferde soll dasselbe sein wie bei den Nachrichten
+** nicht einmal alles kantig und dann alles rund sondern eins aussuchen (Prof. Hammer gefällt das kantige besser)
+** Prof. Haslinger labert über Breadcrumbs
+* warum haben wir Unterscheidung zwischen Anfrage und Chat
+** wir sollten einfach alles als Chat und wenn ich die nicht will soll ich sie blockieren bzw löschen können
+** weil wir werden eh immer annehmen weil wir wissen wollen was er überhaupt will
+** wenn Sophie wirklich so etwas will sollen wir ein stummschalten oder ein blockieren später einbauen
+
+Wichtig: 
+* wir müssen jedes Mal lauffähiges Produkt haben beim Sprint
+* "Claude i brauch a github workflow file des ma meine pull requests guarded und meine artifakte baut"
+* wir brauchen a github actions wo ein Dockerfile rausfällt
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Einzenberger
+a| Endpunkte testen, Dokumentation schreiben
+| 26.05.2026
+
+| Dallinger, Silnovic
+a| Endpunkte implementieren
+| 26.05.2026
+
+| Einzenberger, Dallinger, Silnovic
+a| Datenmodell überarbeiten
+| 26.05.2026
+
+| Einzenberger, Dallinger
+a| Github Actions CI/CD Pipeline
+| 26.05.2026
+
+| Graßauer, Music
+a| Sattler-Wireframe
+| 26.05.2026
+
+| Graßauer, Music
+a| Reiter Frontend Schnittstelle machen
+| 26.05.2026
+
+|===

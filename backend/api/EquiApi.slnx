@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/SolutionItems/">
+    <File Path=".github/workflows/build_on_push.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="ManageMigration.ps1" />
+  </Folder>
+  <Project Path="EquiApi.Core/EquiApi.Core.csproj" />
+  <Project Path="EquiApi.Persistence/EquiApi.Persistence.csproj" />
+  <Project Path="EquiApi.Shared/EquiApi.Shared.csproj" />
+  <Project Path="EquiApi.Test/EquiApi.Test.csproj" />
+  <Project Path="EquiApi.TestInt/EquiApi.TestInt.csproj" />
+  <Project Path="EquiApi/EquiApi.csproj" />
+</Solution>
