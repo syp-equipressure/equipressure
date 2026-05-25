@@ -94,15 +94,11 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
 
     public async ValueTask<IReadOnlyCollection<Person>> GetPersonsOfDeviceAsync(string deviceId)
     {
-        var result = await devices.Include(d => d.Users)
+        return await devices.Include(d => d.Users)
                                   .ThenInclude(u => u.User)
                                   .Where(d => d.Id == deviceId)
-                                  .Select(d => d.Users.Select(u => u.User).FirstOrDefault())
+                                  .SelectMany(d => d.Users.Select(u => u.User))
                                   .ToListAsync();
-        
-        return result.Where(p => p != null)
-                        .Cast<Person>()
-                        .ToList();
     }
 
     public void AddDevice(MeasurementDevice device)
