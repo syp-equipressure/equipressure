@@ -1,4 +1,6 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/models/device.dart';
+import 'package:reiterappfrontend/models/user_data.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/screens/profil/personal_data_screen.dart';
@@ -30,8 +32,11 @@ class ProfilScreen extends StatelessWidget {
           );
         }
 
-        final userData = snapshot.data![0] as dynamic;
-        final devices = snapshot.data![1] as dynamic;
+        final userData = UserData.fromJson(
+            snapshot.data![0] as Map<String, dynamic>);
+        final devices = (snapshot.data![1] as List)
+            .map((d) => Device.fromJson(d as Map<String, dynamic>))
+            .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFB8A5C8),
@@ -58,10 +63,10 @@ class ProfilScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 24),
                 child: Column(
                   children: [
-                    _buildAvatar(userData.imageUrl as String?),
+                    _buildAvatar(userData.imageUrl),
                     const SizedBox(height: 16),
                     Text(
-                      userData.name as String,
+                      userData.name,
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
