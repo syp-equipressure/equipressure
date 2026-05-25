@@ -14,9 +14,33 @@ using AddAddressAsyncResult
 
 public interface ILocationService
 {
+    /// <summary>
+    /// gets cities that are filtered
+    /// </summary>
+    /// <param name="length">amount of cities returned</param>
+    /// <param name="nameFilter">name filter for city names</param>
+    /// <returns>
+    /// <item><description><see cref="Success{T}"/> with a read only collection of <see cref="Address"/> entitys</description></item>
+    /// <item><description>or <see cref="NotFound"/> when no cities are found.</description></item>
+    /// </returns>
     public ValueTask<GetCitiesAsyncResult> GetCitiesAsync(int? length, string? nameFilter);
+    
+    /// <summary>
+    /// adds a address if it doesnt already exist
+    /// </summary>
+    /// <param name="addressName">optional name of address</param>
+    /// <param name="plz">plz</param>
+    /// <param name="cityName">name of the city</param>
+    /// <returns>
+    /// <item><description><see cref="Success{T}"/> contains <see cref="Address"/> entity</description></item>
+    /// <item><description>oder <see cref="IBaseService.InvalidData"/> if params are invalid data</description></item>
+    /// <item><description>oder <see cref="AddressAlreadyExists"/>if address already exists</description></item>
+    /// </returns>
     public ValueTask<AddAddressAsyncResult> AddAddressAsync(string? addressName, string plz, string cityName);
 
+    /// <summary>
+    /// covers the case, when adding address, if it already exists
+    /// </summary>
     public record AddressAlreadyExists();
 }
 
@@ -24,7 +48,7 @@ public class LocationService(IUnitOfWork uow, ILogger<LocationService> logger) :
 {
     public async ValueTask<GetCitiesAsyncResult> GetCitiesAsync(int? length, string? nameFilter)
     {
-        var res = await uow.LocationRepository.GetCitiesAsync(length, nameFilter, true);
+        var res = await uow.LocationRepository.GetCitiesAsync(length, nameFilter);
 
         if (!res.Any())
         {

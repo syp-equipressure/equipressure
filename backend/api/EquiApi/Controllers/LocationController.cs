@@ -43,6 +43,7 @@ public sealed class LocationController(
             success =>
             {
                 logger.LogInformation("Address successfully added: {cityName}, {plz}", request.CityName, request.PLZ);
+                // Wieso kein createdAtAction?
                 return Created();
             },
             invalidData =>
