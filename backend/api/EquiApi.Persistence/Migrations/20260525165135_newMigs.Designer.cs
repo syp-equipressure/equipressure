@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EquiApi.Persistence.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260523170931_newMig1")]
-    partial class newMig1
+    [Migration("20260525165135_newMigs")]
+    partial class newMigs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
