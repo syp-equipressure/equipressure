@@ -8,10 +8,12 @@ Lena Graßauer, Katharina Einzenberger, Flora Dallinger
 
 == Beschreibung
 
-EquiPressure ist eine Anwendung, die den Druck von einem Sattel ermessen und ausgeben soll
+EquiPressure ist eine Anwendung, die den Druck von einem Sattel ermessen und ausgeben soll, sowohl für Reiter:innen als auch für Sattler:innen
 
 == Team-Mitglieder
 
 * Lena Graßauer
 * Katharina Einzenberger
 * Flora Dallinger
+* Lejla Music
+* Almina Silnovic
