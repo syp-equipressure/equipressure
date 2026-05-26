@@ -1728,3 +1728,102 @@ a| Reiter Frontend Schnittstelle machen
 | 26.05.2026
 
 |===
+
+== 2026-05-26
+
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Flora
+| Dallinger
+| 4AHIF
+
+| Katharina
+| Einzenberger
+| 4AHIF
+
+| Lejla
+| Music
+| 4AHIF
+
+| Almina
+| Silnovic
+| 4AHIF
+
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|4AHIF
+
+|Datum
+|Di. 2026-05-26
+
+|Dauer
+|08:00 bis 
+|===
+====
+
+=== Besprochenes
+* Testing Integration und Unit Testing
+* CI/CD Pipeline
+* Sattler Wireframe
+
+* mehr Docker container und Komplexität abschaffen
+
+==== Sprint Planning
+* müssen Projekt einpacken damits übern Sommer gut liegen lassen
+* localhost wäre noch toll bis zum Sommer; nehmen wir uns aber für die 5te vor
+* wir sollten uns dann ausmachen mit was wir im September wieder anfangen
+* wir wollen bis zum Sommer mit de Reiter-Version fertig werden werden
+* 16. Juni Abschlussgespräch; 3 Wochen Sprint; wird die Bewertung/Beurteilung des Projekts
+* Docker Setup nehmen wir uns für nächstes Jahr vor
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+| Dallinger
+a| Horse Endpoints
+| 26.06.2026
+
+| Silnovic
+a| Measurement Endpoints
+| 26.06.2026
+
+| Einzenberger
+a| Integration und Unit Testing
+    Flora und Almina aushelfen
+| 26.06.2026
+
+| Music, Graßauer
+a| Person und Device Schnittstellen ins Frontend einbauen
+| 02.06.2026
+
+| Music, Graßauer
+a| alle anderen Schnittstellen einbauen
+|26.06.2026
+
+| Dallinger, Graßauer
+a| aufschreiben was in Backend, Frontend für nächstes Jahr gemacht werden soll
+|26.06.2026
+
+
+|===
