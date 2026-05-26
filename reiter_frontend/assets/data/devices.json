@@ -1,0 +1,14 @@
+{
+  "devices": [
+    {
+      "id": "device_1",
+      "name": "Lenas Gerät",
+      "number": "EP0706"
+    },
+    {
+      "id": "device_2",
+      "name": "Floras Gerät",
+      "number": "EP0707"
+    }
+  ]
+}
