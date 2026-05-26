@@ -1,0 +1,188 @@
+<app-page-header
+  [title]="customerName()"
+  [subtitle]="customer()?.email"
+  [showBack]="true"
+></app-page-header>
+
+@if (horse(); as h) {
+  <div class="tab-bar">
+    <div class="horse-ribbon">{{ h.name }}</div>
+    <div class="tabs">
+      <button class="tab" [class.active]="tab() === 'messungen'" (click)="setTab('messungen')">Messungen</button>
+      <button class="tab" [class.active]="tab() === 'notizen'"   (click)="setTab('notizen')">Notizen</button>
+    </div>
+  </div>
+}
+
+@if (tab() === 'messungen') {
+  <section class="layout">
+    <aside class="sidebar">
+      @for (m of measurements(); track m.id) {
+        <button
+          class="measurement-card"
+          [class.active]="selected()?.id === m.id"
+          (click)="selectMeasurement(m.id)"
+        >
+          <div class="date">{{ m.date }}</div>
+          <div class="device">{{ m.deviceName }}</div>
+          <div class="meta">{{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%</div>
+        </button>
+      }
+
+      <button class="new-measurement">+ Neue Messung</button>
+    </aside>
+
+    <article class="detail">
+      @if (selected(); as m) {
+        <div class="detail-card">
+          <header class="detail-header">
+            <div class="title-line">
+              <h2>Messung vom {{ m.date }}</h2>
+              <button class="icon-btn ghost" aria-label="Bearbeiten">
+                <span class="material-icons">edit</span>
+              </button>
+            </div>
+            <div class="header-actions">
+              <button class="pill-btn primary">
+                <span class="material-icons">file_download</span>
+                PDF-Bericht
+              </button>
+              <button class="round-btn" aria-label="Teilen">
+                <span class="material-icons">ios_share</span>
+              </button>
+            </div>
+          </header>
+
+          <div class="controls">
+            <div class="control-group">
+              <span class="control-label">Gangart</span>
+              <div class="toggle">
+                @for (g of ['Schritt', 'Trab', 'Galopp']; track g) {
+                  <button
+                    class="toggle-btn"
+                    [class.active]="activeGait() === g"
+                    (click)="toggleGait($any(g))"
+                  >{{ g }}</button>
+                }
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Seite</span>
+              <div class="toggle">
+                @for (s of ['Links', 'Rechts']; track s) {
+                  <button
+                    class="toggle-btn"
+                    [class.active]="activeSide() === s"
+                    (click)="toggleSide($any(s))"
+                  >{{ s }}</button>
+                }
+              </div>
+            </div>
+
+            <a class="reset-link" href="javascript:void(0)">Auf Ø zurücksetzen</a>
+          </div>
+
+          <div class="visual-row">
+            <div class="heatmap-wrap">
+              <div class="filter-chip"><span class="dot"></span>Gefiltert</div>
+              <app-pressure-heatmap
+                [grid]="m.detail.pressureGrid"
+                [mode]="heatmapMode()"
+                [max]="10"
+              ></app-pressure-heatmap>
+              <div class="heatmap-label">Druckverteilung</div>
+              <button class="heatmap-expand" aria-label="Vergrößern">
+                <span class="material-icons">open_in_full</span>
+              </button>
+            </div>
+
+            <div class="scale">
+              <span class="unit">N/cm²</span>
+              <span class="scale-top">10+</span>
+              <div class="scale-gradient">
+                <div class="marker" [style.bottom.%]="(m.detail.maxNcm2 / 10) * 100">
+                  <span class="marker-line"></span>
+                  <span class="marker-value">{{ m.detail.maxNcm2 }}</span>
+                </div>
+              </div>
+              <span class="scale-bot">0</span>
+              <span class="scale-skala">SKALA</span>
+            </div>
+
+            <div class="video-grid">
+              <app-video-tile
+                class="main-vid"
+                [src]="m.detail.videos.main || ''"
+                label="Hauptkamera"
+                [showExpand]="true"
+              ></app-video-tile>
+              <app-video-tile
+                [src]="m.detail.videos.sideRight || ''"
+                label="Seite rechts"
+              ></app-video-tile>
+              <app-video-tile
+                [src]="m.detail.videos.sideLeft || ''"
+                label="Seite links"
+              ></app-video-tile>
+            </div>
+          </div>
+
+          <div class="below">
+            <button class="pill-btn light" (click)="toggleHeatmapMode()">
+              {{ heatmapMode() === 'heatmap' ? 'N/cm² Ansicht' : 'Heatmap Ansicht' }}
+            </button>
+
+            <div class="stats">
+              <div class="stat">
+                <div class="stat-label">MAX</div>
+                <div class="stat-value red">
+                  {{ m.detail.maxNcm2.toString().replace('.', ',') }}
+                  <span class="stat-unit">N/cm²</span>
+                </div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">&Oslash; MITTEL</div>
+                <div class="stat-value">
+                  {{ m.detail.meanNcm2.toString().replace('.', ',') }}
+                  <span class="stat-unit">N/cm²</span>
+                </div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">SYMMETRIE</div>
+                <div class="stat-value orange">
+                  {{ m.symmetryPct }}<span class="stat-unit">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-col">
+                <div class="info-label">REITER*IN</div>
+                <div class="info-value">
+                  {{ m.detail.riderName }} | {{ m.detail.riderHeightM.toString().replace('.', ',') }}m | {{ m.detail.riderWeightKg }}kg
+                </div>
+                <div class="info-label spaced">SATTEL</div>
+                <div class="info-value">{{ m.detail.saddleName }}</div>
+              </div>
+              <div class="info-col">
+                <div class="info-label">DAUER</div>
+                <div class="info-value">{{ m.detail.durationFull }}</div>
+                <div class="info-label spaced">GANG</div>
+                <div class="info-value">{{ m.detail.gaits.join(', ') }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="empty">Noch keine Messungen vorhanden.</div>
+      }
+    </article>
+  </section>
+}
+
+@if (tab() === 'notizen') {
+  <section class="notes-stub">
+    Keine Notizen vorhanden.
+  </section>
+}

@@ -1,0 +1,11 @@
+<div class="tile" [style.background-image]="'url(' + src + ')'">
+  <button class="play" aria-label="Abspielen">
+    <span class="material-icons">play_arrow</span>
+  </button>
+  @if (showExpand) {
+    <button class="expand" aria-label="Vergrößern">
+      <span class="material-icons">open_in_full</span>
+    </button>
+  }
+  <div class="label">{{ label }}</div>
+</div>
