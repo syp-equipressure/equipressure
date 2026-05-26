@@ -1,0 +1,102 @@
+@use '../../styles/theme' as t;
+
+.sidenav {
+  width: t.$sidenav-width;
+  height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px 20px;
+  border-right: 1px solid t.$border-soft;
+  position: relative;
+  z-index: 30;
+}
+
+.hamburger {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 16px;
+  color: t.$text-strong;
+  transition: background 0.15s;
+
+  .material-icons {
+    font-size: 26px;
+  }
+
+  &:hover {
+    background: t.$bg-page;
+  }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: t.$text;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+  border-left: 3px solid transparent;
+
+  .icon {
+    font-size: 24px;
+    color: t.$text;
+  }
+
+  .label {
+    flex: 1;
+  }
+
+  .badge {
+    background: t.$purple-400;
+    color: white;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &:hover {
+    background: t.$bg-page;
+  }
+
+  &.active {
+    background: t.$purple-50;
+    color: t.$purple-500;
+    border-left-color: t.$purple-500;
+
+    .icon {
+      color: t.$purple-500;
+    }
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+.settings {
+  margin-top: 12px;
+  font-weight: 400;
+}

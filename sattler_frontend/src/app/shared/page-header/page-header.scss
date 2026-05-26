@@ -1,0 +1,114 @@
+@use '../../styles/theme' as t;
+
+.page-header {
+  height: t.$header-height;
+  background: #ffffff;
+  border-bottom: 1px solid t.$border-soft;
+  display: grid;
+  grid-template-columns: 80px 1fr 160px;
+  align-items: center;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.left {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: t.$text-strong;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  margin-top: 2px;
+  font-size: 14px;
+  color: t.$text-soft;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: t.$text-strong;
+  transition: background 0.15s;
+
+  .material-icons {
+    font-size: 26px;
+  }
+
+  &:hover {
+    background: t.$bg-page;
+  }
+}
+
+.back-btn {
+  height: 38px;
+  padding: 0 16px 0 14px;
+  background: t.$bg-page;
+  border: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: t.$text-soft;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s;
+
+  .material-icons {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: t.$border-soft;
+  }
+}
+
+.profile-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: t.$purple-50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: t.$purple-500;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  .material-icons {
+    font-size: 26px;
+  }
+
+  &:hover {
+    background: t.$purple-100;
+  }
+}

@@ -1,0 +1,37 @@
+<app-page-header [title]="title()" [showBack]="false"></app-page-header>
+
+<section class="page-body">
+  <button class="back-arrow" (click)="back()" aria-label="Zurück">
+    <span class="material-icons">arrow_back</span>
+  </button>
+
+  <div class="grid">
+    @for (h of horses(); track h.id) {
+      <button class="card" type="button" (click)="openHorse(h.id)">
+        <div
+          class="thumb"
+          [style.background-image]="'url(' + h.imageUrl + ')'"
+        ></div>
+        <div class="info">
+          <div class="name">{{ h.name }}</div>
+          <div class="row">
+            <span class="label">ALTER</span>
+            <span class="value">{{ h.age }}</span>
+          </div>
+          <div class="row">
+            <span class="label">RASSE</span>
+            <span class="value">{{ h.breed }}</span>
+          </div>
+        </div>
+      </button>
+    }
+
+    @if (horses().length === 0) {
+      <div class="empty">Diese Person hat noch keine Pferde hinterlegt.</div>
+    }
+  </div>
+
+  <button class="fab" aria-label="Neues Pferd hinzufügen">
+    <span class="material-icons">add</span>
+  </button>
+</section>

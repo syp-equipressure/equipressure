@@ -1,0 +1,126 @@
+@use '../../styles/theme' as t;
+
+.page-body {
+  padding: 28px 32px 60px;
+  flex: 1;
+}
+
+.panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #ebebeb;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: inset 0 0 0 1px t.$border;
+}
+
+.search-bar {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.search-input {
+  flex: 1;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid t.$border;
+  padding: 0 22px;
+  font-size: 15px;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &::placeholder {
+    color: t.$text-muted;
+  }
+
+  &:focus {
+    border-color: t.$purple-300;
+    box-shadow: 0 0 0 3px rgba(165, 113, 242, 0.15);
+  }
+}
+
+.primary-btn {
+  height: 52px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: none;
+  background: t.$purple-100;
+  color: t.$purple-600;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, color 0.15s;
+
+  .material-icons {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: t.$purple-200;
+    color: t.$purple-700;
+  }
+}
+
+.list-card {
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid t.$border-soft;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 28px;
+  color: t.$text;
+  border-bottom: 1px solid t.$border-soft;
+  transition: background 0.12s;
+  cursor: pointer;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: t.$bg-page;
+  }
+
+  .name {
+    font-size: 17px;
+    color: t.$text-strong;
+  }
+
+  &.me .name {
+    font-weight: 700;
+  }
+
+  .me-tag {
+    font-weight: 700;
+  }
+
+  .action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: t.$purple-500;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .arrow {
+    font-size: 18px;
+  }
+}
+
+.empty {
+  padding: 36px;
+  text-align: center;
+  color: t.$text-muted;
+  font-size: 15px;
+}

@@ -1,0 +1,45 @@
+<app-page-header title="Kundschaft"></app-page-header>
+
+<section class="page-body">
+  <div class="panel">
+    <div class="search-bar">
+      <input
+        class="search-input"
+        type="search"
+        placeholder="Suche nach Name..."
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
+      <button class="primary-btn">
+        <span class="material-icons">add</span>
+        Neue Kund*in
+      </button>
+    </div>
+
+    <div class="list-card">
+      @for (c of filtered(); track c.id) {
+        <a
+          class="row"
+          [class.me]="c.isMe"
+          [routerLink]="['/customers', c.id, 'horses']"
+        >
+          <div class="name">
+            {{ fullName(c) }}@if (c.isMe) { <span class="me-tag"> (Du)</span> }
+          </div>
+          <div class="action">
+            @if (c.isMe) {
+              Deine Pferde
+            } @else {
+              Details
+            }
+            <span class="arrow">→</span>
+          </div>
+        </a>
+      }
+
+      @if (filtered().length === 0) {
+        <div class="empty">Keine Kund*innen gefunden.</div>
+      }
+    </div>
+  </div>
+</section>

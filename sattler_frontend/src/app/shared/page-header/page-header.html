@@ -1,0 +1,29 @@
+<header class="page-header">
+  <div class="left">
+    @if (showMenu) {
+      <button class="icon-btn" (click)="openMenu()" aria-label="Menü öffnen">
+        <span class="material-icons">menu</span>
+      </button>
+    }
+  </div>
+
+  <div class="center">
+    <h1 class="title">{{ title }}</h1>
+    @if (subtitle) {
+      <a class="subtitle" [href]="'mailto:' + subtitle">{{ subtitle }}</a>
+    }
+  </div>
+
+  <div class="right">
+    @if (showBack) {
+      <button class="back-btn" (click)="back()">
+        <span class="material-icons">arrow_back</span>
+        <span>Zurück</span>
+      </button>
+    } @else {
+      <div class="profile-circle" aria-label="Profil">
+        <span class="material-icons">person</span>
+      </div>
+    }
+  </div>
+</header>

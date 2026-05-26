@@ -1,0 +1,34 @@
+<aside class="sidenav">
+  <div class="hamburger" (click)="onClose()" role="button" aria-label="Menü schließen">
+    <span class="material-icons">menu</span>
+  </div>
+
+  <nav class="nav">
+    @for (item of items; track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="onClose()"
+      >
+        <span class="material-icons icon">{{ item.icon }}</span>
+        <span class="label">{{ item.label }}</span>
+        @if (item.badge) {
+          <span class="badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <div class="spacer"></div>
+
+  <a
+    [routerLink]="settings.route"
+    routerLinkActive="active"
+    class="nav-item settings"
+    (click)="onClose()"
+  >
+    <span class="material-icons icon">{{ settings.icon }}</span>
+    <span class="label">{{ settings.label }}</span>
+  </a>
+</aside>

@@ -1,0 +1,37 @@
+// Sattler-frontend palette — derived from the screenshots.
+
+// Primary purple accents
+$purple-50:  #F4ECFF;   // soft chip + sidenav active background
+$purple-100: #E5D6FF;   // FAB background
+$purple-200: #C9A9FF;
+$purple-300: #B295E6;   // primary purple button background (mid)
+$purple-400: #A571F2;   // FAB color / "+ Neue Kund*in" button
+$purple-500: #8A4FE6;   // active sidenav text, purple links
+$purple-600: #6D45B9;   // strong purple text
+$purple-700: #4F2EA0;
+
+// Neutrals
+$bg-page:    #F4F4F4;   // app background (light gray)
+$bg-card:    #FFFFFF;
+$bg-panel:   #F7F4FB;   // slightly tinted gray for inner panels
+$border:    #E3E3E3;
+$border-soft: #ECE6F3;
+$text-strong:#111111;
+$text:       #1F1F1F;
+$text-soft:  #6B6B6B;
+$text-muted: #9A9A9A;
+
+// Accent colors used on the measurement detail
+$accent-red:    #E53935;  // MAX number color
+$accent-orange: #F2A23A;  // SYMMETRY number color
+$accent-purple: $purple-500;
+
+// Layout
+$sidenav-width: 280px;
+$header-height: 72px;
+$radius-card: 14px;
+$radius-pill: 999px;
+
+// Shadows
+$shadow-card: 0 1px 2px rgba(17, 17, 17, 0.04), 0 1px 1px rgba(17, 17, 17, 0.06);
+$shadow-elev: 0 6px 18px rgba(80, 60, 140, 0.18);

@@ -1,0 +1,144 @@
+@use '../../styles/theme' as t;
+
+.page-body {
+  flex: 1;
+  padding: 24px 32px 60px 70px;
+  position: relative;
+}
+
+.back-arrow {
+  position: absolute;
+  top: 28px;
+  left: 24px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: t.$text-strong;
+  transition: background 0.15s;
+
+  .material-icons {
+    font-size: 24px;
+  }
+
+  &:hover {
+    background: t.$bg-card;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid t.$border-soft;
+  box-shadow: t.$shadow-card;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(80, 60, 140, 0.12);
+  }
+}
+
+.thumb {
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  background-color: t.$bg-page;
+  position: relative;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 0;
+}
+
+.info {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  margin-top: -28px;
+  background: #ffffff;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  z-index: 2;
+}
+
+.name {
+  font-size: 22px;
+  font-weight: 700;
+  color: t.$text-strong;
+  margin-bottom: 2px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  font-size: 14px;
+  align-items: baseline;
+
+  .label {
+    color: t.$text-muted;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+
+  .value {
+    color: t.$text;
+  }
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding: 60px;
+  text-align: center;
+  color: t.$text-muted;
+}
+
+.fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: t.$purple-100;
+  color: t.$purple-600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(143, 99, 224, 0.35);
+  transition: background 0.15s, transform 0.15s;
+
+  .material-icons {
+    font-size: 30px;
+  }
+
+  &:hover {
+    background: t.$purple-200;
+    transform: translateY(-1px);
+  }
+}
