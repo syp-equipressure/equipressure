@@ -1,230 +1,188 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:reiterappfrontend/models/device.dart';
-import 'package:reiterappfrontend/models/group_member.dart';
 
+/// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert.
+class DeviceApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  DeviceApiException(this.statusCode, this.message);
+
+  bool get isNotFound => statusCode == 404;
+  bool get isConflict => statusCode == 409;
+  bool get isBadRequest => statusCode == 400;
+  bool get isUnprocessable => statusCode == 422;
+
+  @override
+  String toString() => 'DeviceApiException($statusCode): $message';
+}
+
+/// Spricht den DeviceController (`api/devices`) des Backends an.
+///
+/// Routen 1:1 wie im Backend (Stand dev):
+///   GET    /api/devices/{userId}                 -> DeviceListResponse  { "devices": [...] }
+///   GET    /api/devices/{deviceId}/owner         -> PersonDto
+///   GET    /api/devices/{deviceId}/users         -> PersonListResponse  { "persons": [...] }
+///   POST   /api/devices                          (AddDeviceRequest)     201
+///   POST   /api/devices/{deviceId}/add/{userId}                         201
+///   DELETE /api/devices/{deviceId}/remove/{userId}                      200
 class DeviceService {
   static const String baseUrl = 'http://localhost:5200/api';
+  static const Duration _timeout = Duration(seconds: 10);
+  static const Map<String, String> _jsonHeaders = {
+    'Content-Type': 'application/json',
+  };
 
   // Singleton
   static final DeviceService _instance = DeviceService._internal();
   factory DeviceService() => _instance;
   DeviceService._internal();
 
-  List<Device>? _cachedDevices;
+  // ---------------------------------------------------------------------------
+  // Helper
+  // ---------------------------------------------------------------------------
 
-  /// Lädt alle Geräte
-  Future<List<Device>> getDevices() async {
-    if (_cachedDevices != null) {
-      return _cachedDevices!;
+  /// Extrahiert die erste Liste aus einer *ListResponse, egal ob der Key
+  /// "devices", "persons" o.ä. heißt. Akzeptiert auch eine rohe Liste.
+  static List<Map<String, dynamic>> _extractList(dynamic decoded) {
+    if (decoded is List) {
+      return decoded.cast<Map<String, dynamic>>();
     }
-
-    try {
-      final url = Uri.parse('$baseUrl/devices');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _cachedDevices = data.map((json) => Device.fromJson(json as Map<String, dynamic>)).toList();
-        return _cachedDevices!;
-      } else {
-        throw Exception('Failed to load devices: ${response.statusCode}');
+    if (decoded is Map<String, dynamic>) {
+      for (final value in decoded.values) {
+        if (value is List) {
+          return value.cast<Map<String, dynamic>>();
+        }
       }
-    } catch (e) {
-      throw Exception('Error loading devices: $e');
     }
+    return const [];
   }
 
-  /// Lädt ein einzelnes Gerät mit Details
-  static Future<Map<String, dynamic>> getDeviceDetails(String deviceId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('Failed to load device details: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading device details: $e');
-    }
+  static Never _throwForStatus(http.Response r, String action) {
+    throw DeviceApiException(r.statusCode, 'Failed to $action: HTTP ${r.statusCode}');
   }
 
-  /// Lädt alle Geräte einer Person (inkl. Owner-Info)
-  static Future<List<Map<String, dynamic>>> getPersonDevices(String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/persons/$personId/devices');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 1. GET /api/devices/{userId}  (DeviceListResponse)
+  //    Achtung: Backend-Route erwartet die USER-Id (int), nicht die deviceId.
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> getDevicesByUserId(int userId) async {
+    final url = Uri.parse('$baseUrl/devices/$userId');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load person devices: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading person devices: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    if (response.statusCode == 404) {
+      return const [];
+    }
+    _throwForStatus(response, 'load devices for user $userId');
   }
 
-  /// Lädt Gruppenmitglieder für ein Gerät
-  static Future<List<GroupMember>> getGroupMembers(String deviceId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId/members');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 2. GET /api/devices/{deviceId}/owner  (PersonDto)
+  // ---------------------------------------------------------------------------
+  static Future<Map<String, dynamic>?> getDeviceOwner(String deviceId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/owner');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-        final membersList = jsonData['members'] as List? ?? [];
-        return membersList
-            .map((member) => GroupMember.fromJson(member as Map<String, dynamic>))
-            .toList();
-      } else if (response.statusCode == 404) {
-        return [];
-      } else {
-        throw Exception('Failed to load group members: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading group members: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
+    // 404 = Gerät nicht gefunden, 422 = Gerät hat keinen Owner
+    if (response.statusCode == 404 || response.statusCode == 422) {
+      return null;
+    }
+    _throwForStatus(response, 'load owner of device $deviceId');
   }
 
-  /// Lädt die Geräte des aktuellen Users
-  static Future<List<Device>> loadCurrentUserDevices() async {
-    try {
-      final url = Uri.parse('$baseUrl/users/current/devices');
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 3. GET /api/devices/{deviceId}/users  (PersonListResponse)
+  //    Das ist der korrekte Endpoint — frühere Versionen riefen fälschlich
+  //    /devices/{deviceId}/members auf (existiert im Backend nicht).
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> getDeviceUsers(String deviceId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/users');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((device) => Device.fromJson(device as Map<String, dynamic>)).toList();
-      } else {
-        throw Exception('Failed to load current user devices: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error loading current user devices: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
+    // 404 = Gerät nicht gefunden, 422 = keine User zugewiesen
+    if (response.statusCode == 404 || response.statusCode == 422) {
+      return const [];
+    }
+    _throwForStatus(response, 'load users of device $deviceId');
   }
 
-  /// Fügt ein neues Gerät hinzu
-  static Future<Device> addDevice(Map<String, dynamic> deviceData) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(deviceData),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 4. POST /api/devices  (AddDeviceRequest)
+  //    Body: { "deviceId": string, "ownerId": int, "categoryId": int }
+  //    201 Created | 400 BadRequest | 404 NotFound
+  // ---------------------------------------------------------------------------
+  static Future<void> createDevice({
+    required String deviceId,
+    required int ownerId,
+    required int categoryId,
+  }) async {
+    final url = Uri.parse('$baseUrl/devices');
+    final body = jsonEncode({
+      'deviceId': deviceId,
+      'ownerId': ownerId,
+      'categoryId': categoryId,
+    });
+    final response =
+        await http.post(url, headers: _jsonHeaders, body: body).timeout(_timeout);
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-      } else {
-        throw Exception('Failed to add device: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error adding device: $e');
+    if (response.statusCode == 201) {
+      return;
     }
+    _throwForStatus(response, 'create device $deviceId');
   }
 
-  /// Aktualisiert ein Gerät
-  static Future<Device> updateDevice(String deviceId, Map<String, dynamic> deviceData) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId');
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(deviceData),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 5. POST /api/devices/{deviceId}/add/{userId}
+  //    201 Created | 404 NotFound | 409 Conflict (zu viele User) | 400
+  // ---------------------------------------------------------------------------
+  static Future<void> addUserToDevice(String deviceId, int userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/add/$userId');
+    final response = await http.post(url).timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-      } else {
-        throw Exception('Failed to update device: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error updating device: $e');
+    if (response.statusCode == 201) {
+      return;
     }
+    _throwForStatus(response, 'add user $userId to device $deviceId');
   }
 
-  /// Löscht ein Gerät
-  static Future<void> deleteDevice(String deviceId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId');
-      final response = await http.delete(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // 6. DELETE /api/devices/{deviceId}/remove/{userId}
+  //    200 OK | 404 NotFound | 409 Conflict (zu wenig User / Owner) | 400
+  // ---------------------------------------------------------------------------
+  static Future<void> removeUserFromDevice(String deviceId, int userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/remove/$userId');
+    final response = await http.delete(url).timeout(_timeout);
 
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to delete device: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error deleting device: $e');
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      return;
     }
+    _throwForStatus(response, 'remove user $userId from device $deviceId');
   }
 
-  /// Fügt ein Mitglied zu einer Device-Gruppe hinzu
-  static Future<void> addGroupMember(String deviceId, String personId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId/members');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'personId': personId}),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
+  // ---------------------------------------------------------------------------
+  // Bonus: Geräte einer Person über den PersonController.
+  //   GET /api/persons/{personId}/devices  (DeviceListResponse)
+  // Liegt fachlich näher am PersonController, aber praktisch hier mit dabei.
+  // ---------------------------------------------------------------------------
+  static Future<List<Map<String, dynamic>>> getPersonDevices(int personId) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/devices');
+    final response = await http.get(url).timeout(_timeout);
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('Failed to add group member: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error adding group member: $e');
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body));
     }
-  }
-
-  /// Entfernt ein Mitglied aus einer Device-Gruppe
-  static Future<void> removeGroupMember(String deviceId, String memberId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId/members/$memberId');
-      final response = await http.delete(url).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Request timeout'),
-      );
-
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to remove group member: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error removing group member: $e');
+    if (response.statusCode == 404) {
+      return const [];
     }
-  }
-
-  /// Cache leeren
-  void clearCache() {
-    _cachedDevices = null;
+    _throwForStatus(response, 'load devices of person $personId');
   }
 }
