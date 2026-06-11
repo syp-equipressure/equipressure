@@ -1,0 +1,65 @@
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 203, 107, 0.24), transparent 34%),
+    radial-gradient(circle at 85% 15%, rgba(118, 169, 255, 0.2), transparent 28%),
+    linear-gradient(180deg, #f8f4ec 0%, #f3efe7 100%);
+}
+
+.ambient {
+  position: absolute;
+  inset: auto;
+  border-radius: 999px;
+  filter: blur(12px);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.ambient-one {
+  top: -6rem;
+  left: -5rem;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(255, 185, 94, 0.12);
+}
+
+.ambient-two {
+  right: -4rem;
+  bottom: -7rem;
+  width: 22rem;
+  height: 22rem;
+  background: rgba(95, 132, 255, 0.12);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: 0;
+  background: rgba(20, 18, 14, 0.38);
+  backdrop-filter: blur(3px);
+}
+
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: min(88vw, 20rem);
+  transform: translateX(-102%);
+  transition: transform 180ms ease;
+  pointer-events: none;
+  box-shadow: 0 24px 60px rgba(20, 18, 14, 0.24);
+}
+
+.drawer.drawer-open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.workspace {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}

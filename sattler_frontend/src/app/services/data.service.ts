@@ -9,7 +9,6 @@ import { Measurement, MeasurementDetail } from '../models/measurement.model';
  */
 @Injectable({ providedIn: 'root' })
 export class DataService {
-  // ─── Customers ───────────────────────────────────────────────────────────
   private readonly _customers: Customer[] = [
     {
       id: 'me',
@@ -56,9 +55,7 @@ export class DataService {
     },
   ];
 
-  // ─── Horses ──────────────────────────────────────────────────────────────
   private readonly _horses: Horse[] = [
-    // Max Mustermann
     {
       id: 'kas',
       name: 'Kas',
@@ -66,7 +63,7 @@ export class DataService {
       breed: 'Englisches Vollblut',
       ownerId: 'max',
       imageUrl:
-        'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=600&q=80',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhcJ4yrtCZcwZc1TLgAuVvcN_P_nOTSFNroA&s',
     },
     {
       id: 'petzi',
@@ -75,7 +72,7 @@ export class DataService {
       breed: 'Haflinger',
       ownerId: 'max',
       imageUrl:
-        'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWt6wuJmZQE2BDls6b8qBH9tZn53jbqvx2xg&s',
     },
     {
       id: 'safira',
@@ -84,7 +81,7 @@ export class DataService {
       breed: 'KWPN',
       ownerId: 'max',
       imageUrl:
-        'https://images.unsplash.com/photo-1534773728080-33d31da27ae5?auto=format&fit=crop&w=600&q=80',
+        'https://www.landtiere.de/assets/images/34/738/34738694-haflinger-pferd-feld-gelb-fell-langhaar-2o4uhwbOmce9.jpg',
     },
     {
       id: 'bella',
@@ -93,7 +90,7 @@ export class DataService {
       breed: 'Isländer',
       ownerId: 'max',
       imageUrl:
-        'https://images.unsplash.com/photo-1452857297128-d9c29adba80b?auto=format&fit=crop&w=600&q=80',
+        'https://www.peta.de/wp-content/uploads/2020/11/horse-721136_1920-1024x682.jpg',
     },
     {
       id: 'mira',
@@ -102,7 +99,7 @@ export class DataService {
       breed: 'Englisches Vollblut',
       ownerId: 'max',
       imageUrl:
-        'https://images.unsplash.com/photo-1551884170-09fb70a3a2ed?auto=format&fit=crop&w=600&q=80',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBLATKZfxrR8DGubqewwirncrMtwXZzF02sQ&s',
     },
     {
       id: 'isa',
@@ -111,7 +108,7 @@ export class DataService {
       breed: 'Englisches Vollblut',
       ownerId: 'max',
       imageUrl:
-        'https://images.unsplash.com/photo-1598974357801-cbca100e65d3?auto=format&fit=crop&w=600&q=80',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkqcEdRShL_kALpMAucGhIcsUs7yABkEZpng&s',
     },
     // Sophie's own
     {
@@ -121,16 +118,16 @@ export class DataService {
       breed: 'Hannoveraner',
       ownerId: 'me',
       imageUrl:
-        'https://images.unsplash.com/photo-1488715399355-f06b1c6f9b48?auto=format&fit=crop&w=600&q=80',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSw0pJRnJEQ5mLbJk_DsEoMDyGIdkVhxua3w&s',
     },
     {
       id: 'my-2',
       name: 'Stella',
-      age: 9,
+      age: 1,
       breed: 'Trakehner',
       ownerId: 'me',
       imageUrl:
-        'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=600&q=80',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ30aD8kRv-jJmBgc6toXFbMnbpogQFtagj4w&s',
     },
   ];
 

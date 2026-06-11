@@ -1,4 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 @Component({
@@ -10,4 +12,12 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 })
 export class StubPage {
   @Input() title = '';
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly routeData = toSignal(this.route.data, { initialValue: {} });
+
+  readonly resolvedTitle = computed(() => {
+    const dataTitle = (this.routeData() as { title?: string }).title ?? '';
+    return this.title || dataTitle;
+  });
 }
