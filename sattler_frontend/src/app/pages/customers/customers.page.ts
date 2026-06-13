@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
+import {AddCustomer} from './add-customer/add-customer';
 
 @Component({
   selector: 'app-customers-page',
   standalone: true,
-  imports: [RouterLink, FormsModule, PageHeaderComponent],
+  imports: [AddCustomer, RouterLink, FormsModule, PageHeaderComponent],
   templateUrl: './customers.page.html',
   styleUrl: './customers.page.scss',
 })
@@ -17,6 +18,8 @@ export class CustomersPage {
 
   readonly query = signal('');
   readonly customers = signal<Customer[]>(this.data.getCustomers());
+  showForm  = signal(false);
+
 
   readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -24,6 +27,11 @@ export class CustomersPage {
     if (!q) return list;
     return list.filter(c => fullName(c).toLowerCase().includes(q));
   });
+
+  addCustomer(c: Customer): void {
+    this.customers.update(list => [...list, c]);
+    this.showForm.set(false);
+  }
 
   fullName = fullName;
 }

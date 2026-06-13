@@ -1,19 +1,30 @@
-<div class="heatmap" [class.mode-heatmap]="mode === 'heatmap'" [class.mode-grid]="mode === 'grid'">
-  @for (row of grid; track $index) {
-    <div class="row">
-      @for (v of row; track $index) {
-        @if (mode === 'heatmap') {
-          <div class="cell" [style.background]="colorFor(v)"></div>
-        } @else {
-          <div
-            class="cell grid-cell"
-            [style.background]="cellBg(v)"
-            [style.border-color]="cellBorder(v)"
-          >
-            {{ v.toFixed(1) }}
-          </div>
+<div
+  class="heatmap"
+  [class.mode-heatmap]="mode === 'heatmap'"
+  [class.mode-grid]="mode === 'grid'"
+  [style.--cols]="colCount"
+>
+  <div class="matrix">
+    @for (row of grid; track $index) {
+      <div class="row">
+        @for (v of row; track $index) {
+          @if (mode === 'heatmap') {
+            <div
+              class="cell"
+              [style.background]="colorFor(v)"
+              [attr.title]="v.toFixed(1) + ' N/cm²'"
+            ></div>
+          } @else {
+            <div
+              class="cell grid-cell"
+              [style.background]="cellBg(v)"
+              [style.border-color]="cellBorder(v)"
+            >
+              {{ v.toFixed(1) }}
+            </div>
+          }
         }
-      }
-    </div>
-  }
+      </div>
+    }
+  </div>
 </div>

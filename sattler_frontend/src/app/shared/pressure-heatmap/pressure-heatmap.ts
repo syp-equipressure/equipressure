@@ -14,6 +14,10 @@ export class PressureHeatmapComponent {
   /** Max value the color scale tops out at — usually 10. */
   @Input() max = 10;
 
+  get colCount(): number {
+    return this.grid[0]?.length ?? 0;
+  }
+
   /**
    * Convert a 0..max pressure value to an HSL color matching the
    * jet-like color scale shown in the screenshots (blue → green → yellow → red).

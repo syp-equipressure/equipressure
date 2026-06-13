@@ -292,10 +292,14 @@
 
 .reset-link {
   margin-left: auto;
+  background: transparent;
+  border: 0;
+  padding: 0;
   color: t.$text-soft;
   font-size: 13px;
   text-decoration: underline;
   text-underline-offset: 3px;
+  cursor: pointer;
 
   &:hover {
     color: t.$text;
@@ -317,6 +321,7 @@
   padding: 10px;
   min-height: 280px;
   display: flex;
+  min-width: 0;
 }
 
 .filter-chip {
@@ -333,6 +338,8 @@
   gap: 6px;
   z-index: 2;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  max-width: calc(100% - 28px);
+  white-space: nowrap;
 
   .dot {
     width: 8px;

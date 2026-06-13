@@ -9,7 +9,7 @@
     <div class="horse-ribbon">{{ h.name }}</div>
     <div class="tabs">
       <button class="tab" [class.active]="tab() === 'messungen'" (click)="setTab('messungen')">Messungen</button>
-      <button class="tab" [class.active]="tab() === 'notizen'"   (click)="setTab('notizen')">Notizen</button>
+      <button class="tab" [class.active]="tab() === 'notizen'" (click)="setTab('notizen')">Notizen</button>
     </div>
   </div>
 }
@@ -29,7 +29,7 @@
         </button>
       }
 
-      <button class="new-measurement">+ Neue Messung</button>
+      <button type="button" class="new-measurement">+ Neue Messung</button>
     </aside>
 
     <article class="detail">
@@ -43,11 +43,11 @@
               </button>
             </div>
             <div class="header-actions">
-              <button class="pill-btn primary">
+              <button type="button" class="pill-btn primary">
                 <span class="material-icons">file_download</span>
                 PDF-Bericht
               </button>
-              <button class="round-btn" aria-label="Teilen">
+              <button type="button" class="round-btn" aria-label="Teilen">
                 <span class="material-icons">ios_share</span>
               </button>
             </div>
@@ -59,6 +59,7 @@
               <div class="toggle">
                 @for (g of ['Schritt', 'Trab', 'Galopp']; track g) {
                   <button
+                    type="button"
                     class="toggle-btn"
                     [class.active]="activeGait() === g"
                     (click)="toggleGait($any(g))"
@@ -72,6 +73,7 @@
               <div class="toggle">
                 @for (s of ['Links', 'Rechts']; track s) {
                   <button
+                    type="button"
                     class="toggle-btn"
                     [class.active]="activeSide() === s"
                     (click)="toggleSide($any(s))"
@@ -80,16 +82,16 @@
               </div>
             </div>
 
-            <a class="reset-link" href="javascript:void(0)">Auf Ø zurücksetzen</a>
+            <button type="button" class="reset-link" (click)="resetView()">Auf Ø zurücksetzen</button>
           </div>
 
           <div class="visual-row">
             <div class="heatmap-wrap">
-              <div class="filter-chip"><span class="dot"></span>Gefiltert</div>
+              <div class="filter-chip"><span class="dot"></span>{{ activeGait() }} · {{ activeSide() }}</div>
               <app-pressure-heatmap
-                [grid]="m.detail.pressureGrid"
+                [grid]="pressureGrid()"
                 [mode]="heatmapMode()"
-                [max]="10"
+                [max]="m.detail.maxNcm2"
               ></app-pressure-heatmap>
               <div class="heatmap-label">Druckverteilung</div>
               <button class="heatmap-expand" aria-label="Vergrößern">
@@ -129,7 +131,7 @@
           </div>
 
           <div class="below">
-            <button class="pill-btn light" (click)="toggleHeatmapMode()">
+            <button type="button" class="pill-btn light" (click)="toggleHeatmapMode()">
               {{ heatmapMode() === 'heatmap' ? 'N/cm² Ansicht' : 'Heatmap Ansicht' }}
             </button>
 
