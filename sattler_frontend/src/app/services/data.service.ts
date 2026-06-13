@@ -15,6 +15,8 @@ export class DataService {
       firstName: 'Sophie',
       lastName: 'Grüneis',
       email: 'sophie.grueneis@example.com',
+      heightCm: 170,
+      weightKg: 62,
       isMe: true,
       horseIds: ['my-1', 'my-2'],
     },
@@ -23,6 +25,8 @@ export class DataService {
       firstName: 'Max',
       lastName: 'Mustermann',
       email: 'max@example.com',
+      heightCm: 182,
+      weightKg: 84,
       horseIds: ['kas', 'petzi', 'safira', 'bella', 'mira', 'isa'],
     },
     {
@@ -30,6 +34,8 @@ export class DataService {
       firstName: 'Anna',
       lastName: 'Nass',
       email: 'anna.nass@example.com',
+      heightCm: 168,
+      weightKg: 59,
       horseIds: [],
     },
     {
@@ -37,6 +43,8 @@ export class DataService {
       firstName: 'Flora',
       lastName: 'Fauna',
       email: 'flora@example.com',
+      heightCm: 171,
+      weightKg: 63,
       horseIds: [],
     },
     {
@@ -44,6 +52,8 @@ export class DataService {
       firstName: 'Kathy',
       lastName: 'Rattenburg',
       email: 'kathy@example.com',
+      heightCm: 166,
+      weightKg: 57,
       horseIds: [],
     },
     {
@@ -51,6 +61,8 @@ export class DataService {
       firstName: 'Kai',
       lastName: 'Huber',
       email: 'kai@example.com',
+      heightCm: 180,
+      weightKg: 79,
       horseIds: [],
     },
   ];
@@ -62,6 +74,8 @@ export class DataService {
       age: 18,
       breed: 'Englisches Vollblut',
       ownerId: 'max',
+      heightCm: 165,
+      weightKg: 520,
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhcJ4yrtCZcwZc1TLgAuVvcN_P_nOTSFNroA&s',
     },
@@ -71,6 +85,8 @@ export class DataService {
       age: 10,
       breed: 'Haflinger',
       ownerId: 'max',
+      heightCm: 152,
+      weightKg: 480,
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWt6wuJmZQE2BDls6b8qBH9tZn53jbqvx2xg&s',
     },
@@ -80,6 +96,8 @@ export class DataService {
       age: 13,
       breed: 'KWPN',
       ownerId: 'max',
+      heightCm: 168,
+      weightKg: 540,
       imageUrl:
         'https://www.landtiere.de/assets/images/34/738/34738694-haflinger-pferd-feld-gelb-fell-langhaar-2o4uhwbOmce9.jpg',
     },
@@ -89,6 +107,8 @@ export class DataService {
       age: 8,
       breed: 'Isländer',
       ownerId: 'max',
+      heightCm: 145,
+      weightKg: 410,
       imageUrl:
         'https://www.peta.de/wp-content/uploads/2020/11/horse-721136_1920-1024x682.jpg',
     },
@@ -98,6 +118,8 @@ export class DataService {
       age: 18,
       breed: 'Englisches Vollblut',
       ownerId: 'max',
+      heightCm: 164,
+      weightKg: 505,
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBLATKZfxrR8DGubqewwirncrMtwXZzF02sQ&s',
     },
@@ -107,16 +129,19 @@ export class DataService {
       age: 18,
       breed: 'Englisches Vollblut',
       ownerId: 'max',
+      heightCm: 163,
+      weightKg: 500,
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkqcEdRShL_kALpMAucGhIcsUs7yABkEZpng&s',
     },
-    // Sophie's own
     {
       id: 'my-1',
       name: 'Luna',
       age: 6,
       breed: 'Hannoveraner',
       ownerId: 'me',
+      heightCm: 160,
+      weightKg: 470,
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSw0pJRnJEQ5mLbJk_DsEoMDyGIdkVhxua3w&s',
     },
@@ -126,12 +151,13 @@ export class DataService {
       age: 1,
       breed: 'Trakehner',
       ownerId: 'me',
+      heightCm: 138,
+      weightKg: 320,
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ30aD8kRv-jJmBgc6toXFbMnbpogQFtagj4w&s',
     },
   ];
 
-  // ─── Measurements ────────────────────────────────────────────────────────
   private readonly _measurements: Measurement[] = [
     {
       id: 'm1',
@@ -191,8 +217,6 @@ export class DataService {
   }
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
 function buildPetziDetail(): MeasurementDetail {
   return {
     maxNcm2: 5.8,
@@ -215,11 +239,6 @@ function buildPetziDetail(): MeasurementDetail {
   };
 }
 
-/**
- * 18 rows × 18 cols pressure grid that produces the heatmap from the screenshot:
- * two hot bands (left+right of the spine), one bright hotspot in the upper-left,
- * one hotspot in the lower-right.
- */
 function buildPetziPressureGrid(): number[][] {
   const rows = 18;
   const cols = 18;
@@ -227,18 +246,14 @@ function buildPetziPressureGrid(): number[][] {
   for (let r = 0; r < rows; r++) {
     const row: number[] = [];
     for (let c = 0; c < cols; c++) {
-      // Two vertical pressure bands centered around col=5 and col=13.
       const leftBand = bell(c, 5, 1.5) * bellVertical(r, rows);
       const rightBand = bell(c, 13, 1.5) * bellVertical(r, rows);
-      // Hotspots
       const topLeftHot = bell(c, 5, 1.2) * bell(r, 3, 1.3) * 2.8;
       const bottomRightHot = bell(c, 13, 1.4) * bell(r, 14, 1.8) * 2.4;
 
       let v = (leftBand + rightBand) * 3.4 + topLeftHot + bottomRightHot;
-      // Floor + slight noise so the grid looks natural.
       const noise = ((r * 13 + c * 7) % 5) * 0.05;
       v = Math.max(0, v + noise);
-      // Spine gutter (no pressure exactly on center)
       if (c >= 8 && c <= 10) {
         v *= 0.05;
       }
@@ -255,7 +270,6 @@ function bell(x: number, center: number, sigma: number): number {
 }
 
 function bellVertical(r: number, rows: number): number {
-  // Pressure profile along the spine: smooth peak around the middle, tapered at the ends.
   const mid = rows / 2;
   return Math.max(0, 1 - Math.abs(r - mid) / (rows * 0.7));
 }

@@ -5,4 +5,6 @@ export interface Horse {
   breed: string;
   imageUrl: string;
   ownerId: string;
+  heightCm: number;
+  weightKg: number;
 }

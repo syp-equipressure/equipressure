@@ -3,6 +3,8 @@ export interface Customer {
   firstName: string;
   lastName: string;
   email?: string;
+  heightCm: number;
+  weightKg: number;
   isMe?: boolean;
   horseIds: string[];
 }

@@ -46,6 +46,16 @@ export class MeasurementsPage {
     return list[0] ?? null;
   });
 
+  readonly pressureGrid = computed(() => {
+    const measurement = this.selected();
+    if (!measurement) {
+      return [];
+    }
+
+    const grid = measurement.detail.pressureGrid;
+    return this.activeSide() === 'Rechts' ? mirrorGridX(grid) : grid;
+  });
+
   readonly activeGait = signal<Gait>('Trab');
   readonly activeSide = signal<Side>('Links');
   readonly heatmapMode = signal<HeatmapMode>('heatmap');
@@ -69,4 +79,14 @@ export class MeasurementsPage {
   toggleHeatmapMode() {
     this.heatmapMode.update(m => (m === 'heatmap' ? 'grid' : 'heatmap'));
   }
+
+  resetView() {
+    this.activeGait.set('Trab');
+    this.activeSide.set('Links');
+    this.heatmapMode.set('heatmap');
+  }
+}
+
+function mirrorGridX(grid: number[][]): number[][] {
+  return grid.map(row => [...row].reverse());
 }

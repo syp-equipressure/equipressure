@@ -1,7 +1,150 @@
-<app-page-header [title]="resolvedTitle()"></app-page-header>
-<section class="stub">
-  <div class="card">
-    <h2>{{ resolvedTitle() }}</h2>
-    <p>WIP</p>
-  </div>
-</section>
+<app-page-header [title]="isNewMeasurement() ? 'Neue Messung' : resolvedTitle()"></app-page-header>
+
+@if (isNewMeasurement()) {
+  <section class="new-measurement-shell">
+    <div class="new-measurement-panel">
+      <header class="page-title-row">
+      </header>
+
+      @if (selectedOwner(); as owner) {
+        @if (selectedHorse(); as horse) {
+          <div class="top-grid">
+            <article class="card rider-card">
+              <div class="card-head">
+                <h3>Reiter:in</h3>
+                <div class="avatar" aria-hidden="true">{{ riderName().charAt(0) || '?' }}</div>
+              </div>
+
+              <label class="field">
+                <span class="field-label">Name</span>
+                <div class="select-shell">
+                  <select class="select-input" [value]="owner.owner.id" (change)="selectOwner($any($event.target).value)">
+                    @for (entry of owners(); track entry.owner.id) {
+                      <option [value]="entry.owner.id">{{ fullName(entry.owner) }}</option>
+                    }
+                  </select>
+                  <span class="select-icon material-icons">chevron_right</span>
+                </div>
+              </label>
+
+              <div class="metrics">
+                <div class="metric">
+                  <span class="metric-label">Größe</span>
+                  <div class="metric-value">{{ riderHeight() }} cm</div>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Gewicht</span>
+                  <div class="metric-value">{{ riderWeight() }} kg</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card horse-card">
+              <div class="card-head">
+                <h3>Pferd</h3>
+              </div>
+
+              <label class="field">
+                <span class="field-label">Name</span>
+                <div class="select-shell">
+                  <select
+                    class="select-input"
+                    [value]="horse.id"
+                    (change)="selectHorse($any($event.target).value)"
+                  >
+                    @for (entry of availableHorses(); track entry.id) {
+                      <option [value]="entry.id">{{ entry.name }}</option>
+                    }
+                  </select>
+                  <span class="select-icon material-icons">chevron_right</span>
+                </div>
+              </label>
+
+              <div class="metrics">
+                <div class="metric">
+                  <span class="metric-label">Größe</span>
+                  <div class="metric-value">{{ horseHeight() }} cm</div>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Gewicht</span>
+                  <div class="metric-value">{{ horseWeight() }} kg</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card summary-card">
+              <div class="card-head summary-head">
+                <h3>Zusammenfassung</h3>
+                <span class="summary-badge material-icons">play_arrow</span>
+              </div>
+
+              <div class="summary-list">
+                @for (row of summaryRows(); track row.label) {
+                  <div class="summary-row">
+                    <span class="summary-label">{{ row.label }}</span>
+                    <span class="summary-value" [class.accent]="row.accent">{{ row.value }}</span>
+                  </div>
+                }
+              </div>
+            </article>
+          </div>
+
+          <div class="bottom-grid">
+            <article class="card saddle-card">
+              <h3>Sattel</h3>
+
+              <div class="saddle-grid">
+                <label class="field">
+                  <span class="field-label">Modell</span>
+                  <div class="select-shell">
+                    <input class="text-input" [value]="selectedSaddleName()" readonly />
+                    <span class="select-icon material-icons">chevron_right</span>
+                  </div>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">Kategorie</span>
+                  <div class="select-shell">
+                    <input class="text-input" value="Dressur" readonly />
+                  </div>
+                </label>
+              </div>
+            </article>
+
+            <article class="card recent-card">
+              <div class="card-head">
+                <h3>Letzte Messungen</h3>
+              </div>
+
+              <div class="recent-list">
+                @for (item of recentMeasurements(); track item.id) {
+                  <div class="recent-row">
+                    <span class="dot" [class.green]="item.tone === 'green'" [class.red]="item.tone === 'red'"></span>
+                    <div class="recent-meta">
+                      <div class="recent-label">{{ item.label }}</div>
+                      <div class="recent-date">{{ item.date }}</div>
+                    </div>
+                    <div class="recent-score" [class.green]="item.tone === 'green'" [class.red]="item.tone === 'red'">
+                      {{ item.score }}
+                    </div>
+                  </div>
+                }
+              </div>
+            </article>
+          </div>
+        }
+      }
+
+      <button type="button" class="continue-btn" (click)="continueToMeasurement()">
+        Weiter zur Messung
+      </button>
+    </div>
+  </section>
+} @else {
+  <section class="stub">
+    <div class="card stub-card">
+      <h2>{{ resolvedTitle() }}</h2>
+      <p>WIP</p>
+    </div>
+  </section>
+}

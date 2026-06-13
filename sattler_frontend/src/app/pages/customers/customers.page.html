@@ -10,10 +10,17 @@
         [ngModel]="query()"
         (ngModelChange)="query.set($event)"
       />
-      <button class="primary-btn">
+      <button class="primary-btn" (click)="showForm.set(true)">
         <span class="material-icons">add</span>
         Neue Kund*in
       </button>
+
+      @if (showForm()) {
+        <app-new-customer-form
+          (saved)="addCustomer($event)"
+          (cancelled)="showForm.set(false)"
+        />
+      }
     </div>
 
     <div class="list-card">
