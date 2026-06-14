@@ -40,7 +40,7 @@ public sealed class PersonController(
                                                                            notFound => NotFound());
     }
 
-    [HttpGet("equestrians/{equestrianId:int}/saddlers/{saddlerId:int}")]
+    [HttpGet("saddlers/{saddlerId:int}")]
     [ProducesResponseType<Helper.SaddlerBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -52,7 +52,7 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        var result = await personService.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
+        var result = await personService.GetPersonAsSaddlerByIdAsync(saddlerId);
 
         return result.Match<ActionResult<Helper.SaddlerBasicDto>>(success =>
                                                                             Ok(Helper.SaddlerBasicDto

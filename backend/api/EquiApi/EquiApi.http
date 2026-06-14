@@ -9,7 +9,7 @@
 GET {{BaseUrl}}/persons/equestrians/{{personId}}
 
 ### 1.2 Person (Saddler) abrufen
-GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/saddlers/{{saddlerId}}
+GET {{BaseUrl}}/persons/saddlers/{{saddlerId}}
 
 ### 2. Person abrufen (minimale Daten)
 GET {{BaseUrl}}/persons/{{personId}}/profile-data
