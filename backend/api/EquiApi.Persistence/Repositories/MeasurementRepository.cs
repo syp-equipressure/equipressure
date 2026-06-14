@@ -167,5 +167,21 @@ internal sealed class MeasurementRepository(
                      .Where(d => d.MeasurementId == mId && d.Id == dId)
                      .FirstOrDefaultAsync();
     }
+    
+    public async ValueTask<Measurement?> GetMeasurementByIdAsync(int mgId, int mId)
+    {
+        return await measurementSet
+                     .Where(m => m.GroupId == mgId && m.Id == mId)
+                     .FirstOrDefaultAsync();
+    }
 
+    public void AddMeasurement(Measurement measurement)
+    {
+        measurementSet.Add(measurement);
+    }
+
+    public void RemoveMeasurement(Measurement measurement)
+    {
+        measurementSet.Remove(measurement);
+    }
 }
