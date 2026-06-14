@@ -133,5 +133,24 @@ public interface IMeasurementService
 
 public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
 {
-    
+    public async ValueTask<GetGroupsByHorseResult> GetGroupsByHorseAsync(int horseId)
+    {
+        if (!await uow.MeasurementRepository.HorseExistsAsync(horseId))
+        {
+            logger.LogWarning("Horse with id {HorseId} not found", horseId);
+            return new NotFound();
+        }
+
+        var groups = await uow.MeasurementRepository.GetAllGroupsByHorseAsync(horseId);
+
+        if (groups.Count <= 0)
+        {
+            logger.LogWarning("No measurement groups found for horse {HorseId}", horseId);
+            return new None();
+        }
+
+        logger.LogInformation("Successfully retrieved {Count} measurement groups for horse {HorseId}",
+                              groups.Count, horseId);
+        return new Success<IReadOnlyCollection<MeasurementGroup>>(groups);
+    }
 }
