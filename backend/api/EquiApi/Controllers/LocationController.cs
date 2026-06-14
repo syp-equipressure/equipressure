@@ -37,7 +37,7 @@ public sealed class LocationController(
             return BadRequest();
         }
 
-        var result = await locationService.AddAddressAsync(request.Address, request.PLZ, request.CityName);
+        var result = await locationService.AddAddressAsync(request.Street, request.PLZ, request.CityName);
 
         return result.Match<IActionResult>(
             success =>

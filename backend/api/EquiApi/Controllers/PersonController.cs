@@ -1,7 +1,7 @@
 ﻿using EquiApi.Core.Services;
-using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
+using EquiApi.Shared;
 using EquiApi.Util;
 using EquiPressure.Core.Service;
 using Microsoft.AspNetCore.Mvc;
@@ -191,8 +191,7 @@ public sealed class PersonController(
     [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
     public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlersWithAddress()
     {
-        OneOf<Success<List<Helper.SaddlerBasicData>>, None> result
-            = await personService.GetAllSaddlersAsync();
+        var result = await personService.GetAllSaddlersAsync();
 
         return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
                                                                              {

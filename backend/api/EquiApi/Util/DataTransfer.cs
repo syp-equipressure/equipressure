@@ -1,5 +1,6 @@
 ﻿using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
+using EquiApi.Shared;
 using FluentValidation;
 using NodaTime;
 
@@ -44,8 +45,8 @@ public class DataTransfer
                 RuleFor(x => x.DateOfBirth).NotNull().LessThan(LocalDate.FromDateTime(DateTime.Today));
                 RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
                                      .WithMessage("Email must contain '@' and a '.' after it");
-                RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == "Equestrian");
-                RuleFor(x => x.Description).Empty().When(x => x.Role.Name == "Equestrian");
+                RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == RoleName.Equestrian);
+                RuleFor(x => x.Description).Empty().When(x => x.Role.Name == RoleName.Equestrian);
             }
         }
     }
@@ -67,7 +68,7 @@ public class DataTransfer
     /// <param name="HouseNumber">optional Housenumber of the person</param>
     /// <param name="CityName">CityName of the person</param>
     /// <param name="PLZ">PLZ of the person</param>
-    public sealed record AddressDto(string? Street, int? HouseNumber, string CityName, string PLZ)
+    public sealed record AddressDto(string? Street, string CityName, string PLZ)
     {
         public sealed class Validator : AbstractValidator<AddressDto>
         {
@@ -79,7 +80,7 @@ public class DataTransfer
         }
 
         public static AddressDto FromAddress(Address address) =>
-            new(address.Street, address.HouseNumber, address.City.Name, address.City.PLZ);
+            new(address.AddressName, address.CityName, address.PLZ);
     }
 
     /// <summary>
@@ -166,7 +167,7 @@ public class DataTransfer
     {
         public static HorseListResponse FromHorses(IEnumerable<Horse> horses) => new(horses.Select(HorseDto.FromHorse));
     }
-    
+
     /// <summary>
     /// DTO that returns device
     /// </summary>
@@ -175,7 +176,11 @@ public class DataTransfer
     /// <param name="owner">owner of the device</param>
     /// <param name="DeviceUser">List of users of the device</param>
     public sealed record MeasurementDeviceDto(string Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
-
+    {
+        public static MeasurementDeviceDto FromDevice(MeasurementDevice device) =>
+            new(device.Id, device.CategoryId, device.Owner, device.Users);
+    }
+    
     /// <summary>
     /// DTO that returns list of device dtos
     /// </summary>
@@ -256,9 +261,9 @@ public class DataTransfer
         string? CityName,
         string? PLZ)
     {
-        public static EquestrianBasicDto FromEquestrianBasicData(EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.AddressName,
-                data.CityName, data.PLZ);
+        public static EquestrianBasicDto FromEquestrianBasicData(Helper.EquestrianBasicData data, int id) =>
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street,
+                data.City, data.PLZ);
     }
 
     public sealed record SaddlerBasicDto(
@@ -269,12 +274,10 @@ public class DataTransfer
         string CityName,
         string PLZ,
         string? Link,
-        string? Description,
-        bool IsFavourite)
+        string? Description)
     {
-        public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.AddressName, data.CityName, data.PLZ, data.Link,
-                data.Description, data.IsFavourite);
+        public static SaddlerBasicDto FromSaddlerBasicData(Helper.SaddlerBasicData data) =>
+            new(data.Id, data.FirstName, data.LastName, data.Street, data.City, data.PLZ, data.Link, data.Description);
     }
 
     public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
