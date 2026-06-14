@@ -1,0 +1,122 @@
+<div class="form-overlay" (click)="cancel()"></div>
+
+<div class="form-panel" role="dialog" aria-modal="true" aria-label="Neues Pferd hinzufügen">
+  <div class="form-header">
+    <h2 class="form-title">Neues Pferd</h2>
+    <button class="close-btn" (click)="cancel()" aria-label="Schließen">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+
+  <div class="form-body">
+
+
+
+    <div class="form-field">
+      <label class="form-label">Bild (optional)</label>
+      <label class="file-input-label" for="imageFile">
+        <span class="material-icons">upload</span>
+        Bild auswählen
+      </label>
+      <input
+        id="imageFile"
+        class="file-input-hidden"
+        type="file"
+        accept="image/*"
+        (change)="onFileSelected($event)"
+      />
+    </div>
+
+    <div class="form-field" [class.has-error]="errors()['name']">
+      <label class="form-label" for="horseName">Name *</label>
+      <input
+        id="horseName"
+        class="form-input"
+        type="text"
+        placeholder="z. B. Wolke"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+      />
+      @if (errors()['name']) {
+        <span class="form-error">{{ errors()['name'] }}</span>
+      }
+    </div>
+
+    <div class="form-field" [class.has-error]="errors()['breed']">
+      <label class="form-label" for="breed">Rasse *</label>
+      <input
+        id="breed"
+        class="form-input"
+        type="text"
+        placeholder="z. B. Hannoveraner"
+        [ngModel]="breed()"
+        (ngModelChange)="breed.set($event)"
+      />
+      @if (errors()['breed']) {
+        <span class="form-error">{{ errors()['breed'] }}</span>
+      }
+    </div>
+
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['age']">
+        <label class="form-label" for="age">Alter (Jahre) *</label>
+        <input
+          id="age"
+          class="form-input"
+          type="number"
+          placeholder="z. B. 8"
+          min="0"
+          max="40"
+          [ngModel]="age()"
+          (ngModelChange)="setNumber(age.set.bind(age), $event)"
+        />
+        @if (errors()['age']) {
+          <span class="form-error">{{ errors()['age'] }}</span>
+        }
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['heightCm']">
+        <label class="form-label" for="heightCm">Stockmaß (cm) *</label>
+        <input
+          id="heightCm"
+          class="form-input"
+          type="number"
+          placeholder="z. B. 168"
+          min="100"
+          max="220"
+          [ngModel]="heightCm()"
+          (ngModelChange)="setNumber(heightCm.set.bind(heightCm), $event)"
+        />
+        @if (errors()['heightCm']) {
+          <span class="form-error">{{ errors()['heightCm'] }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-field" [class.has-error]="errors()['weightKg']">
+      <label class="form-label" for="weightKg">Gewicht (kg) *</label>
+      <input
+        id="weightKg"
+        class="form-input"
+        type="number"
+        placeholder="z. B. 580"
+        min="50"
+        max="1200"
+        [ngModel]="weightKg()"
+        (ngModelChange)="setNumber(weightKg.set.bind(weightKg), $event)"
+      />
+      @if (errors()['weightKg']) {
+        <span class="form-error">{{ errors()['weightKg'] }}</span>
+      }
+    </div>
+
+  </div>
+
+  <div class="form-footer">
+    <button class="secondary-btn" (click)="cancel()">Abbrechen</button>
+    <button class="primary-btn" (click)="submit()">
+      <span class="material-icons">check</span>
+      Speichern
+    </button>
+  </div>
+</div>

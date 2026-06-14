@@ -29,7 +29,7 @@
         </button>
       }
 
-      <button type="button" class="new-measurement">+ Neue Messung</button>
+      <button type="button" class="new-measurement" (click)="newMeasurement()">+ Neue Messung</button>
     </aside>
 
     <article class="detail">
@@ -112,7 +112,24 @@
               <span class="scale-skala">SKALA</span>
             </div>
 
-            <div class="video-grid">
+            <div class="info-grid">
+              <div class="info-col">
+                <div class="info-label">REITER*IN</div>
+                <div class="info-value">
+                  {{ m.detail.riderName }} | {{ m.detail.riderHeightM.toString().replace('.', ',') }}m | {{ m.detail.riderWeightKg }}kg
+                </div>
+                <div class="info-label spaced">SATTEL</div>
+                <div class="info-value">{{ m.detail.saddleName }}</div>
+              </div>
+              <div class="info-col">
+                <div class="info-label">DAUER</div>
+                <div class="info-value">{{ m.detail.durationFull }}</div>
+                <div class="info-label spaced">GANG</div>
+                <div class="info-value">{{ m.detail.gaits.join(', ') }}</div>
+              </div>
+            </div>
+
+            <div class="video-grid" style="display: none;">
               <app-video-tile
                 class="main-vid"
                 [src]="m.detail.videos.main || ''"
@@ -155,23 +172,6 @@
                 <div class="stat-value orange">
                   {{ m.symmetryPct }}<span class="stat-unit">%</span>
                 </div>
-              </div>
-            </div>
-
-            <div class="info-grid">
-              <div class="info-col">
-                <div class="info-label">REITER*IN</div>
-                <div class="info-value">
-                  {{ m.detail.riderName }} | {{ m.detail.riderHeightM.toString().replace('.', ',') }}m | {{ m.detail.riderWeightKg }}kg
-                </div>
-                <div class="info-label spaced">SATTEL</div>
-                <div class="info-value">{{ m.detail.saddleName }}</div>
-              </div>
-              <div class="info-col">
-                <div class="info-label">DAUER</div>
-                <div class="info-value">{{ m.detail.durationFull }}</div>
-                <div class="info-label spaced">GANG</div>
-                <div class="info-value">{{ m.detail.gaits.join(', ') }}</div>
               </div>
             </div>
           </div>

@@ -1,6 +1,11 @@
 <header class="page-header">
   <div class="left">
-    @if (showMenu) {
+    @if (showBack) {
+      <button class="back-btn" (click)="back()">
+        <span class="material-icons">arrow_back</span>
+        <span>Zurück</span>
+      </button>
+    } @else if (showMenu) {
       <button class="icon-btn" (click)="openMenu()" aria-label="Menü öffnen">
         <span class="material-icons">menu</span>
       </button>
@@ -15,15 +20,8 @@
   </div>
 
   <div class="right">
-    @if (showBack) {
-      <button class="back-btn" (click)="back()">
-        <span class="material-icons">arrow_back</span>
-        <span>Zurück</span>
-      </button>
-    } @else {
-      <div class="profile-circle" aria-label="Profil">
-        <span class="material-icons">person</span>
-      </div>
-    }
+    <div class="profile-circle" aria-label="Profil">
+      <span class="material-icons">person</span>
+    </div>
   </div>
 </header>

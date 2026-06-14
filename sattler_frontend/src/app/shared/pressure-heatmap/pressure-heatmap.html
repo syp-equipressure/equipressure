@@ -4,17 +4,13 @@
   [class.mode-grid]="mode === 'grid'"
   [style.--cols]="colCount"
 >
-  <div class="matrix">
-    @for (row of grid; track $index) {
-      <div class="row">
-        @for (v of row; track $index) {
-          @if (mode === 'heatmap') {
-            <div
-              class="cell"
-              [style.background]="colorFor(v)"
-              [attr.title]="v.toFixed(1) + ' N/cm²'"
-            ></div>
-          } @else {
+  @if (mode === 'heatmap') {
+    <canvas #canvas class="heatmap-canvas"></canvas>
+  } @else {
+    <div class="matrix">
+      @for (row of grid; track $index) {
+        <div class="row">
+          @for (v of row; track $index) {
             <div
               class="cell grid-cell"
               [style.background]="cellBg(v)"
@@ -23,8 +19,8 @@
               {{ v.toFixed(1) }}
             </div>
           }
-        }
-      </div>
-    }
-  </div>
+        </div>
+      }
+    </div>
+  }
 </div>
