@@ -96,6 +96,15 @@ internal sealed class MeasurementRepository(
                      .Include(mg => mg.Horse)
                      .ThenInclude(h => h.HorseBreeds)
                      .Include(mg => mg.Saddle)
-                     .Where(mg => mg.Id == mgId) .FirstOrDefaultAsync();
+                     .Where(mg => mg.Id == mgId)
+                     .FirstOrDefaultAsync();
     }
+
+    public async ValueTask<IReadOnlyCollection<Measurement>> GetMeasurementsByGroupAsync(int mgId)
+    {
+        return await measurementSet
+                     .Where(m => m.GroupId == mgId)
+                     .AsNoTracking()
+                     .ToListAsync();
+    } 
 }
