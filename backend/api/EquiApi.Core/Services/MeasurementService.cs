@@ -153,4 +153,19 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
                               groups.Count, horseId);
         return new Success<IReadOnlyCollection<MeasurementGroup>>(groups);
     }
+    
+    public async ValueTask<GetGroupByIdResult> GetGroupByIdAsync(int mgId)
+    {
+        var group = await uow.MeasurementRepository.GetGroupByIdAsync(mgId);
+
+        if (group is null)
+        {
+            logger.LogWarning("Measurement group with id {MgId} not found", mgId);
+            return new NotFound();
+        }
+
+        logger.LogInformation("Successfully retrieved measurement group {MgId}", mgId);
+        return new Success<MeasurementGroup>(group);
+    }
+
 }
