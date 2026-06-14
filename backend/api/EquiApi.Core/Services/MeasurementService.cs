@@ -293,6 +293,26 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
                               data.Count, mId);
         return new Success<IReadOnlyCollection<MeasurementData>>(data);
     }
+    
+    public async ValueTask<GetDataByIdResult> GetDataByIdAsync(int mgId, int mId, int dId)
+    {
+        if (!await uow.MeasurementRepository.MeasurementExistsAsync(mgId, mId))
+        {
+            logger.LogWarning("Measurement {MId} in group {MgId} not found", mId, mgId);
+            return new NotFound();
+        }
+
+        var data = await uow.MeasurementRepository.GetDataByIdAsync(mId, dId);
+
+        if (data is null)
+        {
+            logger.LogWarning("Data entry {DId} for measurement {MId} not found", dId, mId);
+            return new NotFound();
+        }
+
+        logger.LogInformation("Successfully retrieved data entry {DId}", dId);
+        return new Success<MeasurementData>(data);
+    }
 
     private static bool TryParseAll(IReadOnlyCollection<MeasurementData> data, out List<double> values)
     {
