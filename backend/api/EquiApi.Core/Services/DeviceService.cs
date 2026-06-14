@@ -159,7 +159,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
     public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, 
         int categoryId)
     {
-        if (!(await uow.PersonRepository.PersonExists(ownerId)))
+        if (!(await uow.PersonRepository.PersonExistsAsync(ownerId)))
         {
             logger.LogWarning("Person with id {id} could not be found", ownerId);
             return new NotFound();
@@ -195,7 +195,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
 
-        if (!await uow.PersonRepository.PersonExists(userId))
+        if (!await uow.PersonRepository.PersonExistsAsync(userId))
         {
             logger.LogWarning("User with id {id} could not be found", userId);
             return new NotFound();
@@ -232,7 +232,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
 
-        if (!await uow.PersonRepository.PersonExists(userId))
+        if (!await uow.PersonRepository.PersonExistsAsync(userId))
         {
             logger.LogWarning("User with id {id} could not be found", userId);
             return new NotFound();

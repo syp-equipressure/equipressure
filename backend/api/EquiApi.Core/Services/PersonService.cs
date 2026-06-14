@@ -1,6 +1,6 @@
-using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
+using EquiApi.Shared;
 using EquiPressure.Core.Service;
 using OneOf.Types;
 
@@ -54,17 +54,17 @@ public interface IPersonService
     /// </returns>
     public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId);
 
+    
     /// <summary>
     /// Retrieves the specific Saddler
     /// </summary>
     /// <param name="saddlerId">The id of the saddler.</param>
-    /// <param name="equestrianId">The id of the equestrian.</param>
     /// <returns>
     /// A <see cref="Success{Saddler}"/> containing the Saddler Basic Data,
     /// <see cref="IBaseService.InvalidData"/> Invalid Ids
     /// or <see cref="NotFound"/> if the person(s) are not found.
     /// </returns>
-    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
+    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId);
 
     /// <summary>
     /// Retrieves the First and Last name for a person.
@@ -248,6 +248,22 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success<Address>(result);
     }
 
+    public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId)
+    {
+        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId);
+
+        if (result is null)
+        {
+            logger.LogWarning("Equestrian could not be found");
+
+            return new NotFound();
+        }
+
+        logger.LogInformation("Equestrian successfully got");
+
+        return new Success<Helper.SaddlerBasicData>(result);
+    }
+
     public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(
         int saddlerId, int equestrianId)
     {
@@ -259,7 +275,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new IBaseService.InvalidData();
         }
 
-        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
+        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId);
 
         if (result is null)
         {

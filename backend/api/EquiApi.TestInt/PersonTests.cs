@@ -22,10 +22,11 @@ public sealed class PersonIntegrationTests(WebApiTestFixture webApiFixture) : We
             "max.success@reiter.at",
             "https://reiter.at",
             "Ein valider Test-Reiter",
-            new Address 
-            { 
-                City = new City { Name = "Linz", PLZ = "4020" }, 
-                Street = "Hauptstraße 1" 
+            new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+                    
             },
             new AccountRole { Name = RoleName.Equestrian }
         );
@@ -52,10 +53,11 @@ public sealed class PersonIntegrationTests(WebApiTestFixture webApiFixture) : We
                 DateOfBirth = new LocalDate(1990, 1, 1),
                 Email = DuplicateEmail,
     
-                Address = new Address 
-                { 
-                    City = new City { Name = "Linz", PLZ = "4020" }, 
-                    Street = "Hauptstraße 1" 
+                Address = new Address
+                {
+                    PLZ = "4050",
+                    CityName = "Traun"
+                    
                 },
                 Roles = new List<PersonRoleAssignment>
                 {
@@ -80,10 +82,11 @@ public sealed class PersonIntegrationTests(WebApiTestFixture webApiFixture) : We
                                                         DuplicateEmail,
                                                         null,
                                                         null,
-                                                        new Address 
-                                                        { 
-                                                            City = new City { Name = "Linz", PLZ = "4020" }, 
-                                                            Street = "Hauptstraße 1" 
+                                                        new Address
+                                                        {
+                                                            PLZ = "4050",
+                                                            CityName = "Traun"
+                    
                                                         },
                                                         new AccountRole { Name = RoleName.Equestrian }
                                                        );
@@ -106,10 +109,11 @@ public sealed class PersonIntegrationTests(WebApiTestFixture webApiFixture) : We
             "invalid.fields@reiter.at",
             null,
             null,
-            new Address 
-            { 
-                City = new City { Name = "Linz", PLZ = "4020" }, 
-                Street = "Hauptstraße 1" 
+            new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+                    
             },
             new AccountRole { Name = RoleName.Equestrian }
         );
@@ -131,10 +135,11 @@ public sealed class PersonIntegrationTests(WebApiTestFixture webApiFixture) : We
             "future@reiter.at",
             null,
             null,
-            new Address 
-            { 
-                City = new City { Name = "Linz", PLZ = "4020" }, 
-                Street = "Hauptstraße 1" 
+            new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+                    
             },
             new AccountRole { Name = RoleName.Equestrian }
         );

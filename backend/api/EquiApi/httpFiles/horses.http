@@ -1,1 +1,5 @@
 @BaseUrl = http://localhost:5200/api/horses
+
+
+### 1. Alle Pferde eines users
+GET {{BaseUrl}}/1
