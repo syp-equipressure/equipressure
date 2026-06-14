@@ -19,6 +19,10 @@ using GetAllDataByMeasurementResult =
     OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<MeasurementData>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetDataByIdResult =
     OneOf.OneOf<OneOf.Types.Success<MeasurementData>, OneOf.Types.NotFound>;
+using AddMeasurementResult =
+    OneOf.OneOf<OneOf.Types.Success<Measurement>, OneOf.Types.NotFound, IBaseService.Conflict>;
+using DeleteMeasurementResult =
+    OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound>;
 
 public interface IMeasurementService
 {
@@ -129,6 +133,31 @@ public interface IMeasurementService
     /// or <see cref="NotFound"/> if the group, measurement, or data entry does not exist.
     /// </returns>
     public ValueTask<GetDataByIdResult> GetDataByIdAsync(int mgId, int mId, int dId);
+    
+    /// <summary>
+    /// Adds a new measurement to a measurement group.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <param name="pace">The pace (Gangart) of the measurement.</param>
+    /// <param name="hand">The hand (Seite) of the measurement.</param>
+    /// <param name="description">Optional description.</param>
+    /// <returns>
+    /// A <see cref="Success{Measurement}"/> if created,
+    /// <see cref="NotFound"/> if the group does not exist,
+    /// or <see cref="IBaseService.Conflict"/> if a measurement with the same pace and hand already exists.
+    /// </returns>
+    public ValueTask<AddMeasurementResult> AddMeasurementAsync(int mgId, string pace, string hand, string? description);
+
+    /// <summary>
+    /// Removes a measurement from a measurement group.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <param name="mId">The id of the measurement.</param>
+    /// <returns>
+    /// A <see cref="Success"/> if deleted,
+    /// or <see cref="NotFound"/> if the group or measurement does not exist.
+    /// </returns>
+    public ValueTask<DeleteMeasurementResult> DeleteMeasurementAsync(int mgId, int mId);
 }
 
 public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
@@ -329,5 +358,50 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         }
 
         return values.Count > 0;
+    }
+    
+    public async ValueTask<AddMeasurementResult> AddMeasurementAsync(int mgId, string pace, string hand, string? description)
+    {
+        if (!await uow.MeasurementRepository.GroupExistsAsync(mgId))
+        {
+            logger.LogWarning("Measurement group {MgId} not found", mgId);
+            return new NotFound();
+        }
+
+        var existing = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
+        if (existing is not null)
+        {
+            logger.LogWarning("Measurement with pace={Pace} hand={Hand} already exists in group {MgId}", pace, hand, mgId);
+            return new IBaseService.Conflict();
+        }
+
+        var measurement = new Measurement
+        {
+            GroupId = mgId,
+            Pace = pace,
+            Hand = hand,
+            Description = description
+        };
+
+        uow.MeasurementRepository.AddMeasurement(measurement);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Measurement successfully added to group {MgId}", mgId);
+        return new Success<Measurement>(measurement);
+    }
+
+    public async ValueTask<DeleteMeasurementResult> DeleteMeasurementAsync(int mgId, int mId)
+    {
+        var measurement = await uow.MeasurementRepository.GetMeasurementByIdAsync(mgId, mId);
+
+        if (measurement is null)
+        {
+            logger.LogWarning("Measurement {MId} in group {MgId} not found", mId, mgId);
+            return new NotFound();
+        }
+
+        uow.MeasurementRepository.RemoveMeasurement(measurement);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Measurement {MId} successfully removed", mId);
+        return new Success();
     }
 }
