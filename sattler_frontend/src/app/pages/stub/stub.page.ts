@@ -40,6 +40,7 @@ export class StubPage {
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
   private readonly routeData = toSignal(this.route.data, { initialValue: {} });
+  private readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   readonly resolvedTitle = computed(() => {
     const dataTitle = (this.routeData() as { title?: string }).title ?? '';
@@ -132,10 +133,23 @@ export class StubPage {
   });
 
   constructor() {
-    const firstOwner = this.owners()[0];
-    if (firstOwner) {
-      this.selectedOwnerId.set(firstOwner.owner.id);
-      this.selectedHorseId.set(firstOwner.horses[0]?.id ?? null);
+    // Check for query parameters (pre-filled from horse detail page)
+    const params = this.route.snapshot.queryParamMap;
+    const ownerId = params.get('ownerId');
+    const horseId = params.get('horseId');
+
+    if (ownerId) {
+      this.selectedOwnerId.set(ownerId);
+      if (horseId) {
+        this.selectedHorseId.set(horseId);
+      }
+    } else {
+      // Default: select first owner and horse
+      const firstOwner = this.owners()[0];
+      if (firstOwner) {
+        this.selectedOwnerId.set(firstOwner.owner.id);
+        this.selectedHorseId.set(firstOwner.horses[0]?.id ?? null);
+      }
     }
   }
 

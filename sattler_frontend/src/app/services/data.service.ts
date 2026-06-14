@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { Measurement, MeasurementDetail } from '../models/measurement.model';
@@ -9,7 +9,7 @@ import { Measurement, MeasurementDetail } from '../models/measurement.model';
  */
 @Injectable({ providedIn: 'root' })
 export class DataService {
-  private readonly _customers: Customer[] = [
+  private readonly _customers = signal<Customer[]>([
     {
       id: 'me',
       firstName: 'Sophie',
@@ -65,9 +65,9 @@ export class DataService {
       weightKg: 79,
       horseIds: [],
     },
-  ];
+  ]);
 
-  private readonly _horses: Horse[] = [
+  private readonly _horses = signal<Horse[]>([
     {
       id: 'kas',
       name: 'Kas',
@@ -156,9 +156,9 @@ export class DataService {
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ30aD8kRv-jJmBgc6toXFbMnbpogQFtagj4w&s',
     },
-  ];
+  ]);
 
-  private readonly _measurements: Measurement[] = [
+  private readonly _measurements = signal<Measurement[]>([
     {
       id: 'm1',
       horseId: 'petzi',
@@ -186,34 +186,106 @@ export class DataService {
       symmetryPct: 96,
       detail: buildPetziDetail(),
     },
-  ];
+    {
+      id: 'm4',
+      horseId: 'kas',
+      date: '10.06.2025',
+      deviceName: 'Prestige X-D2',
+      durationLabel: '01:18 min',
+      symmetryPct: 92,
+      detail: buildPetziDetail(),
+    },
+    {
+      id: 'm5',
+      horseId: 'safira',
+      date: '08.06.2025',
+      deviceName: 'Prestige X-D2',
+      durationLabel: '01:25 min',
+      symmetryPct: 94,
+      detail: buildPetziDetail(),
+    },
+    {
+      id: 'm6',
+      horseId: 'bella',
+      date: '02.06.2025',
+      deviceName: 'Prestige X-D2',
+      durationLabel: '01:20 min',
+      symmetryPct: 98,
+      detail: buildPetziDetail(),
+    },
+    {
+      id: 'm7',
+      horseId: 'mira',
+      date: '30.05.2025',
+      deviceName: 'Prestige X-D2',
+      durationLabel: '01:19 min',
+      symmetryPct: 91,
+      detail: buildPetziDetail(),
+    },
+    {
+      id: 'm8',
+      horseId: 'isa',
+      date: '25.05.2025',
+      deviceName: 'Prestige X-D2',
+      durationLabel: '01:23 min',
+      symmetryPct: 95,
+      detail: buildPetziDetail(),
+    },
+    {
+      id: 'm9',
+      horseId: 'my-1',
+      date: '20.05.2025',
+      deviceName: 'Prestige X-D2',
+      durationLabel: '01:21 min',
+      symmetryPct: 97,
+      detail: buildPetziDetail(),
+    },
+  ]);
+
+  // ── Customers ──────────────────────────────────────────────────────────────
+
+  readonly customers = this._customers.asReadonly();
 
   getCustomers(): Customer[] {
-    return [...this._customers];
+    return this._customers();
   }
 
   getCustomer(id: string): Customer | undefined {
-    return this._customers.find(c => c.id === id);
+    return this._customers().find(c => c.id === id);
   }
 
   getMe(): Customer {
-    return this._customers.find(c => c.isMe)!;
+    return this._customers().find(c => c.isMe)!;
   }
 
+  addCustomer(customer: Customer): void {
+    this._customers.update(list => [...list, customer]);
+  }
+
+  // ── Horses ─────────────────────────────────────────────────────────────────
+
+  readonly horses = this._horses.asReadonly();
+
   getHorsesOf(customerId: string): Horse[] {
-    return this._horses.filter(h => h.ownerId === customerId);
+    return this._horses().filter(h => h.ownerId === customerId);
   }
 
   getHorse(id: string): Horse | undefined {
-    return this._horses.find(h => h.id === id);
+    return this._horses().find(h => h.id === id);
   }
 
+  addHorse(horse: Horse): void {
+    this._horses.update(list => [...list, horse]);
+  }
+
+  // ── Measurements ───────────────────────────────────────────────────────────
+
   getMeasurementsOf(horseId: string): Measurement[] {
-    return this._measurements.filter(m => m.horseId === horseId);
+    return this._measurements().filter(m => m.horseId === horseId);
   }
 
   getMeasurement(id: string): Measurement | undefined {
-    return this._measurements.find(m => m.id === id);
+    return this._measurements().find(m => m.id === id);
   }
 }
 

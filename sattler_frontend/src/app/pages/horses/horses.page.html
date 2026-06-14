@@ -31,7 +31,15 @@
     }
   </div>
 
-  <button class="fab" aria-label="Neues Pferd hinzufügen">
+  <button class="fab" aria-label="Neues Pferd hinzufügen" (click)="showForm.set(true)">
     <span class="material-icons">add</span>
   </button>
+
+  @if (showForm()) {
+    <add-horse
+      [ownerId]="customer()?.id ?? ''"
+      (saved)="addHorse($event)"
+      (cancelled)="showForm.set(false)"
+    />
+  }
 </section>

@@ -3,6 +3,7 @@ export interface Customer {
   firstName: string;
   lastName: string;
   email?: string;
+  phoneNumber?: string;
   heightCm: number;
   weightKg: number;
   isMe?: boolean;

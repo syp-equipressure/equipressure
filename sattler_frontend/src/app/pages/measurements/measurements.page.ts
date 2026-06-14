@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
@@ -19,6 +19,7 @@ type TabKey = 'messungen' | 'notizen';
 })
 export class MeasurementsPage {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly data = inject(DataService);
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
@@ -84,6 +85,13 @@ export class MeasurementsPage {
     this.activeGait.set('Trab');
     this.activeSide.set('Links');
     this.heatmapMode.set('heatmap');
+  }
+
+  newMeasurement() {
+    const c = this.customer();
+    const h = this.horse();
+    if (!c || !h) return;
+    this.router.navigate(['/new-measurement'], { queryParams: { ownerId: c.id, horseId: h.id } });
   }
 }
 

@@ -56,6 +56,21 @@
       }
     </div>
 
+    <div class="form-field" [class.has-error]="errors()['phoneNumber']">
+      <label class="form-label" for="phoneNumber">Telefon</label>
+      <input
+        id="phoneNumber"
+        class="form-input"
+        type="tel"
+        placeholder="z. B. +43 664 1234567"
+        [ngModel]="phoneNumber()"
+        (ngModelChange)="phoneNumber.set($event)"
+      />
+      @if (errors()['phoneNumber']) {
+        <span class="form-error">{{ errors()['phoneNumber'] }}</span>
+      }
+    </div>
+
     <div class="form-row">
       <div class="form-field" [class.has-error]="errors()['heightCm']">
         <label class="form-label" for="heightCm">Körpergröße (cm) *</label>
