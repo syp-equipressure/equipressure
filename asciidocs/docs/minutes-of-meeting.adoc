@@ -1776,7 +1776,7 @@ a| Reiter Frontend Schnittstelle machen
 |Di. 2026-05-26
 
 |Dauer
-|08:00 bis 
+|08:00 bis 8:33
 |===
 ====
 
@@ -1802,16 +1802,16 @@ a| Reiter Frontend Schnittstelle machen
 
 | Dallinger
 a| Horse Endpoints
-| 26.06.2026
+| 16.06.2026
 
 | Silnovic
 a| Measurement Endpoints
-| 26.06.2026
+| 16.06.2026
 
 | Einzenberger
 a| Integration und Unit Testing
     Flora und Almina aushelfen
-| 26.06.2026
+| 16.06.2026
 
 | Music, Graßauer
 a| Person und Device Schnittstellen ins Frontend einbauen
@@ -1819,11 +1819,11 @@ a| Person und Device Schnittstellen ins Frontend einbauen
 
 | Music, Graßauer
 a| alle anderen Schnittstellen einbauen
-|26.06.2026
+| 16.06.2026
 
 | Dallinger, Graßauer
 a| aufschreiben was in Backend, Frontend für nächstes Jahr gemacht werden soll
-|26.06.2026
+| 16.06.2026
 
 
 |===
