@@ -325,7 +325,6 @@ public class DataTransfer
             mg.Name,
             mg.Notes,
             mg.Horse.Name,
-            // TODO: adjust once Horse breed navigation is clarified
             mg.Horse.HorseBreeds.FirstOrDefault()?.Breed.Name ?? string.Empty,
             mg.Horse.DateOfBirth,
             mg.Horse.Weight,
@@ -361,4 +360,23 @@ public class DataTransfer
     }
 
     public sealed record AggregateResponse(double Value);
+    public sealed record AddMeasurementRequest(string Pace, string Hand, string? Description)
+    {
+        public sealed class Validator : AbstractValidator<AddMeasurementRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.Pace)
+                    .NotEmpty();
+
+                RuleFor(x => x.Hand)
+                    .NotEmpty();
+
+                RuleFor(x => x.Description)
+                    .MaximumLength(500)
+                    .When(x => x.Description is not null);
+            }
+        }
+    }
+    
 }

@@ -5,8 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
 [Route("api/measurementgroups")]
-public sealed class MeasurementController(
-    IMeasurementService measurementService) : BaseController
+public sealed class MeasurementController() : BaseController
 {
 
 }
