@@ -1,0 +1,147 @@
+= User Stories: Measurement Endpoints
+:toc:
+:toclevels: 2
+
+== Messungsgruppen
+
+=== MG-1: Alle Messungsgruppen eines Pferdes abrufen
+`GET /api/measurementgroups/horse/:horseId`
+
+*Als* Benutzer der App +
+*möchte ich* alle Messungsgruppen eines bestimmten Pferdes sehen, +
+*damit ich* einen Überblick über vergangene Messungen habe.
+
+==== Definition of Done
+* [ ] Endpoint gibt eine Liste von Messungsgruppen zurück
+* [ ] Jede Messungsgruppe enthält: Datum, durchführende Person (Vor- und Nachname), verwendeter Sattel
+* [ ] Bei unbekannter `horseId` wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `horseId` (≤ 0) wird HTTP 400 zurückgegeben
+* [ ] Bei leerer Liste wird HTTP 200 mit leerer Liste zurückgegeben
+
+---
+
+=== MG-2: Detailansicht einer Messungsgruppe
+`GET /api/measurementgroups/:mgId`
+
+*Als* Benutzer der App +
+*möchte ich* alle Details einer bestimmten Messungsgruppe sehen, +
+*damit ich* eine vollständige Übersicht über eine Messsitzung erhalte.
+
+==== Definition of Done
+* [ ] Endpoint gibt alle Daten der Messungsgruppe zurück
+* [ ] Antwort enthält: Pferd (Name, Rasse, Alter, Gewicht), Reiter (Name, Größe, Gewicht), Sattel, Datum, Notizen
+* [ ] Bei unbekannter `mgId` wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` (≤ 0) wird HTTP 400 zurückgegeben
+
+---
+
+== Messungen
+
+=== M-1: Alle Messungen einer Gruppe abrufen
+`GET /api/measurementgroups/:mgId/measurements`
+
+*Als* Entwickler +
+*möchte ich* alle Messungen einer Messungsgruppe abrufen, +
+*damit ich* dem Client eine vollständige Liste anzeigen kann.
+
+==== Definition of Done
+* [ ] Endpoint gibt alle Messungen der Gruppe zurück
+* [ ] Bei unbekannter `mgId` wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` (≤ 0) wird HTTP 400 zurückgegeben
+* [ ] Bei leerer Liste wird HTTP 200 mit leerer Liste zurückgegeben
+
+---
+
+=== M-2: Eine Messung nach Pace und Hand filtern
+`GET /api/measurementgroups/:mgId/measurements/filter?pace=&hand=`
+
+*Als* Benutzer der App +
+*möchte ich* eine Messung aus einer Gruppe nach Gangart und Hand filtern, +
+*damit ich* gezielt die gewünschte Teilmessung abrufen kann, da Pace und Hand innerhalb einer Gruppe eindeutig sind.
+
+==== Definition of Done
+* [ ] Endpoint gibt genau eine Messung zurück, die den Filterkriterien entspricht
+* [ ] Pace und Hand sind optional — bei fehlendem Parameter wird nicht danach gefiltert
+* [ ] Bei keinem Treffer wird HTTP 404 zurückgegeben
+* [ ] Bei unbekannter `mgId` wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` (≤ 0) wird HTTP 400 zurückgegeben
+
+---
+
+=== M-3: Durchschnitt der Messwerte einer Gruppe
+`GET /api/measurementgroups/:mgId/measurements/average?pace=&hand=`
+
+*Als* Entwickler +
+*möchte ich* den Durchschnitt aller Messwerte einer Gruppe berechnen lassen, optional gefiltert nach Gangart und Hand, +
+*damit ich* dem Benutzer einen statistischen Überblick anbieten kann.
+
+==== Definition of Done
+* [ ] Endpoint gibt den berechneten Durchschnittswert als Zahl zurück
+* [ ] Pace und Hand sind optionale Filterparameter
+* [ ] Bei nicht parsebaren Messwerten wird HTTP 400 zurückgegeben
+* [ ] Bei keinem Treffer wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` (≤ 0) wird HTTP 400 zurückgegeben
+
+---
+
+=== M-4: Minimum der Messwerte einer Gruppe
+`GET /api/measurementgroups/:mgId/measurements/min?pace=&hand=`
+
+*Als* Entwickler +
+*möchte ich* den kleinsten Messwert einer Gruppe abrufen, optional gefiltert nach Gangart und Hand, +
+*damit ich* Ausreißer und Tiefstwerte analysieren kann.
+
+==== Definition of Done
+* [ ] Endpoint gibt den kleinsten Messwert als Zahl zurück
+* [ ] Pace und Hand sind optionale Filterparameter
+* [ ] Bei nicht parsebaren Messwerten wird HTTP 400 zurückgegeben
+* [ ] Bei keinem Treffer wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` (≤ 0) wird HTTP 400 zurückgegeben
+
+---
+
+=== M-5: Maximum der Messwerte einer Gruppe
+`GET /api/measurementgroups/:mgId/measurements/max?pace=&hand=`
+
+*Als* Entwickler +
+*möchte ich* den größten Messwert einer Gruppe abrufen, optional gefiltert nach Gangart und Hand, +
+*damit ich* Spitzenwerte analysieren kann.
+
+==== Definition of Done
+* [ ] Endpoint gibt den größten Messwert als Zahl zurück
+* [ ] Pace und Hand sind optionale Filterparameter
+* [ ] Bei nicht parsebaren Messwerten wird HTTP 400 zurückgegeben
+* [ ] Bei keinem Treffer wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` (≤ 0) wird HTTP 400 zurückgegeben
+
+---
+
+== Messdaten
+
+=== MD-1: Alle Messdaten einer Messung abrufen
+`GET /api/measurementgroups/:mgId/measurements/:mId/measurementData`
+
+*Als* Benutzer der App +
+*möchte ich* alle Messdaten einer Messung sehen, +
+*damit ich* die Werte über alle Zeitstempel hinweg einsehen kann.
+
+==== Definition of Done
+* [ ] Endpoint gibt alle Messdaten der Messung zurück, sortiert nach Zeitstempel
+* [ ] Bei unbekannter `mgId` oder `mId` wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger `mgId` oder `mId` (≤ 0) wird HTTP 400 zurückgegeben
+* [ ] Bei leerer Liste wird HTTP 200 mit leerer Liste zurückgegeben
+
+---
+
+=== MD-2: Ein Messdatum nach Id abrufen
+`GET /api/measurementgroups/:mgId/measurements/:mId/measurementData/:dId`
+
+*Als* Benutzer der App +
+*möchte ich* ein einzelnes Messdatum anhand seiner Id abrufen, +
+*damit ich* den genauen Wert eines bestimmten Zeitstempels einsehen kann.
+
+==== Definition of Done
+* [ ] Endpoint gibt genau ein Messdatum zurück
+* [ ] Antwort enthält: Id, Wert (Data), Zeitstempel
+* [ ] Bei unbekannter `mgId`, `mId` oder `dId` wird HTTP 404 zurückgegeben
+* [ ] Bei ungültiger Id (≤ 0) wird HTTP 400 zurückgegeben
