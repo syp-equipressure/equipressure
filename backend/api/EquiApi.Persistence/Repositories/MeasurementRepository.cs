@@ -89,4 +89,13 @@ internal sealed class MeasurementRepository(
                      .ToListAsync();
     }
 
+    public async ValueTask<MeasurementGroup?> GetGroupByIdAsync(int mgId)
+    {
+        return await groupSet
+                     .Include(mg => mg.Person)
+                     .Include(mg => mg.Horse)
+                     .ThenInclude(h => h.HorseBreeds)
+                     .Include(mg => mg.Saddle)
+                     .Where(mg => mg.Id == mgId) .FirstOrDefaultAsync();
+    }
 }
