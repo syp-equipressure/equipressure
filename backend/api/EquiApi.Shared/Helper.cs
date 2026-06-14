@@ -38,14 +38,12 @@ public class Helper
         decimal Height,
         decimal Weight,
         string? Email,
-        string? Street,
-        int? HouseNumber,
-        string? City,
+        string? AddressName,
+        string? CityName,
         string? PLZ)
     {
         public static EquestrianBasicDto FromEquestrianBasicData(EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street, data.HouseNumber,
-                data.City, data.PLZ);
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.AddressName, data.CityName, data.PLZ);
     }
 
     /// <summary>
@@ -56,23 +54,19 @@ public class Helper
     /// <param name="LastName">Last name of the person</param>
     /// <param name="Link">optional websitelink but only allowed for saddlers</param>
     /// <param name="Description">optional description but only for saddlers.</param>
-    /// <param name="Street">Street of the person</param>
-    /// <param name="HouseNumber">HouseNumber of the person</param>
-    /// <param name="City">City name of the person</param>
     /// <param name="PLZ">PLZ of the person</param>
     public sealed record SaddlerBasicDto(
         int Id,
         string FirstName,
         string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
+        string? AddressName,
+        string CityName,
         string PLZ,
         string? Link,
         string? Description)
     {
         public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+            new(data.Id, data.FirstName, data.LastName, data.AddressName, data.CityName, data.PLZ, data.Link,
                 data.Description);
     }
 
@@ -88,9 +82,8 @@ public class Helper
     public record EquestrianBasicData(
         string FirstName,
         string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
+        string? AddressName,
+        string CityName,
         string PLZ,
         string Email,
         decimal Height,
@@ -100,9 +93,8 @@ public class Helper
         int Id,
         string FirstName,
         string LastName,
-        string? Street,
-        int? HouseNumber,
-        string City,
+        string? AddressName,
+        string CityName,
         string PLZ,
         string? Link,
         string? Description);

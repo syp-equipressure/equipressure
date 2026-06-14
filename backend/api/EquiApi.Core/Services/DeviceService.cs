@@ -159,7 +159,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
     public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, 
         int categoryId)
     {
-        if (!(await uow.PersonRepository.PersonExists(ownerId)))
+        if (!(await uow.PersonRepository.PersonExistsAsync(ownerId)))
         {
             logger.LogWarning("Person with id {id} could not be found", ownerId);
             return new NotFound();
@@ -195,13 +195,14 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
 
-        if (!await uow.PersonRepository.PersonExists(userId))
+        if (!await uow.PersonRepository.PersonExistsAsync(userId))
         {
             logger.LogWarning("User with id {id} could not be found", userId);
             return new NotFound();
         }
 
-        if (device.Category.NumOfAllowedPeople > device.Users.Count + 1)
+        //TODO: Flora fragen ob sie Bedingung jetzt stimmt
+        if (device.Users.Count + 1 > device.Category.NumOfAllowedPeople)
         {
             logger.LogWarning("Device {id} would pass the limited number of users {allowedPeople}"
                               , deviceId, device.Category.NumOfAllowedPeople);
@@ -232,7 +233,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
 
-        if (!await uow.PersonRepository.PersonExists(userId))
+        if (!await uow.PersonRepository.PersonExistsAsync(userId))
         {
             logger.LogWarning("User with id {id} could not be found", userId);
             return new NotFound();

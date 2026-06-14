@@ -58,13 +58,12 @@ public interface IPersonService
     /// Retrieves the specific Saddler
     /// </summary>
     /// <param name="saddlerId">The id of the saddler.</param>
-    /// <param name="equestrianId">The id of the equestrian.</param>
     /// <returns>
     /// A <see cref="Success{Saddler}"/> containing the Saddler Basic Data,
     /// <see cref="IBaseService.InvalidData"/> Invalid Ids
     /// or <see cref="NotFound"/> if the person(s) are not found.
     /// </returns>
-    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
+    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId);
 
     /// <summary>
     /// Retrieves the First and Last name for a person.
@@ -249,17 +248,9 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
     }
 
     public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(
-        int saddlerId, int equestrianId)
+        int saddlerId)
     {
-        // TODO: Fix return type, seperate notFounds for each person
-        if (!await uow.PersonRepository.PersonExistsAsync(equestrianId))
-        {
-            logger.LogWarning("Data is invalid");
-
-            return new IBaseService.InvalidData();
-        }
-
-        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
+        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId);
 
         if (result is null)
         {

@@ -1,4 +1,5 @@
 ﻿using EquiApi.Core.Services;
+using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using EquiApi.Shared;
