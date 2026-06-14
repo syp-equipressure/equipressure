@@ -71,6 +71,26 @@ public interface IMeasurementRepository
     /// <param name="dId">The id of the measurement data entry.</param>
     /// <returns>The measurement data if found, otherwise null.</returns>
     public ValueTask<MeasurementData?> GetDataByIdAsync(int mId, int dId);
+    
+    /// <summary>
+    /// Adds a new measurement to a measurement group.
+    /// </summary>
+    /// <param name="measurement">The measurement to add.</param>
+    public void AddMeasurement(Measurement measurement);
+
+    /// <summary>
+    /// Removes a measurement from a measurement group.
+    /// </summary>
+    /// <param name="measurement">The measurement to remove.</param>
+    public void RemoveMeasurement(Measurement measurement);
+
+    /// <summary>
+    /// Returns a measurement by id within a group.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <param name="mId">The id of the measurement.</param>
+    /// <returns>The measurement if found, otherwise null.</returns>
+    public ValueTask<Measurement?> GetMeasurementByIdAsync(int mgId, int mId);
 }
 
 internal sealed class MeasurementRepository(

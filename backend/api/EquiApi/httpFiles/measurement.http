@@ -49,3 +49,6 @@ GET {{BaseUrl}}/{{mgId}}/measurements/{{mId}}/measurementData
 
 ### 9. Ein Messdatum nach Id (ein Timestamp)
 GET {{BaseUrl}}/{{mgId}}/measurements/{{mId}}/measurementData/{{dId}}
+
+### 10. Messung löschen
+DELETE {{BaseUrl}}/{{mgId}}/measurements/{{mId}}
