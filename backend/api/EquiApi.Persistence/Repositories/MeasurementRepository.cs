@@ -79,5 +79,14 @@ internal sealed class MeasurementRepository(
     DbSet<MeasurementData> dataSet,
     DbSet<Horse> horseSet) : IMeasurementRepository
 {
+    public async ValueTask<IReadOnlyCollection<MeasurementGroup>> GetAllGroupsByHorseAsync(int horseId)
+    {
+        return await groupSet
+                     .Include(mg => mg.Person)
+                     .Include(mg => mg.Saddle)
+                     .Where(mg => mg.HorseId == horseId)
+                     .AsNoTracking()
+                     .ToListAsync();
+    }
 
 }
