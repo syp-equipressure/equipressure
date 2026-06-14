@@ -134,6 +134,18 @@ internal sealed class MeasurementRepository(
 
     public async ValueTask<IReadOnlyCollection<MeasurementData>> GetAllDataByMeasurementAsync(int mId)
     {
-        return await dataSet .Where(d => d.MeasurementId == mId) .OrderBy(d => d.Timestamp) .AsNoTracking() .ToListAsync();
-    } public async ValueTask<MeasurementData?> GetDataByIdAsync(int mId, int dId) { return await dataSet .Where(d => d.MeasurementId == mId && d.Id == dId) .FirstOrDefaultAsync(); }
+        return await dataSet
+                     .Where(d => d.MeasurementId == mId)
+                     .OrderBy(d => d.Timestamp)
+                     .AsNoTracking()
+                     .ToListAsync();
+    }
+
+    public async ValueTask<MeasurementData?> GetDataByIdAsync(int mId, int dId)
+    {
+        return await dataSet
+                     .Where(d => d.MeasurementId == mId && d.Id == dId)
+                     .FirstOrDefaultAsync();
+    }
+
 }
