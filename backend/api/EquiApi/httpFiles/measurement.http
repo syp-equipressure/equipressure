@@ -1,0 +1,51 @@
+@BaseUrl = http://localhost:5200/api/measurementgroups
+
+### Measurement Endpoints
+@horseId = 1
+@mgId = 1
+@mId = 1
+@dId = 1
+@pace = trot
+@hand = left
+
+### 1. Alle Messungsgruppen eines Pferdes abrufen (minimale Daten: Datum, Person, Sattel)
+GET {{BaseUrl}}/horse/{{horseId}}
+
+### 2. Detailansicht einer Messungsgruppe (Pferd, Reiter, Sattel, Datum, Notizen)
+GET {{BaseUrl}}/{{mgId}}
+
+### 3. Alle Messungen aus einer Gruppe
+GET {{BaseUrl}}/{{mgId}}/measurements
+
+### 4. Eine Messung aus einer Gruppe nach Pace und Hand filtern
+GET {{BaseUrl}}/{{mgId}}/measurements/filter?pace={{pace}}&hand={{hand}}
+
+### 4.1 Eine Messung - nur nach Pace filtern
+GET {{BaseUrl}}/{{mgId}}/measurements/filter?pace={{pace}}
+
+### 4.2 Eine Messung - nur nach Hand filtern
+GET {{BaseUrl}}/{{mgId}}/measurements/filter?hand={{hand}}
+
+### 5. Durchschnitt aller Messungen einer Gruppe
+GET {{BaseUrl}}/{{mgId}}/measurements/average
+
+### 5.1 Durchschnitt gefiltert nach Pace und Hand
+GET {{BaseUrl}}/{{mgId}}/measurements/average?pace={{pace}}&hand={{hand}}
+
+### 6. Minimum aller Messungen einer Gruppe
+GET {{BaseUrl}}/{{mgId}}/measurements/min
+
+### 6.1 Minimum gefiltert nach Pace und Hand
+GET {{BaseUrl}}/{{mgId}}/measurements/min?pace={{pace}}&hand={{hand}}
+
+### 7. Maximum aller Messungen einer Gruppe
+GET {{BaseUrl}}/{{mgId}}/measurements/max
+
+### 7.1 Maximum gefiltert nach Pace und Hand
+GET {{BaseUrl}}/{{mgId}}/measurements/max?pace={{pace}}&hand={{hand}}
+
+### 8. Alle Messdaten einer Messung (alle Timestamps)
+GET {{BaseUrl}}/{{mgId}}/measurements/{{mId}}/measurementData
+
+### 9. Ein Messdatum nach Id (ein Timestamp)
+GET {{BaseUrl}}/{{mgId}}/measurements/{{mId}}/measurementData/{{dId}}

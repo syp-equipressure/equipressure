@@ -1,4 +1,4 @@
-﻿namespace EquiApi.Core.Util;
+﻿namespace EquiApi.Shared;
 
 public class Helper
 {
@@ -28,7 +28,6 @@ public class Helper
     /// <param name="Weight">Weight of the person</param>
     /// <param name="Email">optional email of the person</param>
     /// <param name="Street">Street of the person</param>
-    /// <param name="HouseNumber">HouseNumber of the person</param>
     /// <param name="City">City name of the person</param>
     /// <param name="PLZ">PLZ of the person</param>
     public sealed record EquestrianBasicDto(
@@ -39,12 +38,11 @@ public class Helper
         decimal Weight,
         string? Email,
         string? Street,
-        int? HouseNumber,
         string? City,
         string? PLZ)
     {
         public static EquestrianBasicDto FromEquestrianBasicData(EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street, data.HouseNumber,
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street,
                 data.City, data.PLZ);
     }
 
@@ -57,7 +55,6 @@ public class Helper
     /// <param name="Link">optional websitelink but only allowed for saddlers</param>
     /// <param name="Description">optional description but only for saddlers.</param>
     /// <param name="Street">Street of the person</param>
-    /// <param name="HouseNumber">HouseNumber of the person</param>
     /// <param name="City">City name of the person</param>
     /// <param name="PLZ">PLZ of the person</param>
     public sealed record SaddlerBasicDto(
@@ -65,14 +62,13 @@ public class Helper
         string FirstName,
         string LastName,
         string? Street,
-        int? HouseNumber,
         string City,
         string PLZ,
         string? Link,
         string? Description)
     {
         public static SaddlerBasicDto FromSaddlerBasicData(SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.Street, data.HouseNumber, data.City, data.PLZ, data.Link,
+            new(data.Id, data.FirstName, data.LastName, data.Street, data.City, data.PLZ, data.Link,
                 data.Description);
     }
 
@@ -89,7 +85,6 @@ public class Helper
         string FirstName,
         string LastName,
         string? Street,
-        int? HouseNumber,
         string City,
         string PLZ,
         string Email,
@@ -101,7 +96,6 @@ public class Helper
         string FirstName,
         string LastName,
         string? Street,
-        int? HouseNumber,
         string City,
         string PLZ,
         string? Link,

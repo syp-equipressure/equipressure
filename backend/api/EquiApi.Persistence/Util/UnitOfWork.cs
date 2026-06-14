@@ -19,6 +19,7 @@ public interface IUnitOfWork
     public ILocationRepository LocationRepository { get; }
     public  IDeviceRepository DeviceRepository { get; }
     public  IHorseRepository HorseRepository { get; }
+    public  IMeasurementRepository MeasurementRepository { get; }
     public Task SaveChangesAsync();
 }
 
@@ -32,6 +33,7 @@ internal sealed class UnitOfWork(DatabaseContext context, ILogger<UnitOfWork> lo
     public ILocationRepository LocationRepository => new LocationRepository(context.Addresses);
     public IHorseRepository HorseRepository => new HorseRepository(context.Horses);
     public IDeviceRepository DeviceRepository => new DeviceRepository(context.Devices, context.DeviceCategories);
+    public IMeasurementRepository MeasurementRepository => new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates, context.Horses);
 
     public async ValueTask BeginTransactionAsync()
     {

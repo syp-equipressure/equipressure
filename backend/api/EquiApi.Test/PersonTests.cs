@@ -1,7 +1,6 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
-using Library.Core;
 using NSubstitute;
 
 namespace EquiApi.Test;
@@ -27,7 +26,11 @@ public sealed class PersonTests
 
         var result = await _sut.AddPersonAsync(
             "Max", "Mustermann", invalidHeight, 75M, new LocalDate(1995, 5, 20),
-            "max@reiter.at", null, null, new Address(), new AccountRole { Name = RoleName.Equestrian }
+            "max@reiter.at", null, null, new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+            }, new AccountRole { Name = RoleName.Equestrian }
         );
 
         result.IsT1.Should().BeTrue();
@@ -40,7 +43,12 @@ public sealed class PersonTests
 
         var result = await _sut.AddPersonAsync(
             "Max", "Mustermann", 180M, 75M, futureDate,
-            "max@reiter.at", null, null, new Address(), new AccountRole { Name = RoleName.Equestrian }
+            "max@reiter.at", null, null, new Address
+                {
+                    PLZ = "4050",
+                    CityName = "Traun"
+                    
+                }, new AccountRole { Name = RoleName.Equestrian }
         );
 
         result.IsT1.Should().BeTrue();
@@ -54,7 +62,12 @@ public sealed class PersonTests
 
         var result = await _sut.AddPersonAsync(
             "Max", "Mustermann", 180M, 75M, new LocalDate(1995, 5, 20),
-            existingEmail, null, null, new Address(), new AccountRole { Name = RoleName.Equestrian }
+            existingEmail, null, null, new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+                    
+            }, new AccountRole { Name = RoleName.Equestrian }
         );
 
         result.IsT2.Should().BeTrue();
@@ -67,7 +80,12 @@ public sealed class PersonTests
 
         var result = await _sut.AddPersonAsync(
             "Max", "Mustermann", 180M, 75M, new LocalDate(1995, 5, 20),
-            "max@reiter.at", website, null, new Address(), new AccountRole { Name = RoleName.Equestrian }
+            "max@reiter.at", website, null, new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+                    
+            }, new AccountRole { Name = RoleName.Equestrian }
         );
 
         result.IsT2.Should().BeTrue();
@@ -80,7 +98,12 @@ public sealed class PersonTests
 
         var result = await _sut.AddPersonAsync(
             "Max", "Mustermann", 180M, 75M, new LocalDate(1995, 5, 20),
-            "max.unique@reiter.at", null, null, new Address(), new AccountRole { Id = 1, Name = RoleName.Equestrian }
+            "max.unique@reiter.at", null, null, new Address
+            {
+                PLZ = "4050",
+                CityName = "Traun"
+                    
+            }, new AccountRole { Id = 1, Name = RoleName.Equestrian }
         );
 
         result.IsT0.Should().BeTrue();

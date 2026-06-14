@@ -1,0 +1,83 @@
+using EquiApi.Persistence.Model;
+using Microsoft.EntityFrameworkCore;
+
+namespace EquiApi.Persistence.Repositories;
+
+public interface IMeasurementRepository
+{
+    /// <summary>
+    /// Returns all measurement groups for a given horse with minimal data.
+    /// </summary>
+    /// <param name="horseId">The id of the horse.</param>
+    /// <returns>A read-only collection of measurement groups.</returns>
+    public ValueTask<IReadOnlyCollection<MeasurementGroup>> GetAllGroupsByHorseAsync(int horseId);
+
+    /// <summary>
+    /// Returns the full detail view of a single measurement group.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <returns>The measurement group if found, otherwise null.</returns>
+    public ValueTask<MeasurementGroup?> GetGroupByIdAsync(int mgId);
+
+    /// <summary>
+    /// Returns all measurements belonging to a measurement group.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <returns>A read-only collection of measurements.</returns>
+    public ValueTask<IReadOnlyCollection<Measurement>> GetMeasurementsByGroupAsync(int mgId);
+
+    /// <summary>
+    /// Returns a single measurement from a group filtered by pace and hand.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <param name="pace">Optional pace filter.</param>
+    /// <param name="hand">Optional hand filter.</param>
+    /// <returns>The matching measurement if found, otherwise null.</returns>
+    public ValueTask<Measurement?> GetMeasurementByFilterAsync(int mgId, string? pace, string? hand);
+
+    /// <summary>
+    /// Checks whether a measurement group with the given id exists.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <returns>True if exists, false otherwise.</returns>
+    public ValueTask<bool> GroupExistsAsync(int mgId);
+
+    /// <summary>
+    /// Checks whether a horse with the given id exists.
+    /// </summary>
+    /// <param name="horseId">The id of the horse.</param>
+    /// <returns>True if exists, false otherwise.</returns>
+    public ValueTask<bool> HorseExistsAsync(int horseId);
+
+    /// <summary>
+    /// Checks whether a measurement with the given id exists inside a group.
+    /// </summary>
+    /// <param name="mgId">The id of the measurement group.</param>
+    /// <param name="mId">The id of the measurement.</param>
+    /// <returns>True if exists, false otherwise.</returns>
+    public ValueTask<bool> MeasurementExistsAsync(int mgId, int mId);
+
+    /// <summary>
+    /// Returns all measurement data entries for a given measurement.
+    /// </summary>
+    /// <param name="mId">The id of the measurement.</param>
+    /// <returns>A read-only collection of measurement data.</returns>
+    public ValueTask<IReadOnlyCollection<MeasurementData>> GetAllDataByMeasurementAsync(int mId);
+
+    /// <summary>
+    /// Returns a single measurement data entry by id.
+    /// </summary>
+    /// <param name="mId">The id of the measurement.</param>
+    /// <param name="dId">The id of the measurement data entry.</param>
+    /// <returns>The measurement data if found, otherwise null.</returns>
+    public ValueTask<MeasurementData?> GetDataByIdAsync(int mId, int dId);
+}
+
+internal sealed class MeasurementRepository(
+    DbSet<MeasurementGroup> groupSet,
+    DbSet<Measurement> measurementSet,
+    DbSet<MeasurementData> dataSet,
+    DbSet<Horse> horseSet) : IMeasurementRepository
+{
+
+}

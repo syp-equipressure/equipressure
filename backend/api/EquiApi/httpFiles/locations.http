@@ -1,0 +1,21 @@
+﻿@BaseUrl = http://localhost:5200/api/locations
+
+### 1. eine Location hinzufügen
+POST {{BaseUrl}}
+Content-Type: application/json
+
+{
+    "street": "Hausstraße",
+    "houseNumber": 12,
+    "cityName": "Traun",
+    "plz": "4050"
+}
+
+### 2. eine Location hinzufügen (strasse optional)
+POST {{BaseUrl}}
+Content-Type: application/json
+
+{
+    "cityName": "Traun",
+    "plz": "4050"
+}
