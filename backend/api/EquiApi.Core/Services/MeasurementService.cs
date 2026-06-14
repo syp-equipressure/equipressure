@@ -167,5 +167,25 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         logger.LogInformation("Successfully retrieved measurement group {MgId}", mgId);
         return new Success<MeasurementGroup>(group);
     }
+    
+    public async ValueTask<GetMeasurementsByGroupResult> GetMeasurementsByGroupAsync(int mgId)
+    {
+        if (!await uow.MeasurementRepository.GroupExistsAsync(mgId))
+        {
+            logger.LogWarning("Measurement group {MgId} not found", mgId);
+            return new NotFound();
+        }
 
+        var measurements = await uow.MeasurementRepository.GetMeasurementsByGroupAsync(mgId);
+
+        if (measurements.Count <= 0)
+        {
+            logger.LogWarning("No measurements found in group {MgId}", mgId);
+            return new None();
+        }
+
+        logger.LogInformation("Successfully retrieved {Count} measurements for group {MgId}",
+                              measurements.Count, mgId);
+        return new Success<IReadOnlyCollection<Measurement>>(measurements);
+    }
 }
