@@ -188,4 +188,25 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
                               measurements.Count, mgId);
         return new Success<IReadOnlyCollection<Measurement>>(measurements);
     }
+    
+    public async ValueTask<GetMeasurementByFilterResult> GetMeasurementByFilterAsync(int mgId, string? pace,
+                                                                                     string? hand)
+    {
+        if (!await uow.MeasurementRepository.GroupExistsAsync(mgId))
+        {
+            logger.LogWarning("Measurement group {MgId} not found", mgId);
+            return new NotFound();
+        }
+
+        var measurement = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
+
+        if (measurement is null)
+        {
+            logger.LogWarning("No measurement found in group {MgId} with pace={Pace} hand={Hand}", mgId, pace, hand);
+            return new NotFound();
+        }
+
+        logger.LogInformation("Successfully retrieved measurement from group {MgId}", mgId);
+        return new Success<Measurement>(measurement);
+    }
 }
