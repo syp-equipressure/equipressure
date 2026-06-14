@@ -106,5 +106,15 @@ internal sealed class MeasurementRepository(
                      .Where(m => m.GroupId == mgId)
                      .AsNoTracking()
                      .ToListAsync();
-    } 
+    }
+
+    public async ValueTask<Measurement?> GetMeasurementByFilterAsync(int mgId, string? pace, string? hand)
+    {
+        return await measurementSet
+                     .Where(m => m.GroupId == mgId)
+                     .Where(m => pace == null || m.Pace == pace)
+                     .Where(m => hand == null || m.Hand == hand)
+                     .FirstOrDefaultAsync();
+    }
+    
 }
