@@ -2,6 +2,7 @@
 using EquiApi.Persistence.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NodaTime;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EquiApi.Persistence.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260525135328_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,9 +34,8 @@ namespace EquiApi.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Name")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -48,17 +50,9 @@ namespace EquiApi.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AddressName")
-                        .HasColumnType("text");
                     b.Property<int>("CityId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("CityName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PLZ")
-                        .IsRequired()
                     b.Property<int?>("HouseNumber")
                         .HasColumnType("integer");
 
@@ -66,6 +60,8 @@ namespace EquiApi.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CityId");
 
                     b.ToTable("Address", "EquiPressure");
                 });
@@ -85,6 +81,29 @@ namespace EquiApi.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Breed", "EquiPressure");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.City", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PLZ")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PLZ", "Name");
+
+                    b.ToTable("City", "EquiPressure");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>
@@ -109,8 +128,8 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceUser", b =>
                 {
-                    b.Property<string>("DeviceId")
-                        .HasColumnType("text");
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -233,9 +252,11 @@ namespace EquiApi.Persistence.Migrations
 
             modelBuilder.Entity("EquiApi.Persistence.Model.MeasurementDevice", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("text");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
@@ -278,9 +299,8 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<LocalDate>("Date")
                         .HasColumnType("date");
 
-                    b.Property<string>("DeviceId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("HorseId")
                         .HasColumnType("integer");
@@ -509,6 +529,17 @@ namespace EquiApi.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SaddleCategory", "EquiPressure");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.Address", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.City", "City")
+                        .WithMany("Addresses")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+
+                    b.Navigation("City");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceUser", b =>
@@ -768,6 +799,11 @@ namespace EquiApi.Persistence.Migrations
             modelBuilder.Entity("EquiApi.Persistence.Model.Breed", b =>
                 {
                     b.Navigation("HorseBreeds");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.City", b =>
+                {
+                    b.Navigation("Addresses");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>

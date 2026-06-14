@@ -1,5 +1,5 @@
+using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
-using EquiApi.Persistence.Repositories;
 using EquiApi.Persistence.Util;
 using EquiPressure.Core.Service;
 using OneOf.Types;
@@ -7,13 +7,13 @@ using OneOf.Types;
 namespace EquiApi.Core.Services;
 
 using GetPersonAsEquestrianByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<EquestrianBasicData>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Helper.EquestrianBasicData>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
 using GetPersonAsSaddlerByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<SaddlerBasicData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Helper.SaddlerBasicData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
 using GetNameByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<NameData>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Helper.NameData>, OneOf.Types.NotFound>;
 using GetFavouritesOrContactsAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Person>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetOwnedHorsesAsyncResult
@@ -21,7 +21,9 @@ using GetOwnedHorsesAsyncResult
 using GetAllDevicesAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetAllSaddlersAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<SaddlerBasicData>>, OneOf.Types.None, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<List<Helper.SaddlerBasicData>>, OneOf.Types.None>;
+using GetAllSaddlersOfEquestrianAsyncResult
+    = OneOf.OneOf<OneOf.Types.Success<List<Helper.SaddlerBasicData>>, OneOf.Types.None, OneOf.Types.NotFound>;
 // TODO: why would we get a InvalidData if we only check the data in the controller?
 using AddPersonAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Person>, IBaseService.InvalidData, IBaseService.Conflict>;
@@ -52,7 +54,16 @@ public interface IPersonService
     /// </returns>
     public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId);
 
-    // TODO: xml doc
+    /// <summary>
+    /// Retrieves the specific Saddler
+    /// </summary>
+    /// <param name="saddlerId">The id of the saddler.</param>
+    /// <param name="equestrianId">The id of the equestrian.</param>
+    /// <returns>
+    /// A <see cref="Success{Saddler}"/> containing the Saddler Basic Data,
+    /// <see cref="IBaseService.InvalidData"/> Invalid Ids
+    /// or <see cref="NotFound"/> if the person(s) are not found.
+    /// </returns>
     public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
 
     /// <summary>
@@ -117,7 +128,29 @@ public interface IPersonService
     /// <see cref="None"/> if no saddlers exist, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync(int equestrianId);
+    public ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync();
+    
+    /// <summary>
+    /// Retrieves a list of all favourites of an equestrian that are saddlers + their address
+    /// </summary>
+    /// <param name="equestrianId">The id of the equestrian.</param>
+    /// <returns>
+    /// A <see cref="Success{List}"/> of saddlers, 
+    /// <see cref="None"/> if no saddlers exist, 
+    /// or <see cref="NotFound"/> if the person does not exist.
+    /// </returns>
+    public ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerFavouritesAsync(int equestrianId);
+    
+    /// <summary>
+    /// Retrieves a list of all contacts of an equestrian that are saddlers + their address
+    /// </summary>
+    /// <param name="equestrianId">The id of the equestrian.</param>
+    /// <returns>
+    /// A <see cref="Success{List}"/> of saddlers, 
+    /// <see cref="None"/> if no saddlers exist, 
+    /// or <see cref="NotFound"/> if the person does not exist.
+    /// </returns>
+    public ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId);
 
     /// <summary>
     /// Validates and registers a new person in the system with a specific role.
@@ -196,7 +229,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
         logger.LogInformation("Equestrian successfully got");
 
-        return new Success<EquestrianBasicData>(result);
+        return new Success<Helper.EquestrianBasicData>(result);
     }
 
     public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId)
@@ -219,7 +252,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         int saddlerId, int equestrianId)
     {
         // TODO: Fix return type, seperate notFounds for each person
-        if (!await uow.PersonRepository.PersonExists(equestrianId))
+        if (!await uow.PersonRepository.PersonExistsAsync(equestrianId))
         {
             logger.LogWarning("Data is invalid");
 
@@ -237,7 +270,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
         logger.LogInformation("Saddler successfully got");
 
-        return new Success<SaddlerBasicData>(result);
+        return new Success<Helper.SaddlerBasicData>(result);
     }
 
     public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId)
@@ -253,12 +286,12 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
         logger.LogInformation("Name Data successfully got");
 
-        return new Success<NameData>(result);
+        return new Success<Helper.NameData>(result);
     }
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int personId)
     {
-        bool personExists = await uow.PersonRepository.PersonExists(personId);
+        bool personExists = await uow.PersonRepository.PersonExistsAsync(personId);
         if (!personExists)
         {
             logger.LogWarning("Person could not be found");
@@ -282,7 +315,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
     public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int personId)
     {
-        bool personExists = await uow.PersonRepository.PersonExists(personId);
+        bool personExists = await uow.PersonRepository.PersonExistsAsync(personId);
         if (!personExists)
         {
             logger.LogWarning("Person could not be found");
@@ -306,7 +339,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
     public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int personId)
     {
-        bool personExists = await uow.PersonRepository.PersonExists(personId);
+        bool personExists = await uow.PersonRepository.PersonExistsAsync(personId);
         if (!personExists)
         {
             logger.LogWarning("Person could not be found");
@@ -330,7 +363,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
     public async ValueTask<GetAllDevicesAsyncResult> GetAllDevicesByPersonAsync(int personId)
     {
-        if (!await uow.PersonRepository.PersonExists(personId))
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
         {
             logger.LogWarning("Person could not be found");
 
@@ -351,28 +384,65 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success<List<MeasurementDevice>>(result.ToList());
     }
 
-    public async ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync(int equestrianId)
+    public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerFavouritesAsync(int equestrianId)
     {
-        bool personExists = await uow.PersonRepository.PersonExists(equestrianId);
+        bool personExists = await uow.PersonRepository.PersonExistsAsync(equestrianId);
 
         if (!personExists)
         {
-            logger.LogWarning("equestrian could not be found");
-
+            logger.LogWarning("equestrian doesnt exist");
             return new NotFound();
         }
-
-        IReadOnlyCollection<SaddlerBasicData> saddlers
-            = await uow.PersonRepository.GetAllSaddlersByEquestrianIdAsync(equestrianId);
+        
+        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
+            = await uow.PersonRepository.GetAllSaddlerFavouritesOfEquestrianAsync(equestrianId);
 
         if (saddlers.Count <= 0)
         {
             logger.LogWarning("List of saddlers is empty");
-
             return new None();
         }
 
-        return new Success<List<SaddlerBasicData>>(saddlers.ToList());
+        logger.LogInformation("Successfully got list of saddlers");
+        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
+    }
+
+    public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId)
+    {
+        bool personExists = await uow.PersonRepository.PersonExistsAsync(equestrianId);
+
+        if (!personExists)
+        {
+            logger.LogWarning("equestrian doesnt exist");
+            return new NotFound();
+        }
+        
+        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
+            = await uow.PersonRepository.GetAllSaddlerContactsOfEquestrianAsync(equestrianId);
+
+        if (saddlers.Count <= 0)
+        {
+            logger.LogWarning("List of saddlers is empty");
+            return new None();
+        }
+
+        logger.LogInformation("Successfully got list of saddlers");
+        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
+    }
+
+    public async ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync()
+    {
+        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
+            = await uow.PersonRepository.GetAllSaddlersAsync();
+
+        if (saddlers.Count <= 0)
+        {
+            logger.LogWarning("List of saddlers is empty");
+            return new None();
+        }
+
+        logger.LogInformation("Successfully got list of saddlers");
+        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
     }
 
     public async ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
@@ -387,14 +457,14 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new IBaseService.InvalidData();
         }
 
-        if (email != null && await uow.PersonRepository.PersonWithEmailExists(email))
+        if (email != null && await uow.PersonRepository.PersonWithEmailExistsAsync(email))
         {
             logger.LogWarning("Person with Email already exists");
 
             return new IBaseService.Conflict();
         }
 
-        if (role.Name == "Equestrian" && !(websiteLink is null && description is null))
+        if (role.Name == RoleName.Equestrian && !(websiteLink is null && description is null))
         {
             logger.LogWarning("Person with Role Equestrian cannot be added with websitelink and description");
             // TODO: eventuell anderer Return type
@@ -437,7 +507,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
                                                                       string? description, Address? address,
                                                                       List<PersonRoleAssignment>? roles)
     {
-        var person = await uow.PersonRepository.GetPersonById(personId);
+        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
 
         if (person is null)
         {
@@ -453,52 +523,21 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
             return new IBaseService.InvalidData();
         }
 
-        if (email != null && await uow.PersonRepository.IsEmailTakenByAnotherUser(email, personId))
+        if (email != null && await uow.PersonRepository.IsEmailTakenByAnotherUserAsync(email, personId))
         {
             logger.LogWarning("email is already taken by another user");
 
             return new IBaseService.Conflict();
         }
 
-        if (firstName is not null)
-        {
-            person.FirstName = firstName;
-        }
-
-        if (lastName is not null)
-        {
-            person.LastName = lastName;
-        }
-
-        if (height.HasValue)
-        {
-            person.Height = height.Value;
-        }
-
-        if (weight.HasValue)
-        {
-            person.Weight = weight.Value;
-        }
-
-        if (dateOfBirth.HasValue)
-        {
-            person.DateOfBirth = dateOfBirth.Value;
-        }
-
-        if (email is not null)
-        {
-            person.Email = email;
-        }
-
-        if (websiteLink is not null)
-        {
-            person.WebsiteLink = websiteLink;
-        }
-
-        if (description is not null)
-        {
-            person.Description = description;
-        }
+        Helper.UpdateIfNotNull(firstName, x => person.FirstName = x);
+        Helper.UpdateIfNotNull(lastName, x => person.LastName = x);
+        Helper.UpdateIfHasValue(height, x => person.Height = x);
+        Helper.UpdateIfHasValue(weight, x => person.Weight = x);
+        Helper.UpdateIfHasValue(dateOfBirth, x => person.DateOfBirth = x);
+        Helper.UpdateIfNotNull(email, x => person.Email = x);
+        Helper.UpdateIfNotNull(websiteLink, x => person.WebsiteLink = x);
+        Helper.UpdateIfNotNull(description, x => person.Description = x);
 
         if (address is not null)
         {
@@ -519,7 +558,7 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
 
     public async ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int personId)
     {
-        var person = await uow.PersonRepository.GetPersonById(personId);
+        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
 
         if (person == null)
         {
@@ -535,3 +574,5 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success();
     }
 }
+
+

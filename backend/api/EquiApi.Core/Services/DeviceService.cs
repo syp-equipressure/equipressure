@@ -105,7 +105,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
     public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId)
     {
-        var user = await uow.PersonRepository.GetPersonById(userId);
+        var user = await uow.PersonRepository.GetPersonByIdAsync(userId);
         if (user == null)
         {
             logger.LogWarning("User {UserId} not found", userId);

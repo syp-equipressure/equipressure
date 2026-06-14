@@ -1,5 +1,5 @@
-﻿using EquiApi.Persistence.Model;
-using EquiApi.Persistence.Repositories;
+﻿using EquiApi.Core.Util;
+using EquiApi.Persistence.Model;
 using FluentValidation;
 using NodaTime;
 
@@ -8,6 +8,19 @@ namespace EquiApi.Util;
 
 public class DataTransfer
 {
+    /// <summary>
+    /// DTO for adding a person
+    /// </summary>
+    /// <param name="FirstName">First name of the person.</param>
+    /// <param name="LastName">Last name of the person</param>
+    /// <param name="Height">Height of the person</param>
+    /// <param name="Weight">Weight of the person</param>
+    /// <param name="DateOfBirth">Birthdate of the person</param>
+    /// <param name="Email">optional email of the person</param>
+    /// <param name="WebsiteLink">optional websitelink but only allowed for saddlers</param>
+    /// <param name="Description">optional description but only for saddlers.</param>
+    /// <param name="Address">address entity of the person</param>
+    /// <param name="Role">role of the person</param>
     public sealed record AddPersonRequest(
         string FirstName,
         string LastName,
@@ -37,13 +50,24 @@ public class DataTransfer
         }
     }
 
+    /// <summary>
+    /// DTO that returns minimal name data
+    /// </summary>
+    /// <param name="FirstName">First name of the person.</param>
+    /// <param name="LastName">Last name of the person</param>
     public sealed record NameDataDto(string FirstName, string LastName)
     {
-        public static NameDataDto FromData(NameData data) => new(data.FirstName, data.LastName);
+        public static NameDataDto FromData(Helper.NameData data) => new(data.FirstName, data.LastName);
     }
-
-    public sealed record AddressDto(string? Address, string CityName, string PLZ)
-      
+    
+    /// <summary>
+    /// DTO that returns address of person
+    /// </summary>
+    /// <param name="Street">optional Street of the person.</param>
+    /// <param name="HouseNumber">optional Housenumber of the person</param>
+    /// <param name="CityName">CityName of the person</param>
+    /// <param name="PLZ">PLZ of the person</param>
+    public sealed record AddressDto(string? Street, int? HouseNumber, string CityName, string PLZ)
     {
         public sealed class Validator : AbstractValidator<AddressDto>
         {
@@ -55,16 +79,26 @@ public class DataTransfer
         }
 
         public static AddressDto FromAddress(Address address) =>
-
-            new(address.AddressName, address.CityName, address.PLZ);
+            new(address.Street, address.HouseNumber, address.City.Name, address.City.PLZ);
     }
 
+    /// <summary>
+    /// DTO that returns person
+    /// </summary>
+    /// <param name="Id">Id of the person.</param>
+    /// <param name="FirstName">FirstName of the person</param>
+    /// <param name="LastName">Lastname of the person</param>
+    /// <param name="Email">optional Email of the person</param>
     public sealed record PersonDto(int Id, string FirstName, string LastName, string? Email)
     {
         public static PersonDto FromPerson(Person person) =>
             new(person.Id, person.FirstName, person.LastName, person.Email);
     }
 
+    /// <summary>
+    /// DTO that returns list of personDtos
+    /// </summary>
+    /// <param name="Persons">List of persons</param>
     public sealed record PersonListResponse(IEnumerable<PersonDto> Persons)
     {
         public static PersonListResponse FromPersons(IEnumerable<Person> persons) =>
@@ -97,6 +131,18 @@ public class DataTransfer
         }
     }
 
+    
+    /// <summary>
+    /// DTO that returns horse
+    /// </summary>
+    /// <param name="Id">Id of the horse.</param>
+    /// <param name="Name">Name of the horse</param>
+    /// <param name="DateOfBirth">Birthdate of the horse</param>
+    /// <param name="Height">Height of the horse</param>
+    /// <param name="Weight">Weight of the horse</param>
+    /// <param name="Gender">Gender of the horse.</param>
+    /// <param name="BreedNames">List of Breed Names for the horse</param>
+    /// <param name="AddressId">Id of the address</param>
     public sealed record HorseDto(
         int Id,
         string Name,
@@ -112,26 +158,49 @@ public class DataTransfer
                 horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(), horse.AddressId);
     }
 
+    /// <summary>
+    /// DTO that returns list of horse dtos
+    /// </summary>
+    /// <param name="Horses">List of horses</param>
     public sealed record HorseListResponse(IEnumerable<HorseDto> Horses)
     {
         public static HorseListResponse FromHorses(IEnumerable<Horse> horses) => new(horses.Select(HorseDto.FromHorse));
     }
-
+    
+    /// <summary>
+    /// DTO that returns device
+    /// </summary>
+    /// <param name="Id">Id of the device.</param>
+    /// <param name="categoryId">categoryId of the device</param>
+    /// <param name="owner">owner of the device</param>
+    /// <param name="DeviceUser">List of users of the device</param>
     public sealed record MeasurementDeviceDto(string Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
 
-    {
-        public static MeasurementDeviceDto FromDevice(MeasurementDevice device) =>
-            new(device.Id, device.CategoryId, device.Owner, device.Users);
-    }
-
+    /// <summary>
+    /// DTO that returns list of device dtos
+    /// </summary>
+    /// <param name="Devices">List of devices</param>
     public sealed record DeviceListResponse(IEnumerable<MeasurementDeviceDto> Devices)
     {
         public static DeviceListResponse FromDevices(IEnumerable<MeasurementDevice> devices) =>
             new(devices.Select(MeasurementDeviceDto.FromDevice));
     }
 
+    
+    /// <summary>
+    /// DTO for updating a person
+    /// </summary>
+    /// <param name="FirstName">First name of the person.</param>
+    /// <param name="LastName">Last name of the person</param>
+    /// <param name="Height">Height of the person</param>
+    /// <param name="Weight">Weight of the person</param>
+    /// <param name="DateOfBirth">Birthdate of the person</param>
+    /// <param name="Email">optional email of the person</param>
+    /// <param name="WebsiteLink">optional websitelink but only allowed for saddlers</param>
+    /// <param name="Description">optional description but only for saddlers.</param>
+    /// <param name="Address">address entity of the person</param>
+    /// <param name="RoleAssignments">role assignments of the person</param>
     public sealed record UpdatePersonRequest(
-        int Id,
         string? FirstName,
         string? LastName,
         decimal? Height,
@@ -147,7 +216,6 @@ public class DataTransfer
         {
             public Validator()
             {
-                RuleFor(x => x.Id).NotEmpty();
                 RuleFor(x => x.FirstName).NotEmpty();
                 RuleFor(x => x.LastName).NotEmpty();
                 RuleFor(x => x.Height).GreaterThan(0);
@@ -213,4 +281,6 @@ public class DataTransfer
     {
         public static SaddlersListResponse FromSaddlers(IEnumerable<SaddlerBasicDto> saddlers) => new(saddlers);
     }
+    
+    public record NameData(string FirstName, string LastName);
 }
