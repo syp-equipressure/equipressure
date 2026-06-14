@@ -116,5 +116,24 @@ internal sealed class MeasurementRepository(
                      .Where(m => hand == null || m.Hand == hand)
                      .FirstOrDefaultAsync();
     }
-    
+
+    public async ValueTask<bool> GroupExistsAsync(int mgId)
+    {
+        return await groupSet.AnyAsync(mg => mg.Id == mgId);
+    }
+
+    public async ValueTask<bool> HorseExistsAsync(int horseId)
+    {
+        return await horseSet.AnyAsync(h => h.Id == horseId);
+    }
+
+    public async ValueTask<bool> MeasurementExistsAsync(int mgId, int mId)
+    {
+        return await measurementSet.AnyAsync(m => m.GroupId == mgId && m.Id == mId);
+    }
+
+    public async ValueTask<IReadOnlyCollection<MeasurementData>> GetAllDataByMeasurementAsync(int mId)
+    {
+        return await dataSet .Where(d => d.MeasurementId == mId) .OrderBy(d => d.Timestamp) .AsNoTracking() .ToListAsync();
+    } public async ValueTask<MeasurementData?> GetDataByIdAsync(int mId, int dId) { return await dataSet .Where(d => d.MeasurementId == mId && d.Id == dId) .FirstOrDefaultAsync(); }
 }
