@@ -209,4 +209,43 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         logger.LogInformation("Successfully retrieved measurement from group {MgId}", mgId);
         return new Success<Measurement>(measurement);
     }
+    
+    
+    public async ValueTask<GetMeasurementAggregateResult> GetAverageAsync(int mgId, string? pace, string? hand)
+    {
+        var measurementResult = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
+        if (measurementResult is null)
+        {
+            logger.LogWarning("No matching measurement found in group {MgId}", mgId);
+            return new NotFound();
+        }
+
+        var data = await uow.MeasurementRepository.GetAllDataByMeasurementAsync(measurementResult.Id);
+
+        if (!TryParseAll(data, out var values))
+        {
+            logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
+                              measurementResult.Id);
+            return new IBaseService.InvalidData();
+        }
+
+        return new Success<double>(values.Average());
+    }
+
+    private static bool TryParseAll(IReadOnlyCollection<MeasurementData> data, out List<double> values)
+    {
+        values = new List<double>(data.Count);
+
+        foreach (var entry in data)
+        {
+            if (!double.TryParse(entry.Data, out var parsed))
+            {
+                return false;
+            }
+
+            values.Add(parsed);
+        }
+
+        return values.Count > 0;
+    }
 }
