@@ -46,9 +46,9 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async ValueTask<ActionResult<Helper.SaddlerBasicDto>> GetSaddlerById(
-        [FromRoute] int equestrianId, [FromRoute] int saddlerId)
+         [FromRoute] int saddlerId)
     {
-        if (equestrianId <= 0 || saddlerId <= 0)
+        if ( saddlerId <= 0)
         {
             return BadRequest();
         }
