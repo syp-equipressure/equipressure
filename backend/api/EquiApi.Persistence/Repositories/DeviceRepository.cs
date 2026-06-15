@@ -81,7 +81,7 @@ public class DeviceRepository(DbSet<MeasurementDevice> devices, DbSet<DeviceCate
     public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetDevicesFromUserIdAsync(int userId)
     {
         return await devices.Include(d => d.Users)
-                         .Where(d => d.Users.Any(u => u.UserId == userId)).ToListAsync();
+                         .Where(d => (d.Users.Any(u => u.UserId == userId)) || (d.OwnerId == userId)).ToListAsync();
     }
 
     public async ValueTask<Person?> GetOwnerOfDeviceAsync(string deviceId)

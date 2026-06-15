@@ -5,7 +5,7 @@
 namespace EquiApi.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class newMig2 : Migration
+    public partial class newMig11 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
