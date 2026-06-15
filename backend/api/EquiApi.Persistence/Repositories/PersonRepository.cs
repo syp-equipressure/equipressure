@@ -221,7 +221,7 @@ internal sealed class PersonRepository(
     {
         return await personSet.AnyAsync(p => p.Email == personEmail && p.Id != personId);
     }
-
+/*
     public async ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int personId)
     {
         return await personSet
@@ -231,7 +231,7 @@ internal sealed class PersonRepository(
                      .AsNoTracking()
                      .ToListAsync();
     }
-
+    
     public async ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int personId)
     {
         return await personSet
@@ -241,6 +241,26 @@ internal sealed class PersonRepository(
                      .AsNoTracking()
                      .ToListAsync();
     }
+    
+    */
+    
+    public async ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int personId)
+    {
+        return await personSet
+                     .Where(p => p.Relationships.Any(r => r.EquestrianId == personId && r.IsFavourite))
+                     .AsNoTracking()
+                     .ToListAsync();
+    }
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int personId)
+    {
+        return await personSet
+                     .Where(p => p.Relationships.Any(r => r.EquestrianId == personId && r.IsContact))
+                     .AsNoTracking()
+                     .ToListAsync();
+    }
+
+    
 
     public async ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int personId)
     {
