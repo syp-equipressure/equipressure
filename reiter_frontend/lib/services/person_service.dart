@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
+import 'package:reiterappfrontend/services/auth_service.dart';
 
 /// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert
 /// (400/404/409). Schaut so aus dass aufrufende Screens unterscheiden können
@@ -284,16 +285,74 @@ class PersonService {
     _throwForStatus(response, 'load group members');
   }
 
-  // /users/current existiert noch nicht im Backend. Fallback auf lokale JSONs.
+  // /users/current existiert noch nicht im Backend. Wir lösen das im Frontend:
+  // userId kommt vom AuthService (Demo-userId solange Login fehlt). Wenn der
+  // Backend-Call klappt mappen wir EquestrianBasicDto -> UserData-Shape.
+  // Wenn das Backend offline oder die Person nicht da ist: lokaler JSON-Fallback.
   static Future<Map<String, dynamic>> loadUserData() async {
+    final userId = AuthService().currentUserId();
+    if (userId != null) {
+      try {
+        final eq = await getEquestrian(userId.toString());
+        return _equestrianToUserData(eq);
+      } catch (_) {
+        // Backend unerreichbar oder Person nicht gefunden -> JSON Fallback.
+      }
+    }
     final raw = await rootBundle.loadString('assets/data/personal_data.json');
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     return (decoded['user'] as Map<String, dynamic>?) ?? decoded;
   }
 
   static Future<List<Map<String, dynamic>>> loadDevices() async {
+    final userId = AuthService().currentUserId();
+    if (userId != null) {
+      try {
+        final list = await loadPersonDevices(userId.toString());
+        if (list.isNotEmpty) {
+          return list.map(_deviceDtoToUiShape).toList();
+        }
+      } catch (_) {
+        // Backend unerreichbar -> JSON Fallback.
+      }
+    }
     final raw = await rootBundle.loadString('assets/data/devices.json');
     return _extractList(jsonDecode(raw));
+  }
+
+  /// Mappt das Backend-EquestrianBasicDto auf das Shape das UserData.fromJson
+  /// erwartet (id, name, imageUrl, birthDate, address, email, height, weight).
+  /// Backend liefert: id, firstName, lastName, height, weight, email,
+  /// addressName, cityName, plz.
+  static Map<String, dynamic> _equestrianToUserData(Map<String, dynamic> eq) {
+    final street = (eq['addressName'] ?? '').toString();
+    final plz = (eq['plz'] ?? '').toString();
+    final city = (eq['cityName'] ?? '').toString();
+    final cityLine = '$plz $city'.trim();
+    final address = [street, cityLine].where((s) => s.isNotEmpty).join('\n');
+
+    return {
+      'id': eq['id']?.toString() ?? '',
+      'name': '${eq['firstName'] ?? ''} ${eq['lastName'] ?? ''}'.trim(),
+      'imageUrl': '',
+      'birthDate': '',
+      'address': address,
+      'email': (eq['email'] ?? '').toString(),
+      'height': eq['height'] == null ? '' : '${eq['height']} cm',
+      'weight': eq['weight'] == null ? '' : '${eq['weight']} kg',
+    };
+  }
+
+  /// MeasurementDeviceDto (id, categoryId, owner, deviceUser) auf das
+  /// Shape mappen das Device.fromJson erwartet (id, name, number).
+  /// Solange das Backend keine Namen liefert: Anzeigename aus der id zusammensetzen.
+  static Map<String, dynamic> _deviceDtoToUiShape(Map<String, dynamic> dto) {
+    final id = (dto['id'] ?? '').toString();
+    return {
+      'id': id,
+      'name': 'Gerät $id',
+      'number': id,
+    };
   }
 
   // ---------------------------------------------------------------------------
