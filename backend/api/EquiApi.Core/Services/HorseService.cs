@@ -32,14 +32,15 @@ public interface IHorseService
     /// <summary>
     /// Adds a new horse
     /// </summary>
-    public ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dob, decimal weight, decimal height, HorseGender gender, Address address, List<HorseBreed> breeds);
+    public ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dob, decimal weight, 
+        decimal height, HorseGender gender, Address address, List<HorseBreed> breeds, int ownerId);
 }
 
 public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTimeProvider dateTimeProvider) : IHorseService
 {
     public async ValueTask<OneOf<IReadOnlyCollection<Horse>, NotFound>> GetAllHorsesOfPersonAsync(int personId)
     {
-        if (await uow.PersonRepository.PersonExists(personId))
+        if (!await uow.PersonRepository.PersonExists(personId))
         {
             logger.LogInformation("Person with id {id} could not be found", personId);
             return new NotFound();
@@ -68,7 +69,7 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
 
     public async ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dateOfBirth, decimal weight,
                                                                decimal height, HorseGender gender, Address address,
-                                                               List<HorseBreed> breeds)
+                                                               List<HorseBreed> breeds,int ownerId )
     {
         
         //TODO Owner ID 
@@ -78,6 +79,12 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
             logger.LogWarning("Data is invalid");
 
             return new IBaseService.InvalidData();
+        }
+
+        var person = await uow.PersonRepository.GetPersonById(ownerId);
+        if (person is null)
+        {
+            return new NotFound();
         }
 
         var horse = new Horse
@@ -90,7 +97,19 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
             HorseBreeds = breeds,
             Address = address
         };
-
+        
+        var personHorse = new PersonHorse
+        {
+            Person = person,
+            Horse = horse,
+            IsHidden = false,
+            IsOwner = true
+        };
+        
+        horse.Persons.Add(personHorse);
+        uow.HorseRepository.AddHorse(horse);
+        await uow.SaveChangesAsync();
+        
         return new Success<Horse>(horse);
     }
 
