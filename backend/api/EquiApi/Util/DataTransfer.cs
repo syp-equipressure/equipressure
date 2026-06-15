@@ -64,11 +64,11 @@ public class DataTransfer
     /// <summary>
     /// DTO that returns address of person
     /// </summary>
-    /// <param name="Street">optional Street of the person.</param>
+    /// <param name="AddressName">optional Street of the person.</param>
     /// <param name="HouseNumber">optional Housenumber of the person</param>
     /// <param name="CityName">CityName of the person</param>
     /// <param name="PLZ">PLZ of the person</param>
-    public sealed record AddressDto(string? Street, string CityName, string PLZ)
+    public sealed record AddressDto(string? AddressName, string CityName, string PLZ)
     {
         public sealed class Validator : AbstractValidator<AddressDto>
         {
@@ -233,7 +233,7 @@ public class DataTransfer
     }
 
     public sealed record AddLocationRequest(
-        string? Street,
+        string? AddressName,
         int? HouseNumber,
         string CityName,
         string PLZ)
@@ -242,7 +242,7 @@ public class DataTransfer
         {
             public Validator()
             {
-                RuleFor(x => x.Street).NotEmpty();
+                RuleFor(x => x.AddressName).NotEmpty();
                 RuleFor(x => x.HouseNumber).GreaterThan(0);
                 RuleFor(x => x.CityName).NotEmpty();
                 RuleFor(x => x.PLZ).NotEmpty();
@@ -257,11 +257,12 @@ public class DataTransfer
         decimal Height,
         decimal Weight,
         string? Email,
-        string? CityName,
+        string? AddressName,
+        string CityName,
         string PLZ)
     {
         public static EquestrianBasicDto FromEquestrianBasicData(Helper.EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, 
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.AddressName,
                 data.CityName, data.PLZ);
     }
 
@@ -269,13 +270,14 @@ public class DataTransfer
         int Id,
         string FirstName,
         string LastName,
+        string? AddressName,
         string CityName,
         string PLZ,
         string? Link,
         string? Description)
     {
         public static SaddlerBasicDto FromSaddlerBasicData(Helper.SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.CityName, data.PLZ, data.Link, data.Description);
+            new(data.Id, data.FirstName, data.LastName, data.AddressName, data.CityName, data.PLZ, data.Link, data.Description);
     }
 
     public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
