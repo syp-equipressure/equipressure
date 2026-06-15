@@ -71,12 +71,9 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
                                                                decimal height, HorseGender gender, Address address,
                                                                List<HorseBreed> breeds,int ownerId )
     {
-        
-        //TODO Owner ID 
-        
         if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate() || breeds.Count <= 0)
         {
-            logger.LogWarning("Data is invalid");
+            logger.LogWarning("Data for horse is invalid");
 
             return new IBaseService.InvalidData();
         }
@@ -84,6 +81,7 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
         var person = await uow.PersonRepository.GetPersonById(ownerId);
         if (person is null)
         {
+            logger.LogWarning("Person with id {id} could not be found", ownerId);
             return new NotFound();
         }
 
@@ -112,6 +110,4 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
         
         return new Success<Horse>(horse);
     }
-
-    
 }
