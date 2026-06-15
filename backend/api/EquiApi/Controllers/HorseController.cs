@@ -4,16 +4,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
 
-[Microsoft.AspNetCore.Components.Route("api/horses")]
+[Route("api/horses")] 
 public class HorseController(IHorseService service, ILogger<HorseController> logger) : BaseController
 {
-    [HttpGet("{personId:int}")]
+    [HttpGet("person/{personId:int}")] 
     [ProducesResponseType<DataTransfer.HorseListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<DataTransfer.HorseListResponse>> GetHorsesOfPerson([FromRoute] int personId)
     {
-        if (personId < 0)
+        if (personId <= 0) 
         {
             logger.LogWarning("personId: {id} was not valid", personId);
             return BadRequest();
@@ -21,7 +21,7 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
 
         var res = await service.GetAllHorsesOfPersonAsync(personId);
 
-        return res.Match<ActionResult<DataTransfer.HorseListResponse>>(success => Ok(success),
+        return res.Match<ActionResult<DataTransfer.HorseListResponse>>(success => Ok(DataTransfer.HorseListResponse.FromHorses(success)),
                                                                        notFound => NotFound());
     }
 
@@ -31,9 +31,10 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<DataTransfer.HorseDto>> GetById([FromRoute] int id)
     {
-        if (id < 0)
+        if (id <= 0) 
         {
             logger.LogWarning("id: {id} was not valid", id);
+            return BadRequest();
         }
 
         var res = await service.GetHorseByIdAsync(id);
@@ -41,8 +42,4 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
         return res.Match<ActionResult<DataTransfer.HorseDto>>(ok => DataTransfer.HorseDto.FromHorse(ok),
                                                               _ => NotFound());
     }
-    
-    
 }
-
-
