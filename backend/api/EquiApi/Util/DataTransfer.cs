@@ -112,6 +112,31 @@ public class DataTransfer
     {
         public static HorseListResponse FromHorses(IEnumerable<Horse> horses) => new(horses.Select(HorseDto.FromHorse));
     }
+    public sealed record AddHorseRequest(
+        string Name, 
+        LocalDate DateOfBirth, 
+        decimal Weight,
+        decimal Height, 
+        HorseGender Gender, 
+        Address Address,
+        List<HorseBreed> Breeds, 
+        int OwnerId)
+    {
+        public class Validator : AbstractValidator<AddHorseRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+                RuleFor(x => x.DateOfBirth).NotEmpty();
+                RuleFor(x => x.Weight).GreaterThan(0);
+                RuleFor(x => x.Height).GreaterThan(0);
+                RuleFor(x => x.Gender).IsInEnum();
+                RuleFor(x => x.Address).NotNull();
+                RuleFor(x => x.Breeds).NotEmpty().WithMessage("At least one breed must be selected.");
+                RuleFor(x => x.OwnerId).GreaterThan(0);
+            }
+        }
+    }
 
     public sealed record MeasurementDeviceDto(string Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
     {
