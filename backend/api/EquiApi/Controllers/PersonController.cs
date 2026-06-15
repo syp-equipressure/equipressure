@@ -1,7 +1,8 @@
 ﻿using EquiApi.Core.Services;
+using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
-using EquiApi.Persistence.Repositories;
 using EquiApi.Persistence.Util;
+using EquiApi.Shared;
 using EquiApi.Util;
 using EquiPressure.Core.Service;
 using Microsoft.AspNetCore.Mvc;
@@ -11,8 +12,6 @@ using OneOf.Types;
 namespace EquiApi.Controllers;
 
 // TODO: xml documentation
-// TODO: CreatedAtAction verwenden!
-// TODO: dto stimmen ned mit http requests, post!! put
 [Route("api/persons")]
 public sealed class PersonController(
     ITransactionProvider transaction,
@@ -20,10 +19,10 @@ public sealed class PersonController(
     ILogger<PersonController> logger) : BaseController
 {
     [HttpGet("equestrians/{id:int}")]
-    [ProducesResponseType<DataTransfer.EquestrianBasicDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Helper.EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
+    public async ValueTask<ActionResult<Helper.EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
     {
         // check, ob die id überhaupt sinn macht (muss positiv sein)
         if (id <= 0)
@@ -32,34 +31,34 @@ public sealed class PersonController(
         }
 
         // liefert entweder success oder notfound
-        OneOf<Success<EquestrianBasicData>, NotFound> result = await personService.GetPersonAsEquestrianByIdAsync(id);
-
+        var result = await personService.GetPersonAsEquestrianByIdAsync(id);
+        
         // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
-        return result.Match<ActionResult<DataTransfer.EquestrianBasicDto>>(success =>
-                                                                               Ok(DataTransfer.EquestrianBasicDto
-                                                                                        .FromEquestrianBasicData(success
-                                                                                                 .Value, id)),
+        return result.Match<ActionResult<Helper.EquestrianBasicDto>>(success =>
+                                                                               Ok(Helper.EquestrianBasicDto
+                                                                                   .FromEquestrianBasicData(success
+                                                                                       .Value, id)),
                                                                            notFound => NotFound());
     }
 
-    [HttpGet("equestrians/{equestrianId:int}/saddlers/{saddlerId:int}")]
-    [ProducesResponseType<DataTransfer.SaddlerBasicDto>(StatusCodes.Status200OK)]
+    [HttpGet("saddlers/{saddlerId:int}")]
+    [ProducesResponseType<Helper.SaddlerBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlerBasicDto>> GetSaddlerById(
-        [FromRoute] int equestrianId, [FromRoute] int saddlerId)
+    public async ValueTask<ActionResult<Helper.SaddlerBasicDto>> GetSaddlerById(
+         [FromRoute] int saddlerId)
     {
-        if (equestrianId <= 0 || saddlerId <= 0)
+        if ( saddlerId <= 0)
         {
             return BadRequest();
         }
 
-        OneOf<Success<SaddlerBasicData>, IBaseService.InvalidData, NotFound> result
-            = await personService.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
+        var result = await personService.GetPersonAsSaddlerByIdAsync(saddlerId);
 
-        return result.Match<ActionResult<DataTransfer.SaddlerBasicDto>>(success =>
-                                                                            Ok(DataTransfer.SaddlerBasicDto
-                                                                                   .FromSaddlerBasicData(success.Value)),
+        return result.Match<ActionResult<Helper.SaddlerBasicDto>>(success =>
+                                                                            Ok(Helper.SaddlerBasicDto
+                                                                                   .FromSaddlerBasicData(success
+                                                                                       .Value)),
                                                                         invalidData => BadRequest(),
                                                                         notFound => NotFound());
     }
@@ -75,7 +74,7 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        OneOf<Success<NameData>, NotFound> result = await personService.GetNameByIdAsync(id);
+        var result = await personService.GetNameByIdAsync(id);
 
         return result.Match<ActionResult<DataTransfer.NameDataDto>>(success =>
                                                                         Ok(DataTransfer.NameDataDto
@@ -119,9 +118,9 @@ public sealed class PersonController(
         // bei none einfach eine leere liste zurückgeben
         return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
                                                                                Ok(DataTransfer.PersonListResponse
-                                                                                        .FromPersons(success.Value)),
+                                                                                   .FromPersons(success.Value)),
                                                                            none => Ok(DataTransfer.PersonListResponse
-                                                                                    .FromPersons([])),
+                                                                               .FromPersons([])),
                                                                            notFound => NotFound());
     }
 
@@ -140,9 +139,9 @@ public sealed class PersonController(
 
         return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
                                                                                Ok(DataTransfer.PersonListResponse
-                                                                                        .FromPersons(success.Value)),
+                                                                                   .FromPersons(success.Value)),
                                                                            none => Ok(DataTransfer.PersonListResponse
-                                                                                    .FromPersons([])),
+                                                                               .FromPersons([])),
                                                                            notFound => NotFound());
     }
 
@@ -161,9 +160,9 @@ public sealed class PersonController(
 
         return result.Match<ActionResult<DataTransfer.HorseListResponse>>(success =>
                                                                               Ok(DataTransfer.HorseListResponse
-                                                                                       .FromHorses(success.Value)),
-                                                                          none => Ok(DataTransfer.PersonListResponse
-                                                                                   .FromPersons([])),
+                                                                                  .FromHorses(success.Value)),
+                                                                          none => Ok(DataTransfer.HorseListResponse
+                                                                              .FromHorses([])),
                                                                           notFound => NotFound());
     }
 
@@ -178,21 +177,44 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        OneOf<Success<List<MeasurementDevice>>, None, NotFound> result = await personService.GetAllDevicesByPersonAsync(id);
+        OneOf<Success<List<MeasurementDevice>>, None, NotFound> result
+            = await personService.GetAllDevicesByPersonAsync(id);
 
         return result.Match<ActionResult<DataTransfer.DeviceListResponse>>(success =>
                                                                                Ok(DataTransfer.DeviceListResponse
-                                                                                        .FromDevices(success.Value)),
+                                                                                   .FromDevices(success.Value)),
                                                                            none => Ok(DataTransfer.DeviceListResponse
-                                                                                    .FromDevices([])),
+                                                                               .FromDevices([])),
                                                                            notFound => NotFound());
     }
 
-    [HttpGet("equestrians/{equestrianId:int}/saddlers/locations")]
-    [ProducesResponseType<DataTransfer.SaddlersListResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpGet("persons/saddlers")]
+    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
+    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlersWithAddress()
+    {
+        var result = await personService.GetAllSaddlersAsync();
+
+        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
+                                                                             {
+                                                                                 var dtos = success.Value
+                                                                                     .Select(Helper
+                                                                                         .SaddlerBasicDto
+                                                                                         .FromSaddlerBasicData)
+                                                                                     .ToList();
+
+                                                                                 return Ok(new Helper.
+                                                                                     SaddlersListResponse(dtos));
+                                                                             },
+                                                                             none =>
+                                                                                 Ok(new Helper.
+                                                                                     SaddlersListResponse([])));
+    }
+
+    [HttpGet("persons/equestrians/{equestrianId:int}/favourites")]
+    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.SaddlersListResponse>> GetSaddlersWithAddress(
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlerFavouritesWithAddress(
         [FromRoute] int equestrianId)
     {
         if (equestrianId <= 0)
@@ -200,23 +222,56 @@ public sealed class PersonController(
             return BadRequest();
         }
 
-        OneOf<Success<List<SaddlerBasicData>>, None, NotFound> result
-            = await personService.GetAllSaddlersAsync(equestrianId);
+        OneOf<Success<List<Helper.SaddlerBasicData>>, None, NotFound> result
+            = await personService.GetAllSaddlerFavouritesAsync(equestrianId);
 
-        return result.Match<ActionResult<DataTransfer.SaddlersListResponse>>(success =>
-                                                                           {
-                                                                               var dtos = success.Value
-                                                                                   .Select(DataTransfer.SaddlerBasicDto
-                                                                                            .FromSaddlerBasicData)
-                                                                                   .ToList();
+        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
+                                                                             {
+                                                                                 var dtos = success.Value
+                                                                                     .Select(Helper
+                                                                                         .SaddlerBasicDto
+                                                                                         .FromSaddlerBasicData)
+                                                                                     .ToList();
 
-                                                                               return Ok(new DataTransfer.
-                                                                                        SaddlersListResponse(dtos));
-                                                                           },
-                                                                           none =>
-                                                                               Ok(new DataTransfer.
-                                                                                        SaddlersListResponse([])),
-                                                                           notFound => NotFound());
+                                                                                 return Ok(new Helper.
+                                                                                     SaddlersListResponse(dtos));
+                                                                             },
+                                                                             none =>
+                                                                                 Ok(new Helper.
+                                                                                     SaddlersListResponse([])),
+                                                                             notFound => NotFound());
+    }
+
+    [HttpGet("persons/equestrians/{equestrianId:int}/contacts")]
+    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlerContactsWithAddress(
+        [FromRoute] int equestrianId)
+    {
+        if (equestrianId <= 0)
+        {
+            return BadRequest();
+        }
+
+        OneOf<Success<List<Helper.SaddlerBasicData>>, None, NotFound> result
+            = await personService.GetAllSaddlerContactsAsync(equestrianId);
+
+        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
+                                                                             {
+                                                                                 var dtos = success.Value
+                                                                                     .Select(Helper
+                                                                                         .SaddlerBasicDto
+                                                                                         .FromSaddlerBasicData)
+                                                                                     .ToList();
+
+                                                                                 return Ok(new Helper.
+                                                                                     SaddlersListResponse(dtos));
+                                                                             },
+                                                                             none =>
+                                                                                 Ok(new Helper.
+                                                                                     SaddlersListResponse([])),
+                                                                             notFound => NotFound());
     }
 
     [HttpPost]
@@ -244,7 +299,8 @@ public sealed class PersonController(
                                                                {
                                                                    await transaction.CommitAsync();
 
-                                                                   return Created();
+                                                                   return CreatedAtAction(nameof(GetProfileData),
+                                                                    new { id = success.Value.Id }, success.Value);
                                                                },
                                                                async invalid =>
                                                                {
@@ -276,7 +332,7 @@ public sealed class PersonController(
     public async ValueTask<IActionResult> UpdatePerson([FromRoute] int id,
                                                        [FromBody] DataTransfer.UpdatePersonRequest request)
     {
-        if (id <= 0 || id != request.Id ||
+        if (id <= 0 ||
             !ValidateRequest<DataTransfer.UpdatePersonRequest.Validator, DataTransfer.UpdatePersonRequest>(request))
         {
             return BadRequest();
@@ -287,7 +343,7 @@ public sealed class PersonController(
             await transaction.BeginTransactionAsync();
 
             OneOf<Success, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
-                = await personService.UpdatePersonAsync(request.Id, request.FirstName, request.LastName, request.Height,
+                = await personService.UpdatePersonAsync(id, request.FirstName, request.LastName, request.Height,
                                                         request.Weight, request.DateOfBirth, request.Email,
                                                         request.WebsiteLink, request.Description, request.Address,
                                                         request.RoleAssignments);
@@ -317,10 +373,10 @@ public sealed class PersonController(
                                                                    return Conflict();
                                                                });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Error updating person");
+            logger.LogError(ex, "Error updating person");
 
             return Problem();
         }

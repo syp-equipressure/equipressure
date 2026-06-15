@@ -43,8 +43,7 @@ public class PersonRelationship
 public class AccountRole
 {
     public int Id { get; set; }
-    // TODO: enum for roleName?
-    public required string Name { get; set; }
+    public required RoleName Name { get; set; }
 
     public List<PersonRoleAssignment> RoleAssignments { get; set; } = [];
 }
@@ -68,4 +67,11 @@ public class PersonHorse
 
     public Person Person { get; set; } = null!;
     public Horse Horse { get; set; } = null!;
+}
+
+public enum RoleName
+{
+    Equestrian = 10,
+    Saddler = 20,
+    Guest = 30
 }

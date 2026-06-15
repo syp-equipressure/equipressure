@@ -38,7 +38,7 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
 {
     public async ValueTask<OneOf<IReadOnlyCollection<Horse>, NotFound>> GetAllHorsesOfPersonAsync(int personId)
     {
-        if (await uow.PersonRepository.PersonExists(personId))
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
         {
             logger.LogInformation("Person with id {id} could not be found", personId);
             return new NotFound();
