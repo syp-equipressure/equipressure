@@ -257,27 +257,25 @@ public class DataTransfer
         decimal Height,
         decimal Weight,
         string? Email,
-        string? AddressName,
         string? CityName,
-        string? PLZ)
+        string PLZ)
     {
         public static EquestrianBasicDto FromEquestrianBasicData(Helper.EquestrianBasicData data, int id) =>
-            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.Street,
-                data.City, data.PLZ);
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, 
+                data.CityName, data.PLZ);
     }
 
     public sealed record SaddlerBasicDto(
         int Id,
         string FirstName,
         string LastName,
-        string? AddressName,
         string CityName,
         string PLZ,
         string? Link,
         string? Description)
     {
         public static SaddlerBasicDto FromSaddlerBasicData(Helper.SaddlerBasicData data) =>
-            new(data.Id, data.FirstName, data.LastName, data.Street, data.City, data.PLZ, data.Link, data.Description);
+            new(data.Id, data.FirstName, data.LastName, data.CityName, data.PLZ, data.Link, data.Description);
     }
 
     public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
