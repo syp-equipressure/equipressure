@@ -195,6 +195,17 @@ public class PersonService(EquiContext context) : IPersonService
                                   .ToListAsync();
         return new Success<List<Horse>>(result);
     }
+
+    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesAsync(int personId) => throw new NotImplementedException();
+
+    public ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
+                                                          string? email, string? websiteLink, string? description,
+                                                          Address address, AccountRole role) =>
+        throw new NotImplementedException();
+
+    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(Person person) => throw new NotImplementedException();
+
+    public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int id) => throw new NotImplementedException();
 }
 
 public record EquestrianMinimalData(string FirstName, string LastName, string? Street, int? HouseNumber, string City,
