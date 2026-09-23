@@ -30,15 +30,16 @@ public interface IHorseRepository
     /// <summary>
     /// Get all saddles of a horse
     /// </summary>
-    /// <param name="horseId">The id of a horse</param>
+    /// <param name="horseId">The id of the horse</param>
     /// <returns>Saddle entities of a horse</returns>
     public ValueTask<IReadOnlyCollection<Saddle>> GetSaddlesOfHorse(int horseId);
 
     /// <summary>
-    /// Gets all Riders and the owner of a horse 
+    /// Gets all Riders and the owner of a horse
+    /// owner is at the first place
     /// </summary>
-    /// <param name="horseId"></param>
-    /// <returns></returns>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>A List of the owner and all non hidden users and non owner</returns>
     public ValueTask<IReadOnlyCollection<Person>> GetAllRidersOfHorse(int horseId);
 }
 public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorses) : IHorseRepository
@@ -69,5 +70,4 @@ public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorse
               .Select(ph => ph.Person)
               .ToListAsync();
     
-                 
 }
