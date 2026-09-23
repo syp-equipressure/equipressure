@@ -30,12 +30,18 @@ public interface IHorseRepository
     /// <summary>
     /// Get all saddles of a horse
     /// </summary>
-    /// <param name="horseId"></param>
+    /// <param name="horseId">The id of a horse</param>
     /// <returns>Saddle entities of a horse</returns>
     public ValueTask<IReadOnlyCollection<Saddle>> GetSaddlesOfHorse(int horseId);
 
+    /// <summary>
+    /// Gets all Riders and the owner of a horse 
+    /// </summary>
+    /// <param name="horseId"></param>
+    /// <returns></returns>
+    public ValueTask<IReadOnlyCollection<Person>> GetAllRidersOfHorse(int horseId);
 }
-public class HorseRepository(DbSet<Horse> horses) : IHorseRepository
+public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorses) : IHorseRepository
 {
     public async ValueTask<IReadOnlyCollection<Horse>> GetAllHorsesOfUserAsync(int userId) 
         => await horses.Include(h => h.Persons)
@@ -55,4 +61,13 @@ public class HorseRepository(DbSet<Horse> horses) : IHorseRepository
                  .Where(h => h.Id == horseId)
                  .SelectMany(h => h.Saddles)
                  .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetAllRidersOfHorse(int horseId)
+        => await personHorses
+              .Where(ph => ph.HorseId == horseId && (ph.IsOwner || !ph.IsHidden))
+              .OrderByDescending(ph => ph.IsOwner)
+              .Select(ph => ph.Person)
+              .ToListAsync();
+    
+                 
 }
