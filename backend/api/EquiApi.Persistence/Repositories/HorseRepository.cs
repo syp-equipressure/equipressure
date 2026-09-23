@@ -26,6 +26,14 @@ public interface IHorseRepository
     /// </summary>
     /// <param name="horse">the new horse</param>
     public void AddHorse(Horse horse);
+
+    /// <summary>
+    /// Get all saddles of a horse
+    /// </summary>
+    /// <param name="horseId"></param>
+    /// <returns>Saddle entities of a horse</returns>
+    public ValueTask<IReadOnlyCollection<Saddle>> GetSaddlesOfHorse(int horseId);
+
 }
 public class HorseRepository(DbSet<Horse> horses) : IHorseRepository
 {
@@ -41,4 +49,10 @@ public class HorseRepository(DbSet<Horse> horses) : IHorseRepository
     {
         horses.Add(horse);
     }
+
+    public async ValueTask<IReadOnlyCollection<Saddle>> GetSaddlesOfHorse(int horseId) 
+        => await horses.Include(h => h.Saddles)
+                 .Where(h => h.Id == horseId)
+                 .SelectMany(h => h.Saddles)
+                 .ToListAsync();
 }
