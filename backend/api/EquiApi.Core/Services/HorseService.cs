@@ -34,9 +34,15 @@ public interface IHorseService
     /// </summary>
     public ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dob, decimal weight, 
         decimal height, HorseGender gender, Address address, List<HorseBreed> breeds, int ownerId);
+
+    public ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId);
+
+    public ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllRidersOfHorse(int horseId);
+
+    public  ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId);
 }
 
-public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTimeProvider dateTimeProvider) : IHorseService
+public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
 {
     public async ValueTask<OneOf<IReadOnlyCollection<Horse>, NotFound>> GetAllHorsesOfPersonAsync(int personId)
     {
@@ -71,12 +77,6 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
                                                                decimal height, HorseGender gender, Address address,
                                                                List<HorseBreed> breeds,int ownerId )
     {
-        if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate() || breeds.Count <= 0)
-        {
-            logger.LogWarning("Data for horse is invalid");
-
-            return new IBaseService.InvalidData();
-        }
 
         var person = await uow.PersonRepository.GetPersonById(ownerId);
         if (person is null)
@@ -106,8 +106,15 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
         
         horse.Persons.Add(personHorse);
         uow.HorseRepository.AddHorse(horse);
+        logger.LogInformation("Horse added successfully");
         await uow.SaveChangesAsync();
         
         return new Success<Horse>(horse);
     }
+
+    public ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId) => throw new NotImplementedException();
+
+    public ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllRidersOfHorse(int horseId) => throw new NotImplementedException();
+
+    public ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId) => throw new NotImplementedException();
 }
