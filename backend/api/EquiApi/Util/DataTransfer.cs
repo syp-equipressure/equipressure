@@ -167,6 +167,36 @@ public class DataTransfer
     {
         public static HorseListResponse FromHorses(IEnumerable<Horse> horses) => new(horses.Select(HorseDto.FromHorse));
     }
+    
+    /// <summary>
+    /// DTO that returns saddle
+    /// </summary>
+    /// <param name="Id">Id of the saddle.</param>
+    /// <param name="Name">Name of the saddle</param>
+    /// <param name="HorseId">Id of the horse the saddle belongs to</param>
+    /// <param name="CategoryId">Id of the saddle category</param>
+    /// <param name="CategoryName">Name of the saddle category</param>
+    public sealed record SaddleDto(
+        int Id,
+        string Name,
+        int HorseId,
+        int CategoryId,
+        string CategoryName)
+    {
+        public static SaddleDto FromSaddle(Saddle saddle) =>
+            new(saddle.Id, saddle.Name, saddle.HorseId, saddle.CategoryId, saddle.Category.Name);
+    }
+
+    /// <summary>
+    /// DTO that returns list of saddle dtos
+    /// </summary>
+    /// <param name="Saddles">List of saddles</param>
+    public sealed record SaddleListResponse(IEnumerable<SaddleDto> Saddles)
+    {
+        public static SaddleListResponse FromSaddles(IEnumerable<Saddle> saddles) =>
+            new(saddles.Select(SaddleDto.FromSaddle));
+    }
+    
     public sealed record AddHorseRequest(
         string Name, 
         LocalDate DateOfBirth, 
