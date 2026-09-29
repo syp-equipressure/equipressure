@@ -107,7 +107,7 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
     }
 
     [HttpGet("{id:int}/saddles")]
-    [ProducesResponseType<DataTransfer.HorseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<DataTransfer.SaddleListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<DataTransfer.SaddleListResponse>> GetSaddlesOfHorse([FromRoute] int id)
@@ -121,6 +121,24 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
         var res = await service.GetSaddlesOfHorse(id);
 
         return res.Match<ActionResult<DataTransfer.SaddleListResponse>>(success => Ok(success),
+                                                                        notFound => NotFound());
+    }
+    
+    [HttpGet("{id:int}/riders")]
+    [ProducesResponseType<DataTransfer.PersonListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<DataTransfer.PersonListResponse>> GetRidersOfHorse([FromRoute] int id)
+    {
+        if (id < 0)
+        {
+            logger.LogWarning("Id has to be bigger or at least 0");
+            return BadRequest();
+        }
+
+        var res = await service.GetAllRidersOfHorse(id);
+
+        return res.Match<ActionResult<DataTransfer.PersonListResponse>>(success => Ok(success),
                                                                         notFound => NotFound());
     }
 }
