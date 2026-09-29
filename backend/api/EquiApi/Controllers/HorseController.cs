@@ -141,4 +141,19 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
         return res.Match<ActionResult<DataTransfer.PersonListResponse>>(success => Ok(success),
                                                                         notFound => NotFound());
     }
+    
+    [HttpGet("{id:int}/hidden")]
+    [ProducesResponseType<DataTransfer.PersonListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<DataTransfer.PersonListResponse>> GetHiddenUsersOfHorse([FromRoute] int id)
+    {
+        if (id < 0)
+        {
+            logger.LogWarning("Id has to be bigger or at least 0");
+            return BadRequest();
+        }
+
+        return Ok( await service.GetAllHiddenUsersOfHorse(id));
+    }
 }

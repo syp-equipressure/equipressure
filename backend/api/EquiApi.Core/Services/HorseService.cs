@@ -38,7 +38,7 @@ public interface IHorseService
 
     public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetAllRidersOfHorse(int horseId);
 
-    public  ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId);
+    public  ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId);
 }
 
 public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
@@ -137,6 +137,6 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
         return result.ToArray();
     }
 
-    public async ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId) 
+    public async ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId) 
         => (await uow.HorseRepository.GetAllHiddenUsersOfHorse(horseId)).ToArray();
 }
