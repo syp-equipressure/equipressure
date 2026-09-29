@@ -6,6 +6,7 @@ using HorseService = EquiApi.Persistence.Model.Horse;
 
 namespace EquiApi.Test;
 
+// TODO: Add horse owner 
 public sealed class HorseServiceTests
 {
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
@@ -15,7 +16,7 @@ public sealed class HorseServiceTests
 
     public HorseServiceTests()
     {
-        _sut = new Core.Services.HorseService(_uowMock, _loggerMock, _dateTimeProviderMock);
+        _sut = new Core.Services.HorseService(_uowMock, _loggerMock);
 
         _dateTimeProviderMock.GetCurrentDate().Returns(new LocalDate(2026, 1, 1));
     }
@@ -91,7 +92,7 @@ public sealed class HorseServiceTests
     {
         var result = await _sut.AddHorse(
             "Hugo", new LocalDate(2015, 1, 1), 500M, 0M, HorseGender.Male, CreateAddress(),
-            [CreateHorseBreed()]
+            [CreateHorseBreed()], 1
         );
 
         result.IsT1.Should().BeTrue();
@@ -102,7 +103,7 @@ public sealed class HorseServiceTests
     {
         var result = await _sut.AddHorse(
             "Hugo", new LocalDate(2015, 1, 1), -1M, 170M, HorseGender.Male, CreateAddress(),
-            [CreateHorseBreed()]
+            [CreateHorseBreed()], 1
         );
 
         result.IsT1.Should().BeTrue();
@@ -115,7 +116,7 @@ public sealed class HorseServiceTests
 
         var result = await _sut.AddHorse(
             "Hugo", futureDate, 500M, 170M, HorseGender.Male, CreateAddress(),
-            [CreateHorseBreed()]
+            [CreateHorseBreed()], 1
         );
 
         result.IsT1.Should().BeTrue();
@@ -126,7 +127,7 @@ public sealed class HorseServiceTests
     {
         var result = await _sut.AddHorse(
             "Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, CreateAddress(),
-            []
+            [], 1
         );
 
         result.IsT1.Should().BeTrue();
@@ -139,7 +140,7 @@ public sealed class HorseServiceTests
         var breeds = new List<HorseBreed> { CreateHorseBreed() };
 
         var result = await _sut.AddHorse(
-            "Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, address, breeds
+            "Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, address, breeds, 1
         );
 
         result.IsT0.Should().BeTrue();
