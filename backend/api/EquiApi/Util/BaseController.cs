@@ -91,7 +91,7 @@ public abstract class BaseController : ControllerBase
         
         return false;
         
-        static string[] FormatValidationErrors(IEnumerable<ValidationFailure> errors)
+        static str ing[] FormatValidationErrors(IEnumerable<ValidationFailure> errors)
         {
             return errors.Select(FormatValidationError).ToArray();
             

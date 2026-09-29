@@ -37,7 +37,7 @@ public interface IHorseService
 
     public ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId);
 
-    public ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllRidersOfHorse(int horseId);
+    public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetAllRidersOfHorse(int horseId);
 
     public  ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId);
 }
@@ -112,9 +112,32 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
         return new Success<Horse>(horse);
     }
 
-    public ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId) => throw new NotImplementedException();
+    public async ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId)
+    {
+        var result = await uow.HorseRepository.GetSaddlesOfHorse(horseId);
+        if (result.Count < 1)
+        {
+            logger.LogWarning("Could not find any saddle for horse with id {id}", horseId);
+            return new NotFound();
+        }
 
-    public ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllRidersOfHorse(int horseId) => throw new NotImplementedException();
+        return result.ToArray();
+    }
 
-    public ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId) => throw new NotImplementedException();
+    public async ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetAllRidersOfHorse(int horseId)
+    {
+        var result = await uow.HorseRepository.GetAllRidersOfHorse(horseId);
+
+        if (result.Count < 1)
+        {
+            logger.LogWarning("Could not find any rider for horse with id {id}", horseId);
+
+            return new NotFound();
+        }
+
+        return result.ToArray();
+    }
+
+    public async ValueTask<OneOf<IReadOnlyCollection<Person>>> GetAllHiddenUsersOfHorse(int horseId) 
+        => (await uow.HorseRepository.GetAllHiddenUsersOfHorse(horseId)).ToArray();
 }
