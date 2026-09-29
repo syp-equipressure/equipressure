@@ -2,7 +2,6 @@
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using EquiPressure.Core.Service;
-using Library.Core;
 using OneOf;
 using OneOf.Types;
 
@@ -46,7 +45,7 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
 {
     public async ValueTask<OneOf<IReadOnlyCollection<Horse>, NotFound>> GetAllHorsesOfPersonAsync(int personId)
     {
-        if (!await uow.PersonRepository.PersonExists(personId))
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
         {
             logger.LogInformation("Person with id {id} could not be found", personId);
             return new NotFound();
@@ -78,7 +77,7 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
                                                                List<HorseBreed> breeds,int ownerId )
     {
 
-        var person = await uow.PersonRepository.GetPersonById(ownerId);
+        var person = await uow.PersonRepository.GetPersonByIdAsync(ownerId);
         if (person is null)
         {
             logger.LogWarning("Person with id {id} could not be found", ownerId);

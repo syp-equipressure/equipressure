@@ -22,7 +22,6 @@ public sealed class DeviceController(
         {
             logger.LogWarning("userId {userId} has to be a valid number", userId);
 
-            return BadRequest();
         }
 
         var result = await deviceService.GetDevicesFromUserIdAsync(userId);

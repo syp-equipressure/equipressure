@@ -9,7 +9,7 @@ namespace EquiApi.Controllers;
 public class HorseController(IHorseService service, ILogger<HorseController> logger, ITransactionProvider transaction)
     : BaseController
 {
-    [HttpGet("{personId:int}")]
+    [HttpGet("person/{personId:int}")] 
     [ProducesResponseType<DataTransfer.HorseListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -18,7 +18,6 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
         if (personId < 0)
         {
             logger.LogWarning("personId: {id} was not valid", personId);
-
             return BadRequest();
         }
 

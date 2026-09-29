@@ -49,7 +49,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
     // Location DbSets
     public DbSet<Address> Addresses { get; set; }
-    public DbSet<City> Cities { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -281,20 +280,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                .OnDelete(DeleteBehavior.SetNull);
 
         #endregion
-
-        #region city
-
-        var city = mb.Entity<City>();
-        city.HasKey(c => c.Id);
-        city.Property(c => c.Id).ValueGeneratedOnAdd();
-        city.HasIndex(c => new { c.PLZ, c.Name });
-
-        city.HasMany(c => c.Addresses)
-            .WithOne(a => a.City)
-            .HasForeignKey(a => a.CityId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        #endregion
+        
     }
 
     /// <summary>
