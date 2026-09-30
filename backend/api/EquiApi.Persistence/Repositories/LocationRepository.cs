@@ -42,29 +42,44 @@ public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
 { 
     public async ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter)
     {
-        var result = addressSet
-            .GroupBy(a => new { a.CityName, Plz = a.PLZ })
-            .Select(g => new
-            {
-                CityName = g.Key.CityName,
-                Plz = g.Key.Plz,
-                Count = g.Sum(a => a.Persons.Count + a.Horses.Count),
-                Representative = g.First()
-            });
+        var grouped = addressSet
+                      .AsNoTracking()
+                      .Select(a => new
+                      {
+                          a.Id,
+                          a.CityName,
+                          a.PLZ,
+                          Cnt = a.Persons.Count + a.Horses.Count
+                      })
+                      .GroupBy(x => new { x.CityName, x.PLZ })
+                      .Select(g => new
+                      {
+                          g.Key.CityName,
+                          Count = g.Sum(x => x.Cnt),
+                          RepresentativeId = g.Min(x => x.Id)
+                      });
 
         if (nameFilter != null)
         {
-            result = result.Where(g => g.CityName.ToLower().Contains(nameFilter.ToLower()));
+            var filter = nameFilter.ToLower();
+            grouped = grouped.Where(g => g.CityName.ToLower().Contains(filter));
         }
 
-        result = result.OrderBy(r => r.Count);
+        IQueryable<int> ids = grouped
+                              .OrderBy(g => g.Count)
+                              .Select(g => g.RepresentativeId);
 
         if (length != null)
         {
-            result = result.Take(length.Value);
+            ids = ids.Take(length.Value);
         }
 
-        return await result.Select(r => r.Representative).ToListAsync();
+        // Two simple queries are more robust than a Join on a grouped subquery
+        var idList = await ids.ToListAsync();
+        return await addressSet
+                     .AsNoTracking()
+                     .Where(a => idList.Contains(a.Id))
+                     .ToListAsync();
     }
 
     public async ValueTask<bool> AddressExists(string? addressName, string plz, string cityName)
@@ -81,4 +96,3 @@ public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
     }
 
 }
-

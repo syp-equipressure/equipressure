@@ -1,0 +1,23 @@
+@BaseUrl = http://localhost:5200/api/locations
+
+### Get all locations
+GET {{BaseUrl}}
+
+### Search locations by city name
+GET {{BaseUrl}}?nameFilter=Steyr
+
+### Limit locations returned
+GET {{BaseUrl}}?length=10
+
+### Search and limit locations
+GET {{BaseUrl}}?nameFilter=Linz&length=10
+
+### Add a location
+POST {{BaseUrl}}
+Content-Type: application/json
+
+{
+    "addressName": "Linzer Straße 5",
+    "cityName": "Linz",
+    "plz": "4020"
+}
