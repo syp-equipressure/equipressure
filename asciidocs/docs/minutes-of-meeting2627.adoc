@@ -1,0 +1,115 @@
+= Minutes of Meeting
+EquiPressure
+2026/2027
+5th grade
+
+== 2026-09-22
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 22/09/2026
+
+|Dauer
+|12:35 - 13:00
+|===
+====
+
+=== Besprochenes
+* Ist-Stand Präsentation
+* Project Award Präsentations Layout
+
+==== Kritik an der Präsentation
+* Marketing nennt man Go-Market, nicht Marketing Beginn in der Roadmap
+
+==== Layout Project Award Präsentation
+* Vision (Überblick; aber das Wort mag er nicht)
+* Markt in Zahlen, Marktpotential
+* Zielgruppenunterschiede erklären (Reiter vs. Sattler)
+* Team mit Aufgabenbereichen (Teamleader, Frontend, Backend)
+* Geschäftsmodell
+* Roadmap mit Jahren/Stunden/Quartalen
+* Marketing Ideen?
+* wie sehen die Hardware Daten aus
+
+==== Überblick über dieses Schuljahr
+* bis Jänner brauchen wir Mock-Daten über Bluetooth
+* Projekt soll Jänner/Februar fertig sein
+** Codebase soll Ende Dezember fertig sein
+** im Jänner/Februar dann nur mehr Projektabschlussarbeiten und Dokumentation
+* im Sommersemester werden Marketingvideos gedreht und Marketing generell gestartet
+* es wird eine Projectaward Probelauf geben
+* Business Plan muss geschrieben werden
+** ausmachen wie viel Anteil Sophie Grüneis bekommt
+** kann man davon leben?
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|alle
+a| Project Award Präsentation
+| 06.11.2026
+
+|alle
+a| Backlog aufräumen und neue User Stories überlegen
+| 06.11.2026
+
+|Einzenberger
+a| Location Endpoints und Zeitschreibungstool suchen
+| 06.11.2026
+
+|Graßauer
+a| Almina ins Frontend einarbeiten, Features durchgehen und aufteilen
+| 06.11.2026
+
+|Dallinger
+a| Measurement und Horse Enpoints
+| 06.11.2026
+
+|Silnovic
+a| Frontend einarbeiten und Aufgaben von Lena bekommen
+| 06.11.2026
+|===

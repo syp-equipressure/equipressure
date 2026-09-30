@@ -24,6 +24,8 @@
 
 Personen:
 
+TODO: wir machen keine Unterscheidung zwischen Equestrian und Saddler
+
 * GET /persons => alle Personen
 * GET /persons/:id => Person mit id :id
 * GET /persons/:id/contacts => Kontakte einer Person
@@ -35,24 +37,27 @@ Personen:
 * GET /persons/:id/horses/locations => alle Pferde mit Pferde_Id, Location, Profilbild einer Person
 * GET /persons/:id/location => Location einer Person mit id :id
 
+* GET /equestrians/:id
+
 Locations:
 * POST /locations => add a location
+* GET /
 
 Geräte:
 
-* GET /devices/:personId => alle Geräte einer Person
+* ✓ GET /devices/:userId => alle Geräte einer Person
 * GET /devices/:id => Gerät mit der id :id
-* GET /devices/:id/owner => Besitzer des Gerätes (Person)
-* GET /devices/:id/users => alle Personen eines Geräts
-* POST /devices => neues Device hinzufügen
-* PUT /devices/:id => neuen User zu Gerät hinzufügen/löschen
-* DELETE /devices/:id => Gerät mit einer id: löschen
+* ✓ GET /devices/:id/owner => Besitzer des Gerätes (Person)
+* ✓ GET /devices/:id/users => alle Personen eines Geräts
+* ✓ POST /devices => neues Device hinzufügen
+* PUT /devices/:id => neuen User zu Gerät hinzufügen/löschen TODO: anschauen ob PUT oder POST
+* ✓ DELETE /devices/:id => Gerät mit einer id: löschen
 * PATCH /devices/:id/owner => neuen Besitzer festlegen
 
 Pferde: 
 
-* GET /horses/:personId => alle Pferde einer bestimmten Person
-* GET /horses/:id => Pferd mit id :id
+* ✓ GET /horses/:personId => alle Pferde einer bestimmten Person
+* ✓ GET /horses/:id => Pferd mit id :id
 * GET /horses/:id/saddles => alle Sättel eines Pferdes
 * GET /horses/:id/persons => Reitbeteiligungen + Owner
 ** Owner entweder an erster Stelle oder eigener Endpoint für Owner
