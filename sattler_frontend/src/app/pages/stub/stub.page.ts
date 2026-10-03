@@ -6,6 +6,7 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
 import { Horse } from '../../models/horse.model';
 import { Measurement } from '../../models/measurement.model';
+import { Saddle } from '../../models/saddle.model';
 
 interface OwnerCard {
   owner: Customer;
@@ -40,7 +41,6 @@ export class StubPage {
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
   private readonly routeData = toSignal(this.route.data, { initialValue: {} });
-  private readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   readonly resolvedTitle = computed(() => {
     const dataTitle = (this.routeData() as { title?: string }).title ?? '';
@@ -68,7 +68,7 @@ export class StubPage {
   readonly selectedOwner = computed(() => {
     const list = this.owners();
     const selectedId = this.selectedOwnerId();
-    return list.find(entry => entry.owner.id === selectedId) ?? list[0] ?? null;
+    return list.find(entry => entry.owner.id === selectedId) ?? null;
   });
 
   readonly availableHorses = computed(() => this.selectedOwner()?.horses ?? []);
@@ -76,7 +76,17 @@ export class StubPage {
   readonly selectedHorse = computed(() => {
     const horses = this.availableHorses();
     const selectedId = this.selectedHorseId();
-    return horses.find(horse => horse.id === selectedId) ?? horses[0] ?? null;
+    return horses.find(horse => horse.id === selectedId) ?? null;
+  });
+
+  readonly availableSaddles = computed(() => {
+    const horse = this.selectedHorse();
+    return horse ? this.data.getSaddlesOfHorse(horse.id) : [];
+  });
+
+  readonly selectedSaddle = computed<Saddle | null>(() => {
+    const selectedId = this.selectedSaddleId();
+    return this.availableSaddles().find(saddle => saddle.id === selectedId) ?? null;
   });
 
   readonly riderName = computed(() => {
@@ -96,19 +106,18 @@ export class StubPage {
   readonly horseHeight = computed(() => this.selectedHorse()?.heightCm ?? 0);
   readonly horseWeight = computed(() => this.selectedHorse()?.weightKg ?? 0);
 
-  readonly selectedSaddleName = computed(() => {
-    return this.selectedHorseMeasurements()[0]?.detail.saddleName ?? 'Prestige X-D2';
-  });
+  readonly selectedSaddleId = signal<string | null>(null);
+  readonly selectedSaddleName = computed(() => this.selectedSaddle()?.name ?? '');
+  readonly selectedSaddleCategory = computed(() => this.selectedSaddle()?.category ?? '');
 
   readonly summaryRows = computed<SummaryRow[]>(() => {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
-    const latest = this.selectedHorseMeasurements()[0];
 
     return [
       { label: 'Reiter:in', value: owner ? fullName(owner.owner) : '' },
       { label: 'Pferd', value: horse?.name ?? '' },
-      { label: 'Sattel', value: latest?.detail.saddleName ?? 'Prestige X-D2' },
+      { label: 'Sattel', value: this.selectedSaddleName() },
       {
         label: 'Messungen',
         value: horse ? `${this.selectedHorseMeasurements().length} vorhanden` : '',
@@ -133,39 +142,37 @@ export class StubPage {
   });
 
   constructor() {
-    // Check for query parameters (pre-filled from horse detail page)
     const params = this.route.snapshot.queryParamMap;
-    const ownerId = params.get('ownerId');
     const horseId = params.get('horseId');
+    const requestedHorse = horseId ? this.data.getHorse(horseId) : undefined;
+    const ownerId = requestedHorse?.ownerId ?? params.get('ownerId');
+    const owner = this.owners().find(entry => entry.owner.id === ownerId);
 
-    if (ownerId) {
-      this.selectedOwnerId.set(ownerId);
-      if (horseId) {
-        this.selectedHorseId.set(horseId);
-      }
-    } else {
-      // Default: select first owner and horse
-      const firstOwner = this.owners()[0];
-      if (firstOwner) {
-        this.selectedOwnerId.set(firstOwner.owner.id);
-        this.selectedHorseId.set(firstOwner.horses[0]?.id ?? null);
-      }
-    }
+    this.selectedOwnerId.set(owner?.owner.id ?? null);
+    this.selectedHorseId.set(
+      owner?.horses.find(horse => horse.id === requestedHorse?.id)?.id ?? null,
+    );
   }
 
   selectOwner(ownerId: string) {
-    this.selectedOwnerId.set(ownerId);
+    this.selectedOwnerId.set(ownerId || null);
     this.selectedHorseId.set(null);
+    this.selectedSaddleId.set(null);
   }
 
   selectHorse(horseId: string) {
-    this.selectedHorseId.set(horseId);
+    this.selectedHorseId.set(horseId || null);
+    this.selectedSaddleId.set(null);
+  }
+
+  selectSaddle(saddleId: string) {
+    this.selectedSaddleId.set(saddleId || null);
   }
 
   continueToMeasurement() {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
-    if (!owner || !horse) {
+    if (!owner || !horse || !this.selectedSaddle()) {
       return;
     }
 
