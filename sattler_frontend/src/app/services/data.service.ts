@@ -2,7 +2,9 @@ import { Injectable, signal } from '@angular/core';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { Measurement, MeasurementDetail } from '../models/measurement.model';
+import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
+import { formatDuration } from '../utils/time-format';
 
 /**
  * Mock data service. Once backend ships GET /api/persons + UserController,
@@ -316,6 +318,42 @@ export class DataService {
 
   getMeasurement(id: string): Measurement | undefined {
     return this._measurements().find(m => m.id === id);
+  }
+
+  getSamplePressureGrid(): number[][] {
+    return buildPetziPressureGrid();
+  }
+
+  addSessionMeasurement(session: MeasurementSession): Measurement {
+    const owner = this.getCustomer(session.ownerId);
+    const saddle = this.getSaddlesOfHorse(session.horseId)
+      .find(item => item.id === session.saddleId);
+    const completedSegments = session.segments.filter(segment => segment.completed);
+    const totalSeconds = completedSegments.reduce(
+      (total, segment) => total + segment.durationSeconds,
+      0,
+    );
+    const duration = formatDuration(totalSeconds);
+    const detail = buildPetziDetail();
+    detail.riderName = owner ? `${owner.firstName} ${owner.lastName}` : detail.riderName;
+    detail.riderHeightM = owner ? owner.heightCm / 100 : detail.riderHeightM;
+    detail.riderWeightKg = owner?.weightKg ?? detail.riderWeightKg;
+    detail.saddleName = saddle?.name ?? detail.saddleName;
+    detail.durationFull = `${duration} min`;
+    detail.gaits = [...new Set(completedSegments.map(segment => segment.gait))];
+
+    const measurement: Measurement = {
+      id: `m${Date.now()}`,
+      horseId: session.horseId,
+      date: new Date().toLocaleDateString('de-AT'),
+      deviceName: saddle?.name ?? detail.saddleName,
+      durationLabel: `${duration} min`,
+      symmetryPct: 96,
+      notes: session.notes,
+      detail,
+    };
+    this._measurements.update(list => [measurement, ...list]);
+    return measurement;
   }
 
   updateMeasurementNotes(id: string, notes: string): void {
