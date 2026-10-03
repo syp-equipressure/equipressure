@@ -7,6 +7,7 @@ import { Customer, fullName } from '../../models/customer.model';
 import { Horse } from '../../models/horse.model';
 import { Measurement } from '../../models/measurement.model';
 import { Saddle } from '../../models/saddle.model';
+import { MeasurementSessionService } from '../../services/measurement-session.service';
 
 interface OwnerCard {
   owner: Customer;
@@ -40,6 +41,7 @@ export class StubPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
+  private readonly measurementSession = inject(MeasurementSessionService);
   private readonly routeData = toSignal(this.route.data, { initialValue: {} });
 
   readonly resolvedTitle = computed(() => {
@@ -142,6 +144,10 @@ export class StubPage {
   });
 
   constructor() {
+    if (this.route.snapshot.data['title'] === 'Neue Messung') {
+      this.measurementSession.clear();
+    }
+
     const params = this.route.snapshot.queryParamMap;
     const horseId = params.get('horseId');
     const requestedHorse = horseId ? this.data.getHorse(horseId) : undefined;
@@ -149,8 +155,13 @@ export class StubPage {
     const owner = this.owners().find(entry => entry.owner.id === ownerId);
 
     this.selectedOwnerId.set(owner?.owner.id ?? null);
-    this.selectedHorseId.set(
-      owner?.horses.find(horse => horse.id === requestedHorse?.id)?.id ?? null,
+    const selectedHorseId = owner?.horses.find(horse => horse.id === requestedHorse?.id)?.id ?? null;
+    this.selectedHorseId.set(selectedHorseId);
+    const saddleId = params.get('saddleId');
+    this.selectedSaddleId.set(
+      selectedHorseId
+        ? this.data.getSaddlesOfHorse(selectedHorseId).find(saddle => saddle.id === saddleId)?.id ?? null
+        : null,
     );
   }
 
@@ -172,11 +183,18 @@ export class StubPage {
   continueToMeasurement() {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
-    if (!owner || !horse || !this.selectedSaddle()) {
+    const saddle = this.selectedSaddle();
+    if (!owner || !horse || !saddle) {
       return;
     }
 
-    this.router.navigate(['/customers', owner.owner.id, 'horses', horse.id]);
+    this.router.navigate(['/new-measurement/session'], {
+      queryParams: {
+        ownerId: owner.owner.id,
+        horseId: horse.id,
+        saddleId: saddle.id,
+      },
+    });
   }
 
   readonly fullName = fullName;
