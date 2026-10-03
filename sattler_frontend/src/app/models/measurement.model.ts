@@ -8,6 +8,7 @@ export interface Measurement {
   deviceName: string; // e.g. "Prestige X-D2"
   durationLabel: string; // e.g. "01:22 min"
   symmetryPct: number; // 0-100
+  notes: string;
   // detail
   detail: MeasurementDetail;
 }
