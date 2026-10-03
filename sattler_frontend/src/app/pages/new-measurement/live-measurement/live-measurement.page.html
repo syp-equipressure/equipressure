@@ -1,0 +1,49 @@
+<app-page-header title="Live-Messung"></app-page-header>
+
+@if (session()) {
+  <main class="live-page">
+    <header class="live-toolbar">
+      <button type="button" class="back-button" aria-label="Zurück zur Vorbereitung" (click)="finishSegment()">←</button>
+      <strong>Live-Messung</strong>
+      <time>{{ formatDuration(elapsedSeconds()) }}</time>
+      <button type="button" class="stop-button" (click)="finishSegment()">Teilmessung beenden</button>
+    </header>
+
+    <div class="live-layout">
+      <section class="heatmap-card">
+        <div class="heatmap-heading">
+          <span>Druckverteilung</span>
+          <span class="live-indicator">● LIVE</span>
+        </div>
+        <app-pressure-heatmap [grid]="pressureGrid()" [max]="8"></app-pressure-heatmap>
+        <div class="heatmap-legend"><span>Niedrig</span><span class="legend-gradient"></span><span>Hoch</span></div>
+      </section>
+
+      <aside class="live-controls">
+        <section class="control-card">
+          <h2>Gangart</h2>
+          <div class="button-group">
+            @for (option of ['Schritt', 'Trab', 'Galopp']; track option) {
+              <button type="button" [class.active]="gait() === option" (click)="gait.set($any(option))">{{ option }}</button>
+            }
+          </div>
+        </section>
+
+        <section class="control-card">
+          <h2>Aufnahme-Seite</h2>
+          <div class="button-group">
+            @for (option of ['Links', 'Rechts']; track option) {
+              <button type="button" [class.active]="side() === option" (click)="side.set($any(option))">{{ option }}</button>
+            }
+          </div>
+        </section>
+
+        <section class="live-stats">
+          <div><span>Max. Druck</span><strong>5,8 <small>N/cm²</small></strong></div>
+          <div><span>Ø Druck</span><strong>2,1 <small>N/cm²</small></strong></div>
+          <div><span>Symmetrie</span><strong>96%</strong></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+}
