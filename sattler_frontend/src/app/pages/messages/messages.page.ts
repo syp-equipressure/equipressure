@@ -22,42 +22,38 @@ interface ChatMessage {
 export class MessagesPage {
   private readonly data = inject(DataService);
 
-  readonly customers = computed(() => this.data.getCustomers().filter(customer => !customer.isMe));
+  readonly messages = signal<ChatMessage[]>([
+    {
+      id: 1,
+      customerId: 'max',
+      sender: 'sattler',
+      message: 'Lorem ipsum dolor sit amet, consectetur sadipscing elitr, sed',
+      timestamp: '12:04 Uhr',
+    },
+    {
+      id: 2,
+      customerId: 'max',
+      sender: 'customer',
+      message: 'Vielen Dank! Lg',
+      timestamp: '12:49 Uhr',
+    },
+    {
+      id: 3,
+      customerId: 'anna',
+      sender: 'customer',
+      message: 'Sonntag, 5 Uhr? Oder passt dir Montag besser?',
+      timestamp: 'vor 3 Minuten',
+    },
+  ]);
+  readonly customers = computed(() => {
+    const conversationIds = new Set(this.messages().map(message => message.customerId));
+    return this.data.getCustomers().filter(customer => conversationIds.has(customer.id) && !customer.isMe);
+  });
   readonly selectedCustomerId = signal(this.customers()[0]?.id ?? '');
   readonly selectedCustomer = computed<Customer | undefined>(() =>
     this.customers().find(customer => customer.id === this.selectedCustomerId()),
   );
   readonly draft = signal('');
-  readonly messages = signal<ChatMessage[]>([
-    {
-      id: 1,
-      customerId: 'max',
-      sender: 'customer',
-      message: 'Hallo Sophie, könnten wir einen Termin für Kas vereinbaren?',
-      timestamp: '09:14',
-    },
-    {
-      id: 2,
-      customerId: 'max',
-      sender: 'sattler',
-      message: 'Gerne! Wie wäre es nächste Woche am Dienstag?',
-      timestamp: '09:22',
-    },
-    {
-      id: 3,
-      customerId: 'max',
-      sender: 'customer',
-      message: 'Das passt sehr gut. Vielen Dank!',
-      timestamp: '09:26',
-    },
-    {
-      id: 4,
-      customerId: 'anna',
-      sender: 'customer',
-      message: 'Ich wollte wegen der letzten Messung nachfragen.',
-      timestamp: 'Gestern',
-    },
-  ]);
   readonly selectedMessages = computed(() =>
     this.messages().filter(message => message.customerId === this.selectedCustomerId()),
   );
@@ -67,10 +63,27 @@ export class MessagesPage {
   }
 
   latestMessage(customerId: string): string {
-    return (
-      [...this.messages()].reverse().find(message => message.customerId === customerId)?.message ??
-      'Noch keine Nachrichten'
-    );
+    return [...this.messages()].reverse().find(message => message.customerId === customerId)?.message ??
+      'Noch keine Nachrichten';
+  }
+
+  latestMessageTime(customerId: string): string {
+    if (customerId === 'max') return 'vor 2 Stunden';
+    return [...this.messages()].reverse().find(message => message.customerId === customerId)?.timestamp ?? '';
+  }
+
+  avatarUrl(customer: Customer): string | undefined {
+    return customer.horseIds
+      .map(horseId => this.data.getHorse(horseId)?.imageUrl)
+      .find((imageUrl): imageUrl is string => !!imageUrl);
+  }
+
+  customerHorseNames(customer: Customer): string[] {
+    return customer.horseIds
+      .map(horseId => this.data.getHorse(horseId)?.name)
+      .filter((name): name is string => !!name)
+      .slice(0, 2)
+      .reverse();
   }
 
   sendMessage(): void {
@@ -85,7 +98,7 @@ export class MessagesPage {
         customerId,
         sender: 'sattler',
         message,
-        timestamp: new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: `${new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`,
       },
     ]);
     this.draft.set('');

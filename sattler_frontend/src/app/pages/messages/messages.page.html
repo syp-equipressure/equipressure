@@ -3,7 +3,6 @@
 <section class="messages-page">
   <div class="messages-layout">
     <aside class="customer-panel" aria-label="Kundenliste">
-      <h2 class="panel-title">Kunden</h2>
       <div class="customer-list">
         @for (customer of customers(); track customer.id) {
           <button
@@ -12,13 +11,18 @@
             [attr.aria-pressed]="customer.id === selectedCustomerId()"
             (click)="selectCustomer(customer.id)"
           >
-            <span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span>
+            <span class="customer-avatar">
+              @if (avatarUrl(customer)) {
+                <img [src]="avatarUrl(customer)" [alt]="fullName(customer)" />
+              } @else {
+                {{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}
+              }
+            </span>
             <span class="customer-meta">
               <span class="customer-name">{{ fullName(customer) }}</span>
-              <span class="customer-preview">
-                {{ latestMessage(customer.id) }}
-              </span>
+              <span class="customer-preview">{{ latestMessage(customer.id) }}</span>
             </span>
+            <time class="contact-time">{{ latestMessageTime(customer.id) }}</time>
           </button>
         }
       </div>
@@ -27,14 +31,23 @@
     <section class="chat-panel" aria-label="Chatverlauf">
       @if (selectedCustomer(); as customer) {
         <header class="chat-header">
-          <span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span>
-          <div>
+          <span class="customer-avatar">
+            @if (avatarUrl(customer)) {
+              <img [src]="avatarUrl(customer)" [alt]="fullName(customer)" />
+            } @else {
+              {{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}
+            }
+          </span>
+          <div class="chat-contact">
             <h2>{{ fullName(customer) }}</h2>
-            <span class="chat-status">Kunde</span>
+            @if (customerHorseNames(customer).length) {
+              <span>{{ customerHorseNames(customer).join(' | ') }}</span>
+            }
           </div>
         </header>
 
         <div class="chat-history" aria-live="polite">
+          <div class="date-divider"><span>Heute</span></div>
           @for (message of selectedMessages(); track message.id) {
             <article class="message" [class.outgoing]="message.sender === 'sattler'">
               <p>{{ message.message }}</p>
@@ -50,14 +63,16 @@
           <input
             id="message-draft"
             type="text"
-            placeholder="Nachricht schreiben …"
+            placeholder="Nachricht schreiben..."
             [ngModel]="draft()"
             (ngModelChange)="draft.set($event)"
             name="message"
           />
-          <button type="submit" [disabled]="!draft().trim()" aria-label="Nachricht senden">
+          <button type="button" class="attach-button" aria-label="Datei anhängen" title="Datei anhängen">
+            <span class="material-icons">attach_file</span>
+          </button>
+          <button type="submit" class="send-button" [disabled]="!draft().trim()" aria-label="Nachricht senden">
             <span class="material-icons">send</span>
-            Senden
           </button>
         </form>
       } @else {
