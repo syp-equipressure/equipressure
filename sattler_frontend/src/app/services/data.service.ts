@@ -3,6 +3,9 @@ import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { Measurement, MeasurementDetail } from '../models/measurement.model';
 import { Sattler } from '../models/sattler.model';
+import { MeasurementSession } from '../models/measurement-session.model';
+import { Saddle } from '../models/saddle.model';
+import { formatDuration } from '../utils/time-format';
 
 /**
  * Mock data service. Once backend ships GET /api/persons + UserController,
@@ -159,6 +162,22 @@ export class DataService {
     },
   ]);
 
+  private readonly _saddles = signal<Saddle[]>([
+    { id: 'saddle-kas-1', horseId: 'kas', name: 'Prestige X-D2', category: 'Dressur' },
+    { id: 'saddle-kas-2', horseId: 'kas', name: 'Kentaur Ithaka', category: 'Dressur' },
+    { id: 'saddle-petzi-1', horseId: 'petzi', name: 'Prestige X-D2', category: 'Dressur' },
+    { id: 'saddle-petzi-2', horseId: 'petzi', name: 'Wintec 500', category: 'Vielseitigkeit' },
+    { id: 'saddle-safira-1', horseId: 'safira', name: 'Amerigo Vega', category: 'Dressur' },
+    { id: 'saddle-safira-2', horseId: 'safira', name: 'Prestige Roma', category: 'Springen' },
+    { id: 'saddle-bella-1', horseId: 'bella', name: 'Icelandic Pro', category: 'Gangpferd' },
+    { id: 'saddle-bella-2', horseId: 'bella', name: 'Top Reiter', category: 'Gangpferd' },
+    { id: 'saddle-mira-1', horseId: 'mira', name: 'Prestige X-D2', category: 'Dressur' },
+    { id: 'saddle-isa-1', horseId: 'isa', name: 'Prestige X-D2', category: 'Dressur' },
+    { id: 'saddle-luna-1', horseId: 'my-1', name: 'Passier Compact', category: 'Dressur' },
+    { id: 'saddle-luna-2', horseId: 'my-1', name: 'Kieffer Wien', category: 'Vielseitigkeit' },
+    { id: 'saddle-stella-1', horseId: 'my-2', name: 'Wintec 500', category: 'Vielseitigkeit' },
+  ]);
+
   private readonly _measurements = signal<Measurement[]>([
     {
       id: 'm1',
@@ -167,6 +186,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:22 min',
       symmetryPct: 96,
+      notes: 'Sattel liegt ruhig. Im Trab gleichmäßige Druckverteilung.',
       detail: buildPetziDetail(),
     },
     {
@@ -176,6 +196,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:22 min',
       symmetryPct: 96,
+      notes: 'Petzi lief gleichmäßig und zeigte keine Druckempfindlichkeit.',
       detail: buildPetziDetail(),
     },
     {
@@ -185,6 +206,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:22 min',
       symmetryPct: 96,
+      notes: 'Beim nächsten Termin den Widerristbereich erneut kontrollieren.',
       detail: buildPetziDetail(),
     },
     {
@@ -194,6 +216,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:18 min',
       symmetryPct: 92,
+      notes: 'Beim Aufsteigen rutscht der Sattel leicht nach vorne. Gurtung prüfen.',
       detail: buildPetziDetail(),
     },
     {
@@ -203,6 +226,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:25 min',
       symmetryPct: 94,
+      notes: 'Gleichmäßiger Sitz. Passform nach dem Training erneut prüfen.',
       detail: buildPetziDetail(),
     },
     {
@@ -212,6 +236,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:20 min',
       symmetryPct: 98,
+      notes: 'Sehr ausgeglichene Druckverteilung, keine Auffälligkeiten.',
       detail: buildPetziDetail(),
     },
     {
@@ -221,6 +246,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:19 min',
       symmetryPct: 91,
+      notes: 'Linke Seite beim nächsten Training weiter beobachten.',
       detail: buildPetziDetail(),
     },
     {
@@ -230,6 +256,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:23 min',
       symmetryPct: 95,
+      notes: 'Im Galopp entspannt. Sattelposition ist unverändert.',
       detail: buildPetziDetail(),
     },
     {
@@ -239,6 +266,7 @@ export class DataService {
       deviceName: 'Prestige X-D2',
       durationLabel: '01:21 min',
       symmetryPct: 97,
+      notes: 'Luna war während der Messung entspannt und aufmerksam.',
       detail: buildPetziDetail(),
     },
   ]);
@@ -298,6 +326,10 @@ export class DataService {
     return this._horses().find(h => h.id === id);
   }
 
+  getSaddlesOfHorse(horseId: string): Saddle[] {
+    return this._saddles().filter(saddle => saddle.horseId === horseId);
+  }
+
   addHorse(horse: Horse): void {
     this._horses.update(list => [...list, horse]);
   }
@@ -310,6 +342,48 @@ export class DataService {
 
   getMeasurement(id: string): Measurement | undefined {
     return this._measurements().find(m => m.id === id);
+  }
+
+  getSamplePressureGrid(): number[][] {
+    return buildPetziPressureGrid();
+  }
+
+  addSessionMeasurement(session: MeasurementSession): Measurement {
+    const owner = this.getCustomer(session.ownerId);
+    const saddle = this.getSaddlesOfHorse(session.horseId)
+      .find(item => item.id === session.saddleId);
+    const completedSegments = session.segments.filter(segment => segment.completed);
+    const totalSeconds = completedSegments.reduce(
+      (total, segment) => total + segment.durationSeconds,
+      0,
+    );
+    const duration = formatDuration(totalSeconds);
+    const detail = buildPetziDetail();
+    detail.riderName = owner ? `${owner.firstName} ${owner.lastName}` : detail.riderName;
+    detail.riderHeightM = owner ? owner.heightCm / 100 : detail.riderHeightM;
+    detail.riderWeightKg = owner?.weightKg ?? detail.riderWeightKg;
+    detail.saddleName = saddle?.name ?? detail.saddleName;
+    detail.durationFull = `${duration} min`;
+    detail.gaits = [...new Set(completedSegments.map(segment => segment.gait))];
+
+    const measurement: Measurement = {
+      id: `m${Date.now()}`,
+      horseId: session.horseId,
+      date: new Date().toLocaleDateString('de-AT'),
+      deviceName: saddle?.name ?? detail.saddleName,
+      durationLabel: `${duration} min`,
+      symmetryPct: 96,
+      notes: session.notes,
+      detail,
+    };
+    this._measurements.update(list => [measurement, ...list]);
+    return measurement;
+  }
+
+  updateMeasurementNotes(id: string, notes: string): void {
+    this._measurements.update(list =>
+      list.map(measurement => measurement.id === id ? { ...measurement, notes } : measurement),
+    );
   }
 }
 

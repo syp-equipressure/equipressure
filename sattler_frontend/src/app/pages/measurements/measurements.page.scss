@@ -566,7 +566,57 @@ app-pressure-heatmap {
 
 .notes-stub {
   flex: 1;
-  padding: 80px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 14px 22px;
+}
+
+.note-card {
+  background: #ffffff;
+  border: 1px solid t.$border-soft;
+  border-radius: 14px;
+  padding: 14px 12px;
+
+  textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 118px;
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid t.$border-soft;
+    border-radius: 12px;
+    resize: vertical;
+    font: inherit;
+    color: t.$text;
+
+    &::placeholder {
+      color: t.$text-muted;
+    }
+  }
+}
+
+.note-header {
+  padding: 0 4px;
+
+  h2 {
+    margin: 0;
+    color: t.$text-strong;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 5px 0 0;
+    color: t.$text-muted;
+    font-size: 12px;
+  }
+}
+
+.notes-empty {
+  margin: 0;
+  padding: 56px 20px;
   text-align: center;
   color: t.$text-muted;
   font-size: 16px;

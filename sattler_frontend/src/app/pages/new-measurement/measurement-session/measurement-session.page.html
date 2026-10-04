@@ -1,0 +1,103 @@
+<app-page-header title="Neue Messung"></app-page-header>
+
+@if (session(); as current) {
+  <main class="session-page">
+    <button type="button" class="back-link" aria-label="Zurück zur Auswahl" (click)="backToSelection()">←</button>
+    <h1>Messung für {{ owner()?.firstName }} {{ owner()?.lastName }}</h1>
+
+    <div class="session-layout">
+      <section class="session-main">
+        <section class="segment-list" aria-label="Teilmessungen">
+          @for (segment of current.segments; track segment.id; let index = $index) {
+            <article class="session-card segment-card" [class.complete]="segment.completed">
+              <header class="segment-heading">
+                <span class="step-icon">{{ index + 1 }}</span>
+                <strong>{{ segment.gait }} {{ segment.side === 'Links' ? 'linke Hand' : 'rechte Hand' }}</strong>
+                @if (segment.completed) {
+                  <span class="status">Abgeschlossen</span>
+                }
+                <span class="expand-icon">{{ segment.completed ? '✓' : '⌃' }}</span>
+              </header>
+
+              @if (!segment.completed) {
+                <div class="segment-selectors">
+                  <label>
+                    <span>Gangart</span>
+                    <select [value]="segment.gait" (change)="updateSegment(segment, 'gait', $any($event.target).value)">
+                      <option value="Schritt">Schritt</option>
+                      <option value="Trab">Trab</option>
+                      <option value="Galopp">Galopp</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Hand</span>
+                    <select [value]="segment.side" (change)="updateSegment(segment, 'side', $any($event.target).value)">
+                      <option value="Links">Links</option>
+                      <option value="Rechts">Rechts</option>
+                    </select>
+                  </label>
+                </div>
+                <button type="button" class="start-segment" (click)="startSegment(segment)">
+                  Teilmessung starten
+                </button>
+              } @else {
+                <div class="completed-segment">
+                  <span>{{ segment.gait }} {{ segment.side === 'Links' ? 'linke Hand' : 'rechte Hand' }}</span>
+                  <strong>{{ formatDuration(segment.durationSeconds) }}</strong>
+                  <button type="button" class="remove-segment" aria-label="Teilmessung löschen" (click)="removeSegment(segment.id)">×</button>
+                </div>
+              }
+            </article>
+          }
+        </section>
+
+        <button type="button" class="add-segment" (click)="addSegment()">
+          <span>＋</span> Weitere Teilmessung hinzufügen
+        </button>
+
+        <label class="session-card notes-card">
+          <span class="field-label">Notizen</span>
+          <textarea
+            [value]="current.notes"
+            (input)="updateNotes($event)"
+            placeholder="Beobachtungen, Auffälligkeiten, ..."
+          ></textarea>
+        </label>
+      </section>
+
+      <aside class="session-side">
+        <article class="session-card timer-card">
+          <span>GESAMTDAUER</span>
+          <strong>{{ formatDuration(totalSeconds()) }}</strong>
+          <small>{{ completedCount() }} von {{ current.segments.length }} Teilmessungen abgeschlossen</small>
+        </article>
+
+        <article class="session-card detail-card">
+          <h2><span>▶</span> Session</h2>
+          <dl>
+            <dt>Reiter:in</dt><dd>{{ owner()?.firstName }} {{ owner()?.lastName }}</dd>
+            <dt>Pferd</dt><dd>{{ horse()?.name }}</dd>
+            <dt>Sattel</dt><dd>{{ saddle()?.name }}</dd>
+          </dl>
+        </article>
+
+        <article class="session-card progress-card">
+          <h2><span>▶</span> Fortschritt</h2>
+          <ol>
+            @for (segment of current.segments; track segment.id; let index = $index) {
+              <li [class.complete]="segment.completed">
+                <span class="progress-number">{{ index + 1 }}</span>
+                <span>{{ segment.gait }} {{ segment.side === 'Links' ? 'linke Hand' : 'rechte Hand' }}</span>
+                <strong>{{ segment.completed ? formatDuration(segment.durationSeconds) : '-' }}</strong>
+              </li>
+            }
+          </ol>
+        </article>
+      </aside>
+    </div>
+
+    <button type="button" class="finish-button" [disabled]="completedCount() === 0" (click)="finish()">
+      Messung beenden
+    </button>
+  </main>
+}

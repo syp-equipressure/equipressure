@@ -185,6 +185,21 @@
 
 @if (tab() === 'notizen') {
   <section class="notes-stub">
-    Keine Notizen vorhanden.
+    @for (m of measurements(); track m.id) {
+      <article class="note-card">
+        <header class="note-header">
+          <h2>{{ m.date }} · {{ m.deviceName }}</h2>
+          <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toString().replace('.', ',') }} N/cm²</p>
+        </header>
+        <textarea
+          [value]="m.notes"
+          placeholder="Notizen..."
+          aria-label="Notizen zur Messung vom {{ m.date }}"
+          (input)="updateNotes(m.id, $event)"
+        ></textarea>
+      </article>
+    } @empty {
+      <p class="notes-empty">Keine Notizen vorhanden.</p>
+    }
   </section>
 }
