@@ -1,7 +1,7 @@
 .app-shell {
   position: relative;
   min-height: 100vh;
-  background: #f5f6f8;
+  background: oklch(0.97 0 0);
 }
 
 .backdrop {
@@ -33,5 +33,5 @@
   position: relative;
   z-index: 1;
   min-height: 100vh;
-  background: #f5f6f8;
+  background: oklch(0.97 0 0);
 }

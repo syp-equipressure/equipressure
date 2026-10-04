@@ -42,7 +42,7 @@ body {
   --text-primary: #18212f;
   --text-secondary: #5f6b7a;
   --text-muted: #8993a0;
-  --hover-bg: #f5f6f8;
+  --hover-bg: oklch(0.97 0 0);
   --input-bg: #ffffff;
   --primary: #6955ae;
   --error: #c44242;
@@ -53,7 +53,7 @@ body {
 html, body { min-height: 100%; }
 body {
   margin: 0;
-  background: #f5f6f8;
+  background: oklch(0.97 0 0);
   color: #293342;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
