@@ -9,12 +9,12 @@
   min-height: calc(100vh - 72px);
   display: flex;
   padding: 0;
-  background: #ffffff;
+  background: t.$bg-page;
 }
 
 .new-measurement-panel {
   width: 100%;
-  background: #ffffff;
+  background: t.$bg-page;
   border-radius: 0;
   padding: 18px 22px 26px;
   border: 0;
@@ -61,14 +61,17 @@
 }
 
 .top-grid {
-  grid-template-columns: 1fr 1fr 1.1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 18px;
 }
 
 .bottom-grid {
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 20px;
 }
+
+.saddle-card { grid-column: span 2; }
+.recent-card { grid-column: 3; }
 
 .card {
   border: 1px solid t.$border;
@@ -159,7 +162,7 @@
 .saddle-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 32px;
+  gap: 16px;
   align-items: end;
 }
 
@@ -367,6 +370,9 @@
   .bottom-grid {
     grid-template-columns: 1fr;
   }
+
+  .saddle-card,
+  .recent-card { grid-column: auto; }
 
   .new-measurement-panel {
     max-width: 720px;

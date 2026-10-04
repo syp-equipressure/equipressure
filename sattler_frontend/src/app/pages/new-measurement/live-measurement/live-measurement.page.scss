@@ -6,13 +6,12 @@
 .live-toolbar {
   min-height: 62px;
   display: grid;
-  grid-template-columns: 44px 1fr auto auto;
+  grid-template-columns: 44px 1fr auto;
   align-items: center;
   gap: 18px;
   border-bottom: 1px solid t.$border-soft;
   color: t.$text-strong;
 }
-.live-toolbar strong { justify-self: center; }
 .live-toolbar time { color: t.$purple-600; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .back-button, .stop-button { border: 0; cursor: pointer; font: inherit; }
 .back-button { background: transparent; font-size: 22px; color: t.$text-soft; }
@@ -51,7 +50,6 @@ app-pressure-heatmap { display: block; flex: 1; min-height: 380px; border-radius
 
 @media (max-width: 760px) {
   .live-toolbar { grid-template-columns: 32px 1fr auto; gap: 8px; }
-  .live-toolbar strong { justify-self: start; }
   .stop-button { grid-column: 1 / -1; margin-bottom: 10px; }
   .live-layout { grid-template-columns: 1fr; }
   app-pressure-heatmap { min-height: 300px; }

@@ -31,7 +31,7 @@
           [routerLink]="['/customers', c.id, 'horses']"
         >
           <div class="name">
-            {{ fullName(c) }}@if (c.isMe) { <span class="me-tag"> (Du)</span> }
+            {{ fullName(c) }}@if (c.isMe) { <span class="me-tag"></span> }
           </div>
           <div class="action">
             @if (c.isMe) {
