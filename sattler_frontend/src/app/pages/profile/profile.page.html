@@ -38,16 +38,6 @@
       }
     </div>
 
-    <div class="stats">
-      @for (tile of stats(); track tile.label) {
-        <div class="stat-tile">
-          <span class="material-icons stat-icon">{{ tile.icon }}</span>
-          <div class="stat-value">{{ tile.value }}</div>
-          <div class="stat-label">{{ tile.label }}</div>
-        </div>
-      }
-    </div>
-
     @if (editMode()) {
       <form class="info-card edit-form" (ngSubmit)="save()">
         <h3 class="info-title">Profil bearbeiten</h3>
@@ -92,7 +82,20 @@
             <input class="field-input" type="text" [ngModel]="address()"
               (ngModelChange)="address.set($event)" name="address" />
           </label>
+
+          <label class="field">
+            <span class="field-label">Website</span>
+            <input class="field-input" type="url" [ngModel]="website()"
+              (ngModelChange)="website.set($event)" name="website" />
+            @if (errors().website) { <span class="field-error">{{ errors().website }}</span> }
+          </label>
         </div>
+
+        <label class="field description-field">
+          <span class="field-label">Beschreibung</span>
+          <textarea class="field-input description-input" [ngModel]="description()"
+            (ngModelChange)="description.set($event)" name="description" rows="4"></textarea>
+        </label>
 
         <div class="form-actions">
           <button class="ghost-btn" type="button" (click)="cancel()">Abbrechen</button>
@@ -117,6 +120,24 @@
           <span class="material-icons info-icon">place</span>
           <span class="info-text">{{ sattler().address || '—' }}</span>
         </div>
+
+        <div class="info-row">
+          <span class="material-icons info-icon">language</span>
+          @if (sattler().website; as website) {
+            <a class="info-text website-link" [href]="website" target="_blank" rel="noopener noreferrer">
+              {{ website.replace('https://', '').replace('http://', '') }}
+            </a>
+          } @else {
+            <span class="info-text">—</span>
+          }
+        </div>
+
+        @if (sattler().description) {
+          <div class="description-row">
+            <h4>Beschreibung</h4>
+            <p>{{ sattler().description }}</p>
+          </div>
+        }
       </div>
     }
   </div>

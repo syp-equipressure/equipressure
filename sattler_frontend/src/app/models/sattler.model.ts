@@ -6,6 +6,8 @@ export interface Sattler {
   phoneNumber?: string;
   companyName?: string;
   address?: string;
+  website?: string;
+  description?: string;
   memberSince: string;
   avatarUrl?: string;
 }

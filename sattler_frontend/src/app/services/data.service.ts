@@ -278,7 +278,9 @@ export class DataService {
     email: 'sophie.grueneis@sattlerei.example',
     phoneNumber: '+43 660 1234567',
     companyName: 'Sattlerei Grüneis',
-    address: 'Reitweg 12, 4020 Linz',
+    address: 'Lenaustraße 18, 4050 Traun',
+    website: 'https://www.flexibler-sattel.at',
+    description: 'Wir passen alle Sättel an, die gepolstert werden können und deren Kopf-eisen sich kalt verstellen lässt.',
     memberSince: '03/2024',
   });
 

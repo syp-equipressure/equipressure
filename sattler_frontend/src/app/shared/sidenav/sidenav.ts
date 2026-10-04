@@ -21,7 +21,6 @@ export class SidenavComponent {
   private readonly router = inject(Router);
 
   readonly items: NavItem[] = [
-    { label: 'Sattler-Profil', icon: 'badge',             route: '/profile' },
     { label: 'Neue Messung',  icon: 'add_circle_outline', route: '/new-measurement' },
     { label: 'Kund*innen',    icon: 'people_outline',    route: '/customers' },
     { label: 'Nachrichten',   icon: 'chat_bubble_outline', route: '/messages' },
