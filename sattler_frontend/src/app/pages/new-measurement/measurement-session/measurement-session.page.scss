@@ -5,7 +5,7 @@
 .session-page {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 14px 32px 36px;
+  padding: 20px 32px 36px;
 }
 
 .back-link {
@@ -16,14 +16,6 @@
   color: t.$text-strong;
   cursor: pointer;
   font-size: 28px;
-}
-
-h1 {
-  margin: -36px 0 42px;
-  text-align: center;
-  color: t.$text-strong;
-  font-size: 21px;
-  font-weight: 700;
 }
 
 .session-layout {
@@ -213,7 +205,6 @@ textarea::placeholder { color: #999; }
 
 @media (max-width: 680px) {
   .session-page { padding: 8px 14px 24px; }
-  h1 { margin-bottom: 24px; font-size: 16px; }
   .session-layout { grid-template-columns: 1fr; gap: 14px; }
   .session-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .timer-card, .progress-card { grid-column: 1 / -1; }

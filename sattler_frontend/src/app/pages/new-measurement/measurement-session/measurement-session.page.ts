@@ -7,6 +7,7 @@ import { MeasurementSessionService } from '../../../services/measurement-session
 import { formatDuration } from '../../../utils/time-format';
 import { Gait, Side } from '../../../models/measurement.model';
 import { MeasurementSegment } from '../../../models/measurement-session.model';
+import { fullName } from '../../../models/customer.model';
 
 @Component({
   selector: 'app-measurement-session-page',
@@ -28,6 +29,10 @@ export class MeasurementSessionPage {
   readonly owner = computed(() => {
     const session = this.session();
     return session ? this.data.getCustomer(session.ownerId) : undefined;
+  });
+  readonly pageTitle = computed(() => {
+    const owner = this.owner();
+    return owner ? `Messung für ${fullName(owner)}` : 'Neue Messung';
   });
   readonly horse = computed(() => {
     const session = this.session();
