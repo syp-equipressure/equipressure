@@ -65,6 +65,12 @@ export class MeasurementsPage {
     this.selectedId.set(id);
   }
 
+  updateNotes(id: string, event: Event): void {
+    if (event.target instanceof HTMLTextAreaElement) {
+      this.data.updateMeasurementNotes(id, event.target.value);
+    }
+  }
+
   setTab(t: TabKey) {
     this.tab.set(t);
   }
@@ -88,10 +94,11 @@ export class MeasurementsPage {
   }
 
   newMeasurement() {
-    const c = this.customer();
     const h = this.horse();
-    if (!c || !h) return;
-    this.router.navigate(['/new-measurement'], { queryParams: { ownerId: c.id, horseId: h.id } });
+    if (!h) return;
+    this.router.navigate(['/new-measurement'], {
+      queryParams: { ownerId: h.ownerId, horseId: h.id },
+    });
   }
 }
 
