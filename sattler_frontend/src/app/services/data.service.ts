@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { Measurement, MeasurementDetail } from '../models/measurement.model';
+import { Sattler } from '../models/sattler.model';
 
 /**
  * Mock data service. Once backend ships GET /api/persons + UserController,
@@ -241,6 +242,29 @@ export class DataService {
       detail: buildPetziDetail(),
     },
   ]);
+
+  private readonly _sattler = signal<Sattler>({
+    id: 'sattler-1',
+    firstName: 'Sophie',
+    lastName: 'Grüneis',
+    email: 'sophie.grueneis@sattlerei.example',
+    phoneNumber: '+43 660 1234567',
+    companyName: 'Sattlerei Grüneis',
+    address: 'Reitweg 12, 4020 Linz',
+    memberSince: '03/2024',
+  });
+
+  // ── Sattler ──────────────────────────────────────────────────────────────────
+
+  readonly sattler = this._sattler.asReadonly();
+
+  getSattler(): Sattler {
+    return this._sattler();
+  }
+
+  updateSattler(patch: Partial<Sattler>): void {
+    this._sattler.update(current => ({ ...current, ...patch }));
+  }
 
   // ── Customers ──────────────────────────────────────────────────────────────
 
