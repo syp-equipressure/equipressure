@@ -4,13 +4,7 @@ import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Sattler, sattlerFullName } from '../../models/sattler.model';
 
-interface StatTile {
-  label: string;
-  value: number;
-  icon: string;
-}
-
-type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber';
+type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website';
 
 @Component({
   selector: 'app-profile-page',
@@ -31,20 +25,6 @@ export class ProfilePage {
     return `${s.firstName.charAt(0)}${s.lastName.charAt(0)}`.toUpperCase();
   });
 
-  readonly stats = computed<StatTile[]>(() => {
-    const customerCount = this.data.getCustomers().filter(c => !c.isMe).length;
-    const horseCount = this.data.horses().length;
-    const measurementCount = this.data
-      .horses()
-      .reduce((sum, horse) => sum + this.data.getMeasurementsOf(horse.id).length, 0);
-
-    return [
-      { label: 'Kund*innen', value: customerCount, icon: 'people_outline' },
-      { label: 'Pferde', value: horseCount, icon: 'pets' },
-      { label: 'Messungen', value: measurementCount, icon: 'insights' },
-    ];
-  });
-
   // ── Bearbeiten ───────────────────────────────────────────────────────────────
 
   readonly editMode = signal(false);
@@ -55,6 +35,8 @@ export class ProfilePage {
   readonly phoneNumber = signal('');
   readonly companyName = signal('');
   readonly address = signal('');
+  readonly website = signal('');
+  readonly description = signal('');
 
   readonly errors = signal<Partial<Record<EditableField, string>>>({});
   readonly avatarError = signal('');
@@ -67,6 +49,8 @@ export class ProfilePage {
     this.phoneNumber.set(s.phoneNumber ?? '');
     this.companyName.set(s.companyName ?? '');
     this.address.set(s.address ?? '');
+    this.website.set(s.website ?? '');
+    this.description.set(s.description ?? '');
     this.errors.set({});
     this.editMode.set(true);
   }
@@ -86,6 +70,8 @@ export class ProfilePage {
       phoneNumber: this.phoneNumber().trim() || undefined,
       companyName: this.companyName().trim() || undefined,
       address: this.address().trim() || undefined,
+      website: normalizeWebsite(this.website()) || undefined,
+      description: this.description().trim() || undefined,
     };
 
     this.data.updateSattler(patch);
@@ -110,6 +96,10 @@ export class ProfilePage {
         phoneNumber.replace(/\D/g, '').length > 15)
     ) {
       e.phoneNumber = 'Bitte eine gültige Telefonnummer eingeben.';
+    }
+    const website = this.website().trim();
+    if (website && !isValidWebsite(website)) {
+      e.website = 'Bitte eine gültige Website eingeben.';
     }
     this.errors.set(e);
     return Object.keys(e).length === 0;
@@ -141,5 +131,19 @@ export class ProfilePage {
     };
     reader.onerror = () => this.avatarError.set('Das Bild konnte nicht geladen werden.');
     reader.readAsDataURL(file);
+  }
+}
+
+function normalizeWebsite(website: string): string {
+  const value = website.trim();
+  return value && !/^https?:\/\//i.test(value) ? `https://${value}` : value;
+}
+
+function isValidWebsite(website: string): boolean {
+  try {
+    const url = new URL(normalizeWebsite(website));
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
   }
 }

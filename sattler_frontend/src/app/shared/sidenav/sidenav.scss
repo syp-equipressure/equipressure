@@ -54,6 +54,7 @@
   position: relative;
   transition: background 0.15s, color 0.15s;
   border-left: 3px solid transparent;
+  text-decoration: none;
 
   .icon {
     font-size: 24px;
@@ -80,6 +81,12 @@
 
   &:hover {
     background: t.$bg-page;
+  }
+
+  &:visited,
+  &:focus,
+  &:hover {
+    text-decoration: none;
   }
 
   &.active {
