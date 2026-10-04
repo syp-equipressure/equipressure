@@ -33,7 +33,36 @@ body {
   // Reset the user agent margin.
   margin: 0;
 }
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --panel-bg: #ffffff;
+  --border: #dde1e7;
+  --border-color: #dde1e7;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --text-primary: #18212f;
+  --text-secondary: #5f6b7a;
+  --text-muted: #8993a0;
+  --hover-bg: #f5f6f8;
+  --input-bg: #ffffff;
+  --primary: #6955ae;
+  --error: #c44242;
+  --surface: #ffffff;
+  --surface-hover: #f5f6f8;
+}
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: #f5f6f8;
+  color: #293342;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(105, 85, 174, 0.28);
+  outline-offset: 2px;
+}
+
+::selection { background: #eae6f7; color: #18212f; }

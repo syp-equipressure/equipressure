@@ -1,10 +1,6 @@
-<app-page-header [title]="title()" [showBack]="false"></app-page-header>
+<app-page-header [title]="title()" [showBack]="true"></app-page-header>
 
 <section class="page-body">
-  <button class="back-arrow" (click)="back()" aria-label="Zurück">
-    <span class="material-icons">arrow_back</span>
-  </button>
-
   <div class="grid">
     @for (h of horses(); track h.id) {
       <button class="card" type="button" (click)="openHorse(h.id)">

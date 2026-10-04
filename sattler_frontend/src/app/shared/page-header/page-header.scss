@@ -2,12 +2,12 @@
 
 .page-header {
   height: t.$header-height;
-  background: #ffffff;
-  border-bottom: 1px solid t.$border-soft;
+  background: t.$bg-card;
+  border-bottom: 1px solid t.$border;
   display: grid;
   grid-template-columns: 80px 1fr 160px;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 32px;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -32,19 +32,18 @@
 }
 
 .title {
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
   color: t.$text-strong;
   margin: 0;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
 }
 
 .subtitle {
   margin-top: 2px;
-  font-size: 14px;
+  font-size: 13px;
   color: t.$text-soft;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
 .icon-btn {
@@ -94,8 +93,8 @@
 }
 
 .profile-circle {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: t.$purple-50;
   display: flex;
@@ -112,4 +111,25 @@
   &:hover {
     background: t.$purple-100;
   }
+}
+
+@media (max-width: 600px) {
+  .page-header {
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    height: 64px;
+    padding: 0 12px;
+  }
+
+  .title { font-size: 18px; }
+  .subtitle { font-size: 12px; }
+
+  .back-btn {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+
+    span:not(.material-icons) { display: none; }
+  }
+
+  .profile-circle { width: 34px; height: 34px; }
 }
