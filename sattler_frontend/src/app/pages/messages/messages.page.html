@@ -1,0 +1,68 @@
+<app-page-header title="Nachrichten"></app-page-header>
+
+<section class="messages-page">
+  <div class="messages-layout">
+    <aside class="customer-panel" aria-label="Kundenliste">
+      <h2 class="panel-title">Kunden</h2>
+      <div class="customer-list">
+        @for (customer of customers(); track customer.id) {
+          <button
+            class="customer-item"
+            [class.selected]="customer.id === selectedCustomerId()"
+            [attr.aria-pressed]="customer.id === selectedCustomerId()"
+            (click)="selectCustomer(customer.id)"
+          >
+            <span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span>
+            <span class="customer-meta">
+              <span class="customer-name">{{ fullName(customer) }}</span>
+              <span class="customer-preview">
+                {{ latestMessage(customer.id) }}
+              </span>
+            </span>
+          </button>
+        }
+      </div>
+    </aside>
+
+    <section class="chat-panel" aria-label="Chatverlauf">
+      @if (selectedCustomer(); as customer) {
+        <header class="chat-header">
+          <span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span>
+          <div>
+            <h2>{{ fullName(customer) }}</h2>
+            <span class="chat-status">Kunde</span>
+          </div>
+        </header>
+
+        <div class="chat-history" aria-live="polite">
+          @for (message of selectedMessages(); track message.id) {
+            <article class="message" [class.outgoing]="message.sender === 'sattler'">
+              <p>{{ message.message }}</p>
+              <time>{{ message.timestamp }}</time>
+            </article>
+          } @empty {
+            <p class="empty-chat">Noch keine Nachrichten. Beginne den Chat mit {{ customer.firstName }}.</p>
+          }
+        </div>
+
+        <form class="chat-composer" (ngSubmit)="sendMessage()">
+          <label class="visually-hidden" for="message-draft">Nachricht schreiben</label>
+          <input
+            id="message-draft"
+            type="text"
+            placeholder="Nachricht schreiben …"
+            [ngModel]="draft()"
+            (ngModelChange)="draft.set($event)"
+            name="message"
+          />
+          <button type="submit" [disabled]="!draft().trim()" aria-label="Nachricht senden">
+            <span class="material-icons">send</span>
+            Senden
+          </button>
+        </form>
+      } @else {
+        <p class="empty-chat">Wähle einen Kunden aus, um den Chat zu öffnen.</p>
+      }
+    </section>
+  </div>
+</section>
