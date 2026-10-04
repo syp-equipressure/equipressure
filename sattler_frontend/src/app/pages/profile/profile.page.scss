@@ -24,6 +24,32 @@
   box-shadow: t.$shadow-card;
 }
 
+.edit-btn {
+  margin-left: auto;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: t.$radius-pill;
+  border: none;
+  background: t.$purple-100;
+  color: t.$purple-600;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, color 0.15s;
+
+  .material-icons {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: t.$purple-200;
+    color: t.$purple-700;
+  }
+}
+
 .avatar {
   width: 88px;
   height: 88px;
@@ -137,5 +163,95 @@
   .info-text {
     font-size: 15px;
     color: t.$text;
+  }
+}
+
+.edit-form {
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: t.$text-soft;
+  }
+
+  .field-input {
+    height: 46px;
+    border-radius: 10px;
+    border: 1px solid t.$border;
+    padding: 0 14px;
+    font-size: 15px;
+    background: t.$bg-card;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus {
+      border-color: t.$purple-300;
+      box-shadow: 0 0 0 3px rgba(165, 113, 242, 0.15);
+    }
+  }
+
+  .field-error {
+    font-size: 13px;
+    color: t.$accent-red;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .primary-btn {
+    height: 48px;
+    padding: 0 26px;
+    border-radius: t.$radius-pill;
+    border: none;
+    background: t.$purple-100;
+    color: t.$purple-600;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: t.$purple-200;
+      color: t.$purple-700;
+    }
+  }
+
+  .ghost-btn {
+    height: 48px;
+    padding: 0 26px;
+    border-radius: t.$radius-pill;
+    border: 1px solid t.$border;
+    background: t.$bg-card;
+    color: t.$text-soft;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: t.$bg-page;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-form .field-grid,
+  .stats {
+    grid-template-columns: 1fr;
   }
 }
