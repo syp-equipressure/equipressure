@@ -71,11 +71,12 @@
 }
 
 .card {
-  border: 1px solid t.$border-soft;
-  border-radius: 18px;
+  border: 1px solid t.$border;
+  border-radius: 12px;
   background: #ffffff;
-  padding: 16px;
+  padding: 18px;
   min-height: 180px;
+  box-shadow: t.$shadow-card;
 }
 
 .summary-card,
@@ -114,14 +115,14 @@
 }
 
 .avatar {
-  background: #ebdefc;
+  background: t.$purple-50;
   color: t.$purple-600;
   font-weight: 700;
   font-size: 15px;
 }
 
 .summary-badge {
-  background: #efe3ff;
+  background: t.$purple-50;
   color: t.$purple-600;
   font-size: 18px;
 }
@@ -152,13 +153,13 @@
 
 .saddle-grid .field:first-child .select-shell,
 .saddle-grid .field:last-child .select-shell {
-  max-width: 300px;
+  max-width: 360px;
 }
 
 .saddle-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 72px;
+  gap: 32px;
   align-items: end;
 }
 
@@ -175,7 +176,7 @@
   width: 100%;
   height: 40px;
   border: 1px solid #d8d8d8;
-  border-radius: 4px;
+  border-radius: 8px;
   background: #ffffff;
   color: t.$text-strong;
   padding: 0 40px 0 12px;
@@ -229,8 +230,8 @@
 .metric-value {
   min-height: 40px;
   border: 1px solid #d8d8d8;
-  border-radius: 4px;
-  background: #f6f6f6;
+  border-radius: 8px;
+  background: t.$bg-panel;
   padding: 0 10px;
   font-size: 13px;
   color: t.$text-strong;
@@ -326,11 +327,22 @@
   height: 50px;
   border: 0;
   border-radius: 20px;
-  background: #e3d2fa;
-  color: #5f516d;
+  background: t.$purple-500;
+  color: #ffffff;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: t.$purple-600;
+  }
+
+  &:disabled {
+    background: t.$purple-100;
+    color: t.$text-muted;
+    cursor: not-allowed;
+  }
 }
 
 .stub {
@@ -343,7 +355,7 @@
 
 .card.stub-card {
   background: #ffffff;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 48px 56px;
   text-align: center;
   border: 1px solid t.$border-soft;

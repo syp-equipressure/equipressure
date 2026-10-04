@@ -42,8 +42,8 @@ h1 {
 }
 
 .session-card {
-  border: 1px solid #d8d8d8;
-  border-radius: 14px;
+  border: 1px solid t.$border;
+  border-radius: 12px;
   background: #fff;
 }
 
@@ -57,7 +57,7 @@ h1 {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: #d8c1ff;
+  background: t.$purple-500;
   color: #fff;
   font-size: 14px;
   font-weight: 700;
@@ -112,11 +112,11 @@ h1 {
 
 .add-segment {
   width: 100%;
-  border: 1px dashed #bda4e8;
+  border: 1px dashed t.$purple-300;
   border-radius: 8px;
   padding: 11px;
-  background: #f2eaff;
-  color: #bd4fe0;
+  background: t.$purple-50;
+  color: t.$purple-600;
   cursor: pointer;
   font: inherit;
   font-size: 14px;
@@ -130,8 +130,8 @@ textarea {
   min-height: 104px;
   box-sizing: border-box;
   resize: vertical;
-  border: 1px solid #d8d8d8;
-  border-radius: 12px;
+  border: 1px solid t.$border;
+  border-radius: 9px;
   padding: 12px;
   font: inherit;
   font-size: 12px;
@@ -145,13 +145,13 @@ textarea::placeholder { color: #999; }
   gap: 5px;
   padding: 14px 16px 12px;
 }
-.timer-card span { color: #a08ce2; font-size: 12px; font-weight: 700; }
+.timer-card span { color: t.$purple-500; font-size: 12px; font-weight: 700; }
 .timer-card strong {
   width: 100%;
   padding: 6px 0;
   border-radius: 12px;
-  background: #eee8ff;
-  color: #5132d4;
+  background: t.$purple-50;
+  color: t.$purple-600;
   text-align: center;
   font-size: 42px;
   font-variant-numeric: tabular-nums;
@@ -165,7 +165,7 @@ textarea::placeholder { color: #999; }
   color: #222;
   font-size: 14px;
 }
-.detail-card h2 span, .progress-card h2 span { margin-right: 6px; color: #a05cff; }
+.detail-card h2 span, .progress-card h2 span { margin-right: 6px; color: t.$purple-500; }
 .detail-card dl {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -186,11 +186,11 @@ textarea::placeholder { color: #999; }
   min-height: 28px;
   border-radius: 8px;
   padding: 0 4px;
-  background: #eeeaff;
+  background: t.$purple-50;
   color: #333;
   font-size: 11px;
 }
-.progress-number { width: 20px; height: 20px; border-radius: 50%; background: #9a62eb; font-size: 10px; }
+.progress-number { width: 20px; height: 20px; border-radius: 50%; background: t.$purple-400; font-size: 10px; }
 .progress-card li strong { margin-left: auto; padding-right: 7px; color: #777; font-weight: 500; }
 .progress-card li.complete { background: #e4f5e6; }
 .progress-card li.complete .progress-number { background: #50ad68; }
@@ -202,13 +202,14 @@ textarea::placeholder { color: #999; }
   border: 0;
   border-radius: 11px;
   padding: 16px 20px;
-  background: #7448c8;
+  background: t.$purple-500;
   color: white;
   cursor: pointer;
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
 }
-.finish-button:disabled { background: #e8ddf8; color: #625673; cursor: not-allowed; }
+.finish-button:hover:not(:disabled) { background: t.$purple-600; }
+.finish-button:disabled { background: t.$purple-100; color: t.$text-muted; cursor: not-allowed; }
 
 @media (max-width: 680px) {
   .session-page { padding: 8px 14px 24px; }

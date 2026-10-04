@@ -3,11 +3,12 @@
 .sidenav {
   width: t.$sidenav-width;
   height: 100vh;
+  box-sizing: border-box;
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  padding: 18px 14px 20px;
-  border-right: 1px solid t.$border-soft;
+  padding: 20px 12px;
+  border-right: 1px solid t.$border;
   position: relative;
   z-index: 30;
 }
@@ -37,17 +38,17 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: 12px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 9px;
   color: t.$text;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   position: relative;

@@ -5,16 +5,16 @@
   display: grid;
   grid-template-columns: 220px 1fr;
   background: #ffffff;
-  border-bottom: 1px solid t.$border-soft;
+  border-bottom: 1px solid t.$border;
 }
 
 .horse-ribbon {
   background: t.$purple-500;
   color: white;
-  padding: 14px 36px 14px 20px;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
+  padding: 12px 30px 12px 20px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 50%, 100% 100%, 0 100%);
 }
 
@@ -27,8 +27,8 @@
 .tab {
   background: transparent;
   border: none;
-  padding: 14px 28px;
-  font-size: 17px;
+  padding: 12px 22px;
+  font-size: 14px;
   color: t.$text-soft;
   cursor: pointer;
   border-bottom: 3px solid transparent;
@@ -48,9 +48,9 @@
 // ─── Two-pane layout ────────────────────────────────────────────────────────
 .layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 18px;
-  padding: 18px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  padding: 24px 32px;
   align-items: flex-start;
   flex: 1;
 }
@@ -59,14 +59,14 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .measurement-card {
   background: #ffffff;
   border: 1px solid t.$border-soft;
-  border-radius: 14px;
-  padding: 18px 20px;
+  border-radius: 12px;
+  padding: 16px 18px;
   text-align: left;
   cursor: pointer;
   font: inherit;
@@ -77,7 +77,7 @@
   transition: background 0.15s, border-color 0.15s;
 
   .date {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: t.$text-strong;
   }
@@ -103,18 +103,18 @@
 }
 
 .new-measurement {
-  background: t.$purple-100;
+  background: t.$purple-500;
   border: none;
-  color: t.$purple-600;
-  font-size: 16px;
+  color: #ffffff;
+  font-size: 14px;
   font-weight: 600;
-  height: 56px;
-  border-radius: 14px;
+  height: 48px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.15s;
 
   &:hover {
-    background: t.$purple-200;
+    background: t.$purple-600;
   }
 }
 
@@ -127,8 +127,8 @@
 .detail-card {
   background: #ffffff;
   border: 1px solid t.$border-soft;
-  border-radius: 14px;
-  padding: 22px 26px;
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -146,8 +146,8 @@
   gap: 8px;
 
   h2 {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 19px;
+    font-weight: 600;
     margin: 0;
     color: t.$text-strong;
   }
@@ -309,7 +309,7 @@
 // ─── Heatmap + scale + videos ───────────────────────────────────────────────
 .visual-row {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) 70px 1fr;
+  grid-template-columns: minmax(260px, 340px) 58px minmax(0, 1fr);
   gap: 14px;
   align-items: stretch;
 }
@@ -569,14 +569,14 @@ app-pressure-heatmap {
   display: grid;
   align-content: start;
   gap: 14px;
-  padding: 14px 22px;
+  padding: 24px 32px;
 }
 
 .note-card {
   background: #ffffff;
   border: 1px solid t.$border-soft;
-  border-radius: 14px;
-  padding: 14px 12px;
+  border-radius: 12px;
+  padding: 16px;
 
   textarea {
     display: block;
@@ -586,7 +586,7 @@ app-pressure-heatmap {
     margin-top: 14px;
     padding: 12px;
     border: 1px solid t.$border-soft;
-    border-radius: 12px;
+    border-radius: 9px;
     resize: vertical;
     font: inherit;
     color: t.$text;
@@ -651,4 +651,9 @@ app-pressure-heatmap {
   .below {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 18px; }
+  .sidebar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 }
