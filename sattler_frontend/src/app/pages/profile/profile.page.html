@@ -1,0 +1,52 @@
+<app-page-header title="Sattler-Profil"></app-page-header>
+
+<section class="page-body">
+  <div class="panel">
+    <div class="profile-card">
+      <div class="avatar">
+        @if (sattler().avatarUrl) {
+          <img [src]="sattler().avatarUrl" [alt]="fullName()" />
+        } @else {
+          <span class="initials">{{ initials() }}</span>
+        }
+      </div>
+
+      <div class="identity">
+        <h2 class="name">{{ fullName() }}</h2>
+        @if (sattler().companyName) {
+          <div class="company">{{ sattler().companyName }}</div>
+        }
+        <div class="member-since">Mitglied seit {{ sattler().memberSince }}</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      @for (tile of stats(); track tile.label) {
+        <div class="stat-tile">
+          <span class="material-icons stat-icon">{{ tile.icon }}</span>
+          <div class="stat-value">{{ tile.value }}</div>
+          <div class="stat-label">{{ tile.label }}</div>
+        </div>
+      }
+    </div>
+
+    <div class="info-card">
+      <h3 class="info-title">Kontakt</h3>
+
+      <div class="info-row">
+        <span class="material-icons info-icon">mail_outline</span>
+        <span class="info-text">{{ sattler().email }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="material-icons info-icon">phone</span>
+        <span class="info-text">{{ sattler().phoneNumber || '—' }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="material-icons info-icon">place</span>
+        <span class="info-text">{{ sattler().address || '—' }}</span>
+      </div>
+    </div>
+  </div>
+</section>
