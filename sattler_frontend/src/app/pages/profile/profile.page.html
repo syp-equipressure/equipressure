@@ -3,11 +3,22 @@
 <section class="page-body">
   <div class="panel">
     <div class="profile-card">
-      <div class="avatar">
-        @if (sattler().avatarUrl) {
-          <img [src]="sattler().avatarUrl" [alt]="fullName()" />
-        } @else {
-          <span class="initials">{{ initials() }}</span>
+      <div class="avatar-actions">
+        <div class="avatar">
+          @if (sattler().avatarUrl) {
+            <img [src]="sattler().avatarUrl" [alt]="fullName()" />
+          } @else {
+            <span class="initials">{{ initials() }}</span>
+          }
+        </div>
+        <input #avatarInput class="avatar-input" type="file" accept="image/*"
+          aria-label="Profilbild auswählen" (change)="uploadAvatar($event)" />
+        <button class="avatar-upload-btn" type="button" (click)="avatarInput.click()">
+          <span class="material-icons">photo_camera</span>
+          Profilbild hochladen
+        </button>
+        @if (avatarError()) {
+          <span class="field-error avatar-error" role="alert">{{ avatarError() }}</span>
         }
       </div>
 
@@ -67,6 +78,7 @@
             <span class="field-label">Telefon</span>
             <input class="field-input" type="tel" [ngModel]="phoneNumber()"
               (ngModelChange)="phoneNumber.set($event)" name="phoneNumber" />
+            @if (errors().phoneNumber) { <span class="field-error">{{ errors().phoneNumber }}</span> }
           </label>
 
           <label class="field">
