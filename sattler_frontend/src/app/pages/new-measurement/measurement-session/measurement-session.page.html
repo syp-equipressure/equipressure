@@ -1,10 +1,8 @@
-<app-page-header title="Neue Messung"></app-page-header>
+<app-page-header [title]="pageTitle()"></app-page-header>
 
 @if (session(); as current) {
   <main class="session-page">
     <button type="button" class="back-link" aria-label="Zurück zur Auswahl" (click)="backToSelection()">←</button>
-    <h1>Messung für {{ owner()?.firstName }} {{ owner()?.lastName }}</h1>
-
     <div class="session-layout">
       <section class="session-main">
         <section class="segment-list" aria-label="Teilmessungen">
