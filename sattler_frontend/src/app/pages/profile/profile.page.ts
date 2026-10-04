@@ -10,7 +10,7 @@ interface StatTile {
   icon: string;
 }
 
-type EditableField = 'firstName' | 'lastName' | 'email';
+type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber';
 
 @Component({
   selector: 'app-profile-page',
@@ -57,6 +57,7 @@ export class ProfilePage {
   readonly address = signal('');
 
   readonly errors = signal<Partial<Record<EditableField, string>>>({});
+  readonly avatarError = signal('');
 
   startEdit(): void {
     const s = this.sattler();
@@ -95,12 +96,50 @@ export class ProfilePage {
     const e: Partial<Record<EditableField, string>> = {};
     if (!this.firstName().trim()) e.firstName = 'Vorname ist erforderlich.';
     if (!this.lastName().trim()) e.lastName = 'Nachname ist erforderlich.';
-    if (!this.email().trim()) {
+    const email = this.email().trim();
+    if (!email) {
       e.email = 'E-Mail ist erforderlich.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email())) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+    }
+    const phoneNumber = this.phoneNumber().trim();
+    if (
+      phoneNumber &&
+      (!/^\+?[0-9\s()./-]+$/.test(phoneNumber) ||
+        phoneNumber.replace(/\D/g, '').length < 7 ||
+        phoneNumber.replace(/\D/g, '').length > 15)
+    ) {
+      e.phoneNumber = 'Bitte eine gültige Telefonnummer eingeben.';
     }
     this.errors.set(e);
     return Object.keys(e).length === 0;
+  }
+
+  uploadAvatar(event: Event): void {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    this.avatarError.set('');
+
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      this.avatarError.set('Bitte eine Bilddatei auswählen.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.avatarError.set('Das Bild darf höchstens 5 MB groß sein.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        this.data.updateSattler({ avatarUrl: reader.result });
+      } else {
+        this.avatarError.set('Das Bild konnte nicht geladen werden.');
+      }
+    };
+    reader.onerror = () => this.avatarError.set('Das Bild konnte nicht geladen werden.');
+    reader.readAsDataURL(file);
   }
 }

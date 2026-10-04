@@ -74,6 +74,50 @@
   }
 }
 
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.avatar-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid t.$border;
+  border-radius: t.$radius-pill;
+  background: t.$bg-card;
+  color: t.$purple-600;
+  font-size: 12px;
+  cursor: pointer;
+
+  .material-icons {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: t.$purple-100;
+  }
+}
+
+.avatar-error {
+  max-width: 150px;
+  text-align: center;
+}
+
 .identity {
   .name {
     margin: 0;
@@ -253,5 +297,14 @@
   .edit-form .field-grid,
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .profile-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .edit-btn {
+    margin-left: 0;
   }
 }
