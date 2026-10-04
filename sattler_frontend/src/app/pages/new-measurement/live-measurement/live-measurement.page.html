@@ -4,7 +4,6 @@
   <main class="live-page">
     <header class="live-toolbar">
       <button type="button" class="back-button" aria-label="Zurück zur Vorbereitung" (click)="finishSegment()">←</button>
-      <strong>Live-Messung</strong>
       <time>{{ formatDuration(elapsedSeconds()) }}</time>
       <button type="button" class="stop-button" (click)="finishSegment()">Teilmessung beenden</button>
     </header>
