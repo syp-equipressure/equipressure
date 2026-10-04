@@ -67,9 +67,10 @@
 
 .list-card {
   background: #ffffff;
-  border-radius: 12px;
+  border: 1px solid t.$border;
+  border-radius: 14px;
   overflow: hidden;
-  border: 1px solid t.$border-soft;
+  box-shadow: 0 2px 5px rgba(24, 33, 47, 0.04), 0 10px 26px rgba(24, 33, 47, 0.07);
 }
 
 .row {
@@ -97,17 +98,35 @@
     background: t.$bg-page;
   }
 
+  &.me {
+    position: relative;
+    background: #f4f1fb;
+    box-shadow: inset 3px 0 0 t.$purple-500;
+
+    &:hover {
+      background: #eeebf7;
+    }
+
+    .name {
+      color: t.$purple-700;
+      font-weight: 600;
+    }
+  }
+
   .name {
     font-size: 15px;
     color: t.$text-strong;
   }
 
-  &.me .name {
-    font-weight: 700;
-  }
-
   .me-tag {
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 2px 8px;
+    background: t.$purple-100;
+    color: t.$purple-600;
+    font-size: 11px;
+    font-weight: 600;
   }
 
   .action {
