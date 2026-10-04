@@ -1,7 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { sattlerFullName } from '../../models/sattler.model';
+import { Sattler, sattlerFullName } from '../../models/sattler.model';
 
 interface StatTile {
   label: string;
@@ -9,10 +10,12 @@ interface StatTile {
   icon: string;
 }
 
+type EditableField = 'firstName' | 'lastName' | 'email';
+
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [PageHeaderComponent],
+  imports: [FormsModule, PageHeaderComponent],
   templateUrl: './profile.page.html',
   styleUrl: './profile.page.scss',
 })
@@ -41,4 +44,63 @@ export class ProfilePage {
       { label: 'Messungen', value: measurementCount, icon: 'insights' },
     ];
   });
+
+  // ── Bearbeiten ───────────────────────────────────────────────────────────────
+
+  readonly editMode = signal(false);
+
+  readonly firstName = signal('');
+  readonly lastName = signal('');
+  readonly email = signal('');
+  readonly phoneNumber = signal('');
+  readonly companyName = signal('');
+  readonly address = signal('');
+
+  readonly errors = signal<Partial<Record<EditableField, string>>>({});
+
+  startEdit(): void {
+    const s = this.sattler();
+    this.firstName.set(s.firstName);
+    this.lastName.set(s.lastName);
+    this.email.set(s.email);
+    this.phoneNumber.set(s.phoneNumber ?? '');
+    this.companyName.set(s.companyName ?? '');
+    this.address.set(s.address ?? '');
+    this.errors.set({});
+    this.editMode.set(true);
+  }
+
+  cancel(): void {
+    this.editMode.set(false);
+    this.errors.set({});
+  }
+
+  save(): void {
+    if (!this.validate()) return;
+
+    const patch: Partial<Sattler> = {
+      firstName: this.firstName().trim(),
+      lastName: this.lastName().trim(),
+      email: this.email().trim(),
+      phoneNumber: this.phoneNumber().trim() || undefined,
+      companyName: this.companyName().trim() || undefined,
+      address: this.address().trim() || undefined,
+    };
+
+    this.data.updateSattler(patch);
+    this.editMode.set(false);
+  }
+
+  private validate(): boolean {
+    const e: Partial<Record<EditableField, string>> = {};
+    if (!this.firstName().trim()) e.firstName = 'Vorname ist erforderlich.';
+    if (!this.lastName().trim()) e.lastName = 'Nachname ist erforderlich.';
+    if (!this.email().trim()) {
+      e.email = 'E-Mail ist erforderlich.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email())) {
+      e.email = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+    }
+    this.errors.set(e);
+    return Object.keys(e).length === 0;
+  }
 }
