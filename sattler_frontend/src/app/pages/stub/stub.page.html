@@ -104,7 +104,7 @@
                   [disabled]="!selectedHorse() || availableSaddles().length === 0"
                   (change)="selectSaddle($any($event.target).value)"
                 >
-                  <option value="">Sattel auswählen</option>
+                  <option value="" disabled>Sattel auswählen</option>
                   @for (saddle of availableSaddles(); track saddle.id) {
                     <option [value]="saddle.id">{{ saddle.name }}</option>
                   }
