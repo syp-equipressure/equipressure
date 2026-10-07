@@ -58,11 +58,11 @@ Pferde:
 
 * ✓ GET /horses/:personId => alle Pferde einer bestimmten Person
 * ✓ GET /horses/:id => Pferd mit id :id
-* GET /horses/:id/saddles => alle Sättel eines Pferdes
-* GET /horses/:id/persons => Reitbeteiligungen + Owner
+* ✓ GET /horses/:id/saddles => alle Sättel eines Pferdes
+* ✓ GET /horses/:id/persons => Reitbeteiligungen + Owner
 ** Owner entweder an erster Stelle oder eigener Endpoint für Owner
 ** eventuell /horses/:id/owner
-* GET /horses/:id/hidden/persons => Hidden user
+* ✓ GET /horses/:id/hidden/persons => Hidden user
 
 Messungen:
 (mg.. measurementgroup)
