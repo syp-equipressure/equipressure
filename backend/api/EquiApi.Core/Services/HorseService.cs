@@ -31,10 +31,17 @@ public interface IHorseService
     /// <summary>
     /// Adds a new horse
     /// </summary>
-    public ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dob, decimal weight, decimal height, HorseGender gender, Address address, List<HorseBreed> breeds);
+    public ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dob, decimal weight, 
+        decimal height, HorseGender gender, Address address, List<HorseBreed> breeds, int ownerId);
+
+    public ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId);
+
+    public ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetAllRidersOfHorse(int horseId);
+
+    public  ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId);
 }
 
-public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTimeProvider dateTimeProvider) : IHorseService
+public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
 {
     public async ValueTask<OneOf<IReadOnlyCollection<Horse>, NotFound>> GetAllHorsesOfPersonAsync(int personId)
     {
@@ -67,16 +74,14 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
 
     public async ValueTask<OneOf<Success<Horse>, IBaseService.InvalidData, NotFound>> AddHorse(string name, LocalDate dateOfBirth, decimal weight,
                                                                decimal height, HorseGender gender, Address address,
-                                                               List<HorseBreed> breeds)
+                                                               List<HorseBreed> breeds,int ownerId )
     {
-        
-        //TODO Owner ID 
-        
-        if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate() || breeds.Count <= 0)
-        {
-            logger.LogWarning("Data is invalid");
 
-            return new IBaseService.InvalidData();
+        var person = await uow.PersonRepository.GetPersonByIdAsync(ownerId);
+        if (person is null)
+        {
+            logger.LogWarning("Person with id {id} could not be found", ownerId);
+            return new NotFound();
         }
 
         var horse = new Horse
@@ -89,9 +94,49 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger, IDateTi
             HorseBreeds = breeds,
             Address = address
         };
-
+        
+        var personHorse = new PersonHorse
+        {
+            Person = person,
+            Horse = horse,
+            IsHidden = false,
+            IsOwner = true
+        };
+        
+        horse.Persons.Add(personHorse);
+        uow.HorseRepository.AddHorse(horse);
+        logger.LogInformation("Horse added successfully");
+        await uow.SaveChangesAsync();
+        
         return new Success<Horse>(horse);
     }
 
-    
+    public async ValueTask<OneOf<IReadOnlyCollection<Saddle>, NotFound>> GetSaddlesOfHorse(int horseId)
+    {
+        var result = await uow.HorseRepository.GetSaddlesOfHorse(horseId);
+        if (result.Count < 1)
+        {
+            logger.LogWarning("Could not find any saddle for horse with id {id}", horseId);
+            return new NotFound();
+        }
+
+        return result.ToArray();
+    }
+
+    public async ValueTask<OneOf<IReadOnlyCollection<Person>, NotFound>> GetAllRidersOfHorse(int horseId)
+    {
+        var result = await uow.HorseRepository.GetAllRidersOfHorse(horseId);
+
+        if (result.Count < 1)
+        {
+            logger.LogWarning("Could not find any rider for horse with id {id}", horseId);
+
+            return new NotFound();
+        }
+
+        return result.ToArray();
+    }
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId) 
+        => (await uow.HorseRepository.GetAllHiddenUsersOfHorse(horseId)).ToArray();
 }
