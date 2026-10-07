@@ -14,27 +14,13 @@ public interface IPersonRepository
     public ValueTask<Person?> GetPersonByIdAsync(int personId);
 
     /// <summary>
-    /// searches for an equestrian with the given id
-    /// </summary>
-    /// <param name="personId">the id of equestrian we want to get</param>
-    /// <returns>Minimal Data for an equestrian if existing</returns>
-    public ValueTask<Helper.EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int personId);
-
-    /// <summary>
     /// searches for the address of a person with the given id
     /// </summary>
     /// <param name="personId">the id of person we want to get</param>
     /// <returns>the address if it exists or at least the city</returns>
     public ValueTask<Address?> GetPersonAddressAsync(int personId);
 
-    /// <summary>
-    /// searches for a saddler with the given id
-    /// </summary>
-    /// <param name="saddlerId">the id of saddler we want to get</param>
-    /// <param name="equestrianId">the id of equestrian we want to check</param>
-    /// <returns>minimal data for the saddler if found</returns>
-    public ValueTask<Helper.SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
-
+    
     /// <summary>
     /// returns the firstname and lastname of a person with the given id
     /// </summary>
@@ -142,27 +128,6 @@ internal sealed class PersonRepository(
         return await personSet.Where(p => p.Id == personId).FirstOrDefaultAsync();
     }
 
-    public async ValueTask<Helper.EquestrianBasicData?> GetPersonAsEquestrianByIdAsync(int personId)
-    {
-        return await personRoleSet.Include(pra => pra.Person)
-                                  .ThenInclude(p => p.Address)
-                                  .ThenInclude(a => a.City)
-                                  .Include(pra => pra.Role)
-                                  .Where(pra => pra.Role.Name == RoleName.Equestrian)
-                                  .Where(pra => pra.PersonId == personId)
-                                  .Select(pra => new Helper.EquestrianBasicData(pra.Person.FirstName,
-                                                                         pra.Person.LastName,
-                                                                         pra.Person.Address.Street,
-                                                                         pra.Person.Address.HouseNumber,
-                                                                         pra.Person.Address.City.Name,
-                                                                         pra.Person.Address.City.PLZ,
-                                                                         pra.Person.Email!,
-                                                                         pra.Person.Height,
-                                                                         pra.Person.Weight))
-                                  .AsNoTracking()
-                                  .FirstOrDefaultAsync();
-    }
-
     public async ValueTask<Address?> GetPersonAddressAsync(int personId)
     {
         return await personSet.Include(p => p.Address)
@@ -172,39 +137,7 @@ internal sealed class PersonRepository(
                               .AsNoTracking()
                               .FirstOrDefaultAsync();
     }
-
-    public async ValueTask<Helper.SaddlerBasicData?> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId)
-    {
-        return await personRoleSet
-                     .Include(pra => pra.Person)
-                     .ThenInclude(p => p.Address)
-                     .ThenInclude(a => a.City)
-                     .Include(pra => pra.Person)
-                     .ThenInclude(p => p.Relationships)
-                     .Include(pra => pra.Role)
-                     .Where(pra => pra.Role.Name == RoleName.Saddler)
-                     .Where(pra => pra.PersonId == saddlerId)
-                     .Select(pra => new
-                     {
-                         pra.Person,
-                         rel = (pra.Person.Relationships.Where(r =>
-                                                                   (r.EquestrianId == saddlerId
-                                                                    && r.SaddlerId == equestrianId)
-                                                                   || (r.EquestrianId == equestrianId &&
-                                                                       r.SaddlerId == saddlerId)))
-                     })
-                     .Select(p => new Helper.SaddlerBasicData(p.Person.Id,
-                                                                    p.Person.FirstName,
-                                                                    p.Person.LastName,
-                                                                    p.Person.Address.Street,
-                                                                    p.Person.Address.HouseNumber,
-                                                                    p.Person.Address.City.Name,
-                                                                    p.Person.Address.City.PLZ,
-                                                                    p.Person.WebsiteLink,
-                                                                    p.Person.Description))
-                     .AsNoTracking()
-                     .FirstOrDefaultAsync();
-    }
+    
 
     public async ValueTask<Helper.NameData?> GetNameByIdAsync(int personId)
     {
@@ -355,4 +288,3 @@ internal sealed class PersonRepository(
         personSet.Remove(person);
     }
 }
-

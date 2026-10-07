@@ -8,7 +8,7 @@ using OneOf.Types;
 namespace EquiApi.Core.Services;
 
 using GetPersonAsEquestrianByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Helper.EquestrianBasicData>, OneOf.Types.NotFound>;
+    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
 using GetPersonAsSaddlerByIdAsyncResult
@@ -43,7 +43,7 @@ public interface IPersonService
     /// A <see cref="Success{EquestrianBasicData}"/> containing the data, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int personId);
+    public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonByIdAsync(int personId);
 
     /// <summary>
     /// Retrieves the specific address for a person.
@@ -54,19 +54,7 @@ public interface IPersonService
     /// or <see cref="NotFound"/> if the person or their address is missing.
     /// </returns>
     public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId);
-
-    /// <summary>
-    /// Retrieves the specific Saddler
-    /// </summary>
-    /// <param name="saddlerId">The id of the saddler.</param>
-    /// <param name="equestrianId">The id of the equestrian.</param>
-    /// <returns>
-    /// A <see cref="Success{Saddler}"/> containing the Saddler Basic Data,
-    /// <see cref="IBaseService.InvalidData"/> Invalid Ids
-    /// or <see cref="NotFound"/> if the person(s) are not found.
-    /// </returns>
-    public ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(int saddlerId, int equestrianId);
-
+    
     /// <summary>
     /// Retrieves the First and Last name for a person.
     /// </summary>
@@ -217,20 +205,18 @@ public interface IPersonService
 public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, ILogger<PersonService> logger)
     : IPersonService
 {
-    public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonAsEquestrianByIdAsync(int personId)
+    public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonByIdAsync(int personId)
     {
-        var result = await uow.PersonRepository.GetPersonAsEquestrianByIdAsync(personId);
+        var result = await uow.PersonRepository.GetPersonByIdAsync(personId);
 
         if (result is null)
         {
-            logger.LogWarning("Equestrian could not be found");
+            logger.LogWarning("Person with id {id} could not be found", personId);
 
             return new NotFound();
         }
 
-        logger.LogInformation("Equestrian successfully got");
-
-        return new Success<Helper.EquestrianBasicData>(result);
+        return new Success<Person>(result);
     }
 
     public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId)
@@ -247,31 +233,6 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         logger.LogInformation("Address successfully got");
 
         return new Success<Address>(result);
-    }
-
-    public async ValueTask<GetPersonAsSaddlerByIdAsyncResult> GetPersonAsSaddlerByIdAsync(
-        int saddlerId, int equestrianId)
-    {
-        // TODO: Fix return type, seperate notFounds for each person
-        if (!await uow.PersonRepository.PersonExistsAsync(equestrianId))
-        {
-            logger.LogWarning("Data is invalid");
-
-            return new IBaseService.InvalidData();
-        }
-
-        var result = await uow.PersonRepository.GetPersonAsSaddlerByIdAsync(saddlerId, equestrianId);
-
-        if (result is null)
-        {
-            logger.LogWarning("Saddler could not be found");
-
-            return new NotFound();
-        }
-
-        logger.LogInformation("Saddler successfully got");
-
-        return new Success<Helper.SaddlerBasicData>(result);
     }
 
     public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId)
@@ -575,5 +536,4 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success();
     }
 }
-
 
