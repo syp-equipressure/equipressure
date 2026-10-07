@@ -113,3 +113,129 @@ a| Measurement und Horse Enpoints
 a| Frontend einarbeiten und Aufgaben von Lena bekommen
 | 06.11.2026
 |===
+
+== 2026-10-06
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 06/10/2026
+
+|Dauer
+|12:10 - 
+|===
+====
+
+=== Besprochenes
+* Project Award Präsentation
+* Business Plan
+* Frontend Sattler Profil
+* PR Horse Endpoints
+
+==== Project Award Präsentation
+* starker Slogan
+* Folie 5: design überlegen wegen den Kästchen
+** optisch verwirrend weil rechts mehr Text steht wahrscheinlich
+* Folie 4: Selbstüberprüfung weil Selbstkontrolle auch eine andere Bedetung hat
+** deutlich erwähnen, dass es die Probleme sind
+** Probleme noch besser überlegen, besser formulieren
+** "verbesserte/moderner Verwaltungssoftware"
+* das Wort Probleme gibt's nicht? Anscheinend reden wir nur positiv
+** Ist-Stand/Ist-Situation, Pain
+* eine Folie für Probleme und Lösung der Reiter:innen und eine für Sattler:innen, graphisch schön aufbereiteten
+* Überschriften vertikal in der Box zentrieren
+* Markt weltweit Folie löschen, weil's für uns irrelevant ist 
+* Folie 8: Pferdeanzahl auch schreiben
+** wenn wir was finden zur Pferdeverteilung in Österreich nach Bundesländer
+* den Beruf Sattler erklären
+** und bei den Aufgaben erklären was unser Produkt da helfen kann
+** sagen welche Zeit man sich erspart und damit auch Geld
+* er sagt unser Design ist hässlich und technisch nüchtern
+** Haslinger sagt es schaut aus als hätte er es gemacht
+** Hammer sagt wir san ambitionierte junge Frauen und deswegen müssen wir jo anscheinend besser designen können
+
+==== Frontend Sattler
+* Sortierfilter bei Kundschaft
+* Das Wort Kundschaft gefällt ihm gar nicht => KI fragen was wir nehmen können das nicht gegendert ist
+* er versteht das Projekt wieder nicht?
+* man erwartet wenn man vorm Laptop sitzt mehr (Dashboard), weil die Startseite sehr gut für Tablet konfiguriert ist
+** die Startseite ist zu wenig für den Sattler
+** Burger Menü kann man z.B. standardmäßig offen haben
+** Prozesse die zu tun sind anzeigen?
+* Stammdaten der Kunden anzeigen
+** Kathis Idee: Kann man ja über den Pferden auf derselben Seite machen, dass es bisi mehr gefüllt ist
+* Kundenverwaltung fehlt (Kunden löschen, sofort neu anlegen, ändern)
+* Sophie fragen mit welchem Gerät sie unterwegs ist 
+* es ist ihnen zu viel weiß auf der Seite
+
+==== Business Plan
+* Präsentation machen für Business Plan
+* maximales Marktvolumen: wenn das alle nehmen, wie viel können wir maximal einnehmen
+* professionelle Nuter recherchieren: wir erwähnen oben Trainer, physio etc., entweder wir löschen das oder wir bessern das aus und nehmen nur Sattler
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|alle
+a| Project Award Präsentation
+| 06.11.2026
+
+|alle
+a| Backlog aufräumen und neue User Stories überlegen
+| 06.11.2026
+
+|Einzenberger
+a| Location Endpoints und Zeitschreibungstool suchen
+| 06.11.2026
+
+|Graßauer
+a| Almina ins Frontend einarbeiten, Features durchgehen und aufteilen
+| 06.11.2026
+
+|Dallinger
+a| Measurement und Horse Enpoints
+| 06.11.2026
+
+|Silnovic
+a| Frontend einarbeiten und Aufgaben von Lena bekommen
+| 06.11.2026
+|===
