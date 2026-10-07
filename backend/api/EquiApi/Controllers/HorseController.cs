@@ -76,7 +76,8 @@ public class HorseController(IHorseService service, ILogger<HorseController> log
                                                                          request.Name, request.OwnerId);
                                                                     await transaction.CommitAsync();
 
-                                                                    return Created();
+                                                                    return CreatedAtAction(nameof(GetById),
+                                                                     new { id = success.Value.Id }, success.Value);
                                                                 },
                                                                 async invalidData =>
                                                                 {
