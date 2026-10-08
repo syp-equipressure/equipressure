@@ -286,4 +286,25 @@ public class DataTransfer
     }
     
     public record NameData(string FirstName, string LastName);
+
+    public sealed record PersonDetailDto(
+        int Id,
+        string FirstName,
+        string LastName,
+        string? Email,
+        decimal Height,
+        decimal Weight,
+        string? WebsiteLink,
+        string? Description)
+    {
+        public static PersonDetailDto FromData(Person data) => new(data.Id,
+                                                                            data.FirstName, 
+                                                                            data.LastName,
+                                                                            data.Email,
+                                                                            data.Height,
+                                                                            data.Weight,
+                                                                            data.WebsiteLink,
+                                                                            data.Description);
+        
+    }
 }

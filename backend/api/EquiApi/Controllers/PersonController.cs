@@ -2,7 +2,6 @@
 using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
-using EquiApi.Shared;
 using EquiApi.Util;
 using EquiPressure.Core.Service;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +21,7 @@ public sealed class PersonController(
     [ProducesResponseType<Helper.EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<Helper.EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
+    public async ValueTask<ActionResult<Helper.EquestrianBasicDto>> GetPersonById([FromRoute] int id)
     {
         // check, ob die id überhaupt sinn macht (muss positiv sein)
         if (id <= 0)
@@ -31,36 +30,13 @@ public sealed class PersonController(
         }
 
         // liefert entweder success oder notfound
-        var result = await personService.GetPersonAsEquestrianByIdAsync(id);
+        var result = await personService.GetPersonByIdAsync(id);
         
         // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
         return result.Match<ActionResult<Helper.EquestrianBasicDto>>(success =>
-                                                                               Ok(Helper.EquestrianBasicDto
-                                                                                   .FromEquestrianBasicData(success
-                                                                                       .Value, id)),
+                                                                               Ok(DataTransfer.PersonDetailDto
+                                                                                   .FromData(success.Value)),
                                                                            notFound => NotFound());
-    }
-
-    [HttpGet("saddlers/{saddlerId:int}")]
-    [ProducesResponseType<Helper.SaddlerBasicDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<Helper.SaddlerBasicDto>> GetSaddlerById(
-         [FromRoute] int saddlerId)
-    {
-        if ( saddlerId <= 0)
-        {
-            return BadRequest();
-        }
-
-        var result = await personService.GetPersonAsSaddlerByIdAsync(saddlerId);
-
-        return result.Match<ActionResult<Helper.SaddlerBasicDto>>(success =>
-                                                                            Ok(Helper.SaddlerBasicDto
-                                                                                   .FromSaddlerBasicData(success
-                                                                                       .Value)),
-                                                                        invalidData => BadRequest(),
-                                                                        notFound => NotFound());
     }
 
     [HttpGet("{id:int}/profile-data")]
@@ -192,7 +168,8 @@ public sealed class PersonController(
     [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
     public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlersWithAddress()
     {
-        var result = await personService.GetAllSaddlersAsync();
+        OneOf<Success<List<Helper.SaddlerBasicData>>, None> result
+            = await personService.GetAllSaddlersAsync();
 
         return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
                                                                              {
