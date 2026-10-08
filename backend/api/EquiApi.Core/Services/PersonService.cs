@@ -2,12 +2,11 @@ using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using EquiPressure.Core.Service;
-using Library.Core;
 using OneOf.Types;
 
 namespace EquiApi.Core.Services;
 
-using GetPersonAsEquestrianByIdAsyncResult
+using GetPersonByIdAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.NotFound>;
 using GetAddressAsyncResult
     = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
@@ -40,10 +39,10 @@ public interface IPersonService
     /// </summary>
     /// <param name="personId">The id of the person.</param>
     /// <returns>
-    /// A <see cref="Success{EquestrianBasicData}"/> containing the data, 
+    /// A <see cref="Success{Person}"/> containing the data, 
     /// or <see cref="NotFound"/> if the person does not exist.
     /// </returns>
-    public ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonByIdAsync(int personId);
+    public ValueTask<GetPersonByIdAsyncResult> GetPersonByIdAsync(int personId);
 
     /// <summary>
     /// Retrieves the specific address for a person.
@@ -205,7 +204,7 @@ public interface IPersonService
 public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, ILogger<PersonService> logger)
     : IPersonService
 {
-    public async ValueTask<GetPersonAsEquestrianByIdAsyncResult> GetPersonByIdAsync(int personId)
+    public async ValueTask<GetPersonByIdAsyncResult> GetPersonByIdAsync(int personId)
     {
         var result = await uow.PersonRepository.GetPersonByIdAsync(personId);
 
@@ -536,4 +535,5 @@ public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, 
         return new Success();
     }
 }
+
 

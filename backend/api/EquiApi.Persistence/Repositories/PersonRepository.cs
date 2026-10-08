@@ -131,7 +131,7 @@ internal sealed class PersonRepository(
     public async ValueTask<Address?> GetPersonAddressAsync(int personId)
     {
         return await personSet.Include(p => p.Address)
-                              .ThenInclude(a => a.City)
+                              .ThenInclude(a => a.AddressName)
                               .Where(p => p.Id == personId)
                               .Select(p => p.Address)
                               .AsNoTracking()
@@ -219,15 +219,13 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Role)
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
-                     .ThenInclude(a => a.City)
                      .Where(pr => pr.Role.Name == RoleName.Saddler)
                      .Select(pr => new Helper.SaddlerBasicData(pr.PersonId,
                                                                      pr.Person.FirstName,
                                                                      pr.Person.LastName,
-                                                                     pr.Person.Address.Street,
-                                                                     pr.Person.Address.HouseNumber,
-                                                                     pr.Person.Address.City.Name,
-                                                                     pr.Person.Address.City.PLZ,
+                                                                     pr.Person.Address.AddressName,
+                                                                     pr.Person.Address.CityName,
+                                                                     pr.Person.Address.PLZ,
                                                                      pr.Person.WebsiteLink,
                                                                      pr.Person.Description))
                      .OrderBy(p => p.LastName)
@@ -240,16 +238,14 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Role)
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
-                     .ThenInclude(a => a.City)
                      .Where(pr => pr.Role.Name == RoleName.Saddler &&
                                   pr.Person.Relationships.Any(r => r.IsFavourite && r.EquestrianId == equestrianId))
                      .Select(pr => new Helper.SaddlerBasicData(pr.PersonId,
                                                                      pr.Person.FirstName,
                                                                      pr.Person.LastName,
-                                                                     pr.Person.Address.Street,
-                                                                     pr.Person.Address.HouseNumber,
-                                                                     pr.Person.Address.City.Name,
-                                                                     pr.Person.Address.City.PLZ,
+                                                                     pr.Person.Address.AddressName,
+                                                                     pr.Person.Address.CityName,
+                                                                     pr.Person.Address.PLZ,
                                                                      pr.Person.WebsiteLink,
                                                                      pr.Person.Description))
                      .OrderBy(p => p.LastName)
@@ -262,16 +258,14 @@ internal sealed class PersonRepository(
                      .Include(pr => pr.Role)
                      .Include(pr => pr.Person)
                      .ThenInclude(p => p.Address)
-                     .ThenInclude(a => a.City)
                      .Where(pr => pr.Role.Name == RoleName.Saddler &&
                                   pr.Person.Relationships.Any(r => r.IsContact && r.EquestrianId == equestrianId))
                      .Select(pr => new Helper.SaddlerBasicData(pr.PersonId,
                                                                      pr.Person.FirstName,
                                                                      pr.Person.LastName,
-                                                                     pr.Person.Address.Street,
-                                                                     pr.Person.Address.HouseNumber,
-                                                                     pr.Person.Address.City.Name,
-                                                                     pr.Person.Address.City.PLZ,
+                                                                     pr.Person.Address.AddressName,
+                                                                     pr.Person.Address.CityName,
+                                                                     pr.Person.Address.PLZ,
                                                                      pr.Person.WebsiteLink,
                                                                      pr.Person.Description))
                      .OrderBy(p => p.LastName)
@@ -288,3 +282,4 @@ internal sealed class PersonRepository(
         personSet.Remove(person);
     }
 }
+

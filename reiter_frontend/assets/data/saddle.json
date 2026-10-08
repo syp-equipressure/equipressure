@@ -1,0 +1,38 @@
+[
+  {
+    "id": "s1",
+    "name": "Dressursattel Classic",
+    "category": "Dressur",
+    "horseId": "1"
+  },
+  {
+    "id": "s2",
+    "name": "Spring­sattel Pro",
+    "category": "Springen",
+    "horseId": "1"
+  },
+  {
+    "id": "s3",
+    "name": "Vielseitigkeitssattel Comfort",
+    "category": "Vielseitigkeit",
+    "horseId": "2"
+  },
+  {
+    "id": "s4",
+    "name": "Dressursattel Premium",
+    "category": "Dressur",
+    "horseId": "2"
+  },
+  {
+    "id": "s5",
+    "name": "Spring­sattel Light",
+    "category": "Springen",
+    "horseId": "3"
+  },
+  {
+    "id": "s6",
+    "name": "Freizeit­sattel Soft",
+    "category": "Freizeit",
+    "horseId": "3"
+  }
+]

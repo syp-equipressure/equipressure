@@ -13,7 +13,7 @@ public class MeasurementGroup
     public int PersonId { get; set; }
     public Person Person { get; set; } = null!;
 
-    public int DeviceId { get; set; }
+    public required string DeviceId { get; set; }
     public MeasurementDevice Device { get; set; } = null!;
 
     public int HorseId { get; set; }

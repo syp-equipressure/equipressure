@@ -1,6 +1,9 @@
 ﻿using EquiApi.Core.Util;
 using EquiApi.Persistence.Model;
+using EquiApi.Shared;
 using FluentValidation;
+using NodaTime;
+
 
 namespace EquiApi.Util;
 
@@ -40,6 +43,8 @@ public class DataTransfer
                 RuleFor(x => x.Height).GreaterThan(0);
                 RuleFor(x => x.Weight).GreaterThan(0);
                 RuleFor(x => x.DateOfBirth).NotNull().LessThan(LocalDate.FromDateTime(DateTime.Today));
+                RuleFor(x => x.Email).Matches(@"^[^@]+@[^@]+\.[^@]+$").When(x => !string.IsNullOrEmpty(x.Email))
+                                     .WithMessage("Email must contain '@' and a '.' after it");
                 RuleFor(x => x.WebsiteLink).Empty().When(x => x.Role.Name == RoleName.Equestrian);
                 RuleFor(x => x.Description).Empty().When(x => x.Role.Name == RoleName.Equestrian);
             }
@@ -59,11 +64,11 @@ public class DataTransfer
     /// <summary>
     /// DTO that returns address of person
     /// </summary>
-    /// <param name="Street">optional Street of the person.</param>
+    /// <param name="AddressName">optional Street of the person.</param>
     /// <param name="HouseNumber">optional Housenumber of the person</param>
     /// <param name="CityName">CityName of the person</param>
     /// <param name="PLZ">PLZ of the person</param>
-    public sealed record AddressDto(string? Street, int? HouseNumber, string CityName, string PLZ)
+    public sealed record AddressDto(string? AddressName, string CityName, string PLZ)
     {
         public sealed class Validator : AbstractValidator<AddressDto>
         {
@@ -75,7 +80,7 @@ public class DataTransfer
         }
 
         public static AddressDto FromAddress(Address address) =>
-            new(address.Street, address.HouseNumber, address.City.Name, address.City.PLZ);
+            new(address.AddressName, address.CityName, address.PLZ);
     }
 
     /// <summary>
@@ -99,6 +104,32 @@ public class DataTransfer
     {
         public static PersonListResponse FromPersons(IEnumerable<Person> persons) =>
             new(persons.Select(PersonDto.FromPerson));
+    }
+    
+    public sealed record AddDeviceRequest(string DeviceId, int OwnerId, int CategoryId)
+    {
+        public class Validator : AbstractValidator<AddDeviceRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.DeviceId).NotEmpty();
+                RuleFor(x => x.OwnerId).GreaterThan(0);
+                RuleFor(x => x.CategoryId).GreaterThan(0);
+            }
+        }
+    }
+    public sealed record AddUserToDeviceRequest(int UserId, string DeviceId)
+    {
+        public class Validator : AbstractValidator<AddUserToDeviceRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.UserId)
+                    .GreaterThan(0);
+                RuleFor(x => x.DeviceId)
+                    .NotEmpty();
+            }
+        }
     }
 
     
@@ -144,12 +175,12 @@ public class DataTransfer
     /// <param name="categoryId">categoryId of the device</param>
     /// <param name="owner">owner of the device</param>
     /// <param name="DeviceUser">List of users of the device</param>
-    public sealed record MeasurementDeviceDto(int Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
+    public sealed record MeasurementDeviceDto(string Id, int CategoryId, Person Owner, List<DeviceUser> DeviceUser)
     {
         public static MeasurementDeviceDto FromDevice(MeasurementDevice device) =>
             new(device.Id, device.CategoryId, device.Owner, device.Users);
     }
-
+    
     /// <summary>
     /// DTO that returns list of device dtos
     /// </summary>
@@ -199,6 +230,59 @@ public class DataTransfer
                                      .WithMessage("Email must contain '@' and a '.' after it");
             }
         }
+    }
+
+    public sealed record AddLocationRequest(
+        string? AddressName,
+        int? HouseNumber,
+        string CityName,
+        string PLZ)
+    {
+        public sealed class Validator : AbstractValidator<AddLocationRequest>
+        {
+            public Validator()
+            {
+                RuleFor(x => x.AddressName).NotEmpty();
+                RuleFor(x => x.HouseNumber).GreaterThan(0);
+                RuleFor(x => x.CityName).NotEmpty();
+                RuleFor(x => x.PLZ).NotEmpty();
+            }
+        }
+    }
+
+    public sealed record EquestrianBasicDto(
+        int Id,
+        string FirstName,
+        string LastName,
+        decimal Height,
+        decimal Weight,
+        string? Email,
+        string? AddressName,
+        string CityName,
+        string PLZ)
+    {
+        public static EquestrianBasicDto FromEquestrianBasicData(Helper.EquestrianBasicData data, int id) =>
+            new(id, data.FirstName, data.LastName, data.Height, data.Weight, data.Email, data.AddressName,
+                data.CityName, data.PLZ);
+    }
+
+    public sealed record SaddlerBasicDto(
+        int Id,
+        string FirstName,
+        string LastName,
+        string? AddressName,
+        string CityName,
+        string PLZ,
+        string? Link,
+        string? Description)
+    {
+        public static SaddlerBasicDto FromSaddlerBasicData(Helper.SaddlerBasicData data) =>
+            new(data.Id, data.FirstName, data.LastName, data.AddressName, data.CityName, data.PLZ, data.Link, data.Description);
+    }
+
+    public sealed record SaddlersListResponse(IEnumerable<SaddlerBasicDto> Saddlers)
+    {
+        public static SaddlersListResponse FromSaddlers(IEnumerable<SaddlerBasicDto> saddlers) => new(saddlers);
     }
     
     public record NameData(string FirstName, string LastName);
