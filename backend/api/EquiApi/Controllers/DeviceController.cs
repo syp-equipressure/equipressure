@@ -35,6 +35,25 @@ public sealed class DeviceController(
                                                                            });
     }
 
+    [HttpGet("{deviceId}")]
+    [ProducesResponseType<DataTransfer.MeasurementDeviceDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<DataTransfer.MeasurementDeviceDto>> GetDeviceById([FromRoute] string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            return BadRequest();
+        }
+
+        var result = await deviceService.GetDeviceByIdAsync(deviceId);
+
+        return result.Match<ActionResult<DataTransfer.MeasurementDeviceDto>>(success => Ok(DataTransfer
+                                                                                 .MeasurementDeviceDto
+                                                                                 .FromDevice(success.Value)),
+                                                                             _ => NotFound());
+    }
+
     [HttpGet("{deviceId}/owner")]
     [ProducesResponseType<DataTransfer.PersonDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
