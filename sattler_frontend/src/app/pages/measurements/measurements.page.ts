@@ -24,8 +24,12 @@ export class MeasurementsPage {
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
 
-  readonly customer = computed(() => this.data.getCustomer(this.params().get('customerId') ?? ''));
-  readonly horse    = computed(() => this.data.getHorse(this.params().get('horseId') ?? ''));
+  readonly horse = computed(() => this.data.getHorse(this.params().get('horseId') ?? ''));
+  readonly customer = computed(() => {
+    const customerId = this.params().get('customerId');
+    const horse = this.horse();
+    return customerId ? this.data.getCustomer(customerId) : horse ? this.data.getCustomer(horse.ownerId) : undefined;
+  });
   readonly measurements = computed(() => {
     const h = this.horse();
     return h ? this.data.getMeasurementsOf(h.id) : [];

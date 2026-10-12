@@ -121,6 +121,26 @@
   }
 }
 
+.page-header.with-back {
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+
+  .left {
+    grid-column: 1;
+  }
+
+  .center {
+    grid-column: 2;
+    align-items: center;
+    max-width: min(56vw, 640px);
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .right {
+    grid-column: 3;
+  }
+}
+
 @media (max-width: 900px) {
   .page-header {
     padding-right: 20px;
@@ -148,4 +168,12 @@
   }
 
   .profile-circle { width: 34px; height: 34px; }
+
+  .page-header.with-back {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+
+    .center {
+      max-width: 56vw;
+    }
+  }
 }
