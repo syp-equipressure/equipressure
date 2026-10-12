@@ -13,7 +13,11 @@
         class="nav-item"
         (click)="onNavigate()"
       >
-        <span class="material-icons icon">{{ item.icon }}</span>
+          @if (item.icon === 'horse') {
+            <img class="icon-image" src="/assets/horse-icon.svg" alt="" />
+          } @else {
+            <span class="material-icons icon">{{ item.icon }}</span>
+          }
         <span class="label">{{ item.label }}</span>
         @if (item.badge) {
           <span class="badge">{{ item.badge }}</span>

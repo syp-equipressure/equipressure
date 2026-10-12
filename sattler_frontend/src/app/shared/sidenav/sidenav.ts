@@ -23,7 +23,8 @@ export class SidenavComponent {
 
   readonly items: NavItem[] = [
     { label: 'Neue Messung',  icon: 'add_circle_outline', route: '/new-measurement' },
-    { label: 'Kund*innen',    icon: 'people_outline',    route: '/customers' },
+    { label: 'Meine Pferde',  icon: 'horse',              route: '/my-horses' },
+    { label: 'Kundenverwaltung', icon: 'people_outline', route: '/customers' },
     { label: 'Nachrichten',   icon: 'chat_bubble_outline', route: '/messages' },
   ];
 

@@ -64,6 +64,14 @@
     color: t.$text-soft;
   }
 
+  .icon-image {
+    width: 21px;
+    height: 21px;
+    flex: 0 0 21px;
+    object-fit: contain;
+    filter: var(--horse-icon-filter, none);
+  }
+
   .label {
     flex: 1;
   }
