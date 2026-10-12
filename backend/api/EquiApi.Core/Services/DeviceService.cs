@@ -302,11 +302,14 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         var user = await uow.PersonRepository.GetPersonByIdAsync(userId);
         if (user is null)
         {
+            logger.LogWarning("User with id {id} could not be found", userId);
             return new NotFound();
         }
+
         var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
         if (device is null)
         {
+            logger.LogWarning("Device with id {id} could not be found", deviceId);
             return new NotFound();
         }
 
@@ -314,18 +317,19 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         {
             return new Success<MeasurementDevice>(device);
         }
-        
-        
+
         bool wasAlreadyUser = device.Users.Any(u => u.UserId == userId);
-        
-        if (!wasAlreadyUser && device.Users.Count >= device.Category.NumOfAllowedPeople)
+        bool oldOwnerIsAlreadyUser = device.Users.Any(u => u.UserId == device.OwnerId);
+
+        if (!wasAlreadyUser && !oldOwnerIsAlreadyUser
+                            && device.Users.Count >= device.Category.NumOfAllowedPeople)
         {
             return new IDeviceService.TooManyUsers();
         }
-        
+
         device.Users.RemoveAll(u => u.UserId == userId);
 
-        if (device.Users.All(u => u.UserId != device.OwnerId))
+        if (!oldOwnerIsAlreadyUser)
         {
             device.Users.Add(new DeviceUser
             {
@@ -338,6 +342,7 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         device.Owner = user;
         
         await uow.SaveChangesAsync();
+        logger.LogInformation("A new owner with id {ownerId} was named for device with id {deviceId}", userId, deviceId);
         return new Success<MeasurementDevice>(device);
     }
     

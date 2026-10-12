@@ -401,4 +401,225 @@ public sealed class DeviceServiceTests
         device.Users.Should().NotContain(dU);
         await _uowMock.Received(1).SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_UserNotFound_ReturnsNotFound()
+    {
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns((PersonService?)null);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT1.Should().BeTrue();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_DeviceNotFound_ReturnsNotFound()
+    {
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns((MeasurementDevice?)null);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT1.Should().BeTrue();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_UserIsAlreadyOwner_ReturnsSuccessWithoutSaving()
+    {
+        const int ownerId = 1;
+        const string deviceId = "device-1";
+
+        var device = CreateDevice(deviceId, ownerId: ownerId, users: [CreateDeviceUser(3, deviceId)]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(ownerId).Returns(CreatePerson(ownerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(ownerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        result.AsT0.Value.Should().Be(device);
+        device.OwnerId.Should().Be(ownerId);
+        device.Users.Should().ContainSingle(u => u.UserId == 3);
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_NewOwnerIsNoUserAndLimitReached_ReturnsTooManyUsers()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        // old owner is not in Users, so the swap would add a new DeviceUser -> Users.Count would exceed the limit
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 2, users:
+        [
+            CreateDeviceUser(3, deviceId),
+            CreateDeviceUser(4, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT2.Should().BeTrue();
+        device.OwnerId.Should().Be(oldOwnerId);
+        device.Users.Should().HaveCount(2);
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_NewOwnerIsNoUserButOldOwnerIsUser_LimitReached_ReturnsSuccess()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        // old owner already is a DeviceUser, so no additional entry is needed and the count does not grow
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 2, users:
+        [
+            CreateDeviceUser(oldOwnerId, deviceId),
+            CreateDeviceUser(3, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        device.OwnerId.Should().Be(newOwnerId);
+        device.Users.Should().HaveCount(2);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_NewOwnerIsAlreadyUserAndLimitReached_ReturnsSuccess()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 2, users:
+        [
+            CreateDeviceUser(newOwnerId, deviceId),
+            CreateDeviceUser(3, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        device.OwnerId.Should().Be(newOwnerId);
+        device.Users.Should().HaveCount(2);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_NewOwnerIsOnlyOneBelowLimit_ReturnsSuccess()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 2, users:
+        [
+            CreateDeviceUser(3, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        device.Users.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_ValidData_ChangesOwnerAndMovesOldOwnerToUsers()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        var newOwner = CreatePerson(newOwnerId);
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 5, users:
+        [
+            CreateDeviceUser(3, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(newOwner);
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        result.AsT0.Value.Should().Be(device);
+        device.OwnerId.Should().Be(newOwnerId);
+        device.Owner.Should().Be(newOwner);
+        device.Users.Should().HaveCount(2);
+        device.Users.Should().ContainSingle(u => u.UserId == oldOwnerId && u.DeviceId == deviceId);
+        device.Users.Should().ContainSingle(u => u.UserId == 3);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_NewOwnerWasUser_RemovesNewOwnerFromUsers()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 5, users:
+        [
+            CreateDeviceUser(newOwnerId, deviceId),
+            CreateDeviceUser(3, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        device.OwnerId.Should().Be(newOwnerId);
+        device.Users.Should().NotContain(u => u.UserId == newOwnerId);
+        device.Users.Should().Contain(u => u.UserId == oldOwnerId);
+        device.Users.Should().Contain(u => u.UserId == 3);
+    }
+
+    [Fact]
+    public async Task ChangeOwnerOfDevice_OldOwnerAlreadyUser_DoesNotAddDuplicate()
+    {
+        const int oldOwnerId = 1;
+        const int newOwnerId = 2;
+        const string deviceId = "device-1";
+
+        var device = CreateDevice(deviceId, ownerId: oldOwnerId, numOfAllowedPeople: 5, users:
+        [
+            CreateDeviceUser(oldOwnerId, deviceId),
+            CreateDeviceUser(3, deviceId)
+        ]);
+
+        _uowMock.PersonRepository.GetPersonByIdAsync(newOwnerId).Returns(CreatePerson(newOwnerId));
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(deviceId).Returns(device);
+
+        var result = await _sut.ChangeOwnerOfDevice(newOwnerId, deviceId);
+
+        result.IsT0.Should().BeTrue();
+        device.OwnerId.Should().Be(newOwnerId);
+        device.Users.Count(u => u.UserId == oldOwnerId).Should().Be(1);
+        device.Users.Should().HaveCount(2);
+    }
 }
