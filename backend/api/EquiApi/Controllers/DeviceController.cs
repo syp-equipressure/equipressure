@@ -21,7 +21,6 @@ public sealed class DeviceController(
         if (userId < 0)
         {
             logger.LogWarning("userId {userId} has to be a valid number", userId);
-
         }
 
         var result = await deviceService.GetDevicesFromUserIdAsync(userId);
@@ -30,7 +29,10 @@ public sealed class DeviceController(
                                                                                .FromDevices(success.Value)),
                                                                            notFound =>
                                                                            {
-                                                                               logger.LogWarning("No devices found for userId {userId}", userId);
+                                                                               logger
+                                                                                   .LogWarning("No devices found for userId {userId}",
+                                                                                    userId);
+
                                                                                return NotFound();
                                                                            });
     }
@@ -76,7 +78,9 @@ public sealed class DeviceController(
                                                               Ok(DataTransfer.PersonDto.FromPerson(success.Value)),
                                                           notFound =>
                                                           {
-                                                              logger.LogWarning("Device {deviceId} not found", deviceId);
+                                                              logger.LogWarning("Device {deviceId} not found",
+                                                                                deviceId);
+
                                                               return NotFound();
                                                           },
                                                           noOwner =>
@@ -113,7 +117,9 @@ public sealed class DeviceController(
                                                                              .FromPersons(success.Value)),
                                                           notFound =>
                                                           {
-                                                              logger.LogWarning("Device {deviceId} not found", deviceId);
+                                                              logger.LogWarning("Device {deviceId} not found",
+                                                                                deviceId);
+
                                                               return NotFound();
                                                           },
                                                           noUsers =>
@@ -146,16 +152,20 @@ public sealed class DeviceController(
 
             return await result.Match<ValueTask<IActionResult>>(async success =>
                                                                 {
-                                                                    logger.LogInformation("Device {id} successfully added", request.DeviceId);
+                                                                    logger
+                                                                        .LogInformation("Device {id} successfully added",
+                                                                         request.DeviceId);
                                                                     await transaction.CommitAsync();
 
                                                                     return Created();
                                                                 },
                                                                 async notFound =>
                                                                 {
-                                                                    logger.LogWarning("CreateDevice failed — owner or category not found for DeviceId" +
+                                                                    logger
+                                                                        .LogWarning("CreateDevice failed — owner or category not found for DeviceId" +
                                                                          " {deviceId}, OwnerId {ownerId}, CategoryId {categoryId}",
-                                                                         request.DeviceId, request.OwnerId, request.CategoryId);
+                                                                         request.DeviceId, request.OwnerId,
+                                                                         request.CategoryId);
                                                                     await transaction.RollbackAsync();
 
                                                                     return NotFound();
@@ -180,7 +190,9 @@ public sealed class DeviceController(
     {
         if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
         {
-            logger.LogWarning("AddUserToDevice called with invalid arguments: deviceId {deviceId}, userId {userId}", deviceId, userId);
+            logger.LogWarning("AddUserToDevice called with invalid arguments: deviceId {deviceId}, userId {userId}",
+                              deviceId, userId);
+
             return BadRequest();
         }
 
@@ -193,7 +205,9 @@ public sealed class DeviceController(
 
             return await result.Match<ValueTask<IActionResult>>(async success =>
                                                                 {
-                                                                    logger.LogInformation("User {uId} successfully added to device {dId}", userId, deviceId);
+                                                                    logger
+                                                                        .LogInformation("User {uId} successfully added to device {dId}",
+                                                                         userId, deviceId);
                                                                     await transaction.CommitAsync();
 
                                                                     return Created();
@@ -201,13 +215,18 @@ public sealed class DeviceController(
                                                                 async notFound =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-                                                                    logger.LogWarning("AddUserToDevice failed — device or user not found: deviceId {deviceId}, userId {userId}", deviceId, userId);
+                                                                    logger
+                                                                        .LogWarning("AddUserToDevice failed — device or user not found: deviceId {deviceId}, userId {userId}",
+                                                                         deviceId, userId);
+
                                                                     return NotFound();
                                                                 },
                                                                 async tooManyUsers =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-                                                                    logger.LogWarning("AddUserToDevice failed — too many users assigned to device {deviceId}", deviceId);
+                                                                    logger
+                                                                        .LogWarning("AddUserToDevice failed — too many users assigned to device {deviceId}",
+                                                                         deviceId);
 
                                                                     return Conflict();
                                                                 });
@@ -231,7 +250,9 @@ public sealed class DeviceController(
     {
         if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
         {
-            logger.LogWarning("RemoveUserFromDevice called with invalid arguments: deviceId {deviceId}, userId {userId}", deviceId, userId);
+            logger.LogWarning("RemoveUserFromDevice called with invalid arguments: deviceId {deviceId}, userId {userId}",
+                              deviceId, userId);
+
             return BadRequest();
         }
 
@@ -245,26 +266,37 @@ public sealed class DeviceController(
             return await result.Match<ValueTask<IActionResult>>(async success =>
                                                                 {
                                                                     await transaction.CommitAsync();
-                                                                    logger.LogInformation("User {uId} successfully removed from device {dId}", userId, deviceId);
+                                                                    logger
+                                                                        .LogInformation("User {uId} successfully removed from device {dId}",
+                                                                         userId, deviceId);
+
                                                                     return Ok();
                                                                 },
                                                                 async notFound =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-                                                                    logger.LogWarning("RemoveUserFromDevice failed — device or user not found: deviceId {deviceId}, userId {userId}", deviceId, userId);
+                                                                    logger
+                                                                        .LogWarning("RemoveUserFromDevice failed — device or user not found: deviceId {deviceId}, userId {userId}",
+                                                                         deviceId, userId);
 
                                                                     return NotFound();
                                                                 },
                                                                 async tooLittleUsers =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-                                                                    logger.LogWarning("RemoveUserFromDevice failed — device {deviceId} would have too few users after removal", deviceId);
+                                                                    logger
+                                                                        .LogWarning("RemoveUserFromDevice failed — device {deviceId} would have too few users after removal",
+                                                                         deviceId);
+
                                                                     return Conflict();
                                                                 },
                                                                 async ownerCantBeDeleted =>
                                                                 {
                                                                     await transaction.RollbackAsync();
-                                                                    logger.LogWarning("RemoveUserFromDevice failed — user {userId} is the owner of device {deviceId} and cannot be removed", userId, deviceId);
+                                                                    logger
+                                                                        .LogWarning("RemoveUserFromDevice failed — user {userId} is the owner of device {deviceId} and cannot be removed",
+                                                                         userId, deviceId);
+
                                                                     return Conflict();
                                                                 });
         }
@@ -272,6 +304,66 @@ public sealed class DeviceController(
         {
             await transaction.RollbackAsync();
             logger.LogError(ex, "Error removing User {userId} from Device {deviceId}", userId, deviceId);
+
+            return Problem();
+        }
+    }
+
+    [HttpPatch("{deviceId}/owner/{userId:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<IActionResult> NameNewOwnerOfDevice([FromRoute] string deviceId,
+                                                               [FromRoute] int userId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) || userId < 0)
+        {
+            logger.LogWarning("NameNewOwnerOfDevice called with invalid arguments: deviceId {deviceId}, userId {userId}",
+                              deviceId, userId);
+
+            return BadRequest();
+        }
+
+        try
+        {
+            await transaction.BeginTransactionAsync();
+
+            var result
+                = await deviceService.ChangeOwnerOfDevice(userId, deviceId);
+
+            return await result.Match<ValueTask<IActionResult>>(async success =>
+                                                                {
+                                                                    logger
+                                                                        .LogInformation("User {uId} is now owner of device {dId}",
+                                                                         userId, deviceId);
+                                                                    await transaction.CommitAsync();
+
+                                                                    return Ok();
+                                                                },
+                                                                async notFound =>
+                                                                {
+                                                                    await transaction.RollbackAsync();
+                                                                    logger
+                                                                        .LogWarning("NameNewOwnerOfDevice failed — device or user not found: deviceId {deviceId}, userId {userId}",
+                                                                         deviceId, userId);
+
+                                                                    return NotFound();
+                                                                },
+                                                                async tooManyUsers =>
+                                                                {
+                                                                    await transaction.RollbackAsync();
+                                                                    logger
+                                                                        .LogWarning("NameNewOwnerOfDevice failed — too many users assigned to device {deviceId}",
+                                                                         deviceId);
+
+                                                                    return Conflict();
+                                                                });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError(ex, "Error naming User {userId} as new owner of Device {deviceId}", userId, deviceId);
 
             return Problem();
         }
