@@ -26,18 +26,18 @@ Personen:
 
 TODO: wir machen keine Unterscheidung zwischen Equestrian und Saddler
 
-* GET /persons => alle Personen
-* GET /persons/:id => Person mit id :id
-* GET /persons/:id/contacts => Kontakte einer Person
-* GET /persons/:id/favourites => Favourisierte Sattler einer Person
-* GET /persons/:id/devices => alle Geräte einer Person
+* ✓ GET /persons => alle Personen
+* ✓ GET /persons/:id => Person mit id :id
+* ✓ GET /persons/:id/contacts => Kontakte einer Person
+* ✓ GET /persons/:id/favourites => Favourisierte Sattler einer Person
+* ✓ GET /persons/:id/devices => alle Geräte einer Person
 ** könnte eventuell boolean liefern ob Person Owner ist
-* GET /persons/:id/horses => alle Pferde einer Person
-* GET /persons/saddlers/locations => alle Sattler mit Person_Id, Name und location
-* GET /persons/:id/horses/locations => alle Pferde mit Pferde_Id, Location, Profilbild einer Person
-* GET /persons/:id/location => Location einer Person mit id :id
+* ✓ GET /persons/:id/horses => alle Pferde einer Person
+* ✓ GET /persons/saddlers/locations => alle Sattler mit Person_Id, Name und location
+* ✓ GET /persons/:id/horses/locations => alle Pferde mit Pferde_Id, Location, Profilbild einer Person
+* ✓ GET /persons/:id/location => Location einer Person mit id :id
 
-* GET /equestrians/:id
+* ✓ GET /equestrians/:id
 
 Locations:
 * POST /locations => add a location
@@ -46,7 +46,7 @@ Locations:
 Geräte:
 
 * ✓ GET /devices/:userId => alle Geräte einer Person
-* GET /devices/:id => Gerät mit der id :id
+* ✓ GET /devices/:id => Gerät mit der id :id
 * ✓ GET /devices/:id/owner => Besitzer des Gerätes (Person)
 * ✓ GET /devices/:id/users => alle Personen eines Geräts
 * ✓ POST /devices => neues Device hinzufügen
