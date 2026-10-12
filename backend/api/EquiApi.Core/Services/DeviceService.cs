@@ -16,6 +16,13 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId);
+
+    /// <summary>
+    /// service to get a device by its id
+    /// </summary>
+    /// <param name="deviceId">id of the device</param>
+    /// <returns>a MeasurementDevice with the id or a not found if there is none</returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> GetDeviceByIdAsync(string deviceId);
     
     /// <summary>
     /// returns the owner of a specific user
@@ -114,6 +121,19 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         
         var devices = await uow.DeviceRepository.GetDevicesFromUserIdAsync(userId);
         return new Success<IReadOnlyCollection<MeasurementDevice>>(devices);
+    }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> GetDeviceByIdAsync(string deviceId)
+    {
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            logger.LogWarning("Device {DeviceId} not found", deviceId);
+
+            return new NotFound();
+        }
+
+        return new Success<MeasurementDevice>(device);
     }
 
     public async ValueTask<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>> GetOwnerOfDevice(string deviceId)
