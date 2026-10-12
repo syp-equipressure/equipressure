@@ -6,7 +6,6 @@
   padding: 32px 40px 56px;
 }
 
-.identity-card,
 .panel {
   border: 1px solid t.$border;
   border-radius: 14px;
@@ -14,12 +13,13 @@
   box-shadow: t.$shadow-card;
 }
 
-.identity-card {
+.profile-heading {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 24px;
   margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid t.$border-soft;
 }
 
 .customer-avatar {
@@ -189,7 +189,6 @@
     padding: 22px 16px 40px;
   }
 
-  .identity-card,
   .panel {
     padding: 18px;
   }
