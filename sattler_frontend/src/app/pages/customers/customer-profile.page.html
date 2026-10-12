@@ -2,19 +2,14 @@
 
 @if (customer(); as customer) {
   <main class="profile-page">
-    <section class="identity-card">
-      <div class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</div>
-      <div class="identity">
-        <p class="eyebrow">Kundenprofil</p>
-        <h2>{{ fullName(customer) }}</h2>
-        <p>{{ customer.email || 'Keine E-Mail-Adresse hinterlegt' }}</p>
-      </div>
-    </section>
-
     <section class="panel contact-panel">
-      <header class="panel-heading">
-        <p class="eyebrow">Reiterdaten</p>
-        <h2>Persönliche Informationen</h2>
+      <header class="profile-heading">
+        <div class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</div>
+        <div class="identity">
+          <p class="eyebrow">Kundenprofil</p>
+          <h2>{{ fullName(customer) }}</h2>
+          <p>{{ customer.email || 'Keine E-Mail-Adresse hinterlegt' }}</p>
+        </div>
       </header>
       <div class="details-grid">
         <div class="detail-row"><span>Name</span><strong>{{ fullName(customer) }}</strong></div>
