@@ -8,13 +8,17 @@ import { MeasurementSessionPage } from './pages/new-measurement/measurement-sess
 import { LiveMeasurementPage } from './pages/new-measurement/live-measurement/live-measurement.page';
 import { StubPage } from './pages/stub/stub.page';
 import { StartPage } from './pages/startpage/startpage.page';
+import { CustomerProfilePage } from './pages/customers/customer-profile.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'startpage' },
   { path: 'startpage', component: StartPage },
   { path: 'customers', component: CustomersPage },
+  { path: 'customers/:customerId', component: CustomerProfilePage },
   { path: 'customers/:customerId/horses', component: HorsesPage },
   { path: 'customers/:customerId/horses/:horseId', component: MeasurementsPage },
+  { path: 'my-horses', component: HorsesPage },
+  { path: 'my-horses/:horseId', component: MeasurementsPage },
   { path: 'profile', component: ProfilePage },
   { path: 'new-measurement', component: StubPage, data: { title: 'Neue Messung' } },
   { path: 'new-measurement/session', component: MeasurementSessionPage },

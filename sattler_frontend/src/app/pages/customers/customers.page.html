@@ -1,19 +1,49 @@
-<app-page-header title="Kundschaft"></app-page-header>
+<app-page-header title="Kundenverwaltung"></app-page-header>
 
 <section class="page-body">
-  <div class="panel">
-    <div class="search-bar">
-      <input
-        class="search-input"
-        type="search"
-        placeholder="Suche nach Name..."
-        [ngModel]="query()"
-        (ngModelChange)="query.set($event)"
-      />
-      <button class="primary-btn" (click)="showForm.set(true)">
+  <div class="directory">
+    <header class="directory-heading">
+      <div>
+        <p class="eyebrow">Verwaltung</p>
+        <h2>Kund*innen</h2>
+        <p>Kontaktdaten, Pferde und Messverläufe zentral verwalten.</p>
+      </div>
+      <button class="primary-btn" type="button" (click)="showForm.set(true)">
         <span class="material-icons">add</span>
         Neue Kund*in
       </button>
+    </header>
+
+    <div class="filters">
+      <input
+        class="search-input"
+        type="search"
+        placeholder="Name, E-Mail oder Telefonnummer suchen"
+        aria-label="Kund*innen suchen"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+      />
+      <div class="date-filter">
+        <label>
+          <span>Von</span>
+          <input
+            type="date"
+            aria-label="Messungen ab diesem Datum"
+            [value]="measurementDateFrom()"
+            (input)="measurementDateFrom.set($any($event.target).value)"
+          />
+        </label>
+        <label>
+          <span>Bis</span>
+          <input
+            type="date"
+            aria-label="Messungen bis zu diesem Datum"
+            [value]="measurementDateTo()"
+            (input)="measurementDateTo.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <span class="result-count">{{ filtered().length }} Ergebnisse</span>
 
       @if (showForm()) {
         <app-new-customer-form
@@ -23,29 +53,38 @@
       }
     </div>
 
-    <div class="list-card">
+    <div class="customer-list">
+      <div class="list-header" aria-hidden="true">
+        <span>Name</span>
+        <span>Kontakt</span>
+        <span>Aktionen</span>
+      </div>
       @for (c of filtered(); track c.id) {
-        <a
-          class="row"
-          [class.me]="c.isMe"
-          [routerLink]="['/customers', c.id, 'horses']"
-        >
-          <div class="name">
-            {{ fullName(c) }}@if (c.isMe) { <span class="me-tag"></span> }
-          </div>
-          <div class="action">
-            @if (c.isMe) {
-              Deine Pferde
-            } @else {
-              Details
-            }
-            <span class="arrow">→</span>
-          </div>
-        </a>
+        <div class="customer-row">
+          <span class="customer-identity">
+            <span class="avatar">{{ c.firstName.charAt(0) }}{{ c.lastName.charAt(0) }}</span>
+            <strong class="customer-name">{{ fullName(c) }}</strong>
+          </span>
+          <span class="customer-contact">{{ c.email || c.phoneNumber || 'Keine Kontaktdaten' }}</span>
+          <span class="row-actions">
+            <a class="row-action" [routerLink]="['/customers', c.id]">
+              <span class="material-icons">person_outline</span>
+              Profil
+            </a>
+            <a class="row-action" [routerLink]="['/customers', c.id, 'horses']">
+              <img src="/assets/horse-icon.svg" alt="" />
+              Pferde
+            </a>
+          </span>
+        </div>
       }
 
       @if (filtered().length === 0) {
-        <div class="empty">Keine Kund*innen gefunden.</div>
+        <div class="empty">
+          <span class="material-icons">search_off</span>
+          <strong>Keine Kund*innen gefunden</strong>
+          <span>Ändere deine Suche oder passe den Filter an.</span>
+        </div>
       }
     </div>
   </div>

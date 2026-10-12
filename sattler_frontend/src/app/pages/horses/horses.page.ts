@@ -26,8 +26,8 @@ export class HorsesPage {
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
 
   readonly customer = computed(() => {
-    const id = this.params().get('customerId') ?? '';
-    return this.data.customers().find(c => c.id === id);
+    const id = this.params().get('customerId');
+    return id ? this.data.getCustomer(id) : this.data.getMe();
   });
 
   readonly horses = computed(() => {
@@ -38,12 +38,16 @@ export class HorsesPage {
   readonly title = computed(() => {
     const c = this.customer();
     if (!c) return '';
-    return c.isMe ? 'Deine Pferde' : `${fullName(c)}'s Pferde`;
+    return c.isMe ? 'Deine Pferde' : `${fullName(c)} Pferde`;
   });
 
   openHorse(horseId: string): void {
     const c = this.customer();
     if (!c) return;
+    if (c.isMe) {
+      this.router.navigate(['/my-horses', horseId]);
+      return;
+    }
     this.router.navigate(['/customers', c.id, 'horses', horseId]);
   }
 

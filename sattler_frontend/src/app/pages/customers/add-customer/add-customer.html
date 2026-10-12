@@ -72,6 +72,31 @@
     </div>
 
     <div class="form-row">
+      <div class="form-field">
+        <label class="form-label" for="birthDate">Geburtsdatum</label>
+        <input
+          id="birthDate"
+          class="form-input"
+          type="date"
+          [ngModel]="birthDate()"
+          (ngModelChange)="birthDate.set($event)"
+        />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="address">Adresse</label>
+        <input
+          id="address"
+          class="form-input"
+          type="text"
+          placeholder="Straße, PLZ und Ort"
+          [ngModel]="address()"
+          (ngModelChange)="address.set($event)"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
       <div class="form-field" [class.has-error]="errors()['heightCm']">
         <label class="form-label" for="heightCm">Körpergröße (cm) *</label>
         <input

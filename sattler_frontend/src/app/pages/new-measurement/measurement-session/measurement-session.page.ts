@@ -119,7 +119,11 @@ export class MeasurementSessionPage {
     if (!session || this.completedCount() === 0) return;
     const measurementId = this.sessionService.complete();
     if (measurementId) {
-      void this.router.navigate(['/customers', session.ownerId, 'horses', session.horseId], {
+      const owner = this.owner();
+      const destination = owner?.isMe
+        ? ['/my-horses', session.horseId]
+        : ['/customers', session.ownerId, 'horses', session.horseId];
+      void this.router.navigate(destination, {
         queryParams: { measurementId },
       });
     }

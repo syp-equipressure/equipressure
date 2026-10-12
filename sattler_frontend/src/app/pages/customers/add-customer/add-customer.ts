@@ -17,6 +17,8 @@ export class AddCustomer {
   lastName = signal('');
   email = signal('');
   phoneNumber = signal('');
+  birthDate = signal('');
+  address = signal('');
   heightCm = signal<number | null>(null);
   weightKg = signal<number | null>(null);
 
@@ -48,6 +50,8 @@ export class AddCustomer {
       lastName: this.lastName().trim(),
       email: this.email().trim() || undefined,
       phoneNumber: this.phoneNumber().trim() || undefined,
+      birthDate: this.birthDate() || undefined,
+      address: this.address().trim() || undefined,
       heightCm: this.heightCm()!,
       weightKg: this.weightKg()!,
       horseIds: [],
@@ -67,6 +71,8 @@ export class AddCustomer {
     this.lastName.set('');
     this.email.set('');
     this.phoneNumber.set('');
+    this.birthDate.set('');
+    this.address.set('');
     this.heightCm.set(null);
     this.weightKg.set(null);
     this.errors.set({});
