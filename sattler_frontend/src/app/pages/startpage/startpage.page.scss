@@ -198,6 +198,12 @@
   color: t.$purple-600;
 }
 
+.horse-action-icon img {
+  width: 23px;
+  height: 23px;
+  object-fit: contain;
+}
+
 .action-link > span:nth-child(2) {
   display: flex;
   min-width: 0;
