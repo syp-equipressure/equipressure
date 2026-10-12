@@ -1,35 +1,35 @@
 // Product palette: restrained violet accents with neutral workspace surfaces.
-$purple-50:  #F4F2FB;
-$purple-100: #EAE6F7;
-$purple-200: #D5CDED;
-$purple-300: #B9ACDE;
-$purple-400: #8F7BC7;
-$purple-500: #6955AE;
-$purple-600: #55438F;
-$purple-700: #40336B;
+$purple-50:  var(--purple-50);
+$purple-100: var(--purple-100);
+$purple-200: var(--purple-200);
+$purple-300: var(--purple-300);
+$purple-400: var(--purple-400);
+$purple-500: var(--purple-500);
+$purple-600: var(--purple-600);
+$purple-700: var(--purple-700);
 
 // Neutrals
-$bg-page:    oklch(0.97 0 0);
-$bg-card:    #FFFFFF;
-$bg-panel:   #FAFAFC;
-$border:     #DDE1E7;
-$border-soft:#E7E9EE;
-$text-strong:#18212F;
-$text:       #293342;
-$text-soft:  #5F6B7A;
-$text-muted: #8993A0;
+$bg-page:    var(--bg-page);
+$bg-card:    var(--bg-card);
+$bg-panel:   var(--bg-panel);
+$border:     var(--border);
+$border-soft:var(--border-soft);
+$text-strong:var(--text-strong);
+$text:       var(--text);
+$text-soft:  var(--text-soft);
+$text-muted: var(--text-muted);
 
 // Accent colors used on the measurement detail
-$accent-red:    #E53935;  // MAX number color
-$accent-orange: #F2A23A;  // SYMMETRY number color
+$accent-red:    var(--accent-red);
+$accent-orange: var(--accent-orange);
 $accent-purple: $purple-500;
 
 // Layout
-$sidenav-width: 280px;
-$header-height: 72px;
+$sidenav-width: 256px;
+$header-height: 68px;
 $radius-card: 14px;
 $radius-pill: 999px;
 
 // Shadows
-$shadow-card: 0 1px 2px rgba(24, 33, 47, 0.05), 0 4px 14px rgba(24, 33, 47, 0.07);
-$shadow-elev: 0 10px 28px rgba(24, 33, 47, 0.14);
+$shadow-card: var(--shadow-card);
+$shadow-elev: var(--shadow-elev);

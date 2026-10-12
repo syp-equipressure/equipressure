@@ -1,6 +1,8 @@
 <aside class="sidenav">
-  <div class="hamburger" (click)="onClose()" role="button" aria-label="Menü schließen">
-    <span class="material-icons">menu</span>
+  <div class="brand">
+    <a class="brand-link" routerLink="/startpage" aria-label="Zur Startseite" (click)="onNavigate()">
+      <img class="brand-logo" src="/assets/equipressure-logo.png" alt="EquiPressure" />
+    </a>
   </div>
 
   <nav class="nav">
@@ -9,7 +11,7 @@
         [routerLink]="item.route"
         routerLinkActive="active"
         class="nav-item"
-        (click)="onClose()"
+        (click)="onNavigate()"
       >
         <span class="material-icons icon">{{ item.icon }}</span>
         <span class="label">{{ item.label }}</span>
@@ -26,9 +28,14 @@
     [routerLink]="settings.route"
     routerLinkActive="active"
     class="nav-item settings"
-    (click)="onClose()"
+    (click)="onNavigate()"
   >
     <span class="material-icons icon">{{ settings.icon }}</span>
     <span class="label">{{ settings.label }}</span>
   </a>
+
+  <button class="theme-toggle" type="button" (click)="theme.toggle()" [attr.aria-pressed]="theme.isDark()">
+    <span class="material-icons">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+    <span class="label">{{ theme.isDark() ? 'Lightmode' : 'Darkmode' }}</span>
+  </button>
 </aside>

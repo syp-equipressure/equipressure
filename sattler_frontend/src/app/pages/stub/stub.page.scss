@@ -6,17 +6,19 @@
 }
 
 .new-measurement-shell {
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 68px);
   display: flex;
-  padding: 0;
+  padding: 0 20px 24px;
   background: t.$bg-page;
 }
 
 .new-measurement-panel {
   width: 100%;
+  max-width: 1540px;
+  margin: 0 auto;
   background: t.$bg-page;
   border-radius: 0;
-  padding: 18px 22px 26px;
+  padding: 24px 24px 30px;
   border: 0;
   box-shadow: none;
 }
@@ -57,7 +59,7 @@
 .top-grid,
 .bottom-grid {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .top-grid {
@@ -75,10 +77,10 @@
 
 .card {
   border: 1px solid t.$border;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #ffffff;
-  padding: 18px;
-  min-height: 180px;
+  padding: 21px;
+  min-height: 190px;
   box-shadow: t.$shadow-card;
 }
 
@@ -148,26 +150,36 @@
 
 .select-shell {
   position: relative;
-}
-
-.saddle-card .select-shell {
-  max-width: none;
-}
-
-.saddle-grid .field:first-child .select-shell,
-.saddle-grid .field:last-child .select-shell {
-  max-width: 360px;
+  width: 100%;
+  min-width: 0;
 }
 
 .saddle-grid {
   display: grid;
+  width: 100%;
+  min-width: 0;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
   align-items: end;
+
+  .field {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .select-shell,
+  .text-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 .horse-card {
-  padding-top: 31px;
+  padding-top: 21px;
 }
 
 .horse-card .field:first-of-type {
@@ -176,7 +188,11 @@
 
 .select-input,
 .text-input {
+  box-sizing: border-box;
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   height: 40px;
   border: 1px solid #d8d8d8;
   border-radius: 8px;
@@ -326,10 +342,10 @@
 .continue-btn {
   display: block;
   margin: 0 auto;
-  min-width: 300px;
-  height: 50px;
+  min-width: 280px;
+  height: 48px;
   border: 0;
-  border-radius: 20px;
+  border-radius: 9px;
   background: t.$purple-500;
   color: #ffffff;
   font-size: 16px;
@@ -365,35 +381,57 @@
   max-width: 480px;
 }
 
-@media (max-width: 1100px) {
-  .top-grid,
+@media (max-width: 900px) {
+  .top-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-card {
+    grid-column: 1 / -1;
+  }
+
   .bottom-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1.4fr) minmax(250px, 1fr);
   }
 
   .saddle-card,
-  .recent-card { grid-column: auto; }
-
-  .new-measurement-panel {
-    max-width: 720px;
+  .recent-card {
+    grid-column: auto;
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 680px) {
   .new-measurement-shell {
     padding: 0;
   }
 
   .new-measurement-panel {
-    padding: 16px;
+    padding: 18px 14px 24px;
+  }
+
+  .top-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    grid-column: auto;
   }
 
   .metrics {
     grid-template-columns: 1fr;
   }
 
+  .saddle-grid {
+    grid-template-columns: 1fr;
+  }
+
   .continue-btn {
     width: 100%;
     min-width: 0;
+  }
+
+  .card {
+    padding: 18px;
   }
 }

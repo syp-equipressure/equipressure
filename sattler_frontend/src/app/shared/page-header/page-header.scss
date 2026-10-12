@@ -5,12 +5,13 @@
   background: t.$bg-card;
   border-bottom: 1px solid t.$border;
   display: grid;
-  grid-template-columns: 80px 1fr 160px;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
   align-items: center;
-  padding: 0 32px;
+  padding: 0 36px;
   position: sticky;
   top: 0;
   z-index: 20;
+  box-shadow: 0 2px 8px rgba(24, 33, 47, 0.025);
 }
 
 .left {
@@ -21,9 +22,11 @@
 
 .center {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
+  padding-left: 6px;
 }
 
 .right {
@@ -32,11 +35,15 @@
 }
 
 .title {
-  font-size: 22px;
-  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+  font-weight: 650;
   color: t.$text-strong;
   margin: 0;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.35px;
 }
 
 .subtitle {
@@ -114,6 +121,13 @@
   }
 }
 
+@media (max-width: 900px) {
+  .page-header {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
 @media (max-width: 600px) {
   .page-header {
     grid-template-columns: 52px minmax(0, 1fr) 52px;
@@ -121,6 +135,7 @@
     padding: 0 12px;
   }
 
+  .center { padding-left: 2px; }
   .title { font-size: 18px; }
   .subtitle { font-size: 12px; }
 

@@ -4,61 +4,64 @@
   width: t.$sidenav-width;
   height: 100vh;
   box-sizing: border-box;
-  background: #ffffff;
+  background: t.$bg-card;
   display: flex;
   flex-direction: column;
-  padding: 20px 12px;
+  padding: 22px 14px 18px;
   border-right: 1px solid t.$border;
   position: relative;
-  z-index: 30;
 }
 
-.hamburger {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+.brand {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
-  margin-bottom: 16px;
-  color: t.$text-strong;
-  transition: background 0.15s;
+  gap: 11px;
+  min-height: 52px;
+  padding: 0 10px;
+  margin-bottom: 32px;
+}
 
-  .material-icons {
-    font-size: 26px;
-  }
+.brand-link {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+}
 
-  &:hover {
-    background: t.$bg-page;
-  }
+.brand-logo {
+  display: block;
+  width: 100%;
+  max-width: 186px;
+  height: 52px;
+  object-fit: contain;
+  object-position: left center;
+  mix-blend-mode: multiply;
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 9px;
+  padding: 11px 12px;
+  border-radius: 8px;
   color: t.$text;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   position: relative;
   transition: background 0.15s, color 0.15s;
-  border-left: 3px solid transparent;
+  border-left: 0;
   text-decoration: none;
 
   .icon {
-    font-size: 24px;
-    color: t.$text;
+    font-size: 21px;
+    color: t.$text-soft;
   }
 
   .label {
@@ -92,7 +95,7 @@
   &.active {
     background: t.$purple-50;
     color: t.$purple-500;
-    border-left-color: t.$purple-500;
+    font-weight: 600;
 
     .icon {
       color: t.$purple-500;
@@ -107,4 +110,36 @@
 .settings {
   margin-top: 12px;
   font-weight: 400;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: t.$text-soft;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+
+  &:hover {
+    background: t.$bg-page;
+  }
+
+  .material-icons {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 900px) {
+  .brand {
+    margin-bottom: 24px;
+  }
+
 }
