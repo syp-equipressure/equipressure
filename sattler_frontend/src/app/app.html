@@ -1,4 +1,4 @@
-<div class="app-shell">
+<div class="app-shell" [class.sidebar-collapsed]="!sidenav.open()">
   @if (sidenav.open()) {
     <button
       class="backdrop"

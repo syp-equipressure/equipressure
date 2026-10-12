@@ -3,9 +3,9 @@
 :host { display: block; }
 
 .session-page {
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 20px 32px 36px;
+  padding: 24px 40px 40px;
 }
 
 .back-link {
@@ -20,10 +20,10 @@
 
 .session-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 310px;
-  gap: 38px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 28px;
   align-items: start;
-  max-width: 1030px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -203,8 +203,8 @@ textarea::placeholder { color: #999; }
 .finish-button:hover:not(:disabled) { background: t.$purple-600; }
 .finish-button:disabled { background: t.$purple-100; color: t.$text-muted; cursor: not-allowed; }
 
-@media (max-width: 680px) {
-  .session-page { padding: 8px 14px 24px; }
+@media (max-width: 760px) {
+  .session-page { padding: 14px 16px 24px; }
   .session-layout { grid-template-columns: 1fr; gap: 14px; }
   .session-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .timer-card, .progress-card { grid-column: 1 / -1; }

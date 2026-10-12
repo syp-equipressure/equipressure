@@ -6,8 +6,8 @@
         <span>Zurück</span>
       </button>
     } @else if (showMenu) {
-      <button class="icon-btn" (click)="openMenu()" aria-label="Menü öffnen">
-        <span class="material-icons">menu</span>
+      <button class="icon-btn" (click)="openMenu()" [attr.aria-label]="sidenavOpenLabel" [attr.aria-expanded]="sidenavIsOpen">
+        <span class="material-icons">{{ sidenavIsOpen ? 'menu_open' : 'menu' }}</span>
       </button>
     }
   </div>

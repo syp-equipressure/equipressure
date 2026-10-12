@@ -7,6 +7,7 @@
 @use '@angular/material' as mat;
 
 html {
+  color-scheme: light;
   @include mat.theme((
     color: (
       primary: mat.$azure-palette,
@@ -17,44 +18,91 @@ html {
   ));
 }
 
+html {
+  --purple-50: #f4f2fb;
+  --purple-100: #eae6f7;
+  --purple-200: #d5cded;
+  --purple-300: #b9acde;
+  --purple-400: #8f7bc7;
+  --purple-500: #6955ae;
+  --purple-600: #55438f;
+  --purple-700: #40336b;
+  --bg-page: #f5f6f8;
+  --bg-card: #ffffff;
+  --bg-panel: #fafafc;
+  --border: #dde1e7;
+  --border-soft: #e7e9ee;
+  --text-strong: #18212f;
+  --text: #293342;
+  --text-soft: #5f6b7a;
+  --text-muted: #8993a0;
+  --accent-red: #e53935;
+  --accent-orange: #f2a23a;
+  --shadow-card: 0 1px 2px rgba(24, 33, 47, 0.05), 0 4px 14px rgba(24, 33, 47, 0.07);
+  --shadow-elev: 0 10px 28px rgba(24, 33, 47, 0.14);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --purple-50: #2a2538;
+  --purple-100: #383049;
+  --purple-200: #4a3c65;
+  --purple-300: #746397;
+  --purple-400: #ad9bd6;
+  --purple-500: #b4a1ec;
+  --purple-600: #c5b8f0;
+  --purple-700: #d8cff7;
+  --bg-page: #15171c;
+  --bg-card: #20232a;
+  --bg-panel: #252830;
+  --border: #383c46;
+  --border-soft: #30343d;
+  --text-strong: #f1f2f5;
+  --text: #d9dce3;
+  --text-soft: #a7adba;
+  --text-muted: #858d9b;
+  --accent-red: #ff7b78;
+  --accent-orange: #ffc06e;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.18);
+  --shadow-elev: 0 12px 32px rgba(0, 0, 0, 0.36);
+  --mat-sys-surface: #20232a;
+  --mat-sys-on-surface: #f1f2f5;
+}
+
 body {
   // Default the application to a light color theme. This can be changed to
   // `dark` to enable the dark color theme, or to `light dark` to defer to the
   // user's system settings.
-  color-scheme: light;
-
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  background-color: var(--bg-page);
+  color: var(--text);
   font: var(--mat-sys-body-medium);
 
   // Reset the user agent margin.
   margin: 0;
 }
 :root {
-  --panel-bg: #ffffff;
-  --border: #dde1e7;
-  --border-color: #dde1e7;
+  --panel-bg: var(--bg-card);
+  --border-color: var(--border);
   --radius: 8px;
   --radius-lg: 12px;
-  --text-primary: #18212f;
-  --text-secondary: #5f6b7a;
-  --text-muted: #8993a0;
-  --hover-bg: oklch(0.97 0 0);
-  --input-bg: #ffffff;
-  --primary: #6955ae;
+  --text-primary: var(--text-strong);
+  --text-secondary: var(--text-soft);
+  --hover-bg: var(--bg-page);
+  --input-bg: var(--bg-card);
+  --primary: var(--purple-500);
   --error: #c44242;
-  --surface: #ffffff;
-  --surface-hover: #f5f6f8;
+  --surface: var(--bg-card);
+  --surface-hover: var(--bg-page);
 }
 
 html, body { min-height: 100%; }
 body {
   margin: 0;
-  background: oklch(0.97 0 0);
-  color: #293342;
+  background: var(--bg-page);
+  color: var(--text);
   font-family: Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -66,3 +114,75 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 ::selection { background: #eae6f7; color: #18212f; }
+
+html[data-theme='dark'] .workspace,
+html[data-theme='dark'] .sidenav,
+html[data-theme='dark'] .page-header,
+html[data-theme='dark'] .messages-layout,
+html[data-theme='dark'] .customer-item,
+html[data-theme='dark'] .chat-header,
+html[data-theme='dark'] .profile-card,
+html[data-theme='dark'] .info-card,
+html[data-theme='dark'] .stat-tile,
+html[data-theme='dark'] .list-card,
+html[data-theme='dark'] .measurement-card,
+html[data-theme='dark'] .detail-card,
+html[data-theme='dark'] .note-card,
+html[data-theme='dark'] .session-card,
+html[data-theme='dark'] .saddle-card,
+html[data-theme='dark'] .summary-card,
+html[data-theme='dark'] .horse-card,
+html[data-theme='dark'] .rider-card,
+html[data-theme='dark'] .recent-card,
+html[data-theme='dark'] .card,
+html[data-theme='dark'] .panel,
+html[data-theme='dark'] .welcome,
+html[data-theme='dark'] .actions-panel,
+html[data-theme='dark'] .quick-card,
+html[data-theme='dark'] .segment-card,
+html[data-theme='dark'] .chat-composer,
+html[data-theme='dark'] .customer-panel {
+  background-color: var(--bg-card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html[data-theme='dark'] input,
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea {
+  border-color: var(--border);
+  background-color: var(--bg-panel);
+  color: var(--text);
+}
+
+html[data-theme='dark'] .chat-history,
+html[data-theme='dark'] .heatmap-card,
+html[data-theme='dark'] .controls,
+html[data-theme='dark'] .stat,
+html[data-theme='dark'] .metric-value,
+html[data-theme='dark'] .toggle-btn,
+html[data-theme='dark'] .back-btn,
+html[data-theme='dark'] .date-divider {
+  background-color: var(--bg-panel);
+  color: var(--text);
+}
+
+html[data-theme='dark'] .drawer {
+  border-color: var(--border);
+}
+
+html[data-theme='dark'] .workspace h1,
+html[data-theme='dark'] .workspace h2,
+html[data-theme='dark'] .workspace h3,
+html[data-theme='dark'] .workspace h4,
+html[data-theme='dark'] .workspace .name,
+html[data-theme='dark'] .workspace .customer-name,
+html[data-theme='dark'] .workspace .info-value,
+html[data-theme='dark'] .workspace .segment-heading > strong {
+  color: var(--text-strong);
+}
+
+html[data-theme='dark'] .brand-logo {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}

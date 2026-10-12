@@ -48,9 +48,9 @@
 // ─── Two-pane layout ────────────────────────────────────────────────────────
 .layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 20px;
-  padding: 24px 32px;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 22px;
+  padding: 28px 36px;
   align-items: flex-start;
   flex: 1;
 }
@@ -465,19 +465,6 @@ app-pressure-heatmap {
   }
 }
 
-// videos
-.video-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 8px;
-  min-height: 280px;
-
-  .main-vid {
-    grid-column: 1 / -1;
-  }
-}
-
 // ─── Below row: ansicht-toggle + stats + info ──────────────────────────────
 .below {
   display: grid;
@@ -622,7 +609,7 @@ app-pressure-heatmap {
   font-size: 16px;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 980px) {
   .visual-row {
     grid-template-columns: 1fr;
   }
@@ -654,6 +641,12 @@ app-pressure-heatmap {
 }
 
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; padding: 18px; }
+  .layout { grid-template-columns: 1fr; padding: 20px 24px; }
   .sidebar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .tab-bar { grid-template-columns: 1fr; }
+  .horse-ribbon { clip-path: none; }
+  .controls { align-items: flex-start; flex-direction: column; }
 }

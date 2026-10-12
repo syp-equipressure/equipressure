@@ -24,8 +24,16 @@ export class PageHeaderComponent {
     return this.router.url.startsWith('/profile');
   }
 
+  get sidenavIsOpen(): boolean {
+    return this.sidenav.open();
+  }
+
+  get sidenavOpenLabel(): string {
+    return this.sidenavIsOpen ? 'Menü schließen' : 'Menü öffnen';
+  }
+
   openMenu() {
-    this.sidenav.show();
+    this.sidenav.toggle();
   }
 
   back() {

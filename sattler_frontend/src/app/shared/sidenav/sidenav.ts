@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Output, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ThemeService } from '../../services/theme.service';
 
 interface NavItem {
   label: string;
@@ -18,7 +19,7 @@ interface NavItem {
 export class SidenavComponent {
   @Output() close = new EventEmitter<void>();
 
-  private readonly router = inject(Router);
+  readonly theme = inject(ThemeService);
 
   readonly items: NavItem[] = [
     { label: 'Neue Messung',  icon: 'add_circle_outline', route: '/new-measurement' },
@@ -34,5 +35,11 @@ export class SidenavComponent {
 
   onClose() {
     this.close.emit();
+  }
+
+  onNavigate() {
+    if (window.innerWidth <= 900) {
+      this.close.emit();
+    }
   }
 }

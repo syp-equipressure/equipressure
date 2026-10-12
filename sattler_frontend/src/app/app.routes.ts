@@ -7,9 +7,11 @@ import { MessagesPage } from './pages/messages/messages.page';
 import { MeasurementSessionPage } from './pages/new-measurement/measurement-session/measurement-session.page';
 import { LiveMeasurementPage } from './pages/new-measurement/live-measurement/live-measurement.page';
 import { StubPage } from './pages/stub/stub.page';
+import { StartPage } from './pages/startpage/startpage.page';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'customers' },
+  { path: '', pathMatch: 'full', redirectTo: 'startpage' },
+  { path: 'startpage', component: StartPage },
   { path: 'customers', component: CustomersPage },
   { path: 'customers/:customerId/horses', component: HorsesPage },
   { path: 'customers/:customerId/horses/:horseId', component: MeasurementsPage },
