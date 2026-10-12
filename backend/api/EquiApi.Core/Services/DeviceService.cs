@@ -284,4 +284,46 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
 
         return new Success<MeasurementDevice>(device);
     }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>>
+        ChangeOwnerOfDevice(int userId, string deviceId)
+    {
+        var user = await uow.PersonRepository.GetPersonByIdAsync(userId);
+        if (user is null)
+        {
+            return new NotFound();
+        }
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            return new NotFound();
+        }
+
+        if (device.OwnerId == userId)
+        {
+            return new Success<MeasurementDevice>(device);
+        }
+        
+        // soll ein Owner bevor sie zum owner wird bereits user sein?
+        foreach (var usr in device.Users.ToList())
+        {
+            if (usr.UserId == userId)
+            {
+                device.Users.Remove(usr);
+            }
+        }
+        
+        device.Users.Add(new DeviceUser
+        {
+            DeviceId = deviceId,
+            UserId = device.OwnerId
+            
+        });
+        device.OwnerId = userId;
+        
+        device.Owner = user;
+        await uow.SaveChangesAsync();
+        return new Success<MeasurementDevice>(device);
+    }
+    
 }
