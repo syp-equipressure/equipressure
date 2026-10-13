@@ -159,21 +159,7 @@ export class DataService {
     },
   ]);
 
-  private readonly _saddles = signal<Saddle[]>([
-    { id: 'saddle-kas-1', horseId: 'kas', name: 'Prestige X-D2', category: 'Dressur' },
-    { id: 'saddle-kas-2', horseId: 'kas', name: 'Kentaur Ithaka', category: 'Dressur' },
-    { id: 'saddle-petzi-1', horseId: 'petzi', name: 'Prestige X-D2', category: 'Dressur' },
-    { id: 'saddle-petzi-2', horseId: 'petzi', name: 'Wintec 500', category: 'Vielseitigkeit' },
-    { id: 'saddle-safira-1', horseId: 'safira', name: 'Amerigo Vega', category: 'Dressur' },
-    { id: 'saddle-safira-2', horseId: 'safira', name: 'Prestige Roma', category: 'Springen' },
-    { id: 'saddle-bella-1', horseId: 'bella', name: 'Icelandic Pro', category: 'Gangpferd' },
-    { id: 'saddle-bella-2', horseId: 'bella', name: 'Top Reiter', category: 'Gangpferd' },
-    { id: 'saddle-mira-1', horseId: 'mira', name: 'Prestige X-D2', category: 'Dressur' },
-    { id: 'saddle-isa-1', horseId: 'isa', name: 'Prestige X-D2', category: 'Dressur' },
-    { id: 'saddle-luna-1', horseId: 'my-1', name: 'Passier Compact', category: 'Dressur' },
-    { id: 'saddle-luna-2', horseId: 'my-1', name: 'Kieffer Wien', category: 'Vielseitigkeit' },
-    { id: 'saddle-stella-1', horseId: 'my-2', name: 'Wintec 500', category: 'Vielseitigkeit' },
-  ]);
+  private readonly _saddles = signal<Saddle[]>([]);
 
   private readonly _sattler = signal<Sattler>({
     id: 'sattler-1',
@@ -244,6 +230,16 @@ export class DataService {
 
   getSaddlesOfHorse(horseId: string): Saddle[] {
     return this._saddles().filter(saddle => saddle.horseId === horseId);
+  }
+
+  upsertSaddles(saddles: Saddle[]): void {
+    this._saddles.update(current => {
+      const byId = new Map(current.map(saddle => [saddle.id, saddle]));
+      for (const saddle of saddles) {
+        byId.set(saddle.id, saddle);
+      }
+      return [...byId.values()];
+    });
   }
 
   addHorse(horse: Horse): void {

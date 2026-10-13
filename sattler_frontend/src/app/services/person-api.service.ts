@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { Horse } from '../models/horse.model';
+import { Saddle } from '../models/saddle.model';
 
 export interface BackendPerson {
   id: string;
@@ -100,6 +101,16 @@ export class PersonApiService {
         ),
       );
   }
+
+  getSaddles(horseId: string): Observable<Saddle[]> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/horses/${horseId}/saddles`)
+      .pipe(
+        map(response =>
+          extractList(response, ['saddles']).map(saddle => mapSaddle(saddle, horseId)),
+        ),
+      );
+  }
 }
 
 function mapPersonDetails(value: unknown): BackendPersonDetails {
@@ -176,6 +187,24 @@ function mapHorse(value: unknown, ownerId: string, index: number): Horse {
     heightCm: numericValue(value, 'height', 'heightCm', 'height_cm'),
     weightKg: numericValue(value, 'weight', 'weightKg', 'weight_kg'),
     imageUrl: optionalString(value, 'imageUrl', 'image_url') ?? '',
+  };
+}
+
+function mapSaddle(value: unknown, horseId: string): Saddle {
+  if (!isRecord(value)) {
+    throw new Error('Das Backend hat ungültige Satteldaten zurückgegeben.');
+  }
+  const id = firstDefined(value, 'id', 'saddleId', 'saddle_id');
+  const name = firstDefined(value, 'name');
+  const category = firstDefined(value, 'categoryName', 'category_name', 'category');
+  if (id === undefined || name === undefined || category === undefined) {
+    throw new Error('Die Satteldaten enthalten keine ID, keinen Namen oder keine Kategorie.');
+  }
+  return {
+    id: String(id),
+    horseId: String(firstDefined(value, 'horseId', 'horse_id') ?? horseId),
+    name: String(name),
+    category: String(category),
   };
 }
 
