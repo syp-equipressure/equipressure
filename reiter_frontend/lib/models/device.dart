@@ -3,25 +3,23 @@ class Device {
   final String name;
   final String number;
 
-  Device({
-    required this.id,
-    required this.name,
-    required this.number,
-  });
+  Device({required this.id, required this.name, required this.number});
 
   factory Device.fromJson(Map<String, dynamic> json) {
-    return Device(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      number: json['number'] as String,
-    );
+    final rawId = json['id'] ?? json['deviceId'] ?? json['device_id'];
+    if (rawId == null) {
+      throw const FormatException('Invalid device response: missing device ID');
+    }
+    final id = rawId.toString();
+    final number =
+        json['number'] ?? json['serialNumber'] ?? json['serial_number'] ?? id;
+    final name =
+        json['name'] ?? json['deviceName'] ?? json['device_name'] ?? number;
+
+    return Device(id: id, name: name.toString(), number: number.toString());
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'number': number,
-    };
+    return {'id': id, 'name': name, 'number': number};
   }
 }
