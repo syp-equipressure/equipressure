@@ -51,6 +51,11 @@ class DeviceService {
     if (decoded is Map<String, dynamic> && decoded['devices'] is List) {
       return decoded['devices'] as List<dynamic>;
     }
+    if (decoded is Map<String, dynamic>) {
+      for (final value in decoded.values) {
+        if (value is List) return value;
+      }
+    }
     throw const FormatException('Invalid device list response');
   }
 

@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
+import 'package:reiterappfrontend/models/user_data.dart';
+import 'package:reiterappfrontend/services/device_service.dart';
 
 /// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert
 /// (400/404/409). Schaut so aus dass aufrufende Screens unterscheiden können
@@ -352,24 +355,51 @@ class PersonService {
     }
   }
 
-  static Future<Map<String, dynamic>> loadUserData() async {
-    final url = Uri.parse('$baseUrl/users/current');
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+  static Future<UserData> loadUserData(String personId) async {
+    final responses = await Future.wait([
+      http.get(Uri.parse('$baseUrl/persons/$personId')).timeout(_timeout),
+      http
+          .get(Uri.parse('$baseUrl/persons/$personId/profile-data'))
+          .timeout(_timeout),
+      http
+          .get(Uri.parse('$baseUrl/persons/$personId/location'))
+          .timeout(_timeout),
+    ]);
+    for (var index = 0; index < responses.length; index++) {
+      if (responses[index].statusCode != 200) {
+        _throwForStatus(responses[index], 'load person profile data');
+      }
     }
-    _throwForStatus(response, 'load user data');
+
+    final details = jsonDecode(responses[0].body) as Map<String, dynamic>;
+    final name = jsonDecode(responses[1].body) as Map<String, dynamic>;
+    final location = jsonDecode(responses[2].body) as Map<String, dynamic>;
+    final firstName = name['firstName'] ?? name['firstname'];
+    final lastName = name['lastName'] ?? name['lastname'];
+    if (firstName == null || lastName == null) {
+      throw const FormatException('Backend person profile has no full name');
+    }
+
+    final addressName = location['addressName']?.toString();
+    final city = location['cityName']?.toString() ?? '';
+    final postalCode = (location['plz'] ?? location['PLZ'])?.toString() ?? '';
+    return UserData(
+      id: (details['id'] ?? personId).toString(),
+      name: '$firstName $lastName',
+      imageUrl: '',
+      birthDate: 'Nicht verfügbar',
+      address: [
+        addressName,
+        '$postalCode $city',
+      ].where((part) => part != null && part.trim().isNotEmpty).join(', '),
+      email: details['email']?.toString() ?? 'Nicht hinterlegt',
+      height: '${details['height'] ?? '–'} cm',
+      weight: '${details['weight'] ?? '–'} kg',
+    );
   }
 
-  static Future<List<Map<String, dynamic>>> loadDevices() async {
-    final url = Uri.parse('$baseUrl/users/current/devices');
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return _extractList(jsonDecode(response.body));
-    }
-    _throwForStatus(response, 'load devices');
+  static Future<List<Device>> loadDevices(String personId) async {
+    return DeviceService().getDevices(personId);
   }
 
   // ---------------------------------------------------------------------------

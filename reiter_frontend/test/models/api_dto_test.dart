@@ -11,7 +11,7 @@ void main() {
       });
 
       expect(device.id, 'device-42');
-      expect(device.name, 'device-42');
+      expect(device.name, 'Satteldruckmessgerät');
       expect(device.number, 'device-42');
     });
 

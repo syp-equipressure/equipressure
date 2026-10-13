@@ -14,7 +14,12 @@ class Device {
     final number =
         json['number'] ?? json['serialNumber'] ?? json['serial_number'] ?? id;
     final name =
-        json['name'] ?? json['deviceName'] ?? json['device_name'] ?? number;
+        json['name'] ??
+        json['deviceName'] ??
+        json['device_name'] ??
+        json['categoryName'] ??
+        json['category_name'] ??
+        'Satteldruckmessgerät';
 
     return Device(id: id, name: name.toString(), number: number.toString());
   }
