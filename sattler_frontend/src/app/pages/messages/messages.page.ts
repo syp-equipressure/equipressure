@@ -1,10 +1,16 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { computed, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
-import { ChatConversation, ChatMessage, ChatService } from '../../services/chat.service';
+import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { Customer, fullName } from '../../models/customer.model';
 
-const MAX_MESSAGE_LENGTH = 4000;
+interface ChatMessage {
+  id: number;
+  customerId: string;
+  sender: 'customer' | 'sattler';
+  message: string;
+  timestamp: string;
+}
 
 @Component({
   selector: 'app-messages-page',
@@ -13,196 +19,91 @@ const MAX_MESSAGE_LENGTH = 4000;
   templateUrl: './messages.page.html',
   styleUrl: './messages.page.scss',
 })
-export class MessagesPage implements OnInit, OnDestroy {
-  private readonly chat = inject(ChatService);
-  private readonly subscriptions = new Subscription();
-  private toastTimer: ReturnType<typeof setTimeout> | undefined;
-  private activeHistoryRequest = 0;
+export class MessagesPage {
+  private readonly data = inject(DataService);
 
-  @ViewChild('chatHistory') private chatHistory?: ElementRef<HTMLElement>;
+  readonly messages = signal<ChatMessage[]>([
+    {
+      id: 1,
+      customerId: 'max',
+      sender: 'sattler',
+      message: 'Lorem ipsum dolor sit amet, consectetur sadipscing elitr, sed',
+      timestamp: '12:04 Uhr',
+    },
+    {
+      id: 2,
+      customerId: 'max',
+      sender: 'customer',
+      message: 'Vielen Dank! Lg',
+      timestamp: '12:49 Uhr',
+    },
+    {
+      id: 3,
+      customerId: 'anna',
+      sender: 'customer',
+      message: 'Sonntag, 5 Uhr? Oder passt dir Montag besser?',
+      timestamp: 'vor 3 Minuten',
+    },
+  ]);
 
-  readonly conversations = signal<ChatConversation[]>([]);
-  readonly selectedConversationId = signal<string | null>(null);
-  readonly selectedConversation = signal<ChatConversation | null>(null);
-  readonly messages = signal<ChatMessage[]>([]);
-  readonly conversationsError = signal('');
-  readonly historyError = signal('');
-  readonly nextCursor = signal<string | null>(null);
-  readonly loadingConversations = signal(true);
-  readonly loadingMessages = signal(false);
-  readonly loadingOlder = signal(false);
+  readonly customers = computed(() => {
+    const conversationIds = new Set(this.messages().map(message => message.customerId));
+    return this.data.getCustomers().filter(customer => conversationIds.has(customer.id) && !customer.isMe);
+  });
+  readonly selectedCustomerId = signal(this.customers()[0]?.id ?? '');
+  readonly selectedCustomer = computed<Customer | undefined>(() =>
+    this.customers().find(customer => customer.id === this.selectedCustomerId()),
+  );
   readonly draft = signal('');
-  readonly mobileChatOpen = signal(false);
-  readonly toast = signal('');
-  readonly connectionStatus = this.chat.status;
+  readonly selectedMessages = computed(() =>
+    this.messages().filter(message => message.customerId === this.selectedCustomerId()),
+  );
 
-  ngOnInit(): void {
-    this.subscriptions.add(this.chat.messages$.subscribe(message => this.receiveMessage(message)));
-    this.subscriptions.add(this.chat.errors$.subscribe(message => this.showToast(message)));
-    this.chat.connectAfterLogin();
-    void this.loadConversations();
+  selectCustomer(customerId: string): void {
+    this.selectedCustomerId.set(customerId);
   }
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-    this.chat.disconnect();
-    if (this.toastTimer !== undefined) clearTimeout(this.toastTimer);
+  latestMessage(customerId: string): string {
+    return [...this.messages()].reverse().find(message => message.customerId === customerId)?.message ??
+      'Noch keine Nachrichten';
   }
 
-  async loadConversations(): Promise<void> {
-    this.loadingConversations.set(true);
-    this.conversationsError.set('');
-    try {
-      const conversations = await this.chat.loadConversations();
-      const orderedConversations = sortConversations(conversations);
-      this.conversations.set(orderedConversations);
-      const firstConversation = orderedConversations[0];
-      if (firstConversation) {
-        await this.selectConversation(firstConversation.id);
-      } else {
-        this.mobileChatOpen.set(true);
-      }
-    } catch (error) {
-      const message = errorMessage(error);
-      this.conversationsError.set(message);
-      this.showToast(message);
-    } finally {
-      this.loadingConversations.set(false);
-    }
+  latestMessageTime(customerId: string): string {
+    if (customerId === 'max') return 'vor 2 Stunden';
+    return [...this.messages()].reverse().find(message => message.customerId === customerId)?.timestamp ?? '';
   }
 
-  async selectConversation(conversationId: string): Promise<void> {
-    const conversation = this.conversations().find(item => item.id === conversationId);
-    if (!conversation) return;
-
-    const requestId = ++this.activeHistoryRequest;
-    this.selectedConversationId.set(conversationId);
-    this.selectedConversation.set(conversation);
-    this.mobileChatOpen.set(true);
-    this.messages.set([]);
-    this.nextCursor.set(null);
-    this.loadingMessages.set(true);
-    this.historyError.set('');
-    try {
-      const page = await this.chat.loadMessages(conversationId, null);
-      if (requestId !== this.activeHistoryRequest) return;
-      this.messages.set(page.items);
-      this.nextCursor.set(page.nextCursor);
-      this.scrollToBottom();
-    } catch (error) {
-      if (requestId === this.activeHistoryRequest) {
-        this.historyError.set(errorMessage(error));
-        this.showToast(this.historyError());
-      }
-    } finally {
-      if (requestId === this.activeHistoryRequest) this.loadingMessages.set(false);
-    }
+  avatarUrl(customer: Customer): string | undefined {
+    return customer.horseIds
+      .map(horseId => this.data.getHorse(horseId)?.imageUrl)
+      .find((imageUrl): imageUrl is string => !!imageUrl);
   }
 
-  async loadOlderMessages(): Promise<void> {
-    const conversationId = this.selectedConversationId();
-    const cursor = this.nextCursor();
-    if (!conversationId || !cursor || this.loadingOlder()) return;
-
-    this.loadingOlder.set(true);
-    const previousHeight = this.chatHistory?.nativeElement.scrollHeight ?? 0;
-    try {
-      const page = await this.chat.loadMessages(conversationId, cursor);
-      if (conversationId !== this.selectedConversationId()) return;
-      this.messages.update(messages => [...page.items, ...messages]);
-      this.nextCursor.set(page.nextCursor);
-      requestAnimationFrame(() => {
-        const history = this.chatHistory?.nativeElement;
-        if (history) history.scrollTop = history.scrollHeight - previousHeight;
-      });
-    } catch (error) {
-      this.showToast(errorMessage(error));
-    } finally {
-      this.loadingOlder.set(false);
-    }
+  customerHorseNames(customer: Customer): string[] {
+    return customer.horseIds
+      .map(horseId => this.data.getHorse(horseId)?.name)
+      .filter((name): name is string => !!name)
+      .slice(0, 2)
+      .reverse();
   }
 
   sendMessage(): void {
-    const conversationId = this.selectedConversationId();
     const message = this.draft().trim();
-    if (!conversationId || !message) return;
-    if (message.length > MAX_MESSAGE_LENGTH) {
-      this.showToast(`Eine Nachricht darf höchstens ${MAX_MESSAGE_LENGTH} Zeichen lang sein.`);
-      return;
-    }
+    const customerId = this.selectedCustomerId();
+    if (!message || !customerId) return;
 
-    try {
-      this.chat.sendMessage(conversationId, message);
-      this.draft.set('');
-    } catch (error) {
-      this.showToast(errorMessage(error));
-    }
+    this.messages.update(messages => [
+      ...messages,
+      {
+        id: Date.now(),
+        customerId,
+        sender: 'sattler',
+        message,
+        timestamp: `${new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`,
+      },
+    ]);
+    this.draft.set('');
   }
 
-  backToConversations(): void {
-    this.mobileChatOpen.set(false);
-  }
-
-  isOwnMessage(message: ChatMessage): boolean {
-    return message.isMine;
-  }
-
-  avatarInitials(name: string): string {
-    return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase();
-  }
-
-  formatTime(value: string): string {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? value
-      : `${date.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`;
-  }
-
-  private receiveMessage(message: ChatMessage): void {
-    if (this.selectedConversationId() === message.conversationId) {
-      this.messages.update(messages =>
-        messages.some(existing => existing.id === message.id) ? messages : [...messages, message],
-      );
-      this.scrollToBottom();
-    }
-
-    this.conversations.update(conversations =>
-      sortConversations(conversations.map(conversation =>
-        conversation.id === message.conversationId
-          ? { ...conversation, lastMessageText: message.text, lastMessageAt: message.sentAt }
-          : conversation,
-      )),
-    );
-    const selected = this.selectedConversation();
-    if (selected?.id === message.conversationId) {
-      this.selectedConversation.set({
-        ...selected,
-        lastMessageText: message.text,
-        lastMessageAt: message.sentAt,
-      });
-    }
-  }
-
-  private scrollToBottom(): void {
-    requestAnimationFrame(() => {
-      const history = this.chatHistory?.nativeElement;
-      if (history) history.scrollTop = history.scrollHeight;
-    });
-  }
-
-  private showToast(message: string): void {
-    this.toast.set(message);
-    if (this.toastTimer !== undefined) clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => this.toast.set(''), 5000);
-  }
-}
-
-function sortConversations(conversations: ChatConversation[]): ChatConversation[] {
-  return [...conversations].sort(
-    (left, right) => new Date(right.lastMessageAt).getTime() - new Date(left.lastMessageAt).getTime(),
-  );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Die Anfrage ist fehlgeschlagen.';
+  readonly fullName = fullName;
 }
