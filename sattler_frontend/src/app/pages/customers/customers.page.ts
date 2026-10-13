@@ -3,14 +3,13 @@ import { RouterLink } from '@angular/router';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
-import { AddCustomer } from './add-customer/add-customer';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { PersonApiService, BackendPerson } from '../../services/person-api.service';
 
 @Component({
   selector: 'app-customers-page',
   standalone: true,
-  imports: [AddCustomer, RouterLink, PageHeaderComponent],
+  imports: [RouterLink, PageHeaderComponent],
   templateUrl: './customers.page.html',
   styleUrl: './customers.page.scss',
 })
@@ -27,7 +26,6 @@ export class CustomersPage {
   readonly loadingBackendCustomers = signal(false);
   readonly backendCustomersError = signal('');
   readonly demoCustomers = signal<Customer[]>(this.data.getCustomers().filter(customer => !customer.isMe));
-  readonly showForm = signal(false);
 
   readonly backendPersonId = this.personContext.personId;
   readonly customers = computed(() => this.backendCustomers() ?? this.demoCustomers());
@@ -51,7 +49,8 @@ export class CustomersPage {
           : this.personApi.getFavourites(personId);
       const subscription = request.subscribe({
         next: people => {
-          const customers = people.map(toCustomer);
+          // TODO Backend-Bug: contacts/favourites currently include the requested person.
+          const customers = people.filter(person => person.id !== personId).map(toCustomer);
           this.data.upsertCustomers(customers);
           this.backendCustomers.set(customers);
           this.loadingBackendCustomers.set(false);
@@ -96,13 +95,6 @@ export class CustomersPage {
       })
       .sort((left, right) => fullName(left).localeCompare(fullName(right), 'de', { sensitivity: 'base' }));
   });
-
-  addCustomer(c: Customer): void {
-    if (this.backendPersonId()) return;
-    this.data.addCustomer(c);
-    this.demoCustomers.update(list => [...list, c]);
-    this.showForm.set(false);
-  }
 
   fullName = fullName;
 

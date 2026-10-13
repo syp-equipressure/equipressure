@@ -7,12 +7,6 @@
         <p class="eyebrow">Verwaltung</p>
         <h2>{{ activeList() === 'contacts' ? 'Kontakte' : 'Favoriten' }}</h2>
       </div>
-      @if (!backendPersonId()) {
-        <button class="primary-btn" type="button" (click)="showForm.set(true)">
-          <span class="material-icons">add</span>
-          Demo-Kund*in hinzufügen
-        </button>
-      }
     </header>
 
     <div class="filters">
@@ -63,12 +57,6 @@
           um Kontakte und Favoriten aus dem Backend zu laden.</p>
       }
 
-      @if (showForm()) {
-        <app-new-customer-form
-          (saved)="addCustomer($event)"
-          (cancelled)="showForm.set(false)"
-        />
-      }
     </div>
 
     @if (loadingBackendCustomers()) {
