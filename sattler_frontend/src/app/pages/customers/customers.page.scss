@@ -65,8 +65,57 @@
 .filters {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.list-tabs {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 1px solid t.$border;
+  border-radius: 8px;
+  background: t.$bg-card;
+
+  button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: t.$text-soft;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+  }
+
+  button.active {
+    background: t.$purple-100;
+    color: t.$purple-700;
+    font-weight: 600;
+  }
+}
+
+.source-notice,
+.load-state {
+  flex: 1 0 100%;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: t.$bg-card;
+  color: t.$text-soft;
+  font-size: 13px;
+}
+
+.load-state {
+  border: 1px solid t.$border;
+  text-align: center;
+}
+
+.load-state.error {
+  border-color: t.$accent-red;
+  color: t.$accent-red;
 }
 
 .search-input,
@@ -288,6 +337,11 @@
   .filters {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .list-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .date-filter {

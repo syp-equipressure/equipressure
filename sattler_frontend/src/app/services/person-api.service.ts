@@ -33,11 +33,16 @@ export class PersonApiService {
 }
 
 function extractPeople(response: unknown): BackendPerson[] {
-  const records = Array.isArray(response)
-    ? response
-    : isRecord(response)
-      ? Object.values(response).find(Array.isArray)
-      : undefined;
+  let records: unknown;
+  if (Array.isArray(response)) {
+    records = response;
+  } else if (isRecord(response)) {
+    records =
+      response['persons'] ??
+      response['people'] ??
+      response['items'] ??
+      Object.values(response).find(Array.isArray);
+  }
 
   if (!Array.isArray(records)) {
     throw new Error('Das Backend hat keine gültige Personenliste zurückgegeben.');
