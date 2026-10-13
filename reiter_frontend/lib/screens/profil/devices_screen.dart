@@ -6,10 +6,7 @@ import 'device_group_screen.dart';
 class DevicesScreen extends StatefulWidget {
   final List<Device> devices;
 
-  const DevicesScreen({
-    super.key,
-    required this.devices,
-  });
+  const DevicesScreen({super.key, required this.devices});
 
   @override
   State<DevicesScreen> createState() => _DevicesScreenState();
@@ -19,26 +16,28 @@ class _DevicesScreenState extends State<DevicesScreen> {
   int? expandedIndex;
 
   void _scanQRCode() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => _QRCodeScannerScreen(
-          onCodeScanned: (code) {
-            Navigator.pop(context, code);
-          },
-        ),
-      ),
-    ).then((result) {
-      if (result != null) {
-        _handleScannedCode(result);
-      }
-    });
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => _QRCodeScannerScreen(
+              onCodeScanned: (code) {
+                Navigator.pop(context, code);
+              },
+            ),
+          ),
+        )
+        .then((result) {
+          if (result != null) {
+            _handleScannedCode(result);
+          }
+        });
   }
 
   void _handleScannedCode(String code) {
     // Handle the scanned code
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Scanned: $code')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Scanned: $code')));
   }
 
   @override
@@ -67,10 +66,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
           widget.devices.length,
           (index) => Column(
             children: [
-              _buildDeviceItem(
-                index: index,
-                device: widget.devices[index],
-              ),
+              _buildDeviceItem(index: index, device: widget.devices[index]),
               if (index < widget.devices.length - 1)
                 Divider(height: 1, color: Colors.grey[300]),
             ],
@@ -85,10 +81,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
     );
   }
 
-  Widget _buildDeviceItem({
-    required int index,
-    required Device device,
-  }) {
+  Widget _buildDeviceItem({required int index, required Device device}) {
     final isExpanded = expandedIndex == index;
 
     return Column(
@@ -165,38 +158,16 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.chevron_right, color: Colors.black54, size: 20),
+                        Icon(
+                          Icons.chevron_right,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Gerät löschen Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _showDeleteDeviceDialog(context, device);
-                    },
-                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                    label: const Text(
-                      'Gerät löschen',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -210,60 +181,16 @@ class _DevicesScreenState extends State<DevicesScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 15, color: Colors.black87),
           ),
         ),
       ],
-    );
-  }
-
-  void _showDeleteDeviceDialog(BuildContext context, Device device) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Gerät löschen?'),
-          content: Text(
-            'Sind Sie sicher, dass Sie das Gerät "${device.name}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  widget.devices.removeWhere((d) => d.id == device.id);
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Gerät "${device.name}" wurde gelöscht'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              child: const Text(
-                'Löschen',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
