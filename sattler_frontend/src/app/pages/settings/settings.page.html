@@ -4,6 +4,35 @@
   <article class="settings-card">
     <header class="card-header">
       <div>
+        <h2>Backend-Verbindung</h2>
+        <p>
+          Bis die Anmeldung verfügbar ist, gib hier die numerische Personen-ID ein, deren
+          Kontakte und Favoriten angezeigt werden sollen.
+        </p>
+      </div>
+      <span class="material-icons card-icon" aria-hidden="true">link</span>
+    </header>
+    <label class="field">
+      <span class="field-label">Personen-ID</span>
+      <input class="field-input" type="number" min="1" step="1" inputmode="numeric"
+        [ngModel]="backendPersonId()" (ngModelChange)="backendPersonId.set($event)"
+        name="backendPersonId" />
+    </label>
+    @if (backendPersonIdFeedback()) {
+      <p class="feedback" [class.error]="backendPersonIdError()"
+        [class.success]="!backendPersonIdError()"
+        [attr.role]="backendPersonIdError() ? 'alert' : 'status'">
+        {{ backendPersonIdFeedback() }}
+      </p>
+    }
+    <div class="card-actions">
+      <button class="primary-button" type="button" (click)="saveBackendPersonId()">Speichern</button>
+    </div>
+  </article>
+
+  <article class="settings-card">
+    <header class="card-header">
+      <div>
         <h2>Benachrichtigungen</h2>
         <p>Lege fest, worüber du per E-Mail informiert werden möchtest.</p>
       </div>
