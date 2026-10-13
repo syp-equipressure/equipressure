@@ -1,7 +1,7 @@
 ﻿namespace EquiApi.BackgroundServices;
 
 /// <summary>
-///     Configuration for the Bluetooth connection
+///     Configuration for the Bluetooth LE connection
 /// </summary>
 internal sealed class BluetoothOptions
 {
@@ -11,7 +11,7 @@ internal sealed class BluetoothOptions
     public const string SectionName = "Bluetooth";
 
     /// <summary>
-    ///     Gets or sets the name of the device to connect to (case-insensitive)
+    ///     Gets or sets the (advertised) name of the device to connect to (case-insensitive)
     /// </summary>
     public string DeviceName { get; set; } = "EquiPressure_Dummy";
 
@@ -21,9 +21,16 @@ internal sealed class BluetoothOptions
     public TimeSpan CheckInterval { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    ///     Gets or sets the PIN used to pair the device if it is not paired yet. Leave empty to skip pairing.
+    ///     Gets or sets the UUID of the GATT service containing the data characteristic.
+    ///     Default: Nordic UART Service.
     /// </summary>
-    public string? PairingPin { get; set; }
+    public Guid ServiceUuid { get; set; } = Guid.Parse("6E400001-B5A0-F393-E0A9-E50E24DCCA9E");
+
+    /// <summary>
+    ///     Gets or sets the UUID of the characteristic which sends notifications with the data.
+    ///     Default: Nordic UART TX characteristic.
+    /// </summary>
+    public Guid CharacteristicUuid { get; set; } = Guid.Parse("6E400003-B5A0-F393-E0A9-E50E24DCCA9E");
 }
 
 /// <summary>

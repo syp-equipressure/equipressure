@@ -1,14 +1,13 @@
-﻿using System.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Threading.Channels;
+using InTheHand.Bluetooth;
 using Microsoft.Extensions.Options;
 using WordClock.BackgroundServices;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
 
 namespace EquiApi.BackgroundServices;
 
 /// <summary>
-///     A background service that keeps a connection to a Bluetooth device with a configured name
+///     A background service that keeps a BLE (GATT) connection to a device with a configured name
+///     and subscribes to notifications of a configured characteristic
 /// </summary>
 /// <param name="clock">Clock instance to use</param>
 /// <param name="scopeFactory">Service scope factory</param>
@@ -24,8 +23,8 @@ internal sealed class BluetoothConnectionService(
     : BackgroundServiceBase<BluetoothConnectionService>(clock, scopeFactory, logger)
 {
     private readonly BluetoothOptions _options = options.Value;
-    private BluetoothClient? _client;
-    private Task? _readTask;
+    private BluetoothDevice? _device;
+    private Task? _sessionTask;
 
     protected override string ServiceName => nameof(BluetoothConnectionService);
 
@@ -38,56 +37,64 @@ internal sealed class BluetoothConnectionService(
             return;
         }
 
-        // still connected and reading
-        if (_readTask is { IsCompleted: false })
+        // still connected and receiving
+        if (_sessionTask is { IsCompleted: false })
         {
             return;
         }
 
         // clean up the previous connection
-        _readTask = null;
-        _client?.Dispose();
-        _client = null;
+        _sessionTask = null;
+        DisconnectDevice();
 
         var device = await FindDeviceAsync(stoppingToken);
         if (device is null)
         {
-            Logger.LogInformation("Bluetooth device {DeviceName} not found", _options.DeviceName);
+            Logger.LogInformation("BLE device {DeviceName} not found", _options.DeviceName);
             return;
         }
 
-        if (!device.Authenticated && !string.IsNullOrEmpty(_options.PairingPin))
+        var deviceName = device.Name ?? _options.DeviceName;
+        GattCharacteristic? characteristic;
+        try
         {
-            Logger.LogInformation("Pairing with {DeviceName}", device.DeviceName);
-            if (!BluetoothSecurity.PairRequest(device.DeviceAddress, _options.PairingPin))
+            Logger.LogInformation("Connecting to {DeviceName} ({Id})", deviceName, device.Id);
+
+            var gatt = device.Gatt;
+            await gatt.ConnectAsync();
+
+            var service = await gatt.GetPrimaryServiceAsync(BluetoothUuid.FromGuid(_options.ServiceUuid));
+            if (service is null)
             {
-                Logger.LogWarning("Pairing with {DeviceName} failed", device.DeviceName);
+                Logger.LogWarning("Service {Service} not found on {DeviceName}", _options.ServiceUuid, deviceName);
+                SafeDisconnect(device);
+                return;
+            }
+
+            characteristic = await service.GetCharacteristicAsync(BluetoothUuid.FromGuid(_options.CharacteristicUuid));
+            if (characteristic is null)
+            {
+                Logger.LogWarning("Characteristic {Characteristic} not found on {DeviceName}",
+                    _options.CharacteristicUuid, deviceName);
+                SafeDisconnect(device);
                 return;
             }
         }
-
-        var client = new BluetoothClient();
-        try
+        catch (OperationCanceledException)
         {
-            Logger.LogInformation("Connecting to {DeviceName} ({Address})", device.DeviceName, device.DeviceAddress);
-
-            var endpoint = new BluetoothEndPoint(device.DeviceAddress, BluetoothService.SerialPort);
-            await Task.Run(() => client.Connect(endpoint), stoppingToken);
-        }
-        catch (SocketException ex)
-        {
-            client.Dispose();
-            Logger.LogWarning("Connect to {DeviceName} failed: {Message}", device.DeviceName, ex.Message);
-            return;
-        }
-        catch
-        {
-            client.Dispose();
+            SafeDisconnect(device);
             throw;
         }
+        catch (Exception ex)
+        {
+            SafeDisconnect(device);
+            Logger.LogWarning("Connect to {DeviceName} failed: {Message}", deviceName, ex.Message);
+            return;
+        }
 
-        _client = client;
-        _readTask = Task.Run(() => ReadLoopAsync(client, device.DeviceName, stoppingToken), stoppingToken);
+        _device = device;
+        _sessionTask = Task.Run(() => RunSessionAsync(device, characteristic, deviceName, stoppingToken),
+            stoppingToken);
     }
 
     protected override Instant GetFirstTimeToRun() => Clock.GetCurrentInstant();
@@ -98,39 +105,60 @@ internal sealed class BluetoothConnectionService(
     /// <inheritdoc />
     public override void Dispose()
     {
-        _client?.Dispose();
+        DisconnectDevice();
         base.Dispose();
     }
 
-    private Task<BluetoothDeviceInfo?> FindDeviceAsync(CancellationToken stoppingToken)
+    private async Task<BluetoothDevice?> FindDeviceAsync(CancellationToken stoppingToken)
     {
-        // keine Inquiry, nur bereits gekoppelte Geräte
-        using var client = new BluetoothClient();
-        var device = client.PairedDevices.FirstOrDefault(d =>
-                                                             string.Equals(d.DeviceName?.Trim(), _options.DeviceName, StringComparison.OrdinalIgnoreCase));
+        // BLE devices have to be discovered by scanning, there is no SPP-like "paired devices" shortcut
+        var scanOptions = new RequestDeviceOptions { AcceptAllDevices = true };
+        var devices = await Bluetooth.ScanForDevicesAsync(scanOptions, stoppingToken);
 
-        return Task.FromResult(device);
+        return devices.FirstOrDefault(d =>
+            string.Equals(d.Name?.Trim(), _options.DeviceName, StringComparison.OrdinalIgnoreCase));
     }
 
-    private async Task ReadLoopAsync(BluetoothClient client, string deviceName, CancellationToken stoppingToken)
+    private async Task RunSessionAsync(
+        BluetoothDevice device,
+        GattCharacteristic characteristic,
+        string deviceName,
+        CancellationToken stoppingToken)
     {
+        // notifications arrive on a callback thread - queue them so the (async) handler
+        // is called sequentially and in order
+        var channel = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(256)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest,
+            SingleReader = true
+        });
+
+        void OnValueChanged(object? sender, GattCharacteristicValueChangedEventArgs e)
+        {
+            if (e.Value is { Length: > 0 } value)
+            {
+                channel.Writer.TryWrite(value);
+            }
+        }
+
+        void OnDisconnected(object? sender, EventArgs e) => channel.Writer.TryComplete();
+
+        characteristic.CharacteristicValueChanged += OnValueChanged;
+        device.GattServerDisconnected += OnDisconnected;
         try
         {
+            await characteristic.StartNotificationsAsync();
             Logger.LogInformation("Connected to {DeviceName}", deviceName);
 
-            var stream = client.GetStream();
-            var buffer = new byte[1024];
-
-            while (!stoppingToken.IsCancellationRequested && client.Connected)
+            // the connection might have dropped before the handler was attached
+            if (!device.Gatt.IsConnected)
             {
-                var read = await stream.ReadAsync(buffer, stoppingToken);
-                if (read == 0)
-                {
-                    // remote side closed the connection
-                    break;
-                }
+                return;
+            }
 
-                await dataHandler.HandleAsync(buffer.AsMemory(0, read), stoppingToken);
+            await foreach (var data in channel.Reader.ReadAllAsync(stoppingToken))
+            {
+                await dataHandler.HandleAsync(data, stoppingToken);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -139,13 +167,49 @@ internal sealed class BluetoothConnectionService(
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Reading from {DeviceName} failed", deviceName);
+            Logger.LogError(ex, "Receiving from {DeviceName} failed", deviceName);
         }
         finally
         {
+            characteristic.CharacteristicValueChanged -= OnValueChanged;
+            device.GattServerDisconnected -= OnDisconnected;
+            channel.Writer.TryComplete();
+
+            try
+            {
+                await characteristic.StopNotificationsAsync();
+            }
+            catch
+            {
+                // already disconnected
+            }
+
+            SafeDisconnect(device);
             Logger.LogWarning("Connection to {DeviceName} closed", deviceName);
-            client.Dispose();
             await Task.Delay(TimeSpan.FromSeconds(3), CancellationToken.None);
+        }
+    }
+
+    private void DisconnectDevice()
+    {
+        if (_device is null)
+        {
+            return;
+        }
+
+        SafeDisconnect(_device);
+        _device = null;
+    }
+
+    private static void SafeDisconnect(BluetoothDevice device)
+    {
+        try
+        {
+            device.Gatt.Disconnect();
+        }
+        catch
+        {
+            // best effort
         }
     }
 }
