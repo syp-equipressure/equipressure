@@ -267,20 +267,77 @@ class PersonService {
   // ---------------------------------------------------------------------------
 
   static Future<List<GroupMember>> loadGroupMembers(String deviceId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/members');
-    final response = await http.get(url).timeout(_timeout);
+    final usersUrl = Uri.parse('$baseUrl/devices/$deviceId/users');
+    final ownerUrl = Uri.parse('$baseUrl/devices/$deviceId/owner');
+    final responses = await Future.wait([
+      http.get(usersUrl).timeout(_timeout),
+      http.get(ownerUrl).timeout(_timeout),
+    ]);
+    final usersResponse = responses[0];
+    final ownerResponse = responses[1];
 
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-      final membersList = jsonData['members'] as List? ?? [];
-      return membersList
-          .map((m) => GroupMember.fromJson(m as Map<String, dynamic>))
-          .toList();
+    if (usersResponse.statusCode != 200) {
+      _throwForStatus(usersResponse, 'load device users');
     }
-    if (response.statusCode == 404) {
-      return [];
+    if (ownerResponse.statusCode != 200) {
+      _throwForStatus(ownerResponse, 'load device owner');
     }
-    _throwForStatus(response, 'load group members');
+
+    final owner = jsonDecode(ownerResponse.body) as Map<String, dynamic>;
+    final ownerIdValue = owner['id'] ?? owner['person_id'] ?? owner['personId'];
+    if (ownerIdValue == null) {
+      throw const FormatException('Invalid device owner response');
+    }
+    final ownerId = ownerIdValue.toString();
+    final decodedUsers = jsonDecode(usersResponse.body);
+    final List<dynamic> users;
+    if (decodedUsers is List) {
+      users = decodedUsers;
+    } else if (decodedUsers is Map<String, dynamic>) {
+      users =
+          (decodedUsers['persons'] ??
+                  decodedUsers['users'] ??
+                  decodedUsers['members'] ??
+                  [])
+              as List<dynamic>;
+    } else {
+      throw const FormatException('Invalid device users response');
+    }
+
+    return users.map((user) {
+      final member = GroupMember.fromJson(user as Map<String, dynamic>);
+      return GroupMember(
+        id: member.id,
+        name: member.name,
+        imageUrl: member.imageUrl,
+        isCurrentUser: member.isCurrentUser,
+        isOwner: member.id == ownerId,
+      );
+    }).toList();
+  }
+
+  static Future<void> addDeviceUser(String deviceId, String userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/add/$userId');
+    final response = await http.post(url).timeout(_timeout);
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      _throwForStatus(response, 'add device user');
+    }
+  }
+
+  static Future<void> removeDeviceUser(String deviceId, String userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/remove/$userId');
+    final response = await http.delete(url).timeout(_timeout);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      _throwForStatus(response, 'remove device user');
+    }
+  }
+
+  static Future<void> changeDeviceOwner(String deviceId, String userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/owner/$userId');
+    final response = await http.patch(url).timeout(_timeout);
+    if (response.statusCode != 200) {
+      _throwForStatus(response, 'change device owner');
+    }
   }
 
   static Future<Map<String, dynamic>> loadUserData() async {
