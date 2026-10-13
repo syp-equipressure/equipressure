@@ -17,7 +17,7 @@ public sealed class PersonController(
     IPersonService personService,
     ILogger<PersonController> logger) : BaseController
 {
-    [HttpGet("equestrians/{id:int}")]
+    [HttpGet("{id:int}")]
     [ProducesResponseType<Helper.EquestrianBasicDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
