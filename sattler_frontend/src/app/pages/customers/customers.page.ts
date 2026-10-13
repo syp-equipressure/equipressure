@@ -51,7 +51,9 @@ export class CustomersPage {
           : this.personApi.getFavourites(personId);
       const subscription = request.subscribe({
         next: people => {
-          this.backendCustomers.set(people.map(toCustomer));
+          const customers = people.map(toCustomer);
+          this.data.upsertCustomers(customers);
+          this.backendCustomers.set(customers);
           this.loadingBackendCustomers.set(false);
         },
         error: error => {

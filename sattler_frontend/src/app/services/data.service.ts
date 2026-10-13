@@ -316,6 +316,16 @@ export class DataService {
     this._customers.update(list => [...list, customer]);
   }
 
+  upsertCustomers(customers: Customer[]): void {
+    this._customers.update(current => {
+      const byId = new Map(current.map(customer => [customer.id, customer]));
+      for (const customer of customers) {
+        byId.set(customer.id, customer);
+      }
+      return [...byId.values()];
+    });
+  }
+
   // ── Horses ─────────────────────────────────────────────────────────────────
 
   readonly horses = this._horses.asReadonly();
