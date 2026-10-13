@@ -71,7 +71,7 @@ export class SettingsPage {
         ? 'Bitte eine positive numerische Personen-ID eingeben.'
         : this.backendPersonId().trim()
           ? 'Personen-ID gespeichert. Profil, Kontakte, Favoriten und Pferde verwenden diese ID.'
-          : 'Personen-ID entfernt. Die Seiten verwenden wieder Demo-Daten.',
+          : 'Personen-ID entfernt.',
     );
     this.backendPersonIdError.set(!saved);
   }

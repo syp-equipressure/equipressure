@@ -23,7 +23,7 @@
           <label class="field">
             <span class="field-label">Name</span>
             <div class="select-shell">
-              <select id="measurement-rider" name="riderId" class="select-input"
+              <select id="measurement-rider" name="riderId" autocomplete="off" class="select-input"
                 [value]="selectedOwnerId() ?? ''" (change)="selectOwner($any($event.target).value)">
                 <option value="" disabled>Reiter*in auswählen</option>
                 @for (entry of owners(); track entry.owner.id) {
@@ -57,6 +57,7 @@
               <select
                 id="measurement-horse"
                 name="horseId"
+                autocomplete="off"
                 class="select-input"
                 [value]="selectedHorseId() ?? ''"
                 [disabled]="!selectedOwner()"
@@ -111,6 +112,7 @@
                 <select
                   id="measurement-saddle"
                   name="saddleId"
+                  autocomplete="off"
                   class="select-input"
                   [value]="selectedSaddleId() ?? ''"
                   [disabled]="!selectedHorse() || availableSaddles().length === 0"
@@ -181,7 +183,7 @@
   <section class="stub">
     <div class="card stub-card">
       <h2>{{ resolvedTitle() }}</h2>
-      <p>WIP</p>
+      <p>Keine Einträge vorhanden.</p>
     </div>
   </section>
 }
