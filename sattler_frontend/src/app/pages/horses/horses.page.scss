@@ -90,6 +90,20 @@
   color: t.$text-muted;
 }
 
+.empty.error {
+  color: t.$accent-red;
+}
+
+.backend-notice {
+  max-width: 1400px;
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: t.$bg-card;
+  color: t.$text-soft;
+  font-size: 13px;
+}
+
 .fab {
   position: fixed;
   bottom: 32px;

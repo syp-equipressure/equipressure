@@ -1,6 +1,17 @@
 <app-page-header [title]="title()" [showBack]="true"></app-page-header>
 
 <section class="page-body">
+  @if (backendPersonId()) {
+    <p class="backend-notice">
+      Pferde werden direkt aus dem Backend geladen. Anlegen ist verfügbar, sobald die
+      Backend-Route dafür verifiziert ist.
+    </p>
+  }
+  @if (horsesLoading()) {
+    <div class="empty" role="status">Pferde werden geladen …</div>
+  } @else if (horsesError()) {
+    <div class="empty error" role="alert">{{ horsesError() }}</div>
+  } @else {
   <div class="grid">
     @for (h of horses(); track h.id) {
       <button class="card" type="button" (click)="openHorse(h.id)">
@@ -26,10 +37,13 @@
       <div class="empty">Diese Person hat noch keine Pferde hinterlegt.</div>
     }
   </div>
+  }
 
-  <button class="fab" aria-label="Neues Pferd hinzufügen" (click)="showForm.set(true)">
-    <span class="material-icons">add</span>
-  </button>
+  @if (!backendPersonId()) {
+    <button class="fab" aria-label="Neues Pferd hinzufügen" (click)="showForm.set(true)">
+      <span class="material-icons">add</span>
+    </button>
+  }
 
   @if (showForm()) {
     <add-horse

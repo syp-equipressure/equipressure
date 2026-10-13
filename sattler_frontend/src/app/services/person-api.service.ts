@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
+import { Horse } from '../models/horse.model';
 
 export interface BackendPerson {
   id: string;
@@ -30,25 +31,34 @@ export class PersonApiService {
       .get<unknown>(`${this.baseUrl}/persons/${personId}/favourites`)
       .pipe(map(response => extractPeople(response)));
   }
+
+  getHorses(personId: string): Observable<Horse[]> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/persons/${personId}/horses`)
+      .pipe(
+        map(response =>
+          extractList(response, ['horses']).map((horse, index) =>
+            mapHorse(horse, personId, index),
+          ),
+        ),
+      );
+  }
 }
 
 function extractPeople(response: unknown): BackendPerson[] {
-  let records: unknown;
-  if (Array.isArray(response)) {
-    records = response;
-  } else if (isRecord(response)) {
-    records =
-      response['persons'] ??
-      response['people'] ??
-      response['items'] ??
-      Object.values(response).find(Array.isArray);
-  }
+  return extractList(response, ['persons', 'people']).map((record, index) =>
+    mapPerson(record, index),
+  );
+}
 
-  if (!Array.isArray(records)) {
-    throw new Error('Das Backend hat keine gültige Personenliste zurückgegeben.');
+function extractList(response: unknown, keys: string[]): unknown[] {
+  if (Array.isArray(response)) return response;
+  if (isRecord(response)) {
+    for (const key of keys) {
+      if (Array.isArray(response[key])) return response[key] as unknown[];
+    }
   }
-
-  return records.map((record, index) => mapPerson(record, index));
+  throw new Error('Das Backend hat keine gültige Liste zurückgegeben.');
 }
 
 function mapPerson(value: unknown, index: number): BackendPerson {
@@ -76,6 +86,30 @@ function mapPerson(value: unknown, index: number): BackendPerson {
   };
 }
 
+function mapHorse(value: unknown, ownerId: string, index: number): Horse {
+  if (!isRecord(value)) {
+    throw new Error(`Pferd an Listenposition ${index + 1} ist ungültig.`);
+  }
+
+  const id = firstDefined(value, 'id', 'horseId', 'horse_id');
+  const name = firstDefined(value, 'name');
+  if (id === undefined || name === undefined) {
+    throw new Error(`Pferd an Listenposition ${index + 1} enthält keine ID oder keinen Namen.`);
+  }
+
+  const birthDate = optionalString(value, 'dateOfBirth', 'birthDate', 'date_of_birth');
+  return {
+    id: String(id),
+    ownerId: String(firstDefined(value, 'ownerId', 'owner_id') ?? ownerId),
+    name: String(name),
+    age: numericValue(value, 'age') || ageFromDate(birthDate),
+    breed: formatBreed(firstDefined(value, 'breeds', 'breed')),
+    heightCm: numericValue(value, 'height', 'heightCm', 'height_cm'),
+    weightKg: numericValue(value, 'weight', 'weightKg', 'weight_kg'),
+    imageUrl: optionalString(value, 'imageUrl', 'image_url') ?? '',
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -98,4 +132,34 @@ function numericValue(record: Record<string, unknown>, ...keys: string[]): numbe
   const value = firstDefined(record, ...keys);
   const number = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function formatBreed(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (!Array.isArray(value)) return '–';
+  return value
+    .map(breed =>
+      typeof breed === 'string'
+        ? breed
+        : isRecord(breed)
+          ? firstDefined(breed, 'name', 'breedName', 'breed_name')
+          : undefined,
+    )
+    .filter((breed): breed is string => typeof breed === 'string')
+    .join(', ') || '–';
+}
+
+function ageFromDate(value: string | undefined): number {
+  if (!value) return 0;
+  const birthDate = new Date(value);
+  if (Number.isNaN(birthDate.getTime())) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  if (
+    today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return Math.max(0, age);
 }
