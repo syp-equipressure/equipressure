@@ -266,7 +266,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   String _calculateAge(String birthDate) {
-    if (birthDate.isEmpty) return '?yo';
+    if (birthDate.isEmpty) return '?J';
     
     try {
       final parts = birthDate.split('.');
@@ -279,13 +279,13 @@ class _HorsesScreenState extends State<HorsesScreen> {
         final now = DateTime.now();
         final age = now.year - birth.year;
         
-        return '${age}yo';
+        return '$age J';
       }
     } catch (e) {
-      return '?yo';
+      return '? J';
     }
     
-    return '?yo';
+    return '? J';
   }
 
   Widget _addView() {

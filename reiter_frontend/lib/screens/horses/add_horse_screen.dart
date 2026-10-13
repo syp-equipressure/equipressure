@@ -254,7 +254,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       final birthDate = DateTime(year, month, day);
       final now = DateTime.now();
       final age = now.year - birthDate.year;
-      return '${age}yo';
+      return '$age J';
     } catch (e) {
       return '';
     }
