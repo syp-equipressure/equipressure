@@ -304,7 +304,7 @@ class PersonService {
       throw const FormatException('Invalid device users response');
     }
 
-    return users.map((user) {
+    final members = users.map((user) {
       final member = GroupMember.fromJson(user as Map<String, dynamic>);
       return GroupMember(
         id: member.id,
@@ -314,6 +314,18 @@ class PersonService {
         isOwner: member.id == ownerId,
       );
     }).toList();
+    if (!members.any((member) => member.id == ownerId)) {
+      members.add(
+        GroupMember(
+          id: ownerId,
+          name: GroupMember.fromJson(owner).name,
+          imageUrl: (owner['imageUrl'] ?? owner['image_url']) as String?,
+          isCurrentUser: false,
+          isOwner: true,
+        ),
+      );
+    }
+    return members;
   }
 
   static Future<void> addDeviceUser(String deviceId, String userId) async {

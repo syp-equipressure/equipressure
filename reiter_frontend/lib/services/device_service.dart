@@ -136,7 +136,7 @@ class DeviceService {
         throw const FormatException('Invalid device users response');
       }
 
-      return users.map((json) {
+      final members = users.map((json) {
         final member = GroupMember.fromJson(json as Map<String, dynamic>);
         return GroupMember(
           id: member.id,
@@ -146,6 +146,18 @@ class DeviceService {
           isOwner: member.id == ownerId,
         );
       }).toList();
+      if (!members.any((member) => member.id == ownerId)) {
+        members.add(
+          GroupMember(
+            id: ownerId,
+            name: GroupMember.fromJson(owner).name,
+            imageUrl: (owner['imageUrl'] ?? owner['image_url']) as String?,
+            isCurrentUser: false,
+            isOwner: true,
+          ),
+        );
+      }
+      return members;
     } catch (e) {
       throw Exception('Error loading group members: $e');
     }
