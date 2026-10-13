@@ -215,27 +215,36 @@ a| Frontend einarbeiten und Aufgaben von Lena bekommen
 |===
 |wer |macht was |bis wann
 
-|alle
+|Einzenberger
 a| Project Award Präsentation
-| 06.11.2026
-
-|alle
-a| Backlog aufräumen und neue User Stories überlegen
-| 06.11.2026
+| v
 
 |Einzenberger
-a| Location Endpoints und Zeitschreibungstool suchen
-| 06.11.2026
+a| UserStories vom git umschreiben
+| 20.10.2026
+
+|Einzenberger
+a| Location Endpoints und Code Review
+| 20.10.2026
 
 |Graßauer
-a| Almina ins Frontend einarbeiten, Features durchgehen und aufteilen
-| 06.11.2026
+a| Sattler Frontend Design überarbeiten
+| 20.10.2026
+
+|Graßauer, Silnovic
+a| Schnittstellen zum Backend
+| 20.10.2026
 
 |Dallinger
-a| Measurement und Horse Enpoints
-| 06.11.2026
+a| Horse, Device, Person Endpoints
+| 20.10.2026
+
+|Dallinger
+a| Bluetooth Verbindung Prototypen-Dummy
+| 20.10.2026
 
 |Silnovic
-a| Frontend einarbeiten und Aufgaben von Lena bekommen
-| 06.11.2026
+a| Sattler Frontend Chat
+| 20.10.2026
+
 |===
