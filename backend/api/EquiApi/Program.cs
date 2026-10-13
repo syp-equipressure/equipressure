@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using EquiApi;
+using EquiApi.BackgroundServices;
 using EquiApi.Shared;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,10 @@ builder.Services.ConfigureAdditionalRouteConstraints();
 var app = builder.Build();
 
 // not using HTTPS, because all production backends _have_ to be behind a reverse proxy which will handle SSL termination
+
+builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
+builder.Services.AddSingleton<IBluetoothDataHandler, LoggingBluetoothDataHandler>();
+builder.Services.AddHostedService<BluetoothConnectionService>();
 
 app.UseCors(Setup.CorsPolicyName);
 app.UseMiddleware<ExceptionHandlingMiddleware>();
