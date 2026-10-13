@@ -1,60 +1,83 @@
 <app-page-header title="Nachrichten"></app-page-header>
 
 <section class="messages-page">
-  <div class="messages-layout">
-    <aside class="customer-panel" aria-label="Kundenliste">
+  <div class="messages-layout" [class.mobile-chat-open]="mobileChatOpen()">
+    <aside class="customer-panel" aria-label="Konversationen">
+      <div class="panel-title">
+        <h2>Nachrichten</h2>
+        <span>{{ conversations().length }}</span>
+      </div>
       <div class="customer-list">
-        @for (customer of customers(); track customer.id) {
+        @for (conversation of conversations(); track conversation.id) {
           <button
             class="customer-item"
-            [class.selected]="customer.id === selectedCustomerId()"
-            [attr.aria-pressed]="customer.id === selectedCustomerId()"
-            (click)="selectCustomer(customer.id)"
+            [class.selected]="conversation.id === selectedConversationId()"
+            [attr.aria-pressed]="conversation.id === selectedConversationId()"
+            (click)="selectConversation(conversation.id)"
           >
             <span class="customer-avatar">
-              @if (avatarUrl(customer)) {
-                <img [src]="avatarUrl(customer)" [alt]="fullName(customer)" />
-              } @else {
-                {{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}
-              }
+              {{ avatarInitials(conversation.participantName) }}
             </span>
             <span class="customer-meta">
-              <span class="customer-name">{{ fullName(customer) }}</span>
-              <span class="customer-preview">{{ latestMessage(customer.id) }}</span>
+              <span class="customer-name">{{ conversation.participantName }}</span>
+              <span class="customer-preview">{{ conversation.lastMessageText || 'Noch keine Nachrichten' }}</span>
             </span>
-            <time class="contact-time">{{ latestMessageTime(customer.id) }}</time>
+            @if (conversation.lastMessageAt) {
+              <time class="contact-time">{{ formatTime(conversation.lastMessageAt) }}</time>
+            }
           </button>
+        } @empty {
+          @if (loadingConversations()) {
+            <p class="list-message">Konversationen werden geladen …</p>
+          } @else if (conversationsError()) {
+            <p class="list-message error-message">{{ conversationsError() }}</p>
+          } @else {
+            <p class="list-message">Noch keine Konversationen vorhanden.</p>
+          }
         }
       </div>
     </aside>
 
     <section class="chat-panel" aria-label="Chatverlauf">
-      @if (selectedCustomer(); as customer) {
+      @if (selectedConversation(); as conversation) {
         <header class="chat-header">
+          <button class="mobile-back" type="button" (click)="backToConversations()" aria-label="Zurück zur Konversationsliste">
+            <span class="material-icons">arrow_back</span>
+          </button>
           <span class="customer-avatar">
-            @if (avatarUrl(customer)) {
-              <img [src]="avatarUrl(customer)" [alt]="fullName(customer)" />
-            } @else {
-              {{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}
-            }
+            {{ avatarInitials(conversation.participantName) }}
           </span>
           <div class="chat-contact">
-            <h2>{{ fullName(customer) }}</h2>
-            @if (customerHorseNames(customer).length) {
-              <span>{{ customerHorseNames(customer).join(' | ') }}</span>
+            <h2>{{ conversation.participantName }}</h2>
+            @switch (connectionStatus()) {
+              @case ('connected') { <span class="connection-status connected">Verbunden</span> }
+              @case ('connecting') { <span class="connection-status">Verbindung wird hergestellt …</span> }
+              @case ('reconnecting') { <span class="connection-status reconnecting">Verbindung unterbrochen – erneuter Versuch …</span> }
+              @case ('unavailable') { <span class="connection-status disconnected">Chat-Anmeldung nicht verfügbar</span> }
+              @default { <span class="connection-status disconnected">Nicht verbunden</span> }
             }
           </div>
         </header>
 
-        <div class="chat-history" aria-live="polite">
-          <div class="date-divider"><span>Heute</span></div>
-          @for (message of selectedMessages(); track message.id) {
-            <article class="message" [class.outgoing]="message.sender === 'sattler'">
-              <p>{{ message.message }}</p>
-              <time>{{ message.timestamp }}</time>
-            </article>
-          } @empty {
-            <p class="empty-chat">Noch keine Nachrichten. Beginne den Chat mit {{ customer.firstName }}.</p>
+        <div #chatHistory class="chat-history" aria-live="polite">
+          @if (nextCursor()) {
+            <button class="load-older" type="button" [disabled]="loadingOlder()" (click)="loadOlderMessages()">
+              {{ loadingOlder() ? 'Ältere Nachrichten werden geladen …' : 'Ältere Nachrichten laden' }}
+            </button>
+          }
+          @if (loadingMessages()) {
+            <p class="empty-chat">Nachrichten werden geladen …</p>
+          } @else if (historyError()) {
+            <p class="empty-chat error-message">{{ historyError() }}</p>
+          } @else {
+            @for (message of messages(); track message.id) {
+              <article class="message" [class.outgoing]="isOwnMessage(message)">
+                <p>{{ message.text }}</p>
+                <time>{{ formatTime(message.sentAt) }}</time>
+              </article>
+            } @empty {
+              <p class="empty-chat">Noch keine Nachrichten. Schreibe {{ conversation.participantName }}.</p>
+            }
           }
         </div>
 
@@ -63,21 +86,30 @@
           <input
             id="message-draft"
             type="text"
-            placeholder="Nachricht schreiben..."
+            placeholder="Nachricht schreiben …"
+            maxlength="4000"
             [ngModel]="draft()"
             (ngModelChange)="draft.set($event)"
             name="message"
           />
-          <button type="button" class="attach-button" aria-label="Datei anhängen" title="Datei anhängen">
-            <span class="material-icons">attach_file</span>
-          </button>
-          <button type="submit" class="send-button" [disabled]="!draft().trim()" aria-label="Nachricht senden">
+          <button type="submit" class="send-button" [disabled]="!draft().trim() || connectionStatus() !== 'connected'"
+            aria-label="Nachricht senden">
             <span class="material-icons">send</span>
           </button>
         </form>
       } @else {
-        <p class="empty-chat">Wähle einen Kunden aus, um den Chat zu öffnen.</p>
+        @if (loadingConversations()) {
+          <p class="empty-chat">Konversationen werden geladen …</p>
+        } @else if (conversationsError()) {
+          <p class="empty-chat error-message">{{ conversationsError() }}</p>
+        } @else {
+          <p class="empty-chat">Wähle eine Konversation aus, um den Chat zu öffnen.</p>
+        }
       }
     </section>
   </div>
 </section>
+
+@if (toast()) {
+  <div class="toast" role="status" aria-live="polite">{{ toast() }}</div>
+}
