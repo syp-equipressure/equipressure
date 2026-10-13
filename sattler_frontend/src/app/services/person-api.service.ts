@@ -172,7 +172,7 @@ function mapHorse(value: unknown, ownerId: string, index: number): Horse {
     ownerId: String(firstDefined(value, 'ownerId', 'owner_id') ?? ownerId),
     name: String(name),
     age: numericValue(value, 'age') || ageFromDate(birthDate),
-    breed: formatBreed(firstDefined(value, 'breeds', 'breed')),
+    breed: formatBreed(firstDefined(value, 'breedNames', 'breeds', 'breed')),
     heightCm: numericValue(value, 'height', 'heightCm', 'height_cm'),
     weightKg: numericValue(value, 'weight', 'weightKg', 'weight_kg'),
     imageUrl: optionalString(value, 'imageUrl', 'image_url') ?? '',

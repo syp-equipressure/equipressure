@@ -346,6 +346,16 @@ export class DataService {
     this._horses.update(list => [...list, horse]);
   }
 
+  upsertHorses(horses: Horse[]): void {
+    this._horses.update(current => {
+      const byId = new Map(current.map(horse => [horse.id, horse]));
+      for (const horse of horses) {
+        byId.set(horse.id, horse);
+      }
+      return [...byId.values()];
+    });
+  }
+
   // ── Measurements ───────────────────────────────────────────────────────────
 
   getMeasurementsOf(horseId: string): Measurement[] {

@@ -71,6 +71,7 @@ export class HorsesPage {
       this.horsesLoading.set(true);
       const subscription = this.personApi.getHorses(personId).subscribe({
         next: horses => {
+          this.data.upsertHorses(horses);
           this.backendHorses.set(horses);
           this.horsesLoading.set(false);
         },
