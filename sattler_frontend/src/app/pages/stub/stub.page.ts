@@ -120,12 +120,12 @@ export class StubPage {
   });
 
   readonly recentMeasurements = computed<RecentRow[]>(() =>
-    this.selectedHorseMeasurements().slice(0, 2).map((measurement, index) => ({
+    this.selectedHorseMeasurements().slice(0, 2).map(measurement => ({
       id: measurement.id,
       label: `${this.selectedHorse()?.name ?? ''} · ${measurement.deviceName}`,
       date: measurement.date,
-      score: index === 0 ? '92' : '51',
-      tone: index === 0 ? 'green' : 'red',
+      score: String(measurement.symmetryPct),
+      tone: measurement.symmetryPct >= 90 ? 'green' : 'red',
     })),
   );
 

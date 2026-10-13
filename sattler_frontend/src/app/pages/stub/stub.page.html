@@ -60,7 +60,7 @@
                 autocomplete="off"
                 class="select-input"
                 [value]="selectedHorseId() ?? ''"
-                [disabled]="!selectedOwner()"
+                [disabled]="!selectedOwner() || availableHorses().length === 0"
                 (change)="selectHorse($any($event.target).value)"
               >
                 <option value="" disabled>Pferd auswählen</option>
@@ -70,6 +70,9 @@
               </select>
               <span class="select-icon material-icons">chevron_right</span>
             </div>
+            @if (selectedOwner() && availableHorses().length === 0) {
+              <small>Für diesen Reiter sind keine Pferde hinterlegt.</small>
+            }
           </label>
 
           <div class="metrics">
