@@ -21,7 +21,7 @@
                 <div class="segment-selectors">
                   <label>
                     <span>Gangart</span>
-                    <select [id]="'segment-' + segment.id + '-gait'" [name]="'segment-' + segment.id + '-gait'"
+                    <select id="segment-{{ segment.id }}-gait" name="segment-{{ segment.id }}-gait"
                       autocomplete="off" [value]="segment.gait"
                       (change)="updateSegment(segment, 'gait', $any($event.target).value)">
                       <option value="Schritt">Schritt</option>
@@ -31,7 +31,7 @@
                   </label>
                   <label>
                     <span>Hand</span>
-                    <select [id]="'segment-' + segment.id + '-side'" [name]="'segment-' + segment.id + '-side'"
+                    <select id="segment-{{ segment.id }}-side" name="segment-{{ segment.id }}-side"
                       autocomplete="off" [value]="segment.side"
                       (change)="updateSegment(segment, 'side', $any($event.target).value)">
                       <option value="Links">Links</option>
