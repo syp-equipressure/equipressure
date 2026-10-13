@@ -48,6 +48,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   Future<void> _loadPerson(String personId) async {
     setState(() {
+      _personId = personId;
       _loading = true;
       _error = null;
     });
