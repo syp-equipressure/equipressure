@@ -100,4 +100,18 @@ public class Helper
         string? Description);
     
     public record NameData(string FirstName, string LastName);
+    
+    public sealed record PersonDetailData(
+        int Id,
+        string FirstName,
+        string LastName,
+        string? Street,
+        int? HouseNumber,
+        string CityName,
+        string PLZ,
+        string? Email,
+        decimal Height,
+        decimal Weight,
+        string? WebsiteLink,
+        string? Description);
 }
