@@ -2,19 +2,21 @@
 
 .messages-page {
   height: calc(100vh - 68px);
-  min-height: 480px;
-  padding: 24px 30px 30px;
+  min-height: 520px;
+  padding: 22px 28px 28px;
   box-sizing: border-box;
+  background: t.$bg-page;
 }
 
 .messages-layout {
   display: grid;
-  width: 100%;
+  width: min(100%, 1500px);
   height: 100%;
+  margin: 0 auto;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid t.$border;
-  border-radius: 14px;
+  border-radius: 16px;
   background: t.$bg-card;
   box-shadow: t.$shadow-card;
 }
@@ -30,21 +32,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 16px 14px;
+  min-height: 64px;
+  padding: 0 18px;
+  border-bottom: 1px solid t.$border-soft;
 
   h2 {
     margin: 0;
     color: t.$text-strong;
-    font-size: 17px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
   }
 
   span {
-    min-width: 22px;
-    padding: 3px 7px;
+    min-width: 24px;
+    padding: 4px 8px;
     border-radius: 999px;
     background: t.$purple-50;
     color: t.$purple-600;
-    font-size: 12px;
+    font-size: 11px;
+    font-weight: 700;
     text-align: center;
   }
 }
@@ -56,19 +63,26 @@
 
 .customer-item {
   display: flex;
-  min-height: 76px;
+  min-height: 78px;
   align-items: center;
-  gap: 14px;
-  padding: 10px 16px;
+  gap: 12px;
+  margin: 0 8px;
+  padding: 10px;
   border: 0;
   border-bottom: 1px solid t.$border-soft;
+  border-radius: 10px;
   background: t.$bg-card;
   text-align: left;
   cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 
-  &:hover,
-  &.selected {
+  &:hover {
     background: t.$bg-page;
+  }
+
+  &.selected {
+    background: t.$purple-50;
+    box-shadow: inset 3px 0 t.$purple-500;
   }
 }
 
@@ -80,7 +94,8 @@
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
-  background: t.$purple-50;
+  border: 1px solid t.$border-soft;
+  background: t.$bg-panel;
   color: t.$purple-600;
   font-size: 15px;
   font-weight: 700;
@@ -103,7 +118,7 @@
 .customer-name {
   overflow: hidden;
   color: t.$text-strong;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -122,6 +137,7 @@
   margin-top: 8px;
   color: t.$text-muted;
   font-size: 10px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -145,7 +161,7 @@
 
 .chat-header {
   display: flex;
-  min-height: 64px;
+  min-height: 72px;
   align-items: center;
   gap: 14px;
   padding: 8px 18px;
@@ -172,21 +188,40 @@
 }
 
 .connection-status {
-  display: block;
+  display: flex;
+  align-items: center;
   overflow: hidden;
+  gap: 6px;
   margin-top: 3px;
   color: t.$text-soft;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 
+  &::before {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: t.$text-muted;
+    content: '';
+  }
+
   &.connected {
-    color: #27833d;
+    color: t.$text-soft;
+
+    &::before {
+      background: #319454;
+    }
   }
 
   &.reconnecting,
   &.disconnected {
-    color: #a52c27;
+    color: t.$accent-red;
+
+    &::before {
+      background: t.$accent-red;
+    }
   }
 }
 
@@ -195,10 +230,10 @@
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 16px;
-  padding: 22px clamp(20px, 5vw, 72px);
+  gap: 14px;
+  padding: 24px clamp(20px, 5vw, 72px);
   overflow-y: auto;
-  background: t.$bg-page;
+  background: t.$bg-panel;
 }
 
 .load-older {
@@ -218,10 +253,10 @@
 }
 
 .message {
-  max-width: min(72%, 520px);
-  padding: 12px 14px 8px;
+  max-width: min(72%, 560px);
+  padding: 12px 15px 9px;
   border: 1px solid t.$border;
-  border-radius: 12px 12px 12px 2px;
+  border-radius: 14px 14px 14px 4px;
   background: t.$bg-card;
   color: t.$text;
   overflow-wrap: anywhere;
@@ -229,7 +264,7 @@
   p {
     margin: 0;
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 1.5;
     white-space: pre-wrap;
   }
 
@@ -242,13 +277,13 @@
 
   &.outgoing {
     align-self: flex-end;
-    border-color: t.$purple-500;
-    border-radius: 12px 12px 2px 12px;
-    background: t.$purple-500;
-    color: #fff;
+    border-color: t.$purple-100;
+    border-radius: 14px 14px 4px 14px;
+    background: t.$purple-50;
+    color: t.$text-strong;
 
     time {
-      color: rgba(255, 255, 255, 0.75);
+      color: t.$text-soft;
       text-align: right;
     }
   }
@@ -267,19 +302,19 @@
   display: flex;
   min-height: 52px;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 10px;
+  padding: 12px 18px;
   border-top: 1px solid t.$border;
   background: t.$bg-card;
 
   input {
     min-width: 0;
-    height: 40px;
+    height: 42px;
     flex: 1;
     padding: 0 14px;
     border: 1px solid t.$border;
-    border-radius: 999px;
-    background: t.$bg-panel;
+    border-radius: 10px;
+    background: t.$bg-card;
     color: t.$text;
     font: inherit;
 
@@ -295,16 +330,21 @@
 
   .send-button {
     display: grid;
-    width: 40px;
-    height: 40px;
-    flex: 0 0 40px;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
     place-items: center;
     padding: 0;
     border: 0;
-    border-radius: 50%;
+    border-radius: 10px;
     background: t.$purple-500;
     color: #fff;
     cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: t.$purple-600;
+    }
 
     &:disabled {
       cursor: default;
@@ -325,7 +365,7 @@
   max-width: min(440px, calc(100vw - 32px));
   padding: 14px 18px;
   border: 1px solid t.$border;
-  border-radius: 10px;
+  border-radius: 12px;
   background: t.$bg-card;
   box-shadow: t.$shadow-elev;
   color: t.$text-strong;
@@ -352,12 +392,13 @@
 
   .messages-layout {
     grid-template-columns: minmax(240px, 34%) minmax(0, 1fr);
+    border-radius: 14px;
   }
 
   .customer-item {
     min-height: 68px;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 8px;
   }
 
   .customer-avatar {
