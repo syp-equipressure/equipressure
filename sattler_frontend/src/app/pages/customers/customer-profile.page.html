@@ -17,20 +17,34 @@
           <span>E-Mail</span>
           @if (customer.email) {
             <a [href]="'mailto:' + customer.email">{{ customer.email }}</a>
+          } @else if (loadingBackendCustomer()) {
+            <main class="profile-page">
+              <section class="panel not-found" role="status">Kundenprofil wird geladen …</section>
+            </main>
+          } @else if (backendCustomerError()) {
+            <main class="profile-page">
+              <section class="panel not-found" role="alert">{{ backendCustomerError() }}</section>
+            </main>
           } @else {
             <strong>–</strong>
           }
         </div>
-        <div class="detail-row">
-          <span>Geburtstag</span>
-          <strong>{{ formatBirthDate(customer.birthDate) }}</strong>
-        </div>
+        @if (customer.birthDate) {
+          <div class="detail-row">
+            <span>Geburtstag</span>
+            <strong>{{ formatBirthDate(customer.birthDate) }}</strong>
+          </div>
+        }
         <div class="detail-row">
           <span>Adresse</span>
           <strong>{{ customer.address || '–' }}</strong>
         </div>
-        <div class="detail-row"><span>Gewicht</span><strong>{{ customer.weightKg }} kg</strong></div>
-        <div class="detail-row"><span>Größe</span><strong>{{ customer.heightCm }} cm</strong></div>
+        @if (customer.weightKg > 0) {
+          <div class="detail-row"><span>Gewicht</span><strong>{{ customer.weightKg }} kg</strong></div>
+        }
+        @if (customer.heightCm > 0) {
+          <div class="detail-row"><span>Größe</span><strong>{{ customer.heightCm }} cm</strong></div>
+        }
       </div>
       <a class="horses-overview-link" [routerLink]="['horses']">
         <span class="horse-avatar">

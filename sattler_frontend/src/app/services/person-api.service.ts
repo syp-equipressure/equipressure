@@ -15,6 +15,17 @@ export interface BackendPerson {
   horseIds: string[];
 }
 
+export interface BackendPersonDetails extends BackendPerson {
+  websiteLink?: string;
+  description?: string;
+}
+
+export interface BackendLocation {
+  addressName?: string;
+  cityName: string;
+  postalCode: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PersonApiService {
   private readonly http = inject(HttpClient);
@@ -32,6 +43,52 @@ export class PersonApiService {
       .pipe(map(response => extractPeople(response)));
   }
 
+  getPersonDetails(personId: string): Observable<BackendPersonDetails> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/persons/${personId}`)
+      .pipe(map(response => mapPersonDetails(response)));
+  }
+
+  getProfileData(personId: string): Observable<Pick<BackendPerson, 'firstName' | 'lastName'>> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/persons/${personId}/profile-data`)
+      .pipe(
+        map(response => {
+          if (!isRecord(response)) {
+            throw new Error('Das Backend hat keine gültigen Profildaten zurückgegeben.');
+          }
+          const firstName = firstDefined(response, 'firstName', 'firstname', 'first_name');
+          const lastName = firstDefined(response, 'lastName', 'lastname', 'last_name');
+          if (firstName === undefined || lastName === undefined) {
+            throw new Error('Die Profildaten enthalten keinen vollständigen Namen.');
+          }
+          return { firstName: String(firstName), lastName: String(lastName) };
+        }),
+      );
+  }
+
+  getLocation(personId: string): Observable<BackendLocation> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/persons/${personId}/location`)
+      .pipe(
+        map(response => {
+          if (!isRecord(response)) {
+            throw new Error('Das Backend hat keine gültige Adresse zurückgegeben.');
+          }
+          const cityName = firstDefined(response, 'cityName', 'city_name');
+          const postalCode = firstDefined(response, 'plz', 'PLZ', 'postalCode', 'postal_code');
+          if (cityName === undefined || postalCode === undefined) {
+            throw new Error('Die Adresse enthält keinen Ort oder keine Postleitzahl.');
+          }
+          return {
+            addressName: optionalString(response, 'addressName', 'address_name') ?? undefined,
+            cityName: String(cityName),
+            postalCode: String(postalCode),
+          };
+        }),
+      );
+  }
+
   getHorses(personId: string): Observable<Horse[]> {
     return this.http
       .get<unknown>(`${this.baseUrl}/persons/${personId}/horses`)
@@ -43,6 +100,18 @@ export class PersonApiService {
         ),
       );
   }
+}
+
+function mapPersonDetails(value: unknown): BackendPersonDetails {
+  const person = mapPerson(value, 0);
+  if (!isRecord(value)) {
+    throw new Error('Das Backend hat ungültige Personendaten zurückgegeben.');
+  }
+  return {
+    ...person,
+    websiteLink: optionalString(value, 'websiteLink', 'website_link'),
+    description: optionalString(value, 'description'),
+  };
 }
 
 function extractPeople(response: unknown): BackendPerson[] {
