@@ -21,13 +21,13 @@ builder.Services.AddControllers(o => { o.ModelBinderProviders.Insert(0, new Noda
        .AddJsonOptions(o => ConfigureJsonSerialization(o, isDev));
 builder.Services.ConfigureAdditionalRouteConstraints();
 
-var app = builder.Build();
-
-// not using HTTPS, because all production backends _have_ to be behind a reverse proxy which will handle SSL termination
-
 builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
 builder.Services.AddSingleton<IBluetoothDataHandler, LoggingBluetoothDataHandler>();
 builder.Services.AddHostedService<BluetoothConnectionService>();
+
+var app = builder.Build();
+
+// not using HTTPS, because all production backends _have_ to be behind a reverse proxy which will handle SSL termination
 
 app.UseCors(Setup.CorsPolicyName);
 app.UseMiddleware<ExceptionHandlingMiddleware>();
