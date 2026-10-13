@@ -66,10 +66,10 @@ public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorse
     }
 
     public async ValueTask<IReadOnlyCollection<Saddle>> GetSaddlesOfHorse(int horseId) 
-        => await horses.Include(h => h.Saddles)
-                 .Where(h => h.Id == horseId)
-                 .SelectMany(h => h.Saddles)
-                 .ToListAsync();
+        => await horses.Where(h => h.Id == horseId)
+                       .Include(h => h.Saddles)
+                       .SelectMany(h => h.Saddles)
+                       .ToListAsync();
 
     public async ValueTask<IReadOnlyCollection<Person>> GetAllRidersOfHorse(int horseId)
         => await personHorses.Include(ph => ph.Person)
@@ -79,8 +79,8 @@ public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorse
                              .ToListAsync();
 
     public async ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId) 
-        => await personHorses.Include(ph => ph.Person)
-                             .Where(ph => ph.IsHidden && ph.HorseId == horseId)
+        => await personHorses.Where(ph => ph.IsHidden && ph.HorseId == horseId)
+                             .Include(ph => ph.Person)
                              .Select(ph => ph.Person)
                              .ToListAsync();
 
