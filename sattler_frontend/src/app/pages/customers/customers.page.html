@@ -5,7 +5,7 @@
     <header class="directory-heading">
       <div>
         <p class="eyebrow">Verwaltung</p>
-        <h2>Kund*innen</h2>
+        <h2>Kundschaft</h2>
       </div>
       <button class="primary-btn" type="button" (click)="showForm.set(true)">
         <span class="material-icons">add</span>
@@ -18,7 +18,7 @@
         class="search-input"
         type="search"
         placeholder="Name oder E-Mail suchen"
-        aria-label="Kund*innen suchen"
+        aria-label="Kundschaft suchen"
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
@@ -81,7 +81,7 @@
       @if (filtered().length === 0) {
         <div class="empty">
           <span class="material-icons">search_off</span>
-          <strong>Keine Kund*innen gefunden</strong>
+          <strong>Keine Kundschaft gefunden</strong>
           <span>Ändere deine Suche oder passe den Filter an.</span>
         </div>
       }
