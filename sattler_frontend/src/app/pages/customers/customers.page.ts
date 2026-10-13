@@ -23,7 +23,6 @@ export class CustomersPage {
 
   readonly filtered = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('de');
-    const normalizedPhoneQuery = query.replace(/\D/g, '');
     const dateFrom = dateInputTimestamp(this.measurementDateFrom());
     const dateTo = dateInputTimestamp(this.measurementDateTo());
     const hasDateRange = Boolean(this.measurementDateFrom() || this.measurementDateTo());
@@ -33,12 +32,8 @@ export class CustomersPage {
         const searchText = [
           fullName(customer),
           customer.email ?? '',
-          customer.phoneNumber ?? '',
         ].join(' ').toLocaleLowerCase('de');
-        const phoneDigits = (customer.phoneNumber ?? '').replace(/\D/g, '');
-        const matchesSearch =
-          searchText.includes(query) ||
-          (normalizedPhoneQuery.length > 0 && phoneDigits.includes(normalizedPhoneQuery));
+        const matchesSearch = searchText.includes(query);
         const lastMeasurement = this.lastMeasurementTimestamp(customer.id);
         const matchesDateRange =
           !hasDateRange ||
