@@ -252,7 +252,10 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => DevicesScreen(devices: devices),
+                          builder: (context) => DevicesScreen(
+                            devices: devices,
+                            ownerId: _personId!,
+                          ),
                         ),
                       );
                     },

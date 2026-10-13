@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:reiterappfrontend/models/device.dart';
+import 'package:reiterappfrontend/services/device_service.dart';
 import 'device_group_screen.dart';
 
 class DevicesScreen extends StatefulWidget {
   final List<Device> devices;
+  final String ownerId;
 
-  const DevicesScreen({super.key, required this.devices});
+  const DevicesScreen({
+    super.key,
+    required this.devices,
+    required this.ownerId,
+  });
 
   @override
   State<DevicesScreen> createState() => _DevicesScreenState();
@@ -33,11 +39,72 @@ class _DevicesScreenState extends State<DevicesScreen> {
         });
   }
 
-  void _handleScannedCode(String code) {
-    // Handle the scanned code
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Scanned: $code')));
+  Future<void> _handleScannedCode(String code) async {
+    final categoryController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final categoryId = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gerät hinzufügen'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: categoryController,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Gerätekategorie-ID',
+              helperText: 'Das Backend bietet keine Kategorienliste an.',
+            ),
+            validator: (value) {
+              final id = int.tryParse(value?.trim() ?? '');
+              return id == null || id <= 0
+                  ? 'Bitte eine positive Kategorien-ID eingeben.'
+                  : null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(
+                  context,
+                  int.parse(categoryController.text.trim()),
+                );
+              }
+            },
+            child: const Text('Hinzufügen'),
+          ),
+        ],
+      ),
+    );
+    categoryController.dispose();
+    if (categoryId == null || !mounted) return;
+
+    try {
+      final device = await DeviceService.addDevice(
+        deviceId: code,
+        ownerId: int.parse(widget.ownerId),
+        categoryId: categoryId,
+      );
+      if (!mounted) return;
+      setState(() => widget.devices.add(device));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gerät wurde hinzugefügt.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gerät konnte nicht hinzugefügt werden: $error'),
+        ),
+      );
+    }
   }
 
   @override

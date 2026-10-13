@@ -4,10 +4,12 @@ import 'package:reiterappfrontend/models/group_member.dart';
 
 void main() {
   group('API DTO mapping', () {
-    test('maps backend device identifiers to the app device model', () {
+    test('maps the backend device DTO to the app device model', () {
       final device = Device.fromJson({
-        'deviceId': 'device-42',
+        'id': 'device-42',
         'categoryId': 3,
+        'owner': {'id': 12},
+        'deviceUser': [],
       });
 
       expect(device.id, 'device-42');
