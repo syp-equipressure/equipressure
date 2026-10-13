@@ -173,15 +173,23 @@ class DeviceService {
     return DeviceService().getDevices(userId);
   }
 
-  /// Fügt ein neues Gerät hinzu
-  static Future<Device> addDevice(Map<String, dynamic> deviceData) async {
+  /// Fügt ein neues Gerät hinzu.
+  static Future<Device> addDevice({
+    required String deviceId,
+    required int ownerId,
+    required int categoryId,
+  }) async {
     try {
       final url = Uri.parse('$baseUrl/devices');
       final response = await http
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(deviceData),
+            body: jsonEncode({
+              'deviceId': deviceId,
+              'ownerId': ownerId,
+              'categoryId': categoryId,
+            }),
           )
           .timeout(
             const Duration(seconds: 10),
@@ -189,63 +197,17 @@ class DeviceService {
           );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return Device.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,
+        DeviceService().clearCache();
+        return Device(
+          id: deviceId,
+          name: 'Satteldruckmessgerät',
+          number: deviceId,
         );
       } else {
         throw Exception('Failed to add device: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error adding device: $e');
-    }
-  }
-
-  /// Aktualisiert ein Gerät
-  static Future<Device> updateDevice(
-    String deviceId,
-    Map<String, dynamic> deviceData,
-  ) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId');
-      final response = await http
-          .patch(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(deviceData),
-          )
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () => throw Exception('Request timeout'),
-          );
-
-      if (response.statusCode == 200) {
-        return Device.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-      } else {
-        throw Exception('Failed to update device: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error updating device: $e');
-    }
-  }
-
-  /// Löscht ein Gerät
-  static Future<void> deleteDevice(String deviceId) async {
-    try {
-      final url = Uri.parse('$baseUrl/devices/$deviceId');
-      final response = await http
-          .delete(url)
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () => throw Exception('Request timeout'),
-          );
-
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to delete device: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error deleting device: $e');
     }
   }
 
