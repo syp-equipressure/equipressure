@@ -91,10 +91,13 @@
 
 .card-head {
   display: flex;
+  height: 34px;
+  flex: 0 0 34px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  box-sizing: border-box;
 
   h3 {
     margin: 0;
@@ -180,10 +183,6 @@
 
 .horse-card {
   padding-top: 21px;
-}
-
-.horse-card .field:first-of-type {
-  margin-top: 8px;
 }
 
 .select-input,
