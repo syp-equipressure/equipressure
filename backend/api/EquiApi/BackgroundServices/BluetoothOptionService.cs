@@ -13,7 +13,7 @@ internal sealed class BluetoothOptions
     /// <summary>
     ///     Gets or sets the name of the device to connect to (case-insensitive)
     /// </summary>
-    public string DeviceName { get; set; } = "EquiPessureDummy";
+    public string DeviceName { get; set; } = "EquiPressure_Dummy";
 
     /// <summary>
     ///     Gets or sets the interval in which the connection is checked and re-established if necessary

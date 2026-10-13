@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Net.Sockets;
+using InTheHand.Net;
+using Microsoft.Extensions.Options;
 using WordClock.BackgroundServices;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
@@ -67,12 +69,16 @@ internal sealed class BluetoothConnectionService(
         var client = new BluetoothClient();
         try
         {
-            Logger.LogInformation("Connecting to {DeviceName} ({Address})", device.DeviceName,
-                device.DeviceAddress);
+            Logger.LogInformation("Connecting to {DeviceName} ({Address})", device.DeviceName, device.DeviceAddress);
 
-            // serial port profile, change if the device uses a different service
-            await Task.Run(() => client.Connect(device.DeviceAddress, BluetoothService.SerialPort),
-                stoppingToken);
+            var endpoint = new BluetoothEndPoint(device.DeviceAddress, BluetoothService.SerialPort);
+            await Task.Run(() => client.Connect(endpoint), stoppingToken);
+        }
+        catch (SocketException ex)
+        {
+            client.Dispose();
+            Logger.LogWarning("Connect to {DeviceName} failed: {Message}", device.DeviceName, ex.Message);
+            return;
         }
         catch
         {
@@ -96,17 +102,14 @@ internal sealed class BluetoothConnectionService(
         base.Dispose();
     }
 
-    private async Task<BluetoothDeviceInfo?> FindDeviceAsync(CancellationToken stoppingToken)
+    private Task<BluetoothDeviceInfo?> FindDeviceAsync(CancellationToken stoppingToken)
     {
-        // DiscoverDevices is blocking, so move it to the thread pool
-        var devices = await Task.Run(() =>
-        {
-            using var client = new BluetoothClient();
-            return client.DiscoverDevices();
-        }, stoppingToken);
+        // keine Inquiry, nur bereits gekoppelte Geräte
+        using var client = new BluetoothClient();
+        var device = client.PairedDevices.FirstOrDefault(d =>
+                                                             string.Equals(d.DeviceName?.Trim(), _options.DeviceName, StringComparison.OrdinalIgnoreCase));
 
-        return devices.FirstOrDefault(d =>
-            string.Equals(d.DeviceName, _options.DeviceName, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(device);
     }
 
     private async Task ReadLoopAsync(BluetoothClient client, string deviceName, CancellationToken stoppingToken)
@@ -142,6 +145,7 @@ internal sealed class BluetoothConnectionService(
         {
             Logger.LogWarning("Connection to {DeviceName} closed", deviceName);
             client.Dispose();
+            await Task.Delay(TimeSpan.FromSeconds(3), CancellationToken.None);
         }
     }
 }
