@@ -28,28 +28,6 @@
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
-      @if (!backendPersonId()) {
-        <div class="date-filter">
-          <label>
-            <span>Von</span>
-            <input
-              type="date"
-              aria-label="Messungen ab diesem Datum"
-              [value]="measurementDateFrom()"
-              (input)="measurementDateFrom.set($any($event.target).value)"
-            />
-          </label>
-          <label>
-            <span>Bis</span>
-            <input
-              type="date"
-              aria-label="Messungen bis zu diesem Datum"
-              [value]="measurementDateTo()"
-              (input)="measurementDateTo.set($any($event.target).value)"
-            />
-          </label>
-        </div>
-      }
       <span class="result-count">{{ filtered().length }} Ergebnisse</span>
 
       @if (!backendPersonId()) {

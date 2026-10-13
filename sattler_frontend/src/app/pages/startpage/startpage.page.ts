@@ -7,6 +7,7 @@ import { Measurement } from '../../models/measurement.model';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { PersonApiService } from '../../services/person-api.service';
+import { MeasurementService } from '../../services/measurement.service';
 
 interface RecentMeasurement {
   measurement: Measurement;
@@ -25,18 +26,21 @@ export class StartPage {
   private readonly data = inject(DataService);
   private readonly personContext = inject(BackendPersonContextService);
   private readonly personApi = inject(PersonApiService);
+  private readonly measurements = inject(MeasurementService);
 
   readonly firstName = signal('');
   readonly customer = computed(() => this.data.getMe());
   readonly recentMeasurements = computed<RecentMeasurement[]>(() =>
-    this.data.horses()
-      .flatMap(horse =>
-        this.data.getMeasurementsOf(horse.id).map(measurement => ({
+    this.measurements.getRecentMeasurements()
+      .flatMap(measurement => {
+        const horse = this.data.getHorse(measurement.horseId);
+        if (!horse) return [];
+        return [{
           measurement,
           horse,
           owner: this.data.getCustomer(horse.ownerId),
-        })),
-      )
+        }];
+      })
       .sort((left, right) => dateValue(right.measurement.date) - dateValue(left.measurement.date))
       .slice(0, 4),
   );

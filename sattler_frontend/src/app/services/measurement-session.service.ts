@@ -74,13 +74,10 @@ export class MeasurementSessionService {
     );
   }
 
-  complete(): string | null {
+  complete(): void {
     const session = this._session();
-    if (!session || !session.segments.some(segment => segment.completed)) return null;
-
-    const measurement = this.data.addSessionMeasurement(session);
+    if (!session || !session.segments.some(segment => segment.completed)) return;
     this._session.set(null);
-    return measurement.id;
   }
 }
 

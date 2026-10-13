@@ -8,6 +8,7 @@ import { Horse } from '../../models/horse.model';
 import { Measurement } from '../../models/measurement.model';
 import { Saddle } from '../../models/saddle.model';
 import { MeasurementSessionService } from '../../services/measurement-session.service';
+import { MeasurementService } from '../../services/measurement.service';
 
 interface OwnerCard {
   owner: Customer;
@@ -42,6 +43,7 @@ export class StubPage {
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
   private readonly measurementSession = inject(MeasurementSessionService);
+  private readonly measurements = inject(MeasurementService);
   private readonly routeData = toSignal(this.route.data, { initialValue: {} });
 
   readonly resolvedTitle = computed(() => {
@@ -102,7 +104,7 @@ export class StubPage {
 
   readonly selectedHorseMeasurements = computed((): Measurement[] => {
     const horse = this.selectedHorse();
-    return horse ? this.data.getMeasurementsOf(horse.id) : [];
+    return horse ? this.measurements.getMeasurementsForHorse(horse.id) : [];
   });
 
   readonly horseHeight = computed(() => this.selectedHorse()?.heightCm ?? 0);

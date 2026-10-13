@@ -19,8 +19,6 @@ export class CustomersPage {
   private readonly personApi = inject(PersonApiService);
 
   readonly query = signal('');
-  readonly measurementDateFrom = signal('');
-  readonly measurementDateTo = signal('');
   readonly activeList = signal<'contacts' | 'favourites'>('contacts');
   readonly backendCustomers = signal<Customer[] | null>(null);
   readonly loadingBackendCustomers = signal(false);
@@ -71,11 +69,6 @@ export class CustomersPage {
 
   readonly filtered = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('de');
-    const dateFrom = dateInputTimestamp(this.measurementDateFrom());
-    const dateTo = dateInputTimestamp(this.measurementDateTo());
-    const hasDateRange =
-      !this.backendPersonId() &&
-      Boolean(this.measurementDateFrom() || this.measurementDateTo());
 
     return this.customers()
       .filter(customer => {
@@ -84,29 +77,12 @@ export class CustomersPage {
           customer.email ?? '',
         ].join(' ').toLocaleLowerCase('de');
         const matchesSearch = searchText.includes(query);
-        const lastMeasurement = this.lastMeasurementTimestamp(customer.id);
-        const matchesDateRange =
-          !hasDateRange ||
-          (lastMeasurement !== null &&
-            (dateFrom === null || lastMeasurement >= dateFrom) &&
-            (dateTo === null || lastMeasurement <= dateTo));
-
-        return matchesSearch && matchesDateRange;
+        return matchesSearch;
       })
       .sort((left, right) => fullName(left).localeCompare(fullName(right), 'de', { sensitivity: 'base' }));
   });
 
   fullName = fullName;
-
-  private lastMeasurementTimestamp(customerId: string): number | null {
-    const timestamps = this.data.getHorsesOf(customerId)
-      .flatMap(horse => this.data.getMeasurementsOf(horse.id))
-      .map(measurement => measurementTimestamp(measurement.date))
-      .filter((timestamp): timestamp is number => timestamp !== null);
-
-    return timestamps.length > 0 ? Math.max(...timestamps) : null;
-  }
-
 }
 
 function toCustomer(person: BackendPerson): Customer {
@@ -114,35 +90,4 @@ function toCustomer(person: BackendPerson): Customer {
     ...person,
     isMe: false,
   };
-}
-
-function measurementTimestamp(date: string): number | null {
-  const [day, month, year] = date.split('.').map(Number);
-  if (!day || !month || !year) {
-    return null;
-  }
-
-  const parsedDate = new Date(year, month - 1, day);
-  if (parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day) {
-    return null;
-  }
-
-  return parsedDate.getTime();
-}
-
-function dateInputTimestamp(date: string): number | null {
-  if (!date) {
-    return null;
-  }
-  const [year, month, day] = date.split('-').map(Number);
-  if (!day || !month || !year) {
-    return null;
-  }
-
-  const parsedDate = new Date(year, month - 1, day);
-  if (parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day) {
-    return null;
-  }
-
-  return parsedDate.getTime();
 }

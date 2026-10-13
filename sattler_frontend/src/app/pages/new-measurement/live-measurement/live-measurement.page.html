@@ -12,10 +12,8 @@
       <section class="heatmap-card">
         <div class="heatmap-heading">
           <span>Druckverteilung</span>
-          <span class="live-indicator">● LIVE</span>
         </div>
-        <app-pressure-heatmap [grid]="pressureGrid()" [max]="8"></app-pressure-heatmap>
-        <div class="heatmap-legend"><span>Niedrig</span><span class="legend-gradient"></span><span>Hoch</span></div>
+        <div class="measurement-empty">Noch keine Messdaten</div>
       </section>
 
       <aside class="live-controls">
@@ -37,11 +35,6 @@
           </div>
         </section>
 
-        <section class="live-stats">
-          <div><span>Max. Druck</span><strong>5,8 <small>N/cm²</small></strong></div>
-          <div><span>Ø Druck</span><strong>2,1 <small>N/cm²</small></strong></div>
-          <div><span>Symmetrie</span><strong>96%</strong></div>
-        </section>
       </aside>
     </div>
   </main>
