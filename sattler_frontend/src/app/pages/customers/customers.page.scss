@@ -149,6 +149,15 @@
   font-weight: 600;
   letter-spacing: 0.7px;
   text-transform: uppercase;
+
+  > :nth-child(2) {
+    text-align: left;
+  }
+
+  > :last-child {
+    text-align: right;
+    transform: translateX(4px);
+  }
 }
 
 .avatar {
