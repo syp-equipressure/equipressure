@@ -38,7 +38,7 @@ export class HorsesPage {
   readonly title = computed(() => {
     const c = this.customer();
     if (!c) return '';
-    return c.isMe ? 'Deine Pferde' : `${fullName(c)} Pferde`;
+    return c.isMe ? 'Meine Pferde' : `${fullName(c)} Pferde`;
   });
 
   openHorse(horseId: string): void {
