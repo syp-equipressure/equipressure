@@ -68,7 +68,7 @@ export class SettingsPage {
     const saved = this.backendPersonContext.savePersonId(this.backendPersonId());
     this.backendPersonIdFeedback.set(
       saved
-        ? 'Personen-ID gespeichert. Kontakte und Favoriten werden damit geladen.'
+        ? 'Personen-ID gespeichert. Profil, Kontakte, Favoriten und Pferde verwenden diese ID.'
         : 'Bitte eine positive numerische Personen-ID eingeben.',
     );
     this.backendPersonIdError.set(!saved);

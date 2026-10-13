@@ -1,7 +1,19 @@
 <app-page-header title="Sattler-Profil"></app-page-header>
 
 <section class="page-body">
+  @if (backendPersonId() && loadingBackendProfile()) {
+    <div class="profile-state" role="status">Profil wird geladen …</div>
+  } @else if (backendProfileError()) {
+    <div class="profile-state error" role="alert">{{ backendProfileError() }}</div>
+  } @else {
   <div class="panel">
+    @if (backendPersonId()) {
+      <p class="backend-notice">
+        Profilbild und zusätzliche Kontaktdaten haben keine Backend-Endpunkte. Bearbeiten ist
+        deaktiviert, weil das Backend beim Speichern ein Geburtsdatum verlangt, das kein
+        vorhandener Lese-Endpunkt liefert.
+      </p>
+    }
     <div class="profile-card">
       <div class="avatar-actions">
         <div class="avatar">
@@ -11,12 +23,14 @@
             <span class="initials">{{ initials() }}</span>
           }
         </div>
-        <input #avatarInput class="avatar-input" type="file" accept="image/*"
-          aria-label="Profilbild auswählen" (change)="uploadAvatar($event)" />
-        <button class="avatar-upload-btn" type="button" (click)="avatarInput.click()">
-          <span class="material-icons">photo_camera</span>
-          Profilbild hochladen
-        </button>
+        @if (!backendPersonId()) {
+          <input #avatarInput class="avatar-input" type="file" accept="image/*"
+            aria-label="Profilbild auswählen" (change)="uploadAvatar($event)" />
+          <button class="avatar-upload-btn" type="button" (click)="avatarInput.click()">
+            <span class="material-icons">photo_camera</span>
+            Profilbild hochladen
+          </button>
+        }
         @if (avatarError()) {
           <span class="field-error avatar-error" role="alert">{{ avatarError() }}</span>
         }
@@ -27,10 +41,12 @@
         @if (sattler().companyName) {
           <div class="company">{{ sattler().companyName }}</div>
         }
-        <div class="member-since">Mitglied seit {{ sattler().memberSince }}</div>
+        @if (!backendPersonId()) {
+          <div class="member-since">Mitglied seit {{ sattler().memberSince }}</div>
+        }
       </div>
 
-      @if (!editMode()) {
+      @if (!editMode() && !backendPersonId()) {
         <button class="edit-btn" (click)="startEdit()">
           <span class="material-icons">edit</span>
           Bearbeiten
@@ -141,4 +157,5 @@
       </div>
     }
   </div>
+  }
 </section>

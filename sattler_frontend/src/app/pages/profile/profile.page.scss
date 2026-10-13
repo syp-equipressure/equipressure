@@ -13,6 +13,29 @@
   gap: 22px;
 }
 
+.backend-notice,
+.profile-state {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid t.$border;
+  border-radius: 10px;
+  background: t.$bg-card;
+  color: t.$text-soft;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.profile-state {
+  max-width: 700px;
+  margin: 24px auto;
+  text-align: center;
+}
+
+.profile-state.error {
+  border-color: t.$accent-red;
+  color: t.$accent-red;
+}
+
 .profile-card {
   display: flex;
   align-items: center;
