@@ -21,8 +21,10 @@
 
   <div class="right">
     <div class="account-info">
-      <strong>{{ accountName }}</strong>
-      <span>{{ accountEmail }}</span>
+      <strong>{{ accountName() }}</strong>
+      @if (accountEmail()) {
+        <span>{{ accountEmail() }}</span>
+      }
     </div>
     <a class="profile-circle" routerLink="/profile" aria-label="Sattler-Profil" [attr.aria-current]="profileActive ? 'page' : null">
       <span class="material-icons">person</span>
