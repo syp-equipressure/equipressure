@@ -9,6 +9,7 @@ import { LiveMeasurementPage } from './pages/new-measurement/live-measurement/li
 import { StubPage } from './pages/stub/stub.page';
 import { StartPage } from './pages/startpage/startpage.page';
 import { CustomerProfilePage } from './pages/customers/customer-profile.page';
+import { SettingsPage } from './pages/settings/settings.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'startpage' },
@@ -24,5 +25,5 @@ export const routes: Routes = [
   { path: 'new-measurement/session', component: MeasurementSessionPage },
   { path: 'new-measurement/live', component: LiveMeasurementPage },
   { path: 'messages', component: MessagesPage },
-  { path: 'settings', component: StubPage, data: { title: 'Einstellungen' } },
+  { path: 'settings', component: SettingsPage },
 ];
