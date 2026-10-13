@@ -67,9 +67,11 @@ export class SettingsPage {
   saveBackendPersonId(): void {
     const saved = this.backendPersonContext.savePersonId(this.backendPersonId());
     this.backendPersonIdFeedback.set(
-      saved
-        ? 'Personen-ID gespeichert. Profil, Kontakte, Favoriten und Pferde verwenden diese ID.'
-        : 'Bitte eine positive numerische Personen-ID eingeben.',
+      !saved
+        ? 'Bitte eine positive numerische Personen-ID eingeben.'
+        : this.backendPersonId().trim()
+          ? 'Personen-ID gespeichert. Profil, Kontakte, Favoriten und Pferde verwenden diese ID.'
+          : 'Personen-ID entfernt. Die Seiten verwenden wieder Demo-Daten.',
     );
     this.backendPersonIdError.set(!saved);
   }

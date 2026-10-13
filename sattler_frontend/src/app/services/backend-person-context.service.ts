@@ -9,6 +9,11 @@ export class BackendPersonContextService {
 
   savePersonId(value: string): boolean {
     const normalized = value.trim();
+    if (!normalized) {
+      localStorage.removeItem(PERSON_ID_KEY);
+      this.personId.set('');
+      return true;
+    }
     if (!/^[1-9]\d*$/.test(normalized)) {
       return false;
     }
