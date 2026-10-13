@@ -2,23 +2,18 @@
 
 .messages-page {
   height: calc(100vh - 68px);
-  min-height: 520px;
-  padding: 22px 28px 28px;
+  min-height: 0;
+  padding: 0;
   box-sizing: border-box;
-  background: t.$bg-page;
 }
 
 .messages-layout {
   display: grid;
-  width: min(100%, 1500px);
+  width: 100%;
   height: 100%;
-  margin: 0 auto;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid t.$border;
-  border-radius: 16px;
   background: t.$bg-card;
-  box-shadow: t.$shadow-card;
 }
 
 .customer-panel {
@@ -148,10 +143,6 @@
   line-height: 1.5;
 }
 
-.error-message {
-  color: #a52c27;
-}
-
 .chat-panel {
   display: flex;
   min-width: 0;
@@ -187,44 +178,6 @@
   min-width: 0;
 }
 
-.connection-status {
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  gap: 6px;
-  margin-top: 3px;
-  color: t.$text-soft;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &::before {
-    width: 7px;
-    height: 7px;
-    flex: 0 0 7px;
-    border-radius: 50%;
-    background: t.$text-muted;
-    content: '';
-  }
-
-  &.connected {
-    color: t.$text-soft;
-
-    &::before {
-      background: #319454;
-    }
-  }
-
-  &.reconnecting,
-  &.disconnected {
-    color: t.$accent-red;
-
-    &::before {
-      background: t.$accent-red;
-    }
-  }
-}
-
 .chat-history {
   display: flex;
   min-height: 0;
@@ -233,23 +186,18 @@
   gap: 14px;
   padding: 24px clamp(20px, 5vw, 72px);
   overflow-y: auto;
-  background: t.$bg-panel;
+  background: t.$bg-card;
 }
 
-.load-older {
+.date-divider {
   align-self: center;
-  padding: 7px 12px;
-  border: 1px solid t.$border;
+  margin-bottom: auto;
+  padding: 4px 12px;
   border-radius: 999px;
-  background: t.$bg-card;
+  background: t.$purple-50;
   color: t.$text-soft;
-  font-size: 12px;
-  cursor: pointer;
-
-  &:disabled {
-    cursor: wait;
-    opacity: 0.7;
-  }
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .message {
@@ -351,26 +299,25 @@
       opacity: 0.55;
     }
   }
-}
 
-.mobile-back {
-  display: none;
-}
+  .attach-button {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: t.$text-soft;
+    cursor: pointer;
 
-.toast {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 40;
-  max-width: min(440px, calc(100vw - 32px));
-  padding: 14px 18px;
-  border: 1px solid t.$border;
-  border-radius: 12px;
-  background: t.$bg-card;
-  box-shadow: t.$shadow-elev;
-  color: t.$text-strong;
-  font-size: 14px;
-  line-height: 1.45;
+    &:hover {
+      background: t.$bg-page;
+      color: t.$text-strong;
+    }
+  }
 }
 
 .visually-hidden {
@@ -387,12 +334,11 @@
   .messages-page {
     height: calc(100vh - 68px);
     min-height: 0;
-    padding: 14px;
+    padding: 0;
   }
 
   .messages-layout {
     grid-template-columns: minmax(240px, 34%) minmax(0, 1fr);
-    border-radius: 14px;
   }
 
   .customer-item {
@@ -420,58 +366,20 @@
   .messages-page {
     height: calc(100vh - 64px);
     min-height: 0;
-    padding: 0;
   }
 
   .messages-layout {
-    display: block;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .customer-panel,
-  .chat-panel {
-    width: 100%;
-    height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(130px, 31vh) minmax(0, 1fr);
   }
 
   .customer-panel {
-    border: 0;
+    border-right: 0;
+    border-bottom: 1px solid t.$border;
   }
 
-  .chat-panel {
-    display: none;
-  }
-
-  .mobile-chat-open {
-    .customer-panel {
-      display: none;
-    }
-
-    .chat-panel {
-      display: flex;
-    }
-  }
-
-  .mobile-back {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    min-width: 38px;
-    min-height: 38px;
-    padding: 0 4px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: t.$text-strong;
-    cursor: pointer;
-
-    .material-icons {
-      font-size: 22px;
-    }
+  .customer-item {
+    min-height: 62px;
   }
 
   .chat-history {
@@ -482,8 +390,4 @@
     max-width: 88%;
   }
 
-  .toast {
-    right: 12px;
-    bottom: 12px;
-  }
 }
