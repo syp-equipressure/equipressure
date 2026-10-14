@@ -83,11 +83,11 @@ public interface IDeviceService
     /// <summary>
     /// Method to change the owner of a device
     /// </summary>
-    /// <param name="userId">the id of the new owner</param>
+    /// <param name="newOwnerId">the id of the new owner</param>
     /// <param name="deviceId">the id of the device</param>
     /// <returns>the newly changed device</returns>
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>>
-        ChangeOwnerOfDevice(int userId, string deviceId);
+        ChangeOwnerOfDevice(int newOwnerId, string deviceId);
 
     /// <summary>
     /// returned when no Owner was found -> repo sent back null
@@ -297,12 +297,12 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
     }
 
     public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>>
-        ChangeOwnerOfDevice(int userId, string deviceId)
+        ChangeOwnerOfDevice(int newOwnerId, string deviceId)
     {
-        var user = await uow.PersonRepository.GetPersonByIdAsync(userId);
+        var user = await uow.PersonRepository.GetPersonByIdAsync(newOwnerId);
         if (user is null)
         {
-            logger.LogWarning("User with id {id} could not be found", userId);
+            logger.LogWarning("User with id {id} could not be found", newOwnerId);
             return new NotFound();
         }
 
@@ -313,21 +313,21 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             return new NotFound();
         }
 
-        if (device.OwnerId == userId)
+        if (device.OwnerId == newOwnerId)
         {
             return new Success<MeasurementDevice>(device);
         }
 
-        bool wasAlreadyUser = device.Users.Any(u => u.UserId == userId);
+        bool newOwnerWasAlreadyUser = device.Users.Any(u => u.UserId == newOwnerId);
         bool oldOwnerIsAlreadyUser = device.Users.Any(u => u.UserId == device.OwnerId);
 
-        if (!wasAlreadyUser && !oldOwnerIsAlreadyUser
+        if (!newOwnerWasAlreadyUser && !oldOwnerIsAlreadyUser
                             && device.Users.Count >= device.Category.NumOfAllowedPeople)
         {
             return new IDeviceService.TooManyUsers();
         }
 
-        device.Users.RemoveAll(u => u.UserId == userId);
+        device.Users.RemoveAll(u => u.UserId == newOwnerId);
 
         if (!oldOwnerIsAlreadyUser)
         {
@@ -338,11 +338,11 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
             });
         }
 
-        device.OwnerId = userId;
+        device.OwnerId = newOwnerId;
         device.Owner = user;
         
         await uow.SaveChangesAsync();
-        logger.LogInformation("A new owner with id {ownerId} was named for device with id {deviceId}", userId, deviceId);
+        logger.LogInformation("A new owner with id {ownerId} was named for device with id {deviceId}", newOwnerId, deviceId);
         return new Success<MeasurementDevice>(device);
     }
     
