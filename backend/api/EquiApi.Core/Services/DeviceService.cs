@@ -16,6 +16,13 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
         (int userId);
+
+    /// <summary>
+    /// service to get a device by its id
+    /// </summary>
+    /// <param name="deviceId">id of the device</param>
+    /// <returns>a MeasurementDevice with the id or a not found if there is none</returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> GetDeviceByIdAsync(string deviceId);
     
     /// <summary>
     /// returns the owner of a specific user
@@ -71,6 +78,16 @@ public interface IDeviceService
     /// </returns>
     public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooLittleUsers, OwnerCantBeDeleted>> 
         RemoveUserFromDevice(int userId, string deviceId);
+    
+    
+    /// <summary>
+    /// Method to change the owner of a device
+    /// </summary>
+    /// <param name="newOwnerId">the id of the new owner</param>
+    /// <param name="deviceId">the id of the device</param>
+    /// <returns>the newly changed device</returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>>
+        ChangeOwnerOfDevice(int newOwnerId, string deviceId);
 
     /// <summary>
     /// returned when no Owner was found -> repo sent back null
@@ -98,6 +115,7 @@ public interface IDeviceService
     /// returned if someone tries to delete the owner of a device
     /// </summary>
     public record OwnerCantBeDeleted();
+
 }
 
 public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDeviceService
@@ -114,6 +132,19 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
         
         var devices = await uow.DeviceRepository.GetDevicesFromUserIdAsync(userId);
         return new Success<IReadOnlyCollection<MeasurementDevice>>(devices);
+    }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> GetDeviceByIdAsync(string deviceId)
+    {
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            logger.LogWarning("Device {DeviceId} not found", deviceId);
+
+            return new NotFound();
+        }
+
+        return new Success<MeasurementDevice>(device);
     }
 
     public async ValueTask<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>> GetOwnerOfDevice(string deviceId)
@@ -264,4 +295,55 @@ public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDe
 
         return new Success<MeasurementDevice>(device);
     }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>>
+        ChangeOwnerOfDevice(int newOwnerId, string deviceId)
+    {
+        var user = await uow.PersonRepository.GetPersonByIdAsync(newOwnerId);
+        if (user is null)
+        {
+            logger.LogWarning("User with id {id} could not be found", newOwnerId);
+            return new NotFound();
+        }
+
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            logger.LogWarning("Device with id {id} could not be found", deviceId);
+            return new NotFound();
+        }
+
+        if (device.OwnerId == newOwnerId)
+        {
+            return new Success<MeasurementDevice>(device);
+        }
+
+        bool newOwnerWasAlreadyUser = device.Users.Any(u => u.UserId == newOwnerId);
+        bool oldOwnerIsAlreadyUser = device.Users.Any(u => u.UserId == device.OwnerId);
+
+        if (!newOwnerWasAlreadyUser && !oldOwnerIsAlreadyUser
+                            && device.Users.Count >= device.Category.NumOfAllowedPeople)
+        {
+            return new IDeviceService.TooManyUsers();
+        }
+
+        device.Users.RemoveAll(u => u.UserId == newOwnerId);
+
+        if (!oldOwnerIsAlreadyUser)
+        {
+            device.Users.Add(new DeviceUser
+            {
+                DeviceId = deviceId,
+                UserId = device.OwnerId
+            });
+        }
+
+        device.OwnerId = newOwnerId;
+        device.Owner = user;
+        
+        await uow.SaveChangesAsync();
+        logger.LogInformation("A new owner with id {ownerId} was named for device with id {deviceId}", newOwnerId, deviceId);
+        return new Success<MeasurementDevice>(device);
+    }
+    
 }
