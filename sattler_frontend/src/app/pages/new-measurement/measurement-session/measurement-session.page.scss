@@ -40,8 +40,31 @@
 }
 
 .segment-card { padding: 14px 16px 16px; }
+.segment-card.cdk-drag-preview { box-sizing: border-box; border-radius: 12px; box-shadow: t.$shadow-elev; }
+.segment-card.cdk-drag-placeholder { opacity: 0.25; }
+.segment-card.cdk-drag-animating { transition: transform 180ms ease; }
 .segment-heading { display: flex; align-items: center; gap: 10px; min-height: 28px; }
 .segment-heading > strong { flex: 1; color: #161616; font-size: 14px; font-weight: 700; }
+.segment-actions { display: flex; align-items: center; gap: 3px; }
+.segment-action {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: t.$text-soft;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+}
+.segment-action:hover:not(:disabled) { background: t.$purple-50; color: t.$purple-600; }
+.segment-action:disabled { color: t.$text-muted; cursor: not-allowed; opacity: 0.45; }
+.drag-handle { cursor: grab; }
+.drag-handle:active { cursor: grabbing; }
+.segment-action.remove-segment { color: #999; font-size: 20px; }
+.segment-action.remove-segment:hover { background: #fff0f0; color: #b94343; }
 .step-icon, .progress-number {
   display: inline-grid;
   flex: 0 0 auto;
@@ -84,9 +107,9 @@
   width: 100%;
   border: 0;
   border-radius: 7px;
-  padding: 8px;
-  background: #ddc5ff;
-  color: #6030ac;
+  padding: 5px 8px;
+  background: t.$purple-500;
+  color: white;
   cursor: pointer;
   font-size: 12px;
 }
@@ -100,7 +123,6 @@
   font-size: 13px;
 }
 .completed-segment strong { margin-left: auto; color: t.$purple-600; }
-.remove-segment { border: 0; background: transparent; color: #999; cursor: pointer; font-size: 17px; }
 
 .add-segment {
   width: 100%;
@@ -201,7 +223,7 @@ textarea::placeholder { color: #999; }
   font-size: 15px;
 }
 .finish-button:hover:not(:disabled) { background: t.$purple-600; }
-.finish-button:disabled { background: t.$purple-100; color: t.$text-muted; cursor: not-allowed; }
+.finish-button:disabled { background: t.$purple-500; color: white; cursor: not-allowed; }
 
 @media (max-width: 760px) {
   .session-page { padding: 14px 16px 24px; }

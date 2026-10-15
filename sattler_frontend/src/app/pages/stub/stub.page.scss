@@ -111,8 +111,7 @@
   align-items: center;
 }
 
-.avatar,
-.summary-badge {
+.avatar {
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -127,12 +126,6 @@
   color: t.$purple-600;
   font-weight: 700;
   font-size: 15px;
-}
-
-.summary-badge {
-  background: t.$purple-50;
-  color: t.$purple-600;
-  font-size: 18px;
 }
 
 .field {
@@ -203,6 +196,13 @@
   appearance: none;
 }
 
+.select-input:disabled {
+  border-color: #e5e5e5;
+  background: #f1f1f1;
+  color: t.$text-muted;
+  cursor: not-allowed;
+}
+
 .text-input {
   background: #fafafa;
 }
@@ -215,6 +215,10 @@
   color: t.$text-strong;
   font-size: 20px;
   pointer-events: none;
+}
+
+.select-icon.disabled {
+  color: t.$text-muted;
 }
 
 .saddle-card .text-input {

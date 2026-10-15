@@ -74,6 +74,18 @@ export class MeasurementSessionService {
     );
   }
 
+  reorderSegments(segments: MeasurementSegment[]): void {
+    this._session.update(session => {
+      if (!session || segments.length !== session.segments.length) return session;
+      const segmentIds = new Set(segments.map(segment => segment.id));
+      if (segmentIds.size !== session.segments.length
+        || session.segments.some(segment => !segmentIds.has(segment.id))) {
+        return session;
+      }
+      return { ...session, segments: [...segments] };
+    });
+  }
+
   complete(): string | null {
     const session = this._session();
     if (!session || !session.segments.some(segment => segment.completed)) return null;

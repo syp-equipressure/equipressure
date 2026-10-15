@@ -22,7 +22,7 @@
                   <option [value]="entry.owner.id" [selected]="entry.owner.id === selectedOwnerId()">{{ fullName(entry.owner) }}</option>
                 }
               </select>
-              <span class="select-icon material-icons">chevron_right</span>
+              <span class="select-icon material-icons" [class.disabled]="!selectedOwner()">chevron_right</span>
             </div>
           </label>
 
@@ -57,7 +57,7 @@
                   <option [value]="entry.id" [selected]="entry.id === selectedHorseId()">{{ entry.name }}</option>
                 }
               </select>
-              <span class="select-icon material-icons">chevron_right</span>
+              <span class="select-icon material-icons" [class.disabled]="!selectedHorse() || availableSaddles().length === 0">chevron_right</span>
             </div>
           </label>
 
@@ -76,7 +76,6 @@
         <article class="card summary-card">
           <div class="card-head summary-head">
             <h3>Zusammenfassung</h3>
-            <span class="summary-badge material-icons">play_arrow</span>
           </div>
 
           <div class="summary-list">
