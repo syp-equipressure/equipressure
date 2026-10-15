@@ -1,4 +1,4 @@
-using EquiApi.Core.Util;
+﻿using EquiApi.Core.Util;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
 using Serilog;
