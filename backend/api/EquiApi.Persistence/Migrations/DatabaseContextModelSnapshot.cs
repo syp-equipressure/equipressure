@@ -31,8 +31,9 @@ namespace EquiApi.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Name")
-                        .HasColumnType("integer");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -45,17 +46,17 @@ namespace EquiApi.Persistence.Migrations
                         new
                         {
                             Id = 1,
-                            Name = 10
+                            Name = "Equestrian"
                         },
                         new
                         {
                             Id = 2,
-                            Name = 20
+                            Name = "Saddler"
                         },
                         new
                         {
                             Id = 3,
-                            Name = 30
+                            Name = "Guest"
                         });
                 });
 

@@ -1,6 +1,7 @@
 ﻿using EquiApi.Core.Util;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace EquiApi;
@@ -74,6 +75,25 @@ public static class Setup
                 options.ConstraintMap.Add(nameof(LocalDate),
                                           typeof(LocalDateRouteConstraint));
             });
+        }
+    }
+
+    extension(WebApplication app)
+    {
+        /// <summary>
+        ///     Migrates the database and adds the development test data if the database is empty
+        /// </summary>
+        public async ValueTask SeedDevelopmentDataAsync()
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+
+            await context.Database.MigrateAsync();
+            bool seeded = await DevelopmentSeedData.SeedAsync(context);
+
+            Log.Logger.Information(seeded
+                                       ? "Added development test data to the empty database"
+                                       : "Database already contains data, development test data was not added");
         }
     }
 }
