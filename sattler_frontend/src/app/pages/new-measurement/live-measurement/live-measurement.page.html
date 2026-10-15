@@ -1,0 +1,41 @@
+<app-page-header title="Live-Messung"></app-page-header>
+
+@if (session()) {
+  <main class="live-page">
+    <header class="live-toolbar">
+      <button type="button" class="back-button" aria-label="Zurück zur Vorbereitung" (click)="finishSegment()">←</button>
+      <time>{{ formatDuration(elapsedSeconds()) }}</time>
+      <button type="button" class="stop-button" (click)="finishSegment()">Teilmessung beenden</button>
+    </header>
+
+    <div class="live-layout">
+      <section class="heatmap-card">
+        <div class="heatmap-heading">
+          <span>Druckverteilung</span>
+        </div>
+        <div class="measurement-empty">Noch keine Messdaten</div>
+      </section>
+
+      <aside class="live-controls">
+        <section class="control-card">
+          <h2>Gangart</h2>
+          <div class="button-group">
+            @for (option of ['Schritt', 'Trab', 'Galopp']; track option) {
+              <button type="button" [class.active]="gait() === option" disabled>{{ option }}</button>
+            }
+          </div>
+        </section>
+
+        <section class="control-card">
+          <h2>Aufnahme-Seite</h2>
+          <div class="button-group">
+            @for (option of ['Links', 'Rechts']; track option) {
+              <button type="button" [class.active]="side() === option" disabled>{{ option }}</button>
+            }
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </main>
+}

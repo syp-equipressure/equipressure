@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
+import 'package:reiterappfrontend/models/user_data.dart';
+import 'package:reiterappfrontend/services/device_service.dart';
 
 /// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert
 /// (400/404/409). Schaut so aus dass aufrufende Screens unterscheiden können
@@ -269,90 +272,136 @@ class PersonService {
   // ---------------------------------------------------------------------------
 
   static Future<List<GroupMember>> loadGroupMembers(String deviceId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/members');
-    final response = await http.get(url).timeout(_timeout);
+    final usersUrl = Uri.parse('$baseUrl/devices/$deviceId/users');
+    final ownerUrl = Uri.parse('$baseUrl/devices/$deviceId/owner');
+    final responses = await Future.wait([
+      http.get(usersUrl).timeout(_timeout),
+      http.get(ownerUrl).timeout(_timeout),
+    ]);
+    final usersResponse = responses[0];
+    final ownerResponse = responses[1];
 
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-      final membersList = jsonData['members'] as List? ?? [];
-      return membersList
-          .map((m) => GroupMember.fromJson(m as Map<String, dynamic>))
-          .toList();
+    if (usersResponse.statusCode != 200) {
+      _throwForStatus(usersResponse, 'load device users');
     }
-    if (response.statusCode == 404) {
-      return [];
+    if (ownerResponse.statusCode != 200) {
+      _throwForStatus(ownerResponse, 'load device owner');
     }
-    _throwForStatus(response, 'load group members');
+
+    final owner = jsonDecode(ownerResponse.body) as Map<String, dynamic>;
+    final ownerIdValue = owner['id'] ?? owner['person_id'] ?? owner['personId'];
+    if (ownerIdValue == null) {
+      throw const FormatException('Invalid device owner response');
+    }
+    final ownerId = ownerIdValue.toString();
+    final decodedUsers = jsonDecode(usersResponse.body);
+    final List<dynamic> users;
+    if (decodedUsers is List) {
+      users = decodedUsers;
+    } else if (decodedUsers is Map<String, dynamic>) {
+      users =
+          (decodedUsers['persons'] ??
+                  decodedUsers['users'] ??
+                  decodedUsers['members'] ??
+                  [])
+              as List<dynamic>;
+    } else {
+      throw const FormatException('Invalid device users response');
+    }
+
+    final members = users.map((user) {
+      final member = GroupMember.fromJson(user as Map<String, dynamic>);
+      return GroupMember(
+        id: member.id,
+        name: member.name,
+        imageUrl: member.imageUrl,
+        isCurrentUser: member.isCurrentUser,
+        isOwner: member.id == ownerId,
+      );
+    }).toList();
+    if (!members.any((member) => member.id == ownerId)) {
+      members.add(
+        GroupMember(
+          id: ownerId,
+          name: GroupMember.fromJson(owner).name,
+          imageUrl: (owner['imageUrl'] ?? owner['image_url']) as String?,
+          isCurrentUser: false,
+          isOwner: true,
+        ),
+      );
+    }
+    return members;
   }
 
-  // /users/current existiert noch nicht im Backend. Wir lösen das im Frontend:
-  // userId kommt vom AuthService (Demo-userId solange Login fehlt). Wenn der
-  // Backend-Call klappt mappen wir EquestrianBasicDto -> UserData-Shape.
-  // Wenn das Backend offline oder die Person nicht da ist: lokaler JSON-Fallback.
-  static Future<Map<String, dynamic>> loadUserData() async {
-    final userId = AuthService().currentUserId();
-    if (userId != null) {
-      try {
-        final eq = await getEquestrian(userId.toString());
-        return _equestrianToUserData(eq);
-      } catch (_) {
-        // Backend unerreichbar oder Person nicht gefunden -> JSON Fallback.
+  static Future<void> addDeviceUser(String deviceId, String userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/add/$userId');
+    final response = await http.post(url).timeout(_timeout);
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      _throwForStatus(response, 'add device user');
+    }
+  }
+
+  static Future<void> removeDeviceUser(String deviceId, String userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/remove/$userId');
+    final response = await http.delete(url).timeout(_timeout);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      _throwForStatus(response, 'remove device user');
+    }
+  }
+
+  static Future<void> changeDeviceOwner(String deviceId, String userId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId/owner/$userId');
+    final response = await http.patch(url).timeout(_timeout);
+    if (response.statusCode != 200) {
+      _throwForStatus(response, 'change device owner');
+    }
+  }
+
+  static Future<UserData> loadUserData(String personId) async {
+    final responses = await Future.wait([
+      http.get(Uri.parse('$baseUrl/persons/$personId')).timeout(_timeout),
+      http
+          .get(Uri.parse('$baseUrl/persons/$personId/profile-data'))
+          .timeout(_timeout),
+      http
+          .get(Uri.parse('$baseUrl/persons/$personId/location'))
+          .timeout(_timeout),
+    ]);
+    for (var index = 0; index < responses.length; index++) {
+      if (responses[index].statusCode != 200) {
+        _throwForStatus(responses[index], 'load person profile data');
       }
     }
-    final raw = await rootBundle.loadString('assets/data/personal_data.json');
-    final decoded = jsonDecode(raw) as Map<String, dynamic>;
-    return (decoded['user'] as Map<String, dynamic>?) ?? decoded;
-  }
 
-  static Future<List<Map<String, dynamic>>> loadDevices() async {
-    final userId = AuthService().currentUserId();
-    if (userId != null) {
-      try {
-        final list = await loadPersonDevices(userId.toString());
-        if (list.isNotEmpty) {
-          return list.map(_deviceDtoToUiShape).toList();
-        }
-      } catch (_) {
-        // Backend unerreichbar -> JSON Fallback.
-      }
+    final details = jsonDecode(responses[0].body) as Map<String, dynamic>;
+    final name = jsonDecode(responses[1].body) as Map<String, dynamic>;
+    final location = jsonDecode(responses[2].body) as Map<String, dynamic>;
+    final firstName = name['firstName'] ?? name['firstname'];
+    final lastName = name['lastName'] ?? name['lastname'];
+    if (firstName == null || lastName == null) {
+      throw const FormatException('Backend person profile has no full name');
     }
-    final raw = await rootBundle.loadString('assets/data/devices.json');
-    return _extractList(jsonDecode(raw));
+
+    final addressName = location['addressName']?.toString();
+    final city = location['cityName']?.toString() ?? '';
+    final postalCode = (location['plz'] ?? location['PLZ'])?.toString() ?? '';
+    return UserData(
+      id: (details['id'] ?? personId).toString(),
+      name: '$firstName $lastName',
+      imageUrl: '',
+      birthDate: 'Nicht verfügbar',
+      address: [
+        addressName,
+        '$postalCode $city',
+      ].where((part) => part != null && part.trim().isNotEmpty).join(', '),
+      email: details['email']?.toString() ?? 'Nicht hinterlegt',
+      height: '${details['height'] ?? '–'} cm',
+      weight: '${details['weight'] ?? '–'} kg',
+    );
   }
 
-  /// Mappt das Backend-EquestrianBasicDto auf das Shape das UserData.fromJson
-  /// erwartet (id, name, imageUrl, birthDate, address, email, height, weight).
-  /// Backend liefert: id, firstName, lastName, height, weight, email,
-  /// addressName, cityName, plz.
-  static Map<String, dynamic> _equestrianToUserData(Map<String, dynamic> eq) {
-    final street = (eq['addressName'] ?? '').toString();
-    final plz = (eq['plz'] ?? '').toString();
-    final city = (eq['cityName'] ?? '').toString();
-    final cityLine = '$plz $city'.trim();
-    final address = [street, cityLine].where((s) => s.isNotEmpty).join('\n');
-
-    return {
-      'id': eq['id']?.toString() ?? '',
-      'name': '${eq['firstName'] ?? ''} ${eq['lastName'] ?? ''}'.trim(),
-      'imageUrl': '',
-      'birthDate': '',
-      'address': address,
-      'email': (eq['email'] ?? '').toString(),
-      'height': eq['height'] == null ? '' : '${eq['height']} cm',
-      'weight': eq['weight'] == null ? '' : '${eq['weight']} kg',
-    };
-  }
-
-  /// MeasurementDeviceDto (id, categoryId, owner, deviceUser) auf das
-  /// Shape mappen das Device.fromJson erwartet (id, name, number).
-  /// Solange das Backend keine Namen liefert: Anzeigename aus der id zusammensetzen.
-  static Map<String, dynamic> _deviceDtoToUiShape(Map<String, dynamic> dto) {
-    final id = (dto['id'] ?? '').toString();
-    return {
-      'id': id,
-      'name': 'Gerät $id',
-      'number': id,
-    };
+  static Future<List<Device>> loadDevices(String personId) async {
+    return DeviceService().getDevices(personId);
   }
 
   // ---------------------------------------------------------------------------

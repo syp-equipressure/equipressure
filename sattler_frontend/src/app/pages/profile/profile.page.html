@@ -1,0 +1,63 @@
+<app-page-header title="Sattler-Profil"></app-page-header>
+
+<section class="page-body">
+  @if (!backendPersonId()) {
+    <div class="profile-state">Profil nicht verfügbar.</div>
+  } @else if (loadingBackendProfile()) {
+    <div class="profile-state" role="status">Profil wird geladen …</div>
+  } @else if (backendProfileError()) {
+    <div class="profile-state error" role="alert">{{ backendProfileError() }}</div>
+  } @else {
+  <div class="panel">
+    <div class="profile-card">
+      <div class="avatar">
+        @if (sattler().avatarUrl) {
+          <img [src]="sattler().avatarUrl" [alt]="fullName()" />
+        } @else {
+          <span class="initials">{{ initials() }}</span>
+        }
+      </div>
+
+      <div class="identity">
+        <h2 class="name">{{ fullName() }}</h2>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3 class="info-title">Kontakt</h3>
+      @if (sattler().email) {
+        <div class="info-row">
+          <span class="material-icons info-icon">mail_outline</span>
+          <a class="info-text" [href]="'mailto:' + sattler().email">{{ sattler().email }}</a>
+        </div>
+      }
+      @if (sattler().phoneNumber) {
+        <div class="info-row">
+          <span class="material-icons info-icon">phone</span>
+          <a class="info-text" [href]="'tel:' + sattler().phoneNumber">{{ sattler().phoneNumber }}</a>
+        </div>
+      }
+      @if (sattler().address) {
+        <div class="info-row">
+          <span class="material-icons info-icon">place</span>
+          <span class="info-text">{{ sattler().address }}</span>
+        </div>
+      }
+      @if (sattler().website; as website) {
+        <div class="info-row">
+          <span class="material-icons info-icon">language</span>
+          <a class="info-text website-link" [href]="website" target="_blank" rel="noopener noreferrer">
+            {{ website.replace('https://', '').replace('http://', '') }}
+          </a>
+        </div>
+      }
+      @if (sattler().description) {
+        <div class="description-row">
+          <h4>Beschreibung</h4>
+          <p>{{ sattler().description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+  }
+</section>

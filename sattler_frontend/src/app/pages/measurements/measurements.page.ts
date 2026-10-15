@@ -1,0 +1,107 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { DataService } from '../../services/data.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { PressureHeatmapComponent, HeatmapMode } from '../../shared/pressure-heatmap/pressure-heatmap';
+import { VideoTileComponent } from '../../shared/video-tile/video-tile';
+import { Gait, Side, Measurement } from '../../models/measurement.model';
+import { fullName } from '../../models/customer.model';
+import { MeasurementService } from '../../services/measurement.service';
+
+type TabKey = 'messungen' | 'notizen';
+
+@Component({
+  selector: 'app-measurements-page',
+  standalone: true,
+  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent],
+  templateUrl: './measurements.page.html',
+  styleUrl: './measurements.page.scss',
+})
+export class MeasurementsPage {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly data = inject(DataService);
+  private readonly measurementService = inject(MeasurementService);
+
+  private readonly params = toSignal(this.route.paramMap, { requireSync: true });
+
+  readonly horse = computed(() => this.data.getHorse(this.params().get('horseId') ?? ''));
+  readonly customer = computed(() => {
+    const customerId = this.params().get('customerId');
+    const horse = this.horse();
+    return customerId ? this.data.getCustomer(customerId) : horse ? this.data.getCustomer(horse.ownerId) : undefined;
+  });
+  readonly measurements = computed(() => {
+    const h = this.horse();
+    return h ? this.measurementService.getMeasurementsForHorse(h.id) : [];
+  });
+
+  readonly customerName = computed(() => {
+    const c = this.customer();
+    return c ? fullName(c) : '';
+  });
+
+  // ─── UI state ──────────────────────────────────────────────────────────────
+  readonly tab = signal<TabKey>('messungen');
+  readonly selectedId = signal<string | null>(null);
+
+  readonly selected = computed<Measurement | null>(() => {
+    const id = this.selectedId();
+    const list = this.measurements();
+    if (id) return list.find(m => m.id === id) ?? list[0] ?? null;
+    return list[0] ?? null;
+  });
+
+  readonly pressureGrid = computed(() => {
+    const measurement = this.selected();
+    if (!measurement) {
+      return [];
+    }
+
+    const grid = measurement.detail.pressureGrid;
+    return this.activeSide() === 'Rechts' ? mirrorGridX(grid) : grid;
+  });
+
+  readonly activeGait = signal<Gait>('Trab');
+  readonly activeSide = signal<Side>('Links');
+  readonly heatmapMode = signal<HeatmapMode>('heatmap');
+
+  selectMeasurement(id: string) {
+    this.selectedId.set(id);
+  }
+
+  setTab(t: TabKey) {
+    this.tab.set(t);
+  }
+
+  toggleGait(g: Gait) {
+    this.activeGait.set(g);
+  }
+
+  toggleSide(s: Side) {
+    this.activeSide.set(s);
+  }
+
+  toggleHeatmapMode() {
+    this.heatmapMode.update(m => (m === 'heatmap' ? 'grid' : 'heatmap'));
+  }
+
+  resetView() {
+    this.activeGait.set('Trab');
+    this.activeSide.set('Links');
+    this.heatmapMode.set('heatmap');
+  }
+
+  newMeasurement() {
+    const h = this.horse();
+    if (!h) return;
+    this.router.navigate(['/new-measurement'], {
+      queryParams: { ownerId: h.ownerId, horseId: h.id },
+    });
+  }
+}
+
+function mirrorGridX(grid: number[][]): number[][] {
+  return grid.map(row => [...row].reverse());
+}

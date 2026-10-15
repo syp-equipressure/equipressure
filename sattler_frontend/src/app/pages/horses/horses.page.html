@@ -1,0 +1,43 @@
+<app-page-header [title]="title()" [showBack]="true"></app-page-header>
+
+<section class="page-body">
+  @if (horsesLoading()) {
+    <div class="empty" role="status">Pferde werden geladen …</div>
+  } @else if (horsesError()) {
+    <div class="empty error" role="alert">{{ horsesError() }}</div>
+  } @else if (horsesByRider().length === 0) {
+    <div class="empty">Noch keine Pferde</div>
+  } @else {
+    <div class="rider-groups">
+      @for (group of horsesByRider(); track group.rider.id) {
+        <section class="rider-group" [attr.aria-label]="'Pferde von ' + fullName(group.rider)">
+          <h2>{{ fullName(group.rider) }}</h2>
+          <div class="grid">
+            @for (horse of group.horses; track horse.id) {
+              <button class="card" type="button" (click)="openHorse(group.rider.id, horse.id)">
+                @if (horse.imageUrl) {
+                  <div class="thumb" [style.background-image]="'url(' + horse.imageUrl + ')'"></div>
+                }
+                <div class="info">
+                  <div class="name">{{ horse.name }}</div>
+                  @if (horse.age > 0) {
+                    <div class="row">
+                      <span class="label">ALTER</span>
+                      <span class="value">{{ horse.age }}</span>
+                    </div>
+                  }
+                  @if (horse.breed && horse.breed !== '–') {
+                    <div class="row">
+                      <span class="label">RASSE</span>
+                      <span class="value">{{ horse.breed }}</span>
+                    </div>
+                  }
+                </div>
+              </button>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</section>

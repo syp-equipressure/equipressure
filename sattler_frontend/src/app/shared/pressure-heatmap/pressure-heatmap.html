@@ -1,0 +1,26 @@
+<div
+  class="heatmap"
+  [class.mode-heatmap]="mode === 'heatmap'"
+  [class.mode-grid]="mode === 'grid'"
+  [style.--cols]="colCount"
+>
+  @if (mode === 'heatmap') {
+    <canvas #canvas class="heatmap-canvas"></canvas>
+  } @else {
+    <div class="matrix">
+      @for (row of grid; track $index) {
+        <div class="row">
+          @for (v of row; track $index) {
+            <div
+              class="cell grid-cell"
+              [style.background]="cellBg(v)"
+              [style.border-color]="cellBorder(v)"
+            >
+              {{ v.toFixed(1) }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,81 @@
+<app-page-header title="Startseite"></app-page-header>
+
+<main class="dashboard">
+  <section class="welcome">
+    <div class="welcome-copy">
+      <p class="eyebrow">Dein Arbeitsbereich</p>
+      <h2>
+        @if (firstName()) {
+          Willkommen zurück, {{ firstName() }}.
+        } @else {
+          Willkommen zurück.
+        }
+      </h2>
+    </div>
+  </section>
+
+  <div class="dashboard-grid">
+    <section class="panel recent-panel">
+      <header class="panel-header">
+        <div>
+          <p class="eyebrow">Verlauf</p>
+          <h2>Zuletzt gemessen</h2>
+        </div>
+      </header>
+
+      <div class="recent-list">
+        @for (item of recentMeasurements(); track item.measurement.id) {
+          <a
+            class="recent-row"
+            [routerLink]="item.horse.ownerId === customer().id ? ['/my-horses', item.horse.id] : ['/customers', item.horse.ownerId, 'horses', item.horse.id]"
+          >
+            <span class="recent-info">
+              <strong>{{ item.horse.name }}</strong>
+              <span>{{ item.owner ? fullName(item.owner) : 'Unbekannte Kundschaft' }} · {{ item.measurement.deviceName }}</span>
+            </span>
+            <span class="recent-meta">
+              <strong>{{ item.measurement.date }}</strong>
+              <span>Ø Druck {{ item.measurement.detail.meanNcm2.toString().replace('.', ',') }} N/cm²</span>
+            </span>
+          </a>
+        } @empty {
+          <div class="empty-state">
+            <span class="material-icons">analytics</span>
+            <strong>Noch keine Messungen</strong>
+            <span>Deine abgeschlossenen Messungen werden hier angezeigt.</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <aside class="side-column">
+      <section class="panel actions-panel">
+        <p class="eyebrow">Schnellzugriff</p>
+        <h2>Was möchtest du tun?</h2>
+
+        <a class="action-link primary-link" routerLink="/new-measurement">
+          <span class="action-icon material-icons">add_circle_outline</span>
+          <span><strong>Messung starten</strong><small>Passform und Druckverteilung prüfen</small></span>
+          <span class="material-icons action-arrow">arrow_forward</span>
+        </a>
+        <a class="action-link" routerLink="/customers">
+          <span class="action-icon material-icons">people_outline</span>
+          <span><strong>Kundenverwaltung</strong><small>Kund*innen, Pferde und Messverläufe</small></span>
+          <span class="material-icons action-arrow">arrow_forward</span>
+        </a>
+        <a class="action-link" routerLink="/my-horses">
+          <span class="action-icon horse-action-icon">
+            <img src="/assets/horse-icon.svg" alt="" />
+          </span>
+          <span><strong>Meine Pferde</strong><small>Eigene Pferde und Messverläufe</small></span>
+          <span class="material-icons action-arrow">arrow_forward</span>
+        </a>
+        <a class="action-link" routerLink="/messages">
+          <span class="action-icon material-icons">chat_bubble_outline</span>
+          <span><strong>Nachrichten öffnen</strong><small>Mit deiner Kundschaft in Kontakt</small></span>
+          <span class="material-icons action-arrow">arrow_forward</span>
+        </a>
+      </section>
+    </aside>
+  </div>
+</main>

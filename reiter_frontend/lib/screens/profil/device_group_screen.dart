@@ -18,6 +18,7 @@ class DeviceGroupScreen extends StatefulWidget {
 
 class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
   late Future<List<GroupMember>> _membersFuture;
+  bool _isUpdating = false;
 
   @override
   void initState() {
@@ -61,10 +62,7 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
                 }
                 return Text(
                   'Lädt...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 );
               },
             ),
@@ -108,9 +106,9 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: _buildMemberTile(
                           member,
-                          canRemove: !member.isCurrentUser,
+                          canRemove: !member.isCurrentUser && !member.isOwner,
                           onRemove: () {
-                            _showDeleteMemberDialog(context, member, members, index);
+                            _showDeleteMemberDialog(context, member);
                           },
                         ),
                       );
@@ -119,23 +117,41 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
                 ),
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OutlinedButton(
+                        onPressed: _isUpdating ? null : _showAddMemberDialog,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Mitglied hinzufügen'),
                       ),
-                    ),
-                    child: const Text(
-                      'Gerät übergeben',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: _isUpdating
+                            ? null
+                            : () => _showTransferOwnerDialog(members),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Gerät übergeben',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -219,13 +235,13 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
       Colors.amber,
       Colors.pink,
     ];
-    
+
     // Use hash of memberId to consistently pick a color
     final hash = memberId.hashCode.abs();
     return colors[hash % colors.length];
   }
 
-  void _showDeleteMemberDialog(BuildContext context, GroupMember member, List<GroupMember> members, int index) {
+  void _showDeleteMemberDialog(BuildContext context, GroupMember member) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -240,19 +256,12 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
               child: const Text('Abbrechen'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  members.removeAt(index);
-                  _membersFuture = Future.value(members);
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${member.name} wurde aus der Gruppe entfernt'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
+              onPressed: _isUpdating
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      _removeMember(member);
+                    },
               child: const Text(
                 'Entfernen',
                 style: TextStyle(color: Colors.red),
@@ -262,5 +271,154 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
         );
       },
     );
+  }
+
+  Future<void> _showAddMemberDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final userIdController = TextEditingController();
+    final userId = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mitglied hinzufügen'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: userIdController,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Personen-ID',
+              hintText: 'Numerische ID eingeben',
+              helperText:
+                  'Das Backend stellt keine Personenliste zum Auswählen bereit.',
+            ),
+            validator: (value) {
+              final parsed = int.tryParse(value?.trim() ?? '');
+              return parsed == null || parsed < 0
+                  ? 'Bitte eine gültige Personen-ID eingeben.'
+                  : null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(context, int.parse(userIdController.text.trim()));
+              }
+            },
+            child: const Text('Hinzufügen'),
+          ),
+        ],
+      ),
+    );
+    userIdController.dispose();
+    if (userId == null || !mounted) return;
+
+    setState(() => _isUpdating = true);
+    try {
+      await PersonService.addDeviceUser(widget.deviceId, userId.toString());
+      if (!mounted) return;
+      setState(() {
+        _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mitglied wurde hinzugefügt.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mitglied konnte nicht hinzugefügt werden: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  Future<void> _removeMember(GroupMember member) async {
+    setState(() => _isUpdating = true);
+    try {
+      await PersonService.removeDeviceUser(widget.deviceId, member.id);
+      if (!mounted) return;
+      setState(() {
+        _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${member.name} wurde aus der Gruppe entfernt'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mitglied konnte nicht entfernt werden: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  Future<void> _showTransferOwnerDialog(List<GroupMember> members) async {
+    final eligibleMembers = members.where((member) => !member.isOwner).toList();
+    if (eligibleMembers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Es gibt keine Person, an die das Gerät übergeben werden kann.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selectedMember = await showDialog<GroupMember>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Neue Besitzerin oder neuen Besitzer auswählen'),
+        children: eligibleMembers
+            .map(
+              (member) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, member),
+                child: Text(member.name),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (selectedMember == null || !mounted) return;
+
+    setState(() => _isUpdating = true);
+    try {
+      await PersonService.changeDeviceOwner(widget.deviceId, selectedMember.id);
+      if (!mounted) return;
+      setState(() {
+        _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${selectedMember.name} ist jetzt Besitzer*in des Geräts.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Besitz konnte nicht übertragen werden: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
   }
 }

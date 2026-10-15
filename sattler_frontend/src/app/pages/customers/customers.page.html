@@ -1,0 +1,84 @@
+<app-page-header title="Kundenverwaltung"></app-page-header>
+
+<section class="page-body">
+  <div class="directory">
+    <header class="directory-heading">
+      <div>
+        <p class="eyebrow">Verwaltung</p>
+        <h2>{{ activeList() === 'contacts' ? 'Kontakte' : 'Favoriten' }}</h2>
+      </div>
+    </header>
+
+    <div class="filters">
+      <div class="list-tabs" role="tablist" aria-label="Personenliste">
+        <button type="button" role="tab" [attr.aria-selected]="activeList() === 'contacts'"
+          [class.active]="activeList() === 'contacts'" (click)="activeList.set('contacts')">
+          Kontakte
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="activeList() === 'favourites'"
+          [class.active]="activeList() === 'favourites'" (click)="activeList.set('favourites')">
+          Favoriten
+        </button>
+      </div>
+      <input
+        id="customerSearch"
+        name="customerSearch"
+        autocomplete="off"
+        class="search-input"
+        type="search"
+        placeholder="Name oder E-Mail suchen"
+        aria-label="Kundschaft suchen"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+      />
+      <span class="result-count">{{ filtered().length }} Ergebnisse</span>
+
+      @if (!backendPersonId()) {
+        <p class="source-notice">Demo-Daten. Hinterlege deine Backend-Personen-ID in den Einstellungen,
+          um Kontakte und Favoriten aus dem Backend zu laden.</p>
+      }
+
+    </div>
+
+    @if (loadingBackendCustomers()) {
+      <div class="load-state" role="status">Personen werden geladen …</div>
+    } @else if (backendCustomersError()) {
+      <div class="load-state error" role="alert">{{ backendCustomersError() }}</div>
+    } @else {
+    <div class="customer-list">
+      <div class="list-header" aria-hidden="true">
+        <span>Name</span>
+        <span>Kontakt</span>
+        <span>Aktionen</span>
+      </div>
+      @for (c of filtered(); track c.id) {
+        <div class="customer-row">
+          <span class="customer-identity">
+            <span class="avatar">{{ c.firstName.charAt(0) }}{{ c.lastName.charAt(0) }}</span>
+            <strong class="customer-name">{{ fullName(c) }}</strong>
+          </span>
+          <span class="customer-contact">{{ c.email || c.phoneNumber || 'Keine Kontaktdaten' }}</span>
+          <span class="row-actions">
+            <a class="row-action" [routerLink]="['/customers', c.id]">
+              <span class="material-icons">person_outline</span>
+              Profil
+            </a>
+            <a class="row-action" [routerLink]="['/customers', c.id, 'horses']">
+              <img src="/assets/horse-icon.svg" alt="" />
+              Pferde
+            </a>
+          </span>
+        </div>
+      }
+
+      @if (filtered().length === 0) {
+        <div class="empty">
+          <span class="material-icons">search_off</span>
+          <strong>Keine Kundschaft gefunden</strong>
+          <span>Ändere deine Suche oder passe den Filter an.</span>
+        </div>
+      }
+    </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,33 @@
+<header class="page-header" [class.with-back]="showBack">
+  <div class="left">
+    @if (showBack) {
+      <button class="back-btn" (click)="back()">
+        <span class="material-icons">arrow_back</span>
+        <span>Zurück</span>
+      </button>
+    } @else if (showMenu) {
+      <button class="icon-btn" (click)="openMenu()" [attr.aria-label]="sidenavOpenLabel" [attr.aria-expanded]="sidenavIsOpen">
+        <span class="material-icons">{{ sidenavIsOpen ? 'menu_open' : 'menu' }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="center">
+    <h1 class="title">{{ title }}</h1>
+    @if (subtitle) {
+      <a class="subtitle" [href]="'mailto:' + subtitle">{{ subtitle }}</a>
+    }
+  </div>
+
+  <div class="right">
+    <div class="account-info">
+      <strong>{{ accountName() }}</strong>
+      @if (accountEmail()) {
+        <span>{{ accountEmail() }}</span>
+      }
+    </div>
+    <a class="profile-circle" routerLink="/profile" aria-label="Sattler-Profil" [attr.aria-current]="profileActive ? 'page' : null">
+      <span class="material-icons">person</span>
+    </a>
+  </div>
+</header>
