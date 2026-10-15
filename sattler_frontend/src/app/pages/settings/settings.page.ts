@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, UserPreferences } from '../../services/settings.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -12,8 +13,12 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 })
 export class SettingsPage {
   private readonly settings = inject(SettingsService);
+  private readonly backendPersonContext = inject(BackendPersonContextService);
 
   readonly preferences = signal<UserPreferences>(copyPreferences(this.settings.preferences()));
+  readonly backendPersonId = signal(this.backendPersonContext.personId());
+  readonly backendPersonIdFeedback = signal('');
+  readonly backendPersonIdError = signal(false);
   readonly preferencesSaving = signal(false);
   readonly notificationsFeedback = signal('');
   readonly notificationsFeedbackIsError = signal(false);
@@ -57,6 +62,18 @@ export class SettingsPage {
 
   updateTimeFormat(timeFormat: UserPreferences['timeFormat']): void {
     this.preferences.update(preferences => ({ ...preferences, timeFormat }));
+  }
+
+  saveBackendPersonId(): void {
+    const saved = this.backendPersonContext.savePersonId(this.backendPersonId());
+    this.backendPersonIdFeedback.set(
+      !saved
+        ? 'Bitte eine positive numerische Personen-ID eingeben.'
+        : this.backendPersonId().trim()
+          ? 'Personen-ID gespeichert. Profil, Kontakte, Favoriten und Pferde verwenden diese ID.'
+          : 'Personen-ID entfernt.',
+    );
+    this.backendPersonIdError.set(!saved);
   }
 
 }

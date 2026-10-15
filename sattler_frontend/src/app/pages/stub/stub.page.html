@@ -6,6 +6,13 @@
       <header class="page-title-row">
       </header>
 
+      @if (selectionLoading()) {
+        <div class="selection-state" role="status">Kontakte und Pferde werden geladen …</div>
+      } @else if (selectionError()) {
+        <div class="selection-state error" role="alert">{{ selectionError() }}</div>
+      } @else if (owners().length === 0) {
+        <div class="selection-state">Keine Kontakte vorhanden.</div>
+      } @else {
       <div class="top-grid">
         <article class="card rider-card">
           <div class="card-head">
@@ -16,10 +23,11 @@
           <label class="field">
             <span class="field-label">Name</span>
             <div class="select-shell">
-              <select class="select-input" [value]="selectedOwnerId() ?? ''" (change)="selectOwner($any($event.target).value)">
+              <select id="measurement-rider" name="riderId" autocomplete="off" class="select-input"
+                [value]="selectedOwnerId() ?? ''" (change)="selectOwner($any($event.target).value)">
                 <option value="" disabled>Reiter*in auswählen</option>
                 @for (entry of owners(); track entry.owner.id) {
-                  <option [value]="entry.owner.id" [selected]="entry.owner.id === selectedOwnerId()">{{ fullName(entry.owner) }}</option>
+                  <option [value]="entry.owner.id">{{ fullName(entry.owner) }}</option>
                 }
               </select>
               <span class="select-icon material-icons" [class.disabled]="!selectedOwner()">chevron_right</span>
@@ -47,9 +55,12 @@
             <span class="field-label">Name</span>
             <div class="select-shell">
               <select
+                id="measurement-horse"
+                name="horseId"
+                autocomplete="off"
                 class="select-input"
                 [value]="selectedHorseId() ?? ''"
-                [disabled]="!selectedOwner()"
+                [disabled]="!selectedOwner() || availableHorses().length === 0"
                 (change)="selectHorse($any($event.target).value)"
               >
                 <option value="" disabled>Pferd auswählen</option>
@@ -59,6 +70,9 @@
               </select>
               <span class="select-icon material-icons" [class.disabled]="!selectedHorse() || availableSaddles().length === 0">chevron_right</span>
             </div>
+            @if (selectedOwner() && availableHorses().length === 0) {
+              <small>Für diesen Reiter sind keine Pferde hinterlegt.</small>
+            }
           </label>
 
           <div class="metrics">
@@ -98,6 +112,9 @@
               <span class="field-label">Modell</span>
               <div class="select-shell">
                 <select
+                  id="measurement-saddle"
+                  name="saddleId"
+                  autocomplete="off"
                   class="select-input"
                   [value]="selectedSaddleId() ?? ''"
                   [disabled]="!selectedHorse() || availableSaddles().length === 0"
@@ -110,12 +127,20 @@
                 </select>
                 <span class="select-icon material-icons">chevron_right</span>
               </div>
+              @if (saddlesLoading()) {
+                <small role="status">Sättel werden geladen …</small>
+              } @else if (saddlesError()) {
+                <small class="error" role="alert">{{ saddlesError() }}</small>
+              } @else if (selectedHorse() && availableSaddles().length === 0) {
+                <small>Für dieses Pferd ist kein Sattel hinterlegt.</small>
+              }
             </label>
 
             <label class="field">
               <span class="field-label">Kategorie</span>
               <div class="select-shell">
-                <input class="text-input" [value]="selectedSaddleCategory()" readonly />
+                <input id="measurement-saddle-category" name="saddleCategory" class="text-input"
+                  [value]="selectedSaddleCategory()" readonly autocomplete="off" />
               </div>
             </label>
           </div>
@@ -153,13 +178,14 @@
       >
         Weiter zur Messung
       </button>
+      }
     </div>
   </section>
 } @else {
   <section class="stub">
     <div class="card stub-card">
       <h2>{{ resolvedTitle() }}</h2>
-      <p>WIP</p>
+      <p>Keine Einträge vorhanden.</p>
     </div>
   </section>
 }

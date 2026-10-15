@@ -7,6 +7,7 @@ import { PressureHeatmapComponent, HeatmapMode } from '../../shared/pressure-hea
 import { VideoTileComponent } from '../../shared/video-tile/video-tile';
 import { Gait, Side, Measurement } from '../../models/measurement.model';
 import { fullName } from '../../models/customer.model';
+import { MeasurementService } from '../../services/measurement.service';
 
 type TabKey = 'messungen' | 'notizen';
 
@@ -21,6 +22,7 @@ export class MeasurementsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
+  private readonly measurementService = inject(MeasurementService);
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
 
@@ -32,7 +34,7 @@ export class MeasurementsPage {
   });
   readonly measurements = computed(() => {
     const h = this.horse();
-    return h ? this.data.getMeasurementsOf(h.id) : [];
+    return h ? this.measurementService.getMeasurementsForHorse(h.id) : [];
   });
 
   readonly customerName = computed(() => {
@@ -67,12 +69,6 @@ export class MeasurementsPage {
 
   selectMeasurement(id: string) {
     this.selectedId.set(id);
-  }
-
-  updateNotes(id: string, event: Event): void {
-    if (event.target instanceof HTMLTextAreaElement) {
-      this.data.updateMeasurementNotes(id, event.target.value);
-    }
   }
 
   setTab(t: TabKey) {

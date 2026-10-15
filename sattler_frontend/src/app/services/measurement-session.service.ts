@@ -86,13 +86,11 @@ export class MeasurementSessionService {
     });
   }
 
-  complete(): string | null {
-    const session = this._session();
-    if (!session || !session.segments.some(segment => segment.completed)) return null;
+  complete(): void {
 
-    const measurement = this.data.addSessionMeasurement(session);
+    const session = this._session();
+    if (!session || !session.segments.some(segment => segment.completed)) return;
     this._session.set(null);
-    return measurement.id;
   }
 }
 

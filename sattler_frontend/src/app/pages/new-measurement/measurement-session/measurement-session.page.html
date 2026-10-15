@@ -55,7 +55,9 @@
                 <div class="segment-selectors">
                   <label>
                     <span>Gangart</span>
-                    <select [value]="segment.gait" (change)="updateSegment(segment, 'gait', $any($event.target).value)">
+                    <select id="segment-{{ segment.id }}-gait" name="segment-{{ segment.id }}-gait"
+                      autocomplete="off" [value]="segment.gait"
+                      (change)="updateSegment(segment, 'gait', $any($event.target).value)">
                       <option value="Schritt">Schritt</option>
                       <option value="Trab">Trab</option>
                       <option value="Galopp">Galopp</option>
@@ -63,7 +65,9 @@
                   </label>
                   <label>
                     <span>Hand</span>
-                    <select [value]="segment.side" (change)="updateSegment(segment, 'side', $any($event.target).value)">
+                    <select id="segment-{{ segment.id }}-side" name="segment-{{ segment.id }}-side"
+                      autocomplete="off" [value]="segment.side"
+                      (change)="updateSegment(segment, 'side', $any($event.target).value)">
                       <option value="Links">Links</option>
                       <option value="Rechts">Rechts</option>
                     </select>
@@ -89,6 +93,9 @@
         <label class="session-card notes-card">
           <span class="field-label">Notizen</span>
           <textarea
+            id="measurementNotes"
+            name="measurementNotes"
+            autocomplete="off"
             [value]="current.notes"
             (input)="updateNotes($event)"
             placeholder="Beobachtungen, Auffälligkeiten, ..."

@@ -14,6 +14,8 @@
         <label class="form-label" for="firstName">Vorname *</label>
         <input
           id="firstName"
+          name="firstName"
+          autocomplete="given-name"
           class="form-input"
           type="text"
           placeholder="z. B. Anna"
@@ -29,6 +31,8 @@
         <label class="form-label" for="lastName">Nachname *</label>
         <input
           id="lastName"
+          name="lastName"
+          autocomplete="family-name"
           class="form-input"
           type="text"
           placeholder="z. B. Müller"
@@ -45,6 +49,8 @@
       <label class="form-label" for="email">E-Mail</label>
       <input
         id="email"
+        name="email"
+        autocomplete="email"
         class="form-input"
         type="email"
         placeholder="z. B. anna.mueller@example.com"
@@ -61,6 +67,8 @@
         <label class="form-label" for="birthDate">Geburtsdatum</label>
         <input
           id="birthDate"
+          name="birthDate"
+          autocomplete="bday"
           class="form-input"
           type="date"
           [ngModel]="birthDate()"
@@ -72,6 +80,8 @@
         <label class="form-label" for="address">Adresse</label>
         <input
           id="address"
+          name="address"
+          autocomplete="street-address"
           class="form-input"
           type="text"
           placeholder="Straße, PLZ und Ort"
@@ -86,6 +96,8 @@
         <label class="form-label" for="heightCm">Körpergröße (cm) *</label>
         <input
           id="heightCm"
+          name="heightCm"
+          autocomplete="off"
           class="form-input"
           type="number"
           placeholder="z. B. 170"
@@ -103,6 +115,8 @@
         <label class="form-label" for="weightKg">Gewicht (kg) *</label>
         <input
           id="weightKg"
+          name="weightKg"
+          autocomplete="off"
           class="form-input"
           type="number"
           placeholder="z. B. 65"
