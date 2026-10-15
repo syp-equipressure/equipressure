@@ -1,539 +1,556 @@
-using EquiApi.Core.Util;
-using EquiApi.Persistence.Model;
+﻿using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
-using EquiPressure.Core.Service;
+using OneOf;
 using OneOf.Types;
 
 namespace EquiApi.Core.Services;
 
-using GetPersonByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Person>, OneOf.Types.NotFound>;
-using GetAddressAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Address>, OneOf.Types.NotFound>;
-using GetPersonAsSaddlerByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Helper.SaddlerBasicData>, IBaseService.InvalidData, OneOf.Types.NotFound>;
-using GetNameByIdAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Helper.NameData>, OneOf.Types.NotFound>;
-using GetFavouritesOrContactsAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Person>>, OneOf.Types.None, OneOf.Types.NotFound>;
-using GetOwnedHorsesAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Horse>>, OneOf.Types.None, OneOf.Types.NotFound>;
-using GetAllDevicesAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<MeasurementDevice>>, OneOf.Types.None, OneOf.Types.NotFound>;
-using GetAllSaddlersAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<Helper.SaddlerBasicData>>, OneOf.Types.None>;
-using GetAllSaddlersOfEquestrianAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<List<Helper.SaddlerBasicData>>, OneOf.Types.None, OneOf.Types.NotFound>;
-// TODO: why would we get a InvalidData if we only check the data in the controller?
-using AddPersonAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success<Person>, IBaseService.InvalidData, IBaseService.Conflict>;
-using UpdatePersonAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound, IBaseService.InvalidData, IBaseService.Conflict>;
-using DeletePersonAsyncResult
-    = OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound>;
+/// <summary>
+///     The values of a new person
+/// </summary>
+public sealed record NewPersonData(
+    string FirstName,
+    string LastName,
+    decimal Height,
+    decimal Weight,
+    LocalDate DateOfBirth,
+    string? Email,
+    string? WebsiteLink,
+    string? Description,
+    AddressData Address,
+    RoleName Role);
+
+/// <summary>
+///     The values of a person that should be changed, null values are left unchanged
+/// </summary>
+public sealed record PersonChanges(
+    string? FirstName = null,
+    string? LastName = null,
+    decimal? Height = null,
+    decimal? Weight = null,
+    LocalDate? DateOfBirth = null,
+    string? Email = null,
+    string? WebsiteLink = null,
+    string? Description = null,
+    AddressData? Address = null,
+    IReadOnlyCollection<RoleName>? Roles = null);
 
 public interface IPersonService
 {
     /// <summary>
-    /// Retrieves the data of a person formatted for an equestrian user view.
-    /// </summary>
-    /// <param name="personId">The id of the person.</param>
-    /// <returns>
-    /// A <see cref="Success{Person}"/> containing the data, 
-    /// or <see cref="NotFound"/> if the person does not exist.
-    /// </returns>
-    public ValueTask<GetPersonByIdAsyncResult> GetPersonByIdAsync(int personId);
-
-    /// <summary>
-    /// Retrieves the specific address for a person.
-    /// </summary>
-    /// <param name="personId">The id of the person.</param>
-    /// <returns>
-    /// A <see cref="Success{Address}"/> containing the address, 
-    /// or <see cref="NotFound"/> if the person or their address is missing.
-    /// </returns>
-    public ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId);
-    
-    /// <summary>
-    /// Retrieves the First and Last name for a person.
-    /// </summary>
-    /// <param name="personId">The id of the person.</param>
-    /// <returns>
-    /// A <see cref="Success{NameData}"/> if found,
-    /// or <see cref="NotFound"/> if the ID is unknown.
-    /// </returns>
-    public ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId);
-
-    /// <summary>
-    /// Retrieves the list of persons marked as favorites by the specified user.
-    /// </summary>
-    /// <param name="personId">The id of the perosn</param>
-    /// <returns>
-    /// A collection of <see cref="Person"/> entities,
-    /// <see cref="None"/> if the collection is empty, 
-    /// or <see cref="NotFound"/> if the user does not exist.
-    /// </returns>
-    public ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int personId);
-
-    /// <summary>
-    /// Retrieves the list of contacts associated with the specified user.
+    ///     Gets a person including their address and roles
     /// </summary>
     /// <param name="personId">The id of the person</param>
-    /// <returns>
-    /// A collection of <see cref="Person"/> entities,
-    /// <see cref="None"/> if the collection is empty, 
-    /// or <see cref="NotFound"/> if the user does not exist.
-    /// </returns>
-    public ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int personId);
+    /// <returns>The person or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<Person>, NotFound>> GetPersonByIdAsync(int personId);
 
     /// <summary>
-    /// Retrieves all horses owned by the person.
+    ///     Gets the address of a person
     /// </summary>
     /// <param name="personId">The id of the person</param>
-    /// <returns>
-    /// A collection of <see cref="Horse"/> entities,
-    /// <see cref="None"/> if the collection is empty,
-    /// or <see cref="NotFound"/> if the person does not exist.
-    /// </returns>
-    public ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int personId);
+    /// <returns>The address or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<Address>, NotFound>> GetPersonAddressAsync(int personId);
 
     /// <summary>
-    /// Retrieves a list of all devices registered to a specific person.
+    ///     Sets the address of a person. An existing address with the same values is reused.
     /// </summary>
-    /// <param name="personId">The id of the person.</param>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="address">The values of the new address</param>
     /// <returns>
-    /// A <see cref="Success{List}"/> of devices, 
-    /// <see cref="None"/> if no devices are registered, 
-    /// or <see cref="NotFound"/> if the person does not exist.
+    ///     The new address of the person, <see cref="NotFound" /> if the person does not exist
+    ///     or <see cref="StreetRequiredForSaddler" /> if the person is a saddler and the address has no street
     /// </returns>
-    public ValueTask<GetAllDevicesAsyncResult> GetAllDevicesByPersonAsync(int personId);
+    public ValueTask<OneOf<Success<Address>, NotFound, StreetRequiredForSaddler>> UpdatePersonAddressAsync(
+        int personId, AddressData address);
 
     /// <summary>
-    /// Retrieves a list of all saddlers with their address
+    ///     Gets the first and last name of a person
     /// </summary>
-    /// <returns>
-    /// A <see cref="Success{List}"/> of saddlers, 
-    /// <see cref="None"/> if no saddlers exist, 
-    /// or <see cref="NotFound"/> if the person does not exist.
-    /// </returns>
-    public ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync();
-    
-    /// <summary>
-    /// Retrieves a list of all favourites of an equestrian that are saddlers + their address
-    /// </summary>
-    /// <param name="equestrianId">The id of the equestrian.</param>
-    /// <returns>
-    /// A <see cref="Success{List}"/> of saddlers, 
-    /// <see cref="None"/> if no saddlers exist, 
-    /// or <see cref="NotFound"/> if the person does not exist.
-    /// </returns>
-    public ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerFavouritesAsync(int equestrianId);
-    
-    /// <summary>
-    /// Retrieves a list of all contacts of an equestrian that are saddlers + their address
-    /// </summary>
-    /// <param name="equestrianId">The id of the equestrian.</param>
-    /// <returns>
-    /// A <see cref="Success{List}"/> of saddlers, 
-    /// <see cref="None"/> if no saddlers exist, 
-    /// or <see cref="NotFound"/> if the person does not exist.
-    /// </returns>
-    public ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId);
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The name or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<NameData>, NotFound>> GetNameByIdAsync(int personId);
 
     /// <summary>
-    /// Validates and registers a new person in the system with a specific role.
+    ///     Gets all saddlers with their address
     /// </summary>
-    /// <param name="firstName">The first name of the person.</param>
-    /// <param name="lastName">The last name of the person.</param>
-    /// <param name="height">The persons height.</param>
-    /// <param name="weight">The persons weight.</param>
-    /// <param name="dateOfBirth">The persons birth date</param>
-    /// <param name="email">The unique email address for the account (optional).</param>
-    /// <param name="websiteLink">A website link (optional).</param>
-    /// <param name="description">A profile description (optional).</param>
-    /// <param name="address">The address entity to be associated with the person.</param>
-    /// <param name="role">The role assigned to the new person.</param>
-    /// <returns>
-    /// A <see cref="Success{Person}"/> containing the created entity, 
-    /// <see cref="IBaseService.InvalidData"/> if attributes are logically incorrect, 
-    /// or <see cref="IBaseService.Conflict"/> if the provided email is already claimed by another user.
-    /// </returns>
-    public ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
-                                                          decimal weight, LocalDate dateOfBirth, string? email,
-                                                          string? websiteLink, string? description, Address address,
-                                                          AccountRole role);
+    /// <returns>All saddlers, which may be empty</returns>
+    public ValueTask<IReadOnlyCollection<SaddlerData>> GetAllSaddlersAsync();
 
     /// <summary>
-    /// Updates the information for an existing person.
+    ///     Gets all saddlers a person marked as favourite
     /// </summary>
-    /// <param name="personId">The person id to be updated</param>
-    /// <param name="firstName">The new person firstname that we maybe update</param>
-    /// <param name="lastName">The new person lastname that we maybe update</param>
-    /// <param name="height">The new person height that we maybe update</param>
-    /// <param name="weight">The new person weight that we maybe update</param>
-    /// <param name="dateOfBirth">The new person dob that we maybe update</param>
-    /// <param name="email">The new person email that we maybe update</param>
-    /// <param name="websiteLink">The new person websiteLink that we maybe update</param>
-    /// <param name="description">The new person description that we maybe update</param>
-    /// <param name="address">The new person address object that we maybe update</param>
-    /// <param name="roles">The new person roles that we maybe update</param>
-    /// <returns>
-    /// A <see cref="Success{Person}"/> if updated, 
-    /// <see cref="NotFound"/> if the person does not exist, 
-    /// <see cref="IBaseService.InvalidData"/> for invalid field values, 
-    /// or <see cref="IBaseService.Conflict"/> if the new email is claimed by another user.
-    /// </returns>
-    public ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int personId, string? firstName, string? lastName,
-                                                                decimal? height, decimal? weight,
-                                                                LocalDate? dateOfBirth,
-                                                                string? email, string? websiteLink,
-                                                                string? description, Address? address,
-                                                                List<PersonRoleAssignment>? roles);
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The favourite saddlers (may be empty) or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<SaddlerData>>, NotFound>> GetFavouriteSaddlersAsync(
+        int personId);
 
     /// <summary>
-    /// Removes a person from the system.
+    ///     Gets all contacts of a person: the saddlers of an equestrian or the equestrians of a saddler
     /// </summary>
-    /// <param name="personId">The id of the person.</param>
+    /// <param name="personId">The id of the equestrian or saddler</param>
+    /// <returns>The contacts (may be empty) or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<ContactData>>, NotFound>> GetContactsAsync(int personId);
+
+    /// <summary>
+    ///     Adds a new person with a role. An existing address with the same values is reused.
+    /// </summary>
+    /// <param name="data">The values of the new person</param>
+    /// <returns>The new person or <see cref="EmailAlreadyTaken" /> if another person already uses the email</returns>
+    public ValueTask<OneOf<Success<Person>, EmailAlreadyTaken>> AddPersonAsync(NewPersonData data);
+
+    /// <summary>
+    ///     Updates the values of a person. An existing address with the same values is reused.
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="changes">The values to change, null values are left unchanged</param>
     /// <returns>
-    /// A <see cref="Success"/> result if the deletion was successful; 
-    /// otherwise, a <see cref="NotFound"/> result.
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the person does not exist,
+    ///     <see cref="EmailAlreadyTaken" /> if another person already uses the new email
+    ///     or <see cref="StreetRequiredForSaddler" /> if the person is (or becomes) a saddler without a street
     /// </returns>
-    public ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int personId);
+    public ValueTask<OneOf<Success, NotFound, EmailAlreadyTaken, StreetRequiredForSaddler>> UpdatePersonAsync(
+        int personId, PersonChanges changes);
+
+    /// <summary>
+    ///     Removes a person including all their contacts and favourites
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> DeletePersonAsync(int personId);
+
+    /// <summary>
+    ///     Marks a saddler as favourite of an equestrian, does nothing if the saddler already is a favourite
+    /// </summary>
+    /// <param name="equestrianId">The id of the equestrian</param>
+    /// <param name="saddlerId">The id of the saddler</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if one of the persons does not exist
+    ///     or <see cref="InvalidRelationship" /> if the first person is no equestrian or the second one no saddler
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, InvalidRelationship>> AddFavouriteAsync(int equestrianId,
+                                                                                      int saddlerId);
+
+    /// <summary>
+    ///     Removes a saddler from the favourites of an equestrian, a contact between them is kept
+    /// </summary>
+    /// <param name="equestrianId">The id of the equestrian</param>
+    /// <param name="saddlerId">The id of the saddler</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the saddler is no favourite of the equestrian</returns>
+    public ValueTask<OneOf<Success, NotFound>> RemoveFavouriteAsync(int equestrianId, int saddlerId);
+
+    /// <summary>
+    ///     Adds a contact between an equestrian and a saddler, works from both sides.
+    ///     Does nothing if they already are contacts.
+    /// </summary>
+    /// <param name="personId">The id of the equestrian or saddler that adds the contact</param>
+    /// <param name="contactId">The id of the saddler or equestrian that becomes the contact</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if one of the persons does not exist
+    ///     or <see cref="InvalidRelationship" /> if the persons are not an equestrian and a saddler
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, InvalidRelationship>> AddContactAsync(int personId, int contactId);
+
+    /// <summary>
+    ///     Removes a contact between an equestrian and a saddler, works from both sides. A favourite is kept.
+    /// </summary>
+    /// <param name="personId">The id of the equestrian or saddler that removes the contact</param>
+    /// <param name="contactId">The id of the contact</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the persons are no contacts</returns>
+    public ValueTask<OneOf<Success, NotFound>> RemoveContactAsync(int personId, int contactId);
+
+    /// <summary>
+    ///     Returned if another person already uses an email
+    /// </summary>
+    public readonly record struct EmailAlreadyTaken;
+
+    /// <summary>
+    ///     Returned if a saddler would end up with an address without street
+    /// </summary>
+    public readonly record struct StreetRequiredForSaddler;
+
+    /// <summary>
+    ///     Returned if a contact or favourite is not between an equestrian and a saddler
+    /// </summary>
+    /// <param name="Reason">Why the relationship is not possible</param>
+    public readonly record struct InvalidRelationship(string Reason);
 }
 
-public class PersonService(IUnitOfWork uow, IDateTimeProvider dateTimeProvider, ILogger<PersonService> logger)
-    : IPersonService
+internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logger) : IPersonService
 {
-    public async ValueTask<GetPersonByIdAsyncResult> GetPersonByIdAsync(int personId)
+    public async ValueTask<OneOf<Success<Person>, NotFound>> GetPersonByIdAsync(int personId)
     {
-        var result = await uow.PersonRepository.GetPersonByIdAsync(personId);
-
-        if (result is null)
+        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
+        if (person is null)
         {
-            logger.LogWarning("Person with id {id} could not be found", personId);
+            LogPersonNotFound(personId);
 
             return new NotFound();
         }
-
-        return new Success<Person>(result);
-    }
-
-    public async ValueTask<GetAddressAsyncResult> GetPersonAddressAsync(int personId)
-    {
-        var result = await uow.PersonRepository.GetPersonAddressAsync(personId);
-
-        if (result is null)
-        {
-            logger.LogWarning("Address could not be found");
-
-            return new NotFound();
-        }
-
-        logger.LogInformation("Address successfully got");
-
-        return new Success<Address>(result);
-    }
-
-    public async ValueTask<GetNameByIdAsyncResult> GetNameByIdAsync(int personId)
-    {
-        var result = await uow.PersonRepository.GetNameByIdAsync(personId);
-
-        if (result is null)
-        {
-            logger.LogWarning("Person could not be found");
-
-            return new NotFound();
-        }
-
-        logger.LogInformation("Name Data successfully got");
-
-        return new Success<Helper.NameData>(result);
-    }
-
-    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetFavouritesAsync(int personId)
-    {
-        bool personExists = await uow.PersonRepository.PersonExistsAsync(personId);
-        if (!personExists)
-        {
-            logger.LogWarning("Person could not be found");
-
-            return new NotFound();
-        }
-
-        IReadOnlyCollection<Person> result = await uow.PersonRepository.GetFavouritesAsync(personId);
-
-        if (result.Count <= 0)
-        {
-            logger.LogWarning("List of Favourites is empty");
-
-            return new None();
-        }
-
-        logger.LogInformation("List of Favourites successfully got");
-
-        return new Success<IReadOnlyCollection<Person>>(result);
-    }
-
-    public async ValueTask<GetFavouritesOrContactsAsyncResult> GetContactsAsync(int personId)
-    {
-        bool personExists = await uow.PersonRepository.PersonExistsAsync(personId);
-        if (!personExists)
-        {
-            logger.LogWarning("Person could not be found");
-
-            return new NotFound();
-        }
-
-        IReadOnlyCollection<Person> result = await uow.PersonRepository.GetContactsAsync(personId);
-
-        if (result.Count <= 0)
-        {
-            logger.LogWarning("List of Contacts is empty");
-
-            return new None();
-        }
-
-        logger.LogInformation("List of Contacts successfully got");
-
-        return new Success<IReadOnlyCollection<Person>>(result);
-    }
-
-    public async ValueTask<GetOwnedHorsesAsyncResult> GetOwnedHorsesAsync(int personId)
-    {
-        bool personExists = await uow.PersonRepository.PersonExistsAsync(personId);
-        if (!personExists)
-        {
-            logger.LogWarning("Person could not be found");
-
-            return new NotFound();
-        }
-
-        IReadOnlyCollection<Horse> result = await uow.PersonRepository.GetOwnedHorsesAsync(personId);
-
-        if (result.Count <= 0)
-        {
-            logger.LogWarning("List of owned Horses is empty");
-
-            return new None();
-        }
-
-        logger.LogInformation("List of owned Horses successfully got");
-
-        return new Success<IReadOnlyCollection<Horse>>(result);
-    }
-
-    public async ValueTask<GetAllDevicesAsyncResult> GetAllDevicesByPersonAsync(int personId)
-    {
-        if (!await uow.PersonRepository.PersonExistsAsync(personId))
-        {
-            logger.LogWarning("Person could not be found");
-
-            return new NotFound();
-        }
-
-        IReadOnlyCollection<MeasurementDevice> result = await uow.PersonRepository.GetAllDevicesAsync(personId);
-
-        if (result.Count <= 0)
-        {
-            logger.LogWarning("List of Devices is empty");
-
-            return new None();
-        }
-
-        logger.LogInformation("List of Devices successfully got");
-
-        return new Success<List<MeasurementDevice>>(result.ToList());
-    }
-
-    public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerFavouritesAsync(int equestrianId)
-    {
-        bool personExists = await uow.PersonRepository.PersonExistsAsync(equestrianId);
-
-        if (!personExists)
-        {
-            logger.LogWarning("equestrian doesnt exist");
-            return new NotFound();
-        }
-        
-        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
-            = await uow.PersonRepository.GetAllSaddlerFavouritesOfEquestrianAsync(equestrianId);
-
-        if (saddlers.Count <= 0)
-        {
-            logger.LogWarning("List of saddlers is empty");
-            return new None();
-        }
-
-        logger.LogInformation("Successfully got list of saddlers");
-        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
-    }
-
-    public async ValueTask<GetAllSaddlersOfEquestrianAsyncResult> GetAllSaddlerContactsAsync(int equestrianId)
-    {
-        bool personExists = await uow.PersonRepository.PersonExistsAsync(equestrianId);
-
-        if (!personExists)
-        {
-            logger.LogWarning("equestrian doesnt exist");
-            return new NotFound();
-        }
-        
-        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
-            = await uow.PersonRepository.GetAllSaddlerContactsOfEquestrianAsync(equestrianId);
-
-        if (saddlers.Count <= 0)
-        {
-            logger.LogWarning("List of saddlers is empty");
-            return new None();
-        }
-
-        logger.LogInformation("Successfully got list of saddlers");
-        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
-    }
-
-    public async ValueTask<GetAllSaddlersAsyncResult> GetAllSaddlersAsync()
-    {
-        IReadOnlyCollection<Helper.SaddlerBasicData> saddlers
-            = await uow.PersonRepository.GetAllSaddlersAsync();
-
-        if (saddlers.Count <= 0)
-        {
-            logger.LogWarning("List of saddlers is empty");
-            return new None();
-        }
-
-        logger.LogInformation("Successfully got list of saddlers");
-        return new Success<List<Helper.SaddlerBasicData>>(saddlers.ToList());
-    }
-
-    public async ValueTask<AddPersonAsyncResult> AddPersonAsync(string firstName, string lastName, decimal height,
-                                                                decimal weight, LocalDate dateOfBirth,
-                                                                string? email, string? websiteLink, string? description,
-                                                                Address address, AccountRole role)
-    {
-        if (height <= 0 || weight <= 0 || dateOfBirth >= dateTimeProvider.GetCurrentDate())
-        {
-            logger.LogWarning("Data is invalid");
-
-            return new IBaseService.InvalidData();
-        }
-
-        if (email != null && await uow.PersonRepository.PersonWithEmailExistsAsync(email))
-        {
-            logger.LogWarning("Person with Email already exists");
-
-            return new IBaseService.Conflict();
-        }
-
-        if (role.Name == RoleName.Equestrian && !(websiteLink is null && description is null))
-        {
-            logger.LogWarning("Person with Role Equestrian cannot be added with websitelink and description");
-            // TODO: eventuell anderer Return type
-            return new IBaseService.Conflict();
-        }
-
-        var person = new Person
-        {
-            FirstName = firstName,
-            LastName = lastName,
-            Height = height,
-            Weight = weight,
-            DateOfBirth = dateOfBirth,
-            Email = email,
-            WebsiteLink = websiteLink,
-            Description = description,
-            Address = address,
-            Roles = new List<PersonRoleAssignment>()
-        };
-
-        person.Roles.Add(new PersonRoleAssignment
-        {
-            PersonId = person.Id,
-            RoleId = role.Id,
-            Person = person,
-            Role = role
-        });
-
-        uow.PersonRepository.AddPerson(person);
-        await uow.SaveChangesAsync();
-        logger.LogInformation("Person successfully added");
 
         return new Success<Person>(person);
     }
 
-    public async ValueTask<UpdatePersonAsyncResult> UpdatePersonAsync(int personId, string? firstName, string? lastName,
-                                                                      decimal? height, decimal? weight,
-                                                                      LocalDate? dateOfBirth,
-                                                                      string? email, string? websiteLink,
-                                                                      string? description, Address? address,
-                                                                      List<PersonRoleAssignment>? roles)
+    public async ValueTask<OneOf<Success<Address>, NotFound>> GetPersonAddressAsync(int personId)
     {
-        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
-
-        if (person is null)
+        var address = await uow.PersonRepository.GetPersonAddressAsync(personId);
+        if (address is null)
         {
-            logger.LogWarning("Person could not be found");
+            LogPersonNotFound(personId);
 
             return new NotFound();
         }
 
-        if (height is <= 0 || weight is <= 0 || (dateOfBirth.HasValue && dateOfBirth >= dateTimeProvider.GetCurrentDate()))
-        {
-            logger.LogWarning("invalid data");
+        return new Success<Address>(address);
+    }
 
-            return new IBaseService.InvalidData();
+    public async ValueTask<OneOf<Success<Address>, NotFound, IPersonService.StreetRequiredForSaddler>>
+        UpdatePersonAddressAsync(int personId, AddressData address)
+    {
+        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
+        if (person is null)
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
         }
 
-        if (email != null && await uow.PersonRepository.IsEmailTakenByAnotherUserAsync(email, personId))
+        if (HasRole(person, RoleName.Saddler) && string.IsNullOrWhiteSpace(address.AddressName))
         {
-            logger.LogWarning("email is already taken by another user");
+            logger.LogWarning("Cannot change address of saddler {PersonId} to an address without street", personId);
 
-            return new IBaseService.Conflict();
+            return new IPersonService.StreetRequiredForSaddler();
         }
 
-        Helper.UpdateIfNotNull(firstName, x => person.FirstName = x);
-        Helper.UpdateIfNotNull(lastName, x => person.LastName = x);
-        Helper.UpdateIfHasValue(height, x => person.Height = x);
-        Helper.UpdateIfHasValue(weight, x => person.Weight = x);
-        Helper.UpdateIfHasValue(dateOfBirth, x => person.DateOfBirth = x);
-        Helper.UpdateIfNotNull(email, x => person.Email = x);
-        Helper.UpdateIfNotNull(websiteLink, x => person.WebsiteLink = x);
-        Helper.UpdateIfNotNull(description, x => person.Description = x);
+        person.Address = await uow.LocationRepository.FindOrAddAddressAsync(address);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Address of person {PersonId} changed to address {AddressId}", personId,
+                              person.Address.Id);
 
-        if (address is not null)
+        return new Success<Address>(person.Address);
+    }
+
+    public async ValueTask<OneOf<Success<NameData>, NotFound>> GetNameByIdAsync(int personId)
+    {
+        var name = await uow.PersonRepository.GetNameByIdAsync(personId);
+        if (name is null)
         {
-            person.AddressId = address.Id;
-            person.Address = address;
+            LogPersonNotFound(personId);
+
+            return new NotFound();
         }
 
-        if (roles is not null && roles.Count > 0)
+        return new Success<NameData>(name);
+    }
+
+    public async ValueTask<IReadOnlyCollection<SaddlerData>> GetAllSaddlersAsync() =>
+        await uow.PersonRepository.GetAllSaddlersAsync();
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<SaddlerData>>, NotFound>> GetFavouriteSaddlersAsync(
+        int personId)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
         {
-            person.Roles = roles;
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        var saddlers = await uow.PersonRepository.GetFavouriteSaddlersAsync(personId);
+
+        return new Success<IReadOnlyCollection<SaddlerData>>(saddlers);
+    }
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<ContactData>>, NotFound>> GetContactsAsync(int personId)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        var contacts = await uow.PersonRepository.GetContactsAsync(personId);
+
+        return new Success<IReadOnlyCollection<ContactData>>(contacts);
+    }
+
+    public async ValueTask<OneOf<Success<Person>, IPersonService.EmailAlreadyTaken>> AddPersonAsync(
+        NewPersonData data)
+    {
+        if (data.Email is not null && await uow.PersonRepository.IsEmailTakenAsync(data.Email))
+        {
+            logger.LogWarning("Cannot add person, the email is already taken");
+
+            return new IPersonService.EmailAlreadyTaken();
+        }
+
+        var roles = await GetRolesAsync([data.Role]);
+        var address = await uow.LocationRepository.FindOrAddAddressAsync(data.Address);
+
+        var person = new Person
+        {
+            FirstName = data.FirstName,
+            LastName = data.LastName,
+            Height = data.Height,
+            Weight = data.Weight,
+            DateOfBirth = data.DateOfBirth,
+            Email = data.Email,
+            WebsiteLink = data.WebsiteLink,
+            Description = data.Description,
+            Address = address,
+            Roles = roles.Select(role => new PersonRoleAssignment { Role = role }).ToList()
+        };
+
+        uow.PersonRepository.AddPerson(person);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Person {PersonId} added with role {Role}", person.Id, data.Role);
+
+        return new Success<Person>(person);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IPersonService.EmailAlreadyTaken,
+        IPersonService.StreetRequiredForSaddler>> UpdatePersonAsync(int personId, PersonChanges changes)
+    {
+        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
+        if (person is null)
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        if (changes.Email is not null && await uow.PersonRepository.IsEmailTakenAsync(changes.Email, personId))
+        {
+            logger.LogWarning("Cannot update person {PersonId}, the email is already taken", personId);
+
+            return new IPersonService.EmailAlreadyTaken();
+        }
+
+        // check the state after the update: the person may become a saddler or get a new address
+        bool isSaddlerAfterUpdate = changes.Roles is { Count: > 0 }
+            ? changes.Roles.Contains(RoleName.Saddler)
+            : HasRole(person, RoleName.Saddler);
+        string? streetAfterUpdate = changes.Address is not null
+            ? changes.Address.AddressName
+            : person.Address.AddressName;
+        if (isSaddlerAfterUpdate && string.IsNullOrWhiteSpace(streetAfterUpdate))
+        {
+            logger.LogWarning("Cannot update person {PersonId}, a saddler needs an address with street", personId);
+
+            return new IPersonService.StreetRequiredForSaddler();
+        }
+
+        person.FirstName = changes.FirstName ?? person.FirstName;
+        person.LastName = changes.LastName ?? person.LastName;
+        person.Height = changes.Height ?? person.Height;
+        person.Weight = changes.Weight ?? person.Weight;
+        person.DateOfBirth = changes.DateOfBirth ?? person.DateOfBirth;
+        person.Email = changes.Email ?? person.Email;
+        person.WebsiteLink = changes.WebsiteLink ?? person.WebsiteLink;
+        person.Description = changes.Description ?? person.Description;
+
+        if (changes.Address is not null)
+        {
+            person.Address = await uow.LocationRepository.FindOrAddAddressAsync(changes.Address);
+        }
+
+        if (changes.Roles is { Count: > 0 })
+        {
+            var roles = await GetRolesAsync(changes.Roles);
+
+            // only touch the assignments that actually change, re-adding an existing assignment would cause a key conflict
+            person.Roles.RemoveAll(assignment => roles.All(role => role.Id != assignment.RoleId));
+            foreach (var role in roles.Where(role => person.Roles.All(assignment => assignment.RoleId != role.Id)))
+            {
+                person.Roles.Add(new PersonRoleAssignment { Role = role });
+            }
         }
 
         await uow.SaveChangesAsync();
-        logger.LogInformation("Person successfully updated");
+        logger.LogInformation("Person {PersonId} updated", personId);
 
         return new Success();
     }
 
-    public async ValueTask<DeletePersonAsyncResult> DeletePersonAsync(int personId)
+    public async ValueTask<OneOf<Success, NotFound>> DeletePersonAsync(int personId)
     {
         var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
-
-        if (person == null)
+        if (person is null)
         {
-            logger.LogWarning("Person could not be found");
+            LogPersonNotFound(personId);
 
             return new NotFound();
+        }
+
+        // the saddler side of a relationship is restricted in the database (no cascade), so remove them explicitly
+        foreach (var relationship in await uow.PersonRepository.GetRelationshipsOfPersonAsync(personId))
+        {
+            uow.PersonRepository.RemoveRelationship(relationship);
         }
 
         uow.PersonRepository.RemovePerson(person);
         await uow.SaveChangesAsync();
-        logger.LogInformation("Person successfully removed");
+        logger.LogInformation("Person {PersonId} removed", personId);
 
         return new Success();
     }
+
+    public async ValueTask<OneOf<Success, NotFound, IPersonService.InvalidRelationship>> AddFavouriteAsync(
+        int equestrianId, int saddlerId)
+    {
+        var equestrian = await uow.PersonRepository.GetPersonByIdAsync(equestrianId);
+        var saddler = await uow.PersonRepository.GetPersonByIdAsync(saddlerId);
+        if (equestrian is null || saddler is null)
+        {
+            LogPersonNotFound(equestrian is null ? equestrianId : saddlerId);
+
+            return new NotFound();
+        }
+
+        if (equestrianId == saddlerId || !HasRole(equestrian, RoleName.Equestrian)
+                                      || !HasRole(saddler, RoleName.Saddler))
+        {
+            logger.LogWarning("Person {EquestrianId} cannot mark person {SaddlerId} as favourite", equestrianId,
+                              saddlerId);
+
+            return new IPersonService.InvalidRelationship("Only equestrians can mark saddlers as favourite");
+        }
+
+        var relationship = await uow.PersonRepository.GetRelationshipAsync(equestrianId, saddlerId);
+        if (relationship is null)
+        {
+            uow.PersonRepository.AddRelationship(new PersonRelationship
+            {
+                Equestrian = equestrian,
+                Saddler = saddler,
+                IsFavourite = true
+            });
+        }
+        else
+        {
+            relationship.IsFavourite = true;
+        }
+
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Saddler {SaddlerId} is a favourite of equestrian {EquestrianId}", saddlerId,
+                              equestrianId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RemoveFavouriteAsync(int equestrianId, int saddlerId)
+    {
+        var relationship = await uow.PersonRepository.GetRelationshipAsync(equestrianId, saddlerId);
+        if (relationship is not { IsFavourite: true })
+        {
+            logger.LogInformation("Saddler {SaddlerId} is no favourite of equestrian {EquestrianId}", saddlerId,
+                                  equestrianId);
+
+            return new NotFound();
+        }
+
+        relationship.IsFavourite = false;
+        RemoveRelationshipIfUnused(relationship);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Saddler {SaddlerId} removed from the favourites of equestrian {EquestrianId}",
+                              saddlerId, equestrianId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IPersonService.InvalidRelationship>> AddContactAsync(
+        int personId, int contactId)
+    {
+        var person = await uow.PersonRepository.GetPersonByIdAsync(personId);
+        var contact = await uow.PersonRepository.GetPersonByIdAsync(contactId);
+        if (person is null || contact is null)
+        {
+            LogPersonNotFound(person is null ? personId : contactId);
+
+            return new NotFound();
+        }
+
+        var relationship = await GetRelationshipInAnyDirectionAsync(personId, contactId);
+        if (relationship is null)
+        {
+            // the person adding the contact can be the equestrian as well as the saddler
+            (Person Equestrian, Person Saddler)? sides = personId == contactId ? null
+                : HasRole(person, RoleName.Equestrian) && HasRole(contact, RoleName.Saddler) ? (person, contact)
+                : HasRole(person, RoleName.Saddler) && HasRole(contact, RoleName.Equestrian) ? (contact, person)
+                : null;
+            if (sides is null)
+            {
+                logger.LogWarning("Persons {PersonId} and {ContactId} cannot be contacts", personId, contactId);
+
+                return new IPersonService.InvalidRelationship("A contact has to be between an equestrian and a saddler");
+            }
+
+            uow.PersonRepository.AddRelationship(new PersonRelationship
+            {
+                Equestrian = sides.Value.Equestrian,
+                Saddler = sides.Value.Saddler,
+                IsContact = true
+            });
+        }
+        else
+        {
+            relationship.IsContact = true;
+        }
+
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Persons {PersonId} and {ContactId} are contacts", personId, contactId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RemoveContactAsync(int personId, int contactId)
+    {
+        var relationship = await GetRelationshipInAnyDirectionAsync(personId, contactId);
+        if (relationship is not { IsContact: true })
+        {
+            logger.LogInformation("Persons {PersonId} and {ContactId} are no contacts", personId, contactId);
+
+            return new NotFound();
+        }
+
+        relationship.IsContact = false;
+        RemoveRelationshipIfUnused(relationship);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Contact between persons {PersonId} and {ContactId} removed", personId, contactId);
+
+        return new Success();
+    }
+
+    private async ValueTask<PersonRelationship?> GetRelationshipInAnyDirectionAsync(int personId, int otherPersonId) =>
+        await uow.PersonRepository.GetRelationshipAsync(personId, otherPersonId)
+        ?? await uow.PersonRepository.GetRelationshipAsync(otherPersonId, personId);
+
+    // a relationship that is neither contact nor favourite has no meaning anymore
+    private void RemoveRelationshipIfUnused(PersonRelationship relationship)
+    {
+        if (!relationship.IsContact && !relationship.IsFavourite)
+        {
+            uow.PersonRepository.RemoveRelationship(relationship);
+        }
+    }
+
+    private static bool HasRole(Person person, RoleName role) =>
+        person.Roles.Any(assignment => assignment.Role.Name == role);
+
+    private async ValueTask<IReadOnlyCollection<AccountRole>> GetRolesAsync(IReadOnlyCollection<RoleName> roleNames)
+    {
+        var roles = await uow.PersonRepository.GetRolesByNameAsync(roleNames);
+        if (roles.Count != roleNames.Distinct().Count())
+        {
+            // roles are seeded by a migration, so this is a configuration error and not a client error
+            throw new InvalidOperationException($"Not all account roles exist: {string.Join(", ", roleNames)}");
+        }
+
+        return roles;
+    }
+
+    private void LogPersonNotFound(int personId)
+    {
+        logger.LogInformation("Person {PersonId} not found", personId);
+    }
 }
-
-

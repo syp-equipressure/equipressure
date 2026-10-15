@@ -1,759 +1,718 @@
-﻿using System.Runtime.CompilerServices;
-using EquiApi.Core.Services;
-using EquiApi.Core.Util;
+﻿using EquiApi.Core.Services;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
-using EquiPressure.Core.Service;
+using EquiApi.Test.Util;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using OneOf.Types;
 
 namespace EquiApi.Test;
 
 public sealed class PersonServiceTests
 {
+    private const int PersonId = 1;
+
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProviderMock = Substitute.For<IDateTimeProvider>();
-    private readonly ILogger<PersonService> _loggerMock = Substitute.For<ILogger<PersonService>>();
     private readonly PersonService _sut;
 
     public PersonServiceTests()
     {
-        _sut = new PersonService(_uowMock, _dateTimeProviderMock, _loggerMock);
+        _sut = new PersonService(_uowMock, NullLogger<PersonService>.Instance);
 
-        _dateTimeProviderMock.GetCurrentDate().Returns(new LocalDate(2026, 1, 1));
+        _uowMock.PersonRepository.GetRolesByNameAsync(Arg.Any<IReadOnlyCollection<RoleName>>())
+                .Returns(call => call.Arg<IReadOnlyCollection<RoleName>>().Select(TestData.CreateRole).ToList());
+        _uowMock.PersonRepository.GetRelationshipsOfPersonAsync(Arg.Any<int>())
+                .Returns(new List<PersonRelationship>());
     }
-
-    /// <summary>
-    /// Creates an instance without calling a constructor, so we don't have to know every required member.
-    /// Only use it for objects that are just passed through the service (e.g. DTOs / list elements).
-    /// </summary>
-    private static T Uninit<T>() where T : class => (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
-
-    private static Address CreateAddress(int id = 1) => new()
-    {
-        Id = id,
-        AddressName = null,
-        PLZ = "4400",
-        CityName = "Steyr",
-        Persons = [],
-        Horses = []
-    };
-
-    private static AccountRole CreateRole(int id = 1, RoleName name = RoleName.Equestrian) => new()
-    {
-        Id = id,
-        Name = name
-    };
-
-    private static Person CreatePerson(int id = 1)
-    {
-        var person = Uninit<Person>();
-        person.Id = id;
-        person.FirstName = "Max";
-        person.LastName = "Mustermann";
-        person.Height = 180M;
-        person.Weight = 75M;
-        person.DateOfBirth = new LocalDate(1990, 1, 1);
-        person.Email = "max@example.com";
-        person.WebsiteLink = null;
-        person.Description = null;
-        person.Address = CreateAddress();
-        person.Roles = [];
-        return person;
-    }
-
-    private static Horse CreateHorse(int id = 1) => new()
-    {
-        Id = id,
-        Name = "Hugo",
-        DateOfBirth = new LocalDate(2015, 1, 1),
-        Weight = 500M,
-        Height = 170M,
-        Gender = HorseGender.Male,
-        AddressId = 1,
-        Address = CreateAddress(),
-        HorseBreeds = [],
-        Persons = [],
-        Saddles = [],
-        MeasurementGroups = []
-    };
-
 
     [Fact]
     public async Task GetPersonByIdAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns((Person?)null);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns((Person?) null);
 
-        var result = await _sut.GetPersonByIdAsync(personId);
+        var result = await _sut.GetPersonByIdAsync(PersonId);
 
-        result.IsT1.Should().BeTrue();
+        result.Value.Should().BeOfType<NotFound>();
     }
 
     [Fact]
     public async Task GetPersonByIdAsync_PersonExists_ReturnsPerson()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
+        var person = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
 
-        var result = await _sut.GetPersonByIdAsync(personId);
+        var result = await _sut.GetPersonByIdAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().Be(person);
-    }
-
-
-    [Fact]
-    public async Task GetPersonAddressAsync_AddressNotFound_ReturnsNotFound()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonAddressAsync(personId).Returns((Address?)null);
-
-        var result = await _sut.GetPersonAddressAsync(personId);
-
-        result.IsT1.Should().BeTrue();
+        result.Value.Should().BeOfType<Success<Person>>().Which.Value.Should().Be(person);
     }
 
     [Fact]
-    public async Task GetPersonAddressAsync_AddressExists_ReturnsAddress()
+    public async Task GetPersonAddressAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        var address = CreateAddress();
-        _uowMock.PersonRepository.GetPersonAddressAsync(personId).Returns(address);
+        _uowMock.PersonRepository.GetPersonAddressAsync(PersonId).Returns((Address?) null);
 
-        var result = await _sut.GetPersonAddressAsync(personId);
+        var result = await _sut.GetPersonAddressAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().Be(address);
+        result.Value.Should().BeOfType<NotFound>();
     }
 
+    [Fact]
+    public async Task GetPersonAddressAsync_PersonExists_ReturnsAddress()
+    {
+        var address = TestData.CreateAddress();
+        _uowMock.PersonRepository.GetPersonAddressAsync(PersonId).Returns(address);
+
+        var result = await _sut.GetPersonAddressAsync(PersonId);
+
+        result.Value.Should().BeOfType<Success<Address>>().Which.Value.Should().Be(address);
+    }
+
+    [Fact]
+    public async Task UpdatePersonAddressAsync_PersonNotFound_ReturnsNotFound()
+    {
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns((Person?) null);
+
+        var result = await _sut.UpdatePersonAddressAsync(PersonId, TestData.CreateAddressData());
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.LocationRepository.DidNotReceive().AddAddress(Arg.Any<Address>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task UpdatePersonAddressAsync_AddressExists_SetsExistingAddressAndSaves()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        var existingAddress = TestData.CreateAddress(5, "Hauptplatz 1", "4020", "Linz");
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+        _uowMock.LocationRepository.FindAddressAsync("Hauptplatz 1", "4020", "Linz").Returns(existingAddress);
+
+        var result = await _sut.UpdatePersonAddressAsync(PersonId,
+                                                         TestData.CreateAddressData("Hauptplatz 1", "4020", "Linz"));
+
+        result.Value.Should().BeOfType<Success<Address>>().Which.Value.Should().Be(existingAddress);
+        person.Address.Should().Be(existingAddress);
+        _uowMock.LocationRepository.DidNotReceive().AddAddress(Arg.Any<Address>());
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task UpdatePersonAddressAsync_AddressDoesNotExist_AddsAddressAndSaves()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+        _uowMock.LocationRepository.FindAddressAsync("Hauptplatz 1", "4020", "Linz").Returns((Address?) null);
+
+        var result = await _sut.UpdatePersonAddressAsync(PersonId,
+                                                         TestData.CreateAddressData("Hauptplatz 1", "4020", "Linz"));
+
+        var address = result.Value.Should().BeOfType<Success<Address>>().Which.Value;
+        address.AddressName.Should().Be("Hauptplatz 1");
+        address.PLZ.Should().Be("4020");
+        address.CityName.Should().Be("Linz");
+        person.Address.Should().Be(address);
+        _uowMock.LocationRepository.Received(1).AddAddress(address);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
 
     [Fact]
     public async Task GetNameByIdAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetNameByIdAsync(personId).Returns((Helper.NameData?)null);
+        _uowMock.PersonRepository.GetNameByIdAsync(PersonId).Returns((NameData?) null);
 
-        var result = await _sut.GetNameByIdAsync(personId);
+        var result = await _sut.GetNameByIdAsync(PersonId);
 
-        result.IsT1.Should().BeTrue();
+        result.Value.Should().BeOfType<NotFound>();
     }
 
     [Fact]
-    public async Task GetNameByIdAsync_PersonExists_ReturnsNameData()
+    public async Task GetNameByIdAsync_PersonExists_ReturnsName()
     {
-        const int personId = 1;
-        var nameData = Uninit<Helper.NameData>();
-        _uowMock.PersonRepository.GetNameByIdAsync(personId).Returns(nameData);
+        var name = new NameData("Max", "Mustermann");
+        _uowMock.PersonRepository.GetNameByIdAsync(PersonId).Returns(name);
 
-        var result = await _sut.GetNameByIdAsync(personId);
+        var result = await _sut.GetNameByIdAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().Be(nameData);
-    }
-
-
-    [Fact]
-    public async Task GetFavouritesAsync_PersonNotFound_ReturnsNotFound()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(false);
-
-        var result = await _sut.GetFavouritesAsync(personId);
-
-        result.IsT2.Should().BeTrue();
+        result.Value.Should().BeOfType<Success<NameData>>().Which.Value.Should().Be(name);
     }
 
     [Fact]
-    public async Task GetFavouritesAsync_NoFavourites_ReturnsNone()
+    public async Task GetAllSaddlersAsync_ReturnsSaddlersOfRepository()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetFavouritesAsync(personId).Returns(new List<Person>());
+        var saddlers = new List<SaddlerData> { CreateSaddler(2), CreateSaddler(3) };
+        _uowMock.PersonRepository.GetAllSaddlersAsync().Returns(saddlers);
 
-        var result = await _sut.GetFavouritesAsync(personId);
+        var result = await _sut.GetAllSaddlersAsync();
 
-        result.IsT1.Should().BeTrue();
+        result.Should().Equal(saddlers);
     }
 
     [Fact]
-    public async Task GetFavouritesAsync_HasFavourites_ReturnsFavourites()
+    public async Task GetFavouriteSaddlersAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        var favourites = new List<Person> { CreatePerson(2), CreatePerson(3) };
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetFavouritesAsync(personId).Returns(favourites);
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(false);
 
-        var result = await _sut.GetFavouritesAsync(personId);
+        var result = await _sut.GetFavouriteSaddlersAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().BeEquivalentTo(favourites);
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.PersonRepository.DidNotReceive().GetFavouriteSaddlersAsync(Arg.Any<int>());
     }
 
-    // ---------------------------------------------------------------- GetContactsAsync
+    [Fact]
+    public async Task GetFavouriteSaddlersAsync_NoFavourites_ReturnsEmptyList()
+    {
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
+        _uowMock.PersonRepository.GetFavouriteSaddlersAsync(PersonId).Returns(new List<SaddlerData>());
+
+        var result = await _sut.GetFavouriteSaddlersAsync(PersonId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<SaddlerData>>>().Which.Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetFavouriteSaddlersAsync_HasFavourites_ReturnsFavourites()
+    {
+        var saddlers = new List<SaddlerData> { CreateSaddler(2) };
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
+        _uowMock.PersonRepository.GetFavouriteSaddlersAsync(PersonId).Returns(saddlers);
+
+        var result = await _sut.GetFavouriteSaddlersAsync(PersonId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<SaddlerData>>>()
+              .Which.Value.Should().Equal(saddlers);
+    }
 
     [Fact]
     public async Task GetContactsAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(false);
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(false);
 
-        var result = await _sut.GetContactsAsync(personId);
+        var result = await _sut.GetContactsAsync(PersonId);
 
-        result.IsT2.Should().BeTrue();
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.PersonRepository.DidNotReceive().GetContactsAsync(Arg.Any<int>());
     }
 
     [Fact]
-    public async Task GetContactsAsync_NoContacts_ReturnsNone()
+    public async Task GetContactsAsync_NoContacts_ReturnsEmptyList()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetContactsAsync(personId).Returns(new List<Person>());
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
+        _uowMock.PersonRepository.GetContactsAsync(PersonId).Returns(new List<ContactData>());
 
-        var result = await _sut.GetContactsAsync(personId);
+        var result = await _sut.GetContactsAsync(PersonId);
 
-        result.IsT1.Should().BeTrue();
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<ContactData>>>().Which.Value.Should().BeEmpty();
     }
 
     [Fact]
     public async Task GetContactsAsync_HasContacts_ReturnsContacts()
     {
-        const int personId = 1;
-        var contacts = new List<Person> { CreatePerson(2), CreatePerson(3) };
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetContactsAsync(personId).Returns(contacts);
-
-        var result = await _sut.GetContactsAsync(personId);
-
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().BeEquivalentTo(contacts);
-    }
-
-
-    [Fact]
-    public async Task GetOwnedHorsesAsync_PersonNotFound_ReturnsNotFound()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(false);
-
-        var result = await _sut.GetOwnedHorsesAsync(personId);
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetOwnedHorsesAsync_NoHorses_ReturnsNone()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetOwnedHorsesAsync(personId).Returns(new List<Horse>());
-
-        var result = await _sut.GetOwnedHorsesAsync(personId);
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetOwnedHorsesAsync_HasHorses_ReturnsHorses()
-    {
-        const int personId = 1;
-        var horses = new List<Horse> { CreateHorse(1), CreateHorse(2) };
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetOwnedHorsesAsync(personId).Returns(horses);
-
-        var result = await _sut.GetOwnedHorsesAsync(personId);
-
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().BeEquivalentTo(horses);
-    }
-
-
-    [Fact]
-    public async Task GetAllDevicesByPersonAsync_PersonNotFound_ReturnsNotFound()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(false);
-
-        var result = await _sut.GetAllDevicesByPersonAsync(personId);
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAllDevicesByPersonAsync_NoDevices_ReturnsNone()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetAllDevicesAsync(personId).Returns(new List<MeasurementDevice>());
-
-        var result = await _sut.GetAllDevicesByPersonAsync(personId);
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAllDevicesByPersonAsync_HasDevices_ReturnsDevices()
-    {
-        const int personId = 1;
-        var devices = new List<MeasurementDevice> { Uninit<MeasurementDevice>(), Uninit<MeasurementDevice>() };
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.PersonRepository.GetAllDevicesAsync(personId).Returns(devices);
-
-        var result = await _sut.GetAllDevicesByPersonAsync(personId);
-
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().HaveCount(2);
-        result.AsT0.Value.Should().BeEquivalentTo(devices);
-    }
-
-
-    [Fact]
-    public async Task GetAllSaddlersAsync_NoSaddlers_ReturnsNone()
-    {
-        _uowMock.PersonRepository.GetAllSaddlersAsync().Returns(new List<Helper.SaddlerBasicData>());
-
-        var result = await _sut.GetAllSaddlersAsync();
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAllSaddlersAsync_HasSaddlers_ReturnsSaddlers()
-    {
-        var saddlers = new List<Helper.SaddlerBasicData>
+        var contacts = new List<ContactData>
         {
-            Uninit<Helper.SaddlerBasicData>(), Uninit<Helper.SaddlerBasicData>()
+            new(2, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles"),
+            new(3, "Anna", "Huber", null, "Linz", "4020", null, null)
         };
-        _uowMock.PersonRepository.GetAllSaddlersAsync().Returns(saddlers);
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
+        _uowMock.PersonRepository.GetContactsAsync(PersonId).Returns(contacts);
 
-        var result = await _sut.GetAllSaddlersAsync();
+        var result = await _sut.GetContactsAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().BeEquivalentTo(saddlers);
-    }
-
-
-    [Fact]
-    public async Task GetAllSaddlerFavouritesAsync_EquestrianNotFound_ReturnsNotFound()
-    {
-        const int equestrianId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(equestrianId).Returns(false);
-
-        var result = await _sut.GetAllSaddlerFavouritesAsync(equestrianId);
-
-        result.IsT2.Should().BeTrue();
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<ContactData>>>()
+              .Which.Value.Should().Equal(contacts);
     }
 
     [Fact]
-    public async Task GetAllSaddlerFavouritesAsync_NoSaddlers_ReturnsNone()
+    public async Task AddPersonAsync_EmailTaken_ReturnsEmailAlreadyTaken()
     {
-        const int equestrianId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(equestrianId).Returns(true);
-        _uowMock.PersonRepository.GetAllSaddlerFavouritesOfEquestrianAsync(equestrianId)
-                .Returns(new List<Helper.SaddlerBasicData>());
+        const string Email = "taken@example.com";
+        _uowMock.PersonRepository.IsEmailTakenAsync(Email).Returns(true);
 
-        var result = await _sut.GetAllSaddlerFavouritesAsync(equestrianId);
+        var result = await _sut.AddPersonAsync(TestData.CreateNewPersonData(Email));
 
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAllSaddlerFavouritesAsync_HasSaddlers_ReturnsSaddlers()
-    {
-        const int equestrianId = 1;
-        var saddlers = new List<Helper.SaddlerBasicData> { Uninit<Helper.SaddlerBasicData>() };
-        _uowMock.PersonRepository.PersonExistsAsync(equestrianId).Returns(true);
-        _uowMock.PersonRepository.GetAllSaddlerFavouritesOfEquestrianAsync(equestrianId).Returns(saddlers);
-
-        var result = await _sut.GetAllSaddlerFavouritesAsync(equestrianId);
-
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().BeEquivalentTo(saddlers);
-    }
-
-
-    [Fact]
-    public async Task GetAllSaddlerContactsAsync_EquestrianNotFound_ReturnsNotFound()
-    {
-        const int equestrianId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(equestrianId).Returns(false);
-
-        var result = await _sut.GetAllSaddlerContactsAsync(equestrianId);
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAllSaddlerContactsAsync_NoSaddlers_ReturnsNone()
-    {
-        const int equestrianId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(equestrianId).Returns(true);
-        _uowMock.PersonRepository.GetAllSaddlerContactsOfEquestrianAsync(equestrianId)
-                .Returns(new List<Helper.SaddlerBasicData>());
-
-        var result = await _sut.GetAllSaddlerContactsAsync(equestrianId);
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAllSaddlerContactsAsync_HasSaddlers_ReturnsSaddlers()
-    {
-        const int equestrianId = 1;
-        var saddlers = new List<Helper.SaddlerBasicData> { Uninit<Helper.SaddlerBasicData>() };
-        _uowMock.PersonRepository.PersonExistsAsync(equestrianId).Returns(true);
-        _uowMock.PersonRepository.GetAllSaddlerContactsOfEquestrianAsync(equestrianId).Returns(saddlers);
-
-        var result = await _sut.GetAllSaddlerContactsAsync(equestrianId);
-
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.Should().BeEquivalentTo(saddlers);
-    }
-
-
-    [Fact]
-    public async Task AddPersonAsync_WithInvalidHeight_ReturnsInvalidData()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 0M, 75M, new LocalDate(1990, 1, 1),
-            null, null, null, CreateAddress(), CreateRole()
-        );
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_WithInvalidWeight_ReturnsInvalidData()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, -1M, new LocalDate(1990, 1, 1),
-            null, null, null, CreateAddress(), CreateRole()
-        );
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_WithBirthDateInFuture_ReturnsInvalidData()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(2026, 5, 20),
-            null, null, null, CreateAddress(), CreateRole()
-        );
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_WithBirthDateToday_ReturnsInvalidData()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(2026, 1, 1),
-            null, null, null, CreateAddress(), CreateRole()
-        );
-
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_WithExistingEmail_ReturnsConflict()
-    {
-        const string email = "max@example.com";
-        _uowMock.PersonRepository.PersonWithEmailExistsAsync(email).Returns(true);
-
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1),
-            email, null, null, CreateAddress(), CreateRole()
-        );
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_EquestrianWithWebsiteLink_ReturnsConflict()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1),
-            null, "https://example.com", null, CreateAddress(), CreateRole(name: RoleName.Equestrian)
-        );
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_EquestrianWithDescription_ReturnsConflict()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1),
-            null, null, "Some description", CreateAddress(), CreateRole(name: RoleName.Equestrian)
-        );
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_InvalidData_DoesNotSave()
-    {
-        await _sut.AddPersonAsync(
-            "Max", "Mustermann", 0M, 75M, new LocalDate(1990, 1, 1),
-            null, null, null, CreateAddress(), CreateRole()
-        );
-
+        result.Value.Should().BeOfType<IPersonService.EmailAlreadyTaken>();
         _uowMock.PersonRepository.DidNotReceive().AddPerson(Arg.Any<Person>());
         await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task AddPersonAsync_ValidEquestrian_ReturnsSuccess()
+    public async Task AddPersonAsync_ValidData_AddsPersonWithRoleAndSaves()
     {
-        var address = CreateAddress();
-        var role = CreateRole(name: RoleName.Equestrian);
+        var data = TestData.CreateNewPersonData(role: RoleName.Saddler);
 
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1),
-            "max@example.com", null, null, address, role
-        );
+        var result = await _sut.AddPersonAsync(data);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.FirstName.Should().Be("Max");
-        result.AsT0.Value.LastName.Should().Be("Mustermann");
-        result.AsT0.Value.Height.Should().Be(180M);
-        result.AsT0.Value.Weight.Should().Be(75M);
-        result.AsT0.Value.DateOfBirth.Should().Be(new LocalDate(1990, 1, 1));
-        result.AsT0.Value.Email.Should().Be("max@example.com");
-        result.AsT0.Value.Address.Should().Be(address);
-        result.AsT0.Value.Roles.Should().ContainSingle();
-        result.AsT0.Value.Roles.Single().Role.Should().Be(role);
-        result.AsT0.Value.Roles.Single().RoleId.Should().Be(role.Id);
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_ValidSaddlerWithWebsiteAndDescription_ReturnsSuccess()
-    {
-        var role = CreateRole(2, RoleName.Saddler);
-
-        var result = await _sut.AddPersonAsync(
-            "Sabine", "Sattler", 170M, 65M, new LocalDate(1985, 5, 5),
-            null, "https://sattler.example.com", "Custom saddles", CreateAddress(), role
-        );
-
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Value.WebsiteLink.Should().Be("https://sattler.example.com");
-        result.AsT0.Value.Description.Should().Be("Custom saddles");
-    }
-
-    [Fact]
-    public async Task AddPersonAsync_ValidData_AddsPersonAndSavesChanges()
-    {
-        var result = await _sut.AddPersonAsync(
-            "Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1),
-            null, null, null, CreateAddress(), CreateRole()
-        );
-
-        _uowMock.PersonRepository.Received(1).AddPerson(result.AsT0.Value);
+        var person = result.Value.Should().BeOfType<Success<Person>>().Which.Value;
+        person.FirstName.Should().Be(data.FirstName);
+        person.LastName.Should().Be(data.LastName);
+        person.Height.Should().Be(data.Height);
+        person.Weight.Should().Be(data.Weight);
+        person.DateOfBirth.Should().Be(data.DateOfBirth);
+        person.Email.Should().Be(data.Email);
+        person.Roles.Should().ContainSingle().Which.Role.Name.Should().Be(RoleName.Saddler);
+        _uowMock.PersonRepository.Received(1).AddPerson(person);
         await _uowMock.Received(1).SaveChangesAsync();
     }
 
-    // ---------------------------------------------------------------- UpdatePersonAsync
+    [Fact]
+    public async Task AddPersonAsync_AddressExists_ReusesAddress()
+    {
+        var address = TestData.CreateAddress();
+        _uowMock.LocationRepository.FindAddressAsync(null, "4400", "Steyr").Returns(address);
+
+        var result = await _sut.AddPersonAsync(TestData.CreateNewPersonData());
+
+        result.Value.Should().BeOfType<Success<Person>>().Which.Value.Address.Should().Be(address);
+        _uowMock.LocationRepository.DidNotReceive().AddAddress(Arg.Any<Address>());
+    }
+
+    [Fact]
+    public async Task AddPersonAsync_AddressDoesNotExist_AddsAddress()
+    {
+        _uowMock.LocationRepository.FindAddressAsync(null, "4400", "Steyr").Returns((Address?) null);
+
+        var result = await _sut.AddPersonAsync(TestData.CreateNewPersonData());
+
+        var person = result.Value.Should().BeOfType<Success<Person>>().Which.Value;
+        person.Address.CityName.Should().Be("Steyr");
+        _uowMock.LocationRepository.Received(1).AddAddress(person.Address);
+    }
+
+    [Fact]
+    public async Task AddPersonAsync_RoleNotSeeded_Throws()
+    {
+        _uowMock.PersonRepository.GetRolesByNameAsync(Arg.Any<IReadOnlyCollection<RoleName>>())
+                .Returns(new List<AccountRole>());
+
+        var act = async () => await _sut.AddPersonAsync(TestData.CreateNewPersonData());
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
 
     [Fact]
     public async Task UpdatePersonAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns((Person?)null);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns((Person?) null);
 
-        var result = await _sut.UpdatePersonAsync(
-            personId, "New", null, null, null, null, null, null, null, null, null
-        );
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(FirstName: "New"));
 
-        result.IsT1.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task UpdatePersonAsync_WithInvalidHeight_ReturnsInvalidData()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(CreatePerson(personId));
-
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, 0M, null, null, null, null, null, null, null
-        );
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task UpdatePersonAsync_WithInvalidWeight_ReturnsInvalidData()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(CreatePerson(personId));
-
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, -5M, null, null, null, null, null, null
-        );
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task UpdatePersonAsync_WithBirthDateInFuture_ReturnsInvalidData()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(CreatePerson(personId));
-
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, null, new LocalDate(2026, 5, 20), null, null, null, null, null
-        );
-
-        result.IsT2.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task UpdatePersonAsync_EmailTakenByAnotherUser_ReturnsConflict()
-    {
-        const int personId = 1;
-        const string email = "taken@example.com";
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(CreatePerson(personId));
-        _uowMock.PersonRepository.IsEmailTakenByAnotherUserAsync(email, personId).Returns(true);
-
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, null, null, email, null, null, null, null
-        );
-
-        result.IsT3.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task UpdatePersonAsync_InvalidData_DoesNotSave()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(CreatePerson(personId));
-
-        await _sut.UpdatePersonAsync(personId, null, null, 0M, null, null, null, null, null, null, null);
-
+        result.Value.Should().BeOfType<NotFound>();
         await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task UpdatePersonAsync_AllFieldsNull_KeepsPersonUnchanged()
+    public async Task UpdatePersonAsync_EmailTakenByAnotherPerson_ReturnsEmailAlreadyTaken()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
+        const string Email = "taken@example.com";
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(TestData.CreatePerson(PersonId));
+        _uowMock.PersonRepository.IsEmailTakenAsync(Email, PersonId).Returns(true);
 
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, null, null, null, null, null, null, null
-        );
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(Email: Email));
 
-        result.IsT0.Should().BeTrue();
-        person.FirstName.Should().Be("Max");
-        person.LastName.Should().Be("Mustermann");
-        person.Height.Should().Be(180M);
-        person.Weight.Should().Be(75M);
-        person.DateOfBirth.Should().Be(new LocalDate(1990, 1, 1));
-        person.Email.Should().Be("max@example.com");
+        result.Value.Should().BeOfType<IPersonService.EmailAlreadyTaken>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task UpdatePersonAsync_ValidData_UpdatesFieldsAndSaves()
+    public async Task UpdatePersonAsync_NoChanges_KeepsPersonUnchanged()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
-        _uowMock.PersonRepository.IsEmailTakenByAnotherUserAsync("new@example.com", personId).Returns(false);
+        var person = TestData.CreatePerson(PersonId);
+        var expected = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
 
-        var result = await _sut.UpdatePersonAsync(
-            personId, "Moritz", "Musterfrau", 185M, 80M, new LocalDate(1991, 2, 2),
-            "new@example.com", "https://example.com", "New description", null, null
-        );
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges());
 
-        result.IsT0.Should().BeTrue();
-        person.FirstName.Should().Be("Moritz");
+        result.Value.Should().BeOfType<Success>();
+        person.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public async Task UpdatePersonAsync_SomeChanges_UpdatesOnlyTheseValuesAndSaves()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(LastName: "Musterfrau", Height: 185M,
+                                                                              WebsiteLink: "https://example.com"));
+
+        result.Value.Should().BeOfType<Success>();
+        person.FirstName.Should().Be("Max");
         person.LastName.Should().Be("Musterfrau");
         person.Height.Should().Be(185M);
-        person.Weight.Should().Be(80M);
-        person.DateOfBirth.Should().Be(new LocalDate(1991, 2, 2));
-        person.Email.Should().Be("new@example.com");
+        person.Weight.Should().Be(75M);
         person.WebsiteLink.Should().Be("https://example.com");
-        person.Description.Should().Be("New description");
         await _uowMock.Received(1).SaveChangesAsync();
     }
 
     [Fact]
-    public async Task UpdatePersonAsync_WithAddress_UpdatesAddress()
+    public async Task UpdatePersonAsync_WithAddress_SetsFoundAddress()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        var newAddress = CreateAddress(5);
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
+        var person = TestData.CreatePerson(PersonId);
+        var newAddress = TestData.CreateAddress(5, "Hauptplatz 1", "4020", "Linz");
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+        _uowMock.LocationRepository.FindAddressAsync("Hauptplatz 1", "4020", "Linz").Returns(newAddress);
 
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, null, null, null, null, null, newAddress, null
-        );
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(
+                                                      Address: TestData.CreateAddressData("Hauptplatz 1", "4020",
+                                                                                          "Linz")));
 
-        result.IsT0.Should().BeTrue();
+        result.Value.Should().BeOfType<Success>();
         person.Address.Should().Be(newAddress);
-        person.AddressId.Should().Be(5);
     }
 
     [Fact]
     public async Task UpdatePersonAsync_WithRoles_ReplacesRoles()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        var roles = new List<PersonRoleAssignment> { Uninit<PersonRoleAssignment>() };
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
+        var person = TestData.CreatePerson(PersonId, address: TestData.CreateAddress(addressName: "Werkstattgasse 1"));
+        person.Roles = [new PersonRoleAssignment { Role = TestData.CreateRole(RoleName.Equestrian), RoleId = 10 }];
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
 
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, null, null, null, null, null, null, roles
-        );
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(Roles: [RoleName.Saddler]));
 
-        result.IsT0.Should().BeTrue();
-        person.Roles.Should().BeEquivalentTo(roles);
+        result.Value.Should().BeOfType<Success>();
+        person.Roles.Should().ContainSingle().Which.Role.Name.Should().Be(RoleName.Saddler);
+    }
+
+    [Fact]
+    public async Task UpdatePersonAsync_WithExistingRole_KeepsExistingAssignment()
+    {
+        var person = TestData.CreatePerson(PersonId, address: TestData.CreateAddress(addressName: "Werkstattgasse 1"));
+        var existingAssignment = new PersonRoleAssignment { Role = TestData.CreateRole(RoleName.Equestrian), RoleId = 10 };
+        person.Roles = [existingAssignment];
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+
+        var result = await _sut.UpdatePersonAsync(PersonId,
+                                                  new PersonChanges(Roles: [RoleName.Equestrian, RoleName.Saddler]));
+
+        result.Value.Should().BeOfType<Success>();
+        person.Roles.Should().HaveCount(2).And.Contain(existingAssignment);
     }
 
     [Fact]
     public async Task UpdatePersonAsync_WithEmptyRoles_KeepsExistingRoles()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        var existingRoles = new List<PersonRoleAssignment> { Uninit<PersonRoleAssignment>() };
-        person.Roles = existingRoles;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
+        var person = TestData.CreatePerson(PersonId);
+        var existingAssignment = new PersonRoleAssignment { Role = TestData.CreateRole(RoleName.Equestrian), RoleId = 10 };
+        person.Roles = [existingAssignment];
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
 
-        var result = await _sut.UpdatePersonAsync(
-            personId, null, null, null, null, null, null, null, null, null, []
-        );
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(Roles: []));
 
-        result.IsT0.Should().BeTrue();
-        person.Roles.Should().BeEquivalentTo(existingRoles);
+        result.Value.Should().BeOfType<Success>();
+        person.Roles.Should().ContainSingle().Which.Should().Be(existingAssignment);
     }
-
 
     [Fact]
     public async Task DeletePersonAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns((Person?)null);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns((Person?) null);
 
-        var result = await _sut.DeletePersonAsync(personId);
+        var result = await _sut.DeletePersonAsync(PersonId);
 
-        result.IsT1.Should().BeTrue();
+        result.Value.Should().BeOfType<NotFound>();
         _uowMock.PersonRepository.DidNotReceive().RemovePerson(Arg.Any<Person>());
         await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task DeletePersonAsync_PersonExists_RemovesPersonAndReturnsSuccess()
+    public async Task DeletePersonAsync_PersonExists_RemovesPersonAndSaves()
     {
-        const int personId = 1;
-        var person = CreatePerson(personId);
-        _uowMock.PersonRepository.GetPersonByIdAsync(personId).Returns(person);
+        var person = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
 
-        var result = await _sut.DeletePersonAsync(personId);
+        var result = await _sut.DeletePersonAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
+        result.Value.Should().BeOfType<Success>();
         _uowMock.PersonRepository.Received(1).RemovePerson(person);
         await _uowMock.Received(1).SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task DeletePersonAsync_PersonWithRelationships_RemovesRelationshipsAndPerson()
+    {
+        const int SaddlerId = 2;
+        var saddler = TestData.CreatePerson(SaddlerId, role: RoleName.Saddler);
+        var relationship = new PersonRelationship { EquestrianId = PersonId, SaddlerId = SaddlerId, IsContact = true };
+        _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns(saddler);
+        _uowMock.PersonRepository.GetRelationshipsOfPersonAsync(SaddlerId).Returns(new List<PersonRelationship> { relationship });
+
+        var result = await _sut.DeletePersonAsync(SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.PersonRepository.Received(1).RemoveRelationship(relationship);
+        _uowMock.PersonRepository.Received(1).RemovePerson(saddler);
+    }
+
+    [Fact]
+    public async Task UpdatePersonAddressAsync_SaddlerWithoutStreet_ReturnsStreetRequired()
+    {
+        var saddler = TestData.CreatePerson(PersonId, role: RoleName.Saddler);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(saddler);
+
+        var result = await _sut.UpdatePersonAddressAsync(PersonId, TestData.CreateAddressData(addressName: null));
+
+        result.Value.Should().BeOfType<IPersonService.StreetRequiredForSaddler>();
+        saddler.Address.AddressName.Should().Be("Werkstattgasse 1");
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task UpdatePersonAsync_SaddlerRemovesStreet_ReturnsStreetRequired()
+    {
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId)
+                .Returns(TestData.CreatePerson(PersonId, role: RoleName.Saddler));
+
+        var result = await _sut.UpdatePersonAsync(PersonId,
+                                                  new PersonChanges(Address: TestData.CreateAddressData(addressName: null)));
+
+        result.Value.Should().BeOfType<IPersonService.StreetRequiredForSaddler>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task UpdatePersonAsync_EquestrianWithoutStreetBecomesSaddler_ReturnsStreetRequired()
+    {
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId)
+                .Returns(TestData.CreatePerson(PersonId, role: RoleName.Equestrian));
+
+        var result = await _sut.UpdatePersonAsync(PersonId, new PersonChanges(Roles: [RoleName.Saddler]));
+
+        result.Value.Should().BeOfType<IPersonService.StreetRequiredForSaddler>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddFavouriteAsync_SaddlerNotFound_ReturnsNotFound()
+    {
+        const int SaddlerId = 2;
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId)
+                .Returns(TestData.CreatePerson(PersonId, role: RoleName.Equestrian));
+        _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns((Person?) null);
+
+        var result = await _sut.AddFavouriteAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData(RoleName.Equestrian, RoleName.Equestrian)]
+    [InlineData(RoleName.Saddler, RoleName.Saddler)]
+    [InlineData(RoleName.Saddler, RoleName.Equestrian)]
+    public async Task AddFavouriteAsync_NotEquestrianAndSaddler_ReturnsInvalidRelationship(RoleName personRole,
+                                                                                           RoleName otherRole)
+    {
+        const int OtherId = 2;
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(TestData.CreatePerson(PersonId, role: personRole));
+        _uowMock.PersonRepository.GetPersonByIdAsync(OtherId).Returns(TestData.CreatePerson(OtherId, role: otherRole));
+
+        var result = await _sut.AddFavouriteAsync(PersonId, OtherId);
+
+        result.Value.Should().BeOfType<IPersonService.InvalidRelationship>();
+        _uowMock.PersonRepository.DidNotReceive().AddRelationship(Arg.Any<PersonRelationship>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddFavouriteAsync_NoRelationshipYet_AddsFavourite()
+    {
+        const int SaddlerId = 2;
+        var equestrian = TestData.CreatePerson(PersonId, role: RoleName.Equestrian);
+        var saddler = TestData.CreatePerson(SaddlerId, role: RoleName.Saddler);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(equestrian);
+        _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns(saddler);
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, SaddlerId).Returns((PersonRelationship?) null);
+
+        var result = await _sut.AddFavouriteAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.PersonRepository.Received(1).AddRelationship(Arg.Is<PersonRelationship>(r =>
+            r.Equestrian == equestrian && r.Saddler == saddler && r.IsFavourite && !r.IsContact));
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddFavouriteAsync_AlreadyContact_MarksExistingRelationshipAsFavourite()
+    {
+        const int SaddlerId = 2;
+        var relationship = new PersonRelationship { EquestrianId = PersonId, SaddlerId = SaddlerId, IsContact = true };
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId)
+                .Returns(TestData.CreatePerson(PersonId, role: RoleName.Equestrian));
+        _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId)
+                .Returns(TestData.CreatePerson(SaddlerId, role: RoleName.Saddler));
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, SaddlerId).Returns(relationship);
+
+        var result = await _sut.AddFavouriteAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        relationship.IsFavourite.Should().BeTrue();
+        relationship.IsContact.Should().BeTrue();
+        _uowMock.PersonRepository.DidNotReceive().AddRelationship(Arg.Any<PersonRelationship>());
+    }
+
+    [Fact]
+    public async Task RemoveFavouriteAsync_NoFavourite_ReturnsNotFound()
+    {
+        const int SaddlerId = 2;
+        var relationship = new PersonRelationship { EquestrianId = PersonId, SaddlerId = SaddlerId, IsContact = true };
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, SaddlerId).Returns(relationship);
+
+        var result = await _sut.RemoveFavouriteAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemoveFavouriteAsync_AlsoContact_KeepsRelationshipAsContact()
+    {
+        const int SaddlerId = 2;
+        var relationship = new PersonRelationship
+        {
+            EquestrianId = PersonId,
+            SaddlerId = SaddlerId,
+            IsContact = true,
+            IsFavourite = true
+        };
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, SaddlerId).Returns(relationship);
+
+        var result = await _sut.RemoveFavouriteAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        relationship.IsFavourite.Should().BeFalse();
+        relationship.IsContact.Should().BeTrue();
+        _uowMock.PersonRepository.DidNotReceive().RemoveRelationship(Arg.Any<PersonRelationship>());
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemoveFavouriteAsync_OnlyFavourite_RemovesRelationship()
+    {
+        const int SaddlerId = 2;
+        var relationship = new PersonRelationship { EquestrianId = PersonId, SaddlerId = SaddlerId, IsFavourite = true };
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, SaddlerId).Returns(relationship);
+
+        var result = await _sut.RemoveFavouriteAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.PersonRepository.Received(1).RemoveRelationship(relationship);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddContactAsync_EquestrianAddsSaddler_AddsContactWithEquestrianAndSaddlerSide()
+    {
+        const int SaddlerId = 2;
+        var equestrian = TestData.CreatePerson(PersonId, role: RoleName.Equestrian);
+        var saddler = TestData.CreatePerson(SaddlerId, role: RoleName.Saddler);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(equestrian);
+        _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns(saddler);
+
+        var result = await _sut.AddContactAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.PersonRepository.Received(1).AddRelationship(Arg.Is<PersonRelationship>(r =>
+            r.Equestrian == equestrian && r.Saddler == saddler && r.IsContact && !r.IsFavourite));
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddContactAsync_SaddlerAddsEquestrian_AddsContactWithEquestrianAndSaddlerSide()
+    {
+        const int EquestrianId = 2;
+        var saddler = TestData.CreatePerson(PersonId, role: RoleName.Saddler);
+        var equestrian = TestData.CreatePerson(EquestrianId, role: RoleName.Equestrian);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(saddler);
+        _uowMock.PersonRepository.GetPersonByIdAsync(EquestrianId).Returns(equestrian);
+
+        var result = await _sut.AddContactAsync(PersonId, EquestrianId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.PersonRepository.Received(1).AddRelationship(Arg.Is<PersonRelationship>(r =>
+            r.Equestrian == equestrian && r.Saddler == saddler && r.IsContact));
+    }
+
+    [Fact]
+    public async Task AddContactAsync_FavouriteExistsInOtherDirection_MarksExistingRelationshipAsContact()
+    {
+        const int EquestrianId = 2;
+        var relationship = new PersonRelationship { EquestrianId = EquestrianId, SaddlerId = PersonId, IsFavourite = true };
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId)
+                .Returns(TestData.CreatePerson(PersonId, role: RoleName.Saddler));
+        _uowMock.PersonRepository.GetPersonByIdAsync(EquestrianId)
+                .Returns(TestData.CreatePerson(EquestrianId, role: RoleName.Equestrian));
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, EquestrianId).Returns((PersonRelationship?) null);
+        _uowMock.PersonRepository.GetRelationshipAsync(EquestrianId, PersonId).Returns(relationship);
+
+        var result = await _sut.AddContactAsync(PersonId, EquestrianId);
+
+        result.Value.Should().BeOfType<Success>();
+        relationship.IsContact.Should().BeTrue();
+        relationship.IsFavourite.Should().BeTrue();
+        _uowMock.PersonRepository.DidNotReceive().AddRelationship(Arg.Any<PersonRelationship>());
+    }
+
+    [Theory]
+    [InlineData(RoleName.Equestrian, RoleName.Equestrian)]
+    [InlineData(RoleName.Saddler, RoleName.Saddler)]
+    [InlineData(RoleName.Guest, RoleName.Saddler)]
+    public async Task AddContactAsync_NotEquestrianAndSaddler_ReturnsInvalidRelationship(RoleName personRole,
+                                                                                         RoleName otherRole)
+    {
+        const int OtherId = 2;
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(TestData.CreatePerson(PersonId, role: personRole));
+        _uowMock.PersonRepository.GetPersonByIdAsync(OtherId).Returns(TestData.CreatePerson(OtherId, role: otherRole));
+
+        var result = await _sut.AddContactAsync(PersonId, OtherId);
+
+        result.Value.Should().BeOfType<IPersonService.InvalidRelationship>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemoveContactAsync_NoContact_ReturnsNotFound()
+    {
+        var result = await _sut.RemoveContactAsync(PersonId, 2);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemoveContactAsync_FromSaddlerSide_RemovesRelationship()
+    {
+        const int EquestrianId = 2;
+        var relationship = new PersonRelationship { EquestrianId = EquestrianId, SaddlerId = PersonId, IsContact = true };
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, EquestrianId).Returns((PersonRelationship?) null);
+        _uowMock.PersonRepository.GetRelationshipAsync(EquestrianId, PersonId).Returns(relationship);
+
+        var result = await _sut.RemoveContactAsync(PersonId, EquestrianId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.PersonRepository.Received(1).RemoveRelationship(relationship);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemoveContactAsync_AlsoFavourite_KeepsRelationshipAsFavourite()
+    {
+        const int SaddlerId = 2;
+        var relationship = new PersonRelationship
+        {
+            EquestrianId = PersonId,
+            SaddlerId = SaddlerId,
+            IsContact = true,
+            IsFavourite = true
+        };
+        _uowMock.PersonRepository.GetRelationshipAsync(PersonId, SaddlerId).Returns(relationship);
+
+        var result = await _sut.RemoveContactAsync(PersonId, SaddlerId);
+
+        result.Value.Should().BeOfType<Success>();
+        relationship.IsContact.Should().BeFalse();
+        relationship.IsFavourite.Should().BeTrue();
+        _uowMock.PersonRepository.DidNotReceive().RemoveRelationship(Arg.Any<PersonRelationship>());
+    }
+
+    private static SaddlerData CreateSaddler(int id) =>
+        new(id, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles");
 }

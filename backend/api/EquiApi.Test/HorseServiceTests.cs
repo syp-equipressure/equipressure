@@ -1,183 +1,221 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
+using EquiApi.Test.Util;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using Horse = EquiApi.Persistence.Model.Horse;
+using OneOf.Types;
 
 namespace EquiApi.Test;
 
 public sealed class HorseServiceTests
 {
+    private const int HorseId = 1;
+
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
-    private readonly ILogger<Core.Services.HorseService> _loggerMock = Substitute.For<ILogger<Core.Services.HorseService>>();
-    private readonly Core.Services.HorseService _sut;
+    private readonly HorseService _sut;
 
     public HorseServiceTests()
     {
-        _sut = new Core.Services.HorseService(_uowMock, _loggerMock);
+        _sut = new HorseService(_uowMock, NullLogger<HorseService>.Instance);
     }
-
-    private static Address CreateAddress(int id = 1) => new()
-    {
-        Id = id,
-        AddressName = null,
-        PLZ = "4400",
-        CityName = "Steyr",
-        Persons = [],
-        Horses = []
-    };
-
-    private static Breed CreateBreed(int id = 1, string name = "Haflinger") => new()
-    {
-        Id = id,
-        Name = name,
-        HorseBreeds = []
-    };
-
-    private static HorseBreed CreateHorseBreed(int breedId = 1, int horseId = 0) => new()
-    {
-        BreedId = breedId,
-        Breed = CreateBreed(breedId),
-        HorseId = horseId,
-        Horse = null!
-    };
-
-    private static Horse CreateHorse(int id = 1, Address? address = null) => new()
-    {
-        Id = id,
-        Name = "Hugo",
-        DateOfBirth = new LocalDate(2015, 1, 1),
-        Weight = 500M,
-        Height = 170M,
-        Gender = HorseGender.Male,
-        AddressId = address?.Id ?? 1,
-        Address = address ?? CreateAddress(),
-        HorseBreeds = [],
-        Persons = [],
-        Saddles = [],
-        MeasurementGroups = []
-    };
-
-    private static Person CreatePerson(int id = 1, Address? address = null) => new()
-    {
-        Id = id,
-        FirstName = "Max",
-        LastName = "Mustermann",
-        Height = 180M,
-        Weight = 75M,
-        DateOfBirth = new LocalDate(1990, 1, 1),
-        AddressId = address?.Id ?? 1,
-        Address = address ?? CreateAddress()
-    };
 
     [Fact]
     public async Task GetHorseByIdAsync_HorseNotFound_ReturnsNotFound()
     {
-        const int HorseId = 1;
-        _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns((Horse?)null);
+        _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns((Horse?) null);
 
         var result = await _sut.GetHorseByIdAsync(HorseId);
 
-        result.IsT1.Should().BeTrue();
+        result.Value.Should().BeOfType<NotFound>();
     }
 
     [Fact]
     public async Task GetHorseByIdAsync_HorseExists_ReturnsHorse()
     {
-        const int HorseId = 1;
-        var horse = CreateHorse(HorseId);
+        var horse = TestData.CreateHorse(HorseId);
         _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns(horse);
 
         var result = await _sut.GetHorseByIdAsync(HorseId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Should().Be(horse);
-    }
-
-
-    [Fact]
-    public async Task GetAllHorsesOfPersonAsync_PersonNotFound_ReturnsNotFound()
-    {
-        const int personId = 1;
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(false);
-
-        var result = await _sut.GetAllHorsesOfPersonAsync(personId);
-
-        result.IsT1.Should().BeTrue();
-        await _uowMock.HorseRepository.DidNotReceive().GetAllHorsesOfUserAsync(Arg.Any<int>());
+        result.Value.Should().BeOfType<Success<Horse>>().Which.Value.Should().Be(horse);
     }
 
     [Fact]
-    public async Task GetAllHorsesOfPersonAsync_PersonExists_ReturnsHorses()
+    public async Task GetOwnedHorsesOfPersonAsync_PersonNotFound_ReturnsNotFound()
     {
-        const int personId = 1;
-        var horse = CreateHorse();
-        _uowMock.PersonRepository.PersonExistsAsync(personId).Returns(true);
-        _uowMock.HorseRepository.GetAllHorsesOfUserAsync(personId).Returns(new List<Horse> { horse });
+        const int PersonId = 1;
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(false);
 
-        var result = await _sut.GetAllHorsesOfPersonAsync(personId);
+        var result = await _sut.GetOwnedHorsesOfPersonAsync(PersonId);
 
-        result.IsT0.Should().BeTrue();
-        result.AsT0.Should().ContainSingle().Which.Should().Be(horse);
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.HorseRepository.DidNotReceive().GetOwnedHorsesOfPersonAsync(Arg.Any<int>());
     }
 
+    [Fact]
+    public async Task GetOwnedHorsesOfPersonAsync_PersonExists_ReturnsHorses()
+    {
+        const int PersonId = 1;
+        var horses = new List<Horse> { TestData.CreateHorse(1), TestData.CreateHorse(2, "Blitz") };
+        _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
+        _uowMock.HorseRepository.GetOwnedHorsesOfPersonAsync(PersonId).Returns(horses);
+
+        var result = await _sut.GetOwnedHorsesOfPersonAsync(PersonId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<Horse>>>()
+              .Which.Value.Should().BeEquivalentTo(horses);
+    }
 
     [Fact]
-    public async Task AddHorse_OwnerNotFound_ReturnsNotFound()
+    public async Task AddHorseAsync_OwnerNotFound_ReturnsNotFound()
     {
-        const int ownerId = 1;
-        _uowMock.PersonRepository.GetPersonByIdAsync(ownerId).Returns((Person?)null);
+        const int OwnerId = 1;
+        _uowMock.PersonRepository.GetPersonByIdAsync(OwnerId).Returns((Person?) null);
 
-        var result = await _sut.AddHorse(
-            "Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, CreateAddress(),
-            [CreateHorseBreed()], ownerId
-        );
+        var result = await _sut.AddHorseAsync(TestData.CreateNewHorseData(OwnerId));
 
-        result.IsT2.Should().BeTrue();
+        result.Value.Should().BeOfType<NotFound>();
         _uowMock.HorseRepository.DidNotReceive().AddHorse(Arg.Any<Horse>());
         await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task AddHorse_ValidData_ReturnsSuccess()
+    public async Task AddHorseAsync_BreedNotFound_ReturnsNotFound()
     {
-        const int ownerId = 1;
-        var owner = CreatePerson(ownerId);
-        var address = CreateAddress();
-        var breeds = new List<HorseBreed> { CreateHorseBreed() };
-        _uowMock.PersonRepository.GetPersonByIdAsync(ownerId).Returns(owner);
+        const int OwnerId = 1;
+        _uowMock.PersonRepository.GetPersonByIdAsync(OwnerId).Returns(TestData.CreatePerson(OwnerId));
+        _uowMock.HorseRepository.GetBreedsByIdAsync(Arg.Any<IReadOnlyCollection<int>>())
+                .Returns(new List<Breed> { TestData.CreateBreed(1) });
 
-        var result = await _sut.AddHorse(
-            "Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, address, breeds, ownerId
-        );
+        var result = await _sut.AddHorseAsync(TestData.CreateNewHorseData(OwnerId, 1, 2));
 
-        result.IsT0.Should().BeTrue();
-        var horse = result.AsT0.Value;
-        horse.Name.Should().Be("Hugo");
-        horse.Address.Should().Be(address);
-        horse.HorseBreeds.Should().BeEquivalentTo(breeds);
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.HorseRepository.DidNotReceive().AddHorse(Arg.Any<Horse>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task AddHorse_ValidData_AddsOwnerAndSaves()
+    public async Task AddHorseAsync_ValidData_AddsHorseWithOwnerAndBreeds()
     {
-        const int ownerId = 1;
-        var owner = CreatePerson(ownerId);
-        _uowMock.PersonRepository.GetPersonByIdAsync(ownerId).Returns(owner);
+        const int OwnerId = 1;
+        var owner = TestData.CreatePerson(OwnerId);
+        var breed = TestData.CreateBreed(1);
+        var address = TestData.CreateAddress();
+        _uowMock.PersonRepository.GetPersonByIdAsync(OwnerId).Returns(owner);
+        _uowMock.HorseRepository.GetBreedsByIdAsync(Arg.Any<IReadOnlyCollection<int>>())
+                .Returns(new List<Breed> { breed });
+        _uowMock.LocationRepository.FindAddressAsync(null, "4400", "Steyr").Returns(address);
 
-        var result = await _sut.AddHorse(
-            "Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, CreateAddress(),
-            [CreateHorseBreed()], ownerId
-        );
+        var result = await _sut.AddHorseAsync(TestData.CreateNewHorseData(OwnerId, 1));
 
-        var horse = result.AsT0.Value;
+        var horse = result.Value.Should().BeOfType<Success<Horse>>().Which.Value;
+        horse.Name.Should().Be("Hugo");
+        horse.Address.Should().Be(address);
+        horse.HorseBreeds.Should().ContainSingle().Which.Breed.Should().Be(breed);
         var personHorse = horse.Persons.Should().ContainSingle().Subject;
         personHorse.Person.Should().Be(owner);
-        personHorse.Horse.Should().Be(horse);
         personHorse.IsOwner.Should().BeTrue();
         personHorse.IsHidden.Should().BeFalse();
-
         _uowMock.HorseRepository.Received(1).AddHorse(horse);
+        _uowMock.LocationRepository.DidNotReceive().AddAddress(Arg.Any<Address>());
         await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddHorseAsync_AddressDoesNotExist_AddsAddress()
+    {
+        const int OwnerId = 1;
+        _uowMock.PersonRepository.GetPersonByIdAsync(OwnerId).Returns(TestData.CreatePerson(OwnerId));
+        _uowMock.HorseRepository.GetBreedsByIdAsync(Arg.Any<IReadOnlyCollection<int>>())
+                .Returns(new List<Breed> { TestData.CreateBreed(1) });
+        _uowMock.LocationRepository.FindAddressAsync(null, "4400", "Steyr").Returns((Address?) null);
+
+        var result = await _sut.AddHorseAsync(TestData.CreateNewHorseData(OwnerId, 1));
+
+        var horse = result.Value.Should().BeOfType<Success<Horse>>().Which.Value;
+        horse.Address.CityName.Should().Be("Steyr");
+        horse.Address.PLZ.Should().Be("4400");
+        _uowMock.LocationRepository.Received(1).AddAddress(horse.Address);
+    }
+
+    [Fact]
+    public async Task GetSaddlesOfHorseAsync_HorseNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(false);
+
+        var result = await _sut.GetSaddlesOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<NotFound>();
+    }
+
+    [Fact]
+    public async Task GetSaddlesOfHorseAsync_HorseWithoutSaddles_ReturnsEmptyList()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.HorseRepository.GetSaddlesOfHorseAsync(HorseId).Returns(new List<Saddle>());
+
+        var result = await _sut.GetSaddlesOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<Saddle>>>().Which.Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSaddlesOfHorseAsync_HorseWithSaddles_ReturnsSaddles()
+    {
+        var saddles = new List<Saddle> { TestData.CreateSaddle(1, HorseId), TestData.CreateSaddle(2, HorseId) };
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.HorseRepository.GetSaddlesOfHorseAsync(HorseId).Returns(saddles);
+
+        var result = await _sut.GetSaddlesOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<Saddle>>>()
+              .Which.Value.Should().BeEquivalentTo(saddles);
+    }
+
+    [Fact]
+    public async Task GetRidersOfHorseAsync_HorseNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(false);
+
+        var result = await _sut.GetRidersOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<NotFound>();
+    }
+
+    [Fact]
+    public async Task GetRidersOfHorseAsync_HorseExists_ReturnsRiders()
+    {
+        var riders = new List<Person> { TestData.CreatePerson(1), TestData.CreatePerson(2) };
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.HorseRepository.GetRidersOfHorseAsync(HorseId).Returns(riders);
+
+        var result = await _sut.GetRidersOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<Person>>>()
+              .Which.Value.Should().Equal(riders);
+    }
+
+    [Fact]
+    public async Task GetHiddenRidersOfHorseAsync_HorseNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(false);
+
+        var result = await _sut.GetHiddenRidersOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<NotFound>();
+    }
+
+    [Fact]
+    public async Task GetHiddenRidersOfHorseAsync_HorseExists_ReturnsHiddenRiders()
+    {
+        var riders = new List<Person> { TestData.CreatePerson(3) };
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.HorseRepository.GetHiddenRidersOfHorseAsync(HorseId).Returns(riders);
+
+        var result = await _sut.GetHiddenRidersOfHorseAsync(HorseId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<Person>>>()
+              .Which.Value.Should().Equal(riders);
     }
 }

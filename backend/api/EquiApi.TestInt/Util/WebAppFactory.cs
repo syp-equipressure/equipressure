@@ -1,5 +1,4 @@
-using EquiApi.Persistence;
-using EquiApi.Persistence.Util;
+﻿using EquiApi.Persistence.Util;
 using EquiApi.Shared;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -11,7 +10,9 @@ namespace EquiApi.TestInt.Util;
 internal sealed class WebAppFactory(string connectionString) : WebApplicationFactory<Program>
 {
     public static readonly LocalDateTime CurrentDateTimeForTests = new(2026, 01, 01, 14, 30, 00);
-    
+
+    public static LocalDate CurrentDate => CurrentDateTimeForTests.Date;
+
     public IClock TestClock =>
         Services.GetService<IClock>() ??
         throw new InvalidOperationException("Service provider not available or clock not registered");
@@ -57,4 +58,3 @@ internal sealed class WebAppFactory(string connectionString) : WebApplicationFac
         }
     }
 }
-

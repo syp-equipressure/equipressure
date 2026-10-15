@@ -1,7 +1,4 @@
-﻿using NodaTime;
-
-namespace EquiApi.Persistence.Model;
-
+﻿namespace EquiApi.Persistence.Model;
 
 public class Person
 {
@@ -27,7 +24,7 @@ public class Person
     public List<Release> Releases { get; set; } = [];
 }
 
-// m-m bzh zwischen Person und Person
+// m:n relationship between an equestrian and a saddler
 public class PersonRelationship
 {
     public int EquestrianId { get; set; }

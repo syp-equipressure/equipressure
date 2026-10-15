@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,15 +10,13 @@ public static class PersistenceSetup
     private const string ConnectionStringName = "Postgres";
     private const string MigrationHistoryTable = "__EFMigrationsHistory";
 
-    private static void ConfigureDatabase(IServiceCollection services, IConfiguration configuration,
-                                          bool isDev)
+    private static void ConfigureDatabase(IServiceCollection services, IConfiguration configuration, bool isDev)
     {
         string connectionString = configuration.GetConnectionString(ConnectionStringName)
                                   ?? throw new InvalidOperationException("Connection string not found");
         services.AddDbContext<DatabaseContext>(optionsBuilder =>
         {
-            ConfigureDatabaseContextOptions(optionsBuilder, connectionString,
-                                            isDev);
+            ConfigureDatabaseContextOptions(optionsBuilder, connectionString, isDev);
         });
     }
 
@@ -43,13 +41,11 @@ public static class PersistenceSetup
 
     extension(IServiceCollection services)
     {
-        public void ConfigurePersistence(IConfigurationManager configurationManager,
-                                         bool isDev)
+        public void ConfigurePersistence(IConfigurationManager configurationManager, bool isDev)
         {
             ConfigureDatabase(services, configurationManager, isDev);
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<ITransactionProvider, UnitOfWork>();
         }
     }
 }

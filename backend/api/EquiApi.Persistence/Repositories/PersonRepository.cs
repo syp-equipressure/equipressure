@@ -1,4 +1,4 @@
-﻿using EquiApi.Core.Util;
+﻿using System.Linq.Expressions;
 using EquiApi.Persistence.Model;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,269 +7,181 @@ namespace EquiApi.Persistence.Repositories;
 public interface IPersonRepository
 {
     /// <summary>
-    /// returns a person with the given id
+    ///     Gets a person including their address and roles
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>a person</returns>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The tracked person or null if it does not exist</returns>
     public ValueTask<Person?> GetPersonByIdAsync(int personId);
 
     /// <summary>
-    /// searches for the address of a person with the given id
+    ///     Gets the address of a person
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>the address if it exists or at least the city</returns>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The address or null if the person does not exist</returns>
     public ValueTask<Address?> GetPersonAddressAsync(int personId);
 
-    
     /// <summary>
-    /// returns the firstname and lastname of a person with the given id
+    ///     Gets the first and last name of a person
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>firstname and lastname</returns>
-    public ValueTask<Helper.NameData?> GetNameByIdAsync(int personId);
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The name or null if the person does not exist</returns>
+    public ValueTask<NameData?> GetNameByIdAsync(int personId);
 
     /// <summary>
-    /// checks if a person with the given id exists
+    ///     Checks if a person exists
     /// </summary>
-    /// <param name="personId">the id of person we want to check</param>
-    /// <returns>true if exists false if not</returns>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>True if the person exists, false otherwise</returns>
     public ValueTask<bool> PersonExistsAsync(int personId);
 
     /// <summary>
-    /// checks if a person with the given email exists
+    ///     Checks if an email is already used by a person
     /// </summary>
-    /// <param name="personEmail">the email of person we want to check</param>
-    /// <returns>true if exists false if not</returns>
-    public ValueTask<bool> PersonWithEmailExistsAsync(string personEmail);
+    /// <param name="email">The email to check</param>
+    /// <param name="excludedPersonId">Optional id of a person whose email is ignored (e.g. the person being updated)</param>
+    /// <returns>True if another person already uses the email, false otherwise</returns>
+    public ValueTask<bool> IsEmailTakenAsync(string email, int? excludedPersonId = null);
 
     /// <summary>
-    /// checks if a role with the given role exists
+    ///     Gets the (tracked) account roles with the given names
     /// </summary>
-    /// <param name="role">the role we want to check</param>
-    /// <returns>true if exists, false if not</returns>
-    public ValueTask<bool> RoleExistsAsync(AccountRole role);
+    /// <param name="roleNames">The names of the roles</param>
+    /// <returns>The roles that exist for the given names</returns>
+    public ValueTask<IReadOnlyCollection<AccountRole>> GetRolesByNameAsync(IReadOnlyCollection<RoleName> roleNames);
 
     /// <summary>
-    /// checks if an email by a certain person is taken by another person
+    ///     Gets all saddlers with their address, ordered by last name
     /// </summary>
-    /// <param name="personEmail">email of person </param>
-    /// <param name="personId">id of perso</param>
-    /// <returns>true if taken, false if not</returns>
-    public ValueTask<bool> IsEmailTakenByAnotherUserAsync(string personEmail, int personId);
+    /// <returns>All saddlers</returns>
+    public ValueTask<IReadOnlyCollection<SaddlerData>> GetAllSaddlersAsync();
 
     /// <summary>
-    /// returns all persons that are marked as favourites for the given person
+    ///     Gets all saddlers an equestrian marked as favourite, ordered by last name
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>all favourites of a person</returns>
-    public ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int personId);
+    /// <param name="equestrianId">The id of the equestrian</param>
+    /// <returns>The favourite saddlers of the equestrian</returns>
+    public ValueTask<IReadOnlyCollection<SaddlerData>> GetFavouriteSaddlersAsync(int equestrianId);
 
     /// <summary>
-    /// returns all persons that are marked as contacts for the given person
+    ///     Gets all contacts of a person, ordered by last name. Contacts work in both directions:
+    ///     the contacts of an equestrian are saddlers and the contacts of a saddler are equestrians.
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>all contacts of a Person</returns>
-    public ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int personId);
+    /// <param name="personId">The id of the equestrian or saddler</param>
+    /// <returns>The contacts of the person</returns>
+    public ValueTask<IReadOnlyCollection<ContactData>> GetContactsAsync(int personId);
 
     /// <summary>
-    /// returns all horses that are owned by the person with the given id
+    ///     Gets the relationship (contact and/or favourite) between an equestrian and a saddler
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>a list of the owned horses</returns>
-    public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int personId);
+    /// <param name="equestrianId">The id of the equestrian</param>
+    /// <param name="saddlerId">The id of the saddler</param>
+    /// <returns>The tracked relationship or null if there is none</returns>
+    public ValueTask<PersonRelationship?> GetRelationshipAsync(int equestrianId, int saddlerId);
 
     /// <summary>
-    /// returns all devices that belong to the person with the given id
+    ///     Gets all relationships of a person, no matter if the person is the equestrian or the saddler
     /// </summary>
-    /// <param name="personId">the id of person we want to get</param>
-    /// <returns>list of devices</returns>
-    public ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId);
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The tracked relationships</returns>
+    public ValueTask<IReadOnlyCollection<PersonRelationship>> GetRelationshipsOfPersonAsync(int personId);
 
     /// <summary>
-    /// returns all saddlers with their address
+    ///     Adds a new relationship between an equestrian and a saddler
     /// </summary>
-    /// <returns>list of saddlers</returns>
-    public ValueTask<IReadOnlyCollection<Helper.SaddlerBasicData>> GetAllSaddlersAsync();
+    /// <param name="relationship">The relationship to add</param>
+    public void AddRelationship(PersonRelationship relationship);
 
     /// <summary>
-    /// returns all saddlers that is a favourite of an equestrian + their address
+    ///     Removes a relationship between an equestrian and a saddler
     /// </summary>
-    /// <param name="equestrianId">the id of equestrian</param>
-    /// <returns>list of saddlers</returns>
-    public ValueTask<IReadOnlyCollection<Helper.SaddlerBasicData>> GetAllSaddlerFavouritesOfEquestrianAsync(int equestrianId);
+    /// <param name="relationship">The relationship to remove</param>
+    public void RemoveRelationship(PersonRelationship relationship);
 
     /// <summary>
-    /// returns all saddlers that is a contact of an equestrian + their address
+    ///     Adds a new person
     /// </summary>
-    /// <param name="equestrianId">the id of equestrian</param>
-    /// <returns>list of saddlers</returns>
-    public ValueTask<IReadOnlyCollection<Helper.SaddlerBasicData>> GetAllSaddlerContactsOfEquestrianAsync(int equestrianId);
-
-    /// <summary>
-    /// Creates a new person in the system and assigns a role.
-    /// </summary>
-    /// <param name="person">The person object to add</param>
+    /// <param name="person">The person to add</param>
     public void AddPerson(Person person);
 
     /// <summary>
-    /// Removes a person and their associated role assignments from the database.
+    ///     Removes a person, their role assignments are removed as well
     /// </summary>
-    /// <param name="person">The person entity to be deleted.</param>
+    /// <param name="person">The person to remove</param>
     public void RemovePerson(Person person);
 }
 
 internal sealed class PersonRepository(
     DbSet<Person> personSet,
-    DbSet<PersonRoleAssignment> personRoleSet,
-    DbSet<AccountRole> rolesSet) : IPersonRepository
+    DbSet<PersonRelationship> relationshipSet,
+    DbSet<AccountRole> roleSet) : IPersonRepository
 {
-    public async ValueTask<Person?> GetPersonByIdAsync(int personId)
-    {
-        return await personSet.Where(p => p.Id == personId).FirstOrDefaultAsync();
-    }
+    public async ValueTask<Person?> GetPersonByIdAsync(int personId) =>
+        await personSet.Include(p => p.Address)
+                       .Include(p => p.Roles)
+                       .ThenInclude(pra => pra.Role)
+                       .FirstOrDefaultAsync(p => p.Id == personId);
 
-    public async ValueTask<Address?> GetPersonAddressAsync(int personId)
-    {
-        return await personSet.Include(p => p.Address)
-                              .ThenInclude(a => a.AddressName)
-                              .Where(p => p.Id == personId)
-                              .Select(p => p.Address)
-                              .AsNoTracking()
-                              .FirstOrDefaultAsync();
-    }
-    
+    public async ValueTask<Address?> GetPersonAddressAsync(int personId) =>
+        await personSet.AsNoTracking()
+                       .Where(p => p.Id == personId)
+                       .Select(p => p.Address)
+                       .FirstOrDefaultAsync();
 
-    public async ValueTask<Helper.NameData?> GetNameByIdAsync(int personId)
-    {
-        return await personSet
-                     .Where(p => p.Id == personId)
-                     .Select(p => new Helper.NameData(p.FirstName, p.LastName))
-                     .AsNoTracking()
-                     .FirstOrDefaultAsync();
-    }
+    public async ValueTask<NameData?> GetNameByIdAsync(int personId) =>
+        await personSet.Where(p => p.Id == personId)
+                       .Select(p => new NameData(p.FirstName, p.LastName))
+                       .FirstOrDefaultAsync();
 
-    public async ValueTask<bool> PersonExistsAsync(int personId)
-    {
-        return await personSet.AnyAsync(p => p.Id == personId);
-    }
+    public async ValueTask<bool> PersonExistsAsync(int personId) =>
+        await personSet.AnyAsync(p => p.Id == personId);
 
-    public async ValueTask<bool> PersonWithEmailExistsAsync(string personEmail)
-    {
-        return await personSet.AnyAsync(p => p.Email == personEmail);
-    }
+    public async ValueTask<bool> IsEmailTakenAsync(string email, int? excludedPersonId = null) =>
+        await personSet.AnyAsync(p => p.Email == email && p.Id != excludedPersonId);
 
-    public async ValueTask<bool> IsEmailTakenByAnotherUserAsync(string personEmail, int personId)
-    {
-        return await personSet.AnyAsync(p => p.Email == personEmail && p.Id != personId);
-    }
-
-    public async ValueTask<IReadOnlyCollection<Person>> GetFavouritesAsync(int personId)
-    {
-        return await personSet
-                     .Include(p => p.Relationships)
-                     .Where(p => p.Id == personId)
-                     .Where(p => p.Relationships.All(r => r.IsFavourite))
-                     .AsNoTracking()
+    public async ValueTask<IReadOnlyCollection<AccountRole>> GetRolesByNameAsync(
+        IReadOnlyCollection<RoleName> roleNames) =>
+        await roleSet.Where(r => roleNames.Contains(r.Name))
                      .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<SaddlerData>> GetAllSaddlersAsync() =>
+        await QuerySaddlers(_ => true).ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<SaddlerData>> GetFavouriteSaddlersAsync(int equestrianId) =>
+        await QuerySaddlers(p => p.Relationships.Any(r => r.EquestrianId == equestrianId && r.IsFavourite))
+            .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<ContactData>> GetContactsAsync(int personId) =>
+        await personSet.Where(p => relationshipSet.Any(r => r.IsContact
+                                                            && ((r.EquestrianId == personId && r.SaddlerId == p.Id)
+                                                                || (r.SaddlerId == personId
+                                                                    && r.EquestrianId == p.Id))))
+                       .OrderBy(p => p.LastName)
+                       .ThenBy(p => p.FirstName)
+                       .Select(p => new ContactData(p.Id,
+                                                    p.FirstName,
+                                                    p.LastName,
+                                                    p.Address.AddressName,
+                                                    p.Address.CityName,
+                                                    p.Address.PLZ,
+                                                    p.WebsiteLink,
+                                                    p.Description))
+                       .ToListAsync();
+
+    public async ValueTask<PersonRelationship?> GetRelationshipAsync(int equestrianId, int saddlerId) =>
+        await relationshipSet.FirstOrDefaultAsync(r => r.EquestrianId == equestrianId && r.SaddlerId == saddlerId);
+
+    public async ValueTask<IReadOnlyCollection<PersonRelationship>> GetRelationshipsOfPersonAsync(int personId) =>
+        await relationshipSet.Where(r => r.EquestrianId == personId || r.SaddlerId == personId)
+                             .ToListAsync();
+
+    public void AddRelationship(PersonRelationship relationship)
+    {
+        relationshipSet.Add(relationship);
     }
 
-    public async ValueTask<IReadOnlyCollection<Person>> GetContactsAsync(int personId)
+    public void RemoveRelationship(PersonRelationship relationship)
     {
-        return await personSet
-                     .Include(p => p.Relationships)
-                     .Where(p => p.Id == personId)
-                     .Where(p => p.Relationships.All(r => r.IsContact))
-                     .AsNoTracking()
-                     .ToListAsync();
-    }
-
-    public async ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesAsync(int personId)
-    {
-        return await personSet.Include(p => p.Horses)
-                              .ThenInclude(ph => ph.Horse)
-                              .Where(p => p.Horses.Any(p => p.PersonId == personId && p.IsOwner))
-                              .SelectMany(p => p.Horses.Select(ph => ph.Horse))
-                              .AsNoTracking()
-                              .ToListAsync();
-    }
-
-    public async ValueTask<bool> RoleExistsAsync(AccountRole role)
-    {
-        return await rolesSet.AnyAsync(r => r.Name == role.Name && r.Id == role.Id);
-    }
-
-    public async ValueTask<IReadOnlyCollection<MeasurementDevice>> GetAllDevicesAsync(int personId)
-    {
-        return await personSet.Include(p => p.UserDevices)
-                              .ThenInclude(ud => ud.Device)
-                              .Include(p => p.OwnerDevices)
-                              .Select(p => new
-                              {
-                                  uDevice = p.UserDevices.Select(ud => ud.Device),
-                                  oDevice = p.OwnerDevices
-                              })
-                              .SelectMany(p => p.uDevice.Concat(p.oDevice))
-                              .AsNoTracking()
-                              .ToListAsync();
-    }
-
-    public async ValueTask<IReadOnlyCollection<Helper.SaddlerBasicData>> GetAllSaddlersAsync()
-    {
-        return await personRoleSet
-                     .Include(pr => pr.Role)
-                     .Include(pr => pr.Person)
-                     .ThenInclude(p => p.Address)
-                     .Where(pr => pr.Role.Name == RoleName.Saddler)
-                     .Select(pr => new Helper.SaddlerBasicData(pr.PersonId,
-                                                                     pr.Person.FirstName,
-                                                                     pr.Person.LastName,
-                                                                     pr.Person.Address.AddressName,
-                                                                     pr.Person.Address.CityName,
-                                                                     pr.Person.Address.PLZ,
-                                                                     pr.Person.WebsiteLink,
-                                                                     pr.Person.Description))
-                     .OrderBy(p => p.LastName)
-                     .ToListAsync();
-    }
-
-    public async ValueTask<IReadOnlyCollection<Helper.SaddlerBasicData>> GetAllSaddlerFavouritesOfEquestrianAsync(int equestrianId)
-    {
-        return await personRoleSet
-                     .Include(pr => pr.Role)
-                     .Include(pr => pr.Person)
-                     .ThenInclude(p => p.Address)
-                     .Where(pr => pr.Role.Name == RoleName.Saddler &&
-                                  pr.Person.Relationships.Any(r => r.IsFavourite && r.EquestrianId == equestrianId))
-                     .Select(pr => new Helper.SaddlerBasicData(pr.PersonId,
-                                                                     pr.Person.FirstName,
-                                                                     pr.Person.LastName,
-                                                                     pr.Person.Address.AddressName,
-                                                                     pr.Person.Address.CityName,
-                                                                     pr.Person.Address.PLZ,
-                                                                     pr.Person.WebsiteLink,
-                                                                     pr.Person.Description))
-                     .OrderBy(p => p.LastName)
-                     .ToListAsync();
-    }
-
-    public async ValueTask<IReadOnlyCollection<Helper.SaddlerBasicData>> GetAllSaddlerContactsOfEquestrianAsync(int equestrianId)
-    {
-        return await personRoleSet
-                     .Include(pr => pr.Role)
-                     .Include(pr => pr.Person)
-                     .ThenInclude(p => p.Address)
-                     .Where(pr => pr.Role.Name == RoleName.Saddler &&
-                                  pr.Person.Relationships.Any(r => r.IsContact && r.EquestrianId == equestrianId))
-                     .Select(pr => new Helper.SaddlerBasicData(pr.PersonId,
-                                                                     pr.Person.FirstName,
-                                                                     pr.Person.LastName,
-                                                                     pr.Person.Address.AddressName,
-                                                                     pr.Person.Address.CityName,
-                                                                     pr.Person.Address.PLZ,
-                                                                     pr.Person.WebsiteLink,
-                                                                     pr.Person.Description))
-                     .OrderBy(p => p.LastName)
-                     .ToListAsync();
+        relationshipSet.Remove(relationship);
     }
 
     public void AddPerson(Person person)
@@ -281,5 +193,19 @@ internal sealed class PersonRepository(
     {
         personSet.Remove(person);
     }
-}
 
+    // Person.Relationships contains the relationships in which the person is the saddler
+    private IQueryable<SaddlerData> QuerySaddlers(Expression<Func<Person, bool>> filter) =>
+        personSet.Where(p => p.Roles.Any(pra => pra.Role.Name == RoleName.Saddler))
+                 .Where(filter)
+                 .OrderBy(p => p.LastName)
+                 .ThenBy(p => p.FirstName)
+                 .Select(p => new SaddlerData(p.Id,
+                                              p.FirstName,
+                                              p.LastName,
+                                              p.Address.AddressName,
+                                              p.Address.CityName,
+                                              p.Address.PLZ,
+                                              p.WebsiteLink,
+                                              p.Description));
+}

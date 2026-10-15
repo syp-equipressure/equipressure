@@ -7,10 +7,6 @@
         <ProjectReference Include="..\EquiApi\EquiApi.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" Version="10.0.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="AwesomeAssertions" Version="9.6.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />

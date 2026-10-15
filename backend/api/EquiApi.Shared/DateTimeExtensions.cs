@@ -1,4 +1,4 @@
-namespace EquiApi.Shared;
+﻿namespace EquiApi.Shared;
 
 public static class DateTimeExtensions
 {

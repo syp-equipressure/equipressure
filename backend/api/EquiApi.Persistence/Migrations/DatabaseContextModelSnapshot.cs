@@ -36,7 +36,27 @@ namespace EquiApi.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("AccountRole", "EquiPressure");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = 10
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = 20
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = 30
+                        });
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Address", b =>
@@ -227,7 +247,6 @@ namespace EquiApi.Persistence.Migrations
             modelBuilder.Entity("EquiApi.Persistence.Model.MeasurementDevice", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("text");
 
                     b.Property<int>("CategoryId")
@@ -433,33 +452,6 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("Release", "EquiPressure");
                 });
 
-            modelBuilder.Entity("EquiApi.Persistence.Model.Rocket", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Manufacturer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("MaxThrust")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("ModelName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("PayloadDeltaV")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Rocket", "EquiPressure");
-                });
-
             modelBuilder.Entity("EquiApi.Persistence.Model.Saddle", b =>
                 {
                     b.Property<int>("Id")
@@ -528,7 +520,7 @@ namespace EquiApi.Persistence.Migrations
                     b.HasOne("EquiApi.Persistence.Model.Address", "Address")
                         .WithMany("Horses")
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Address");
@@ -653,7 +645,7 @@ namespace EquiApi.Persistence.Migrations
                     b.HasOne("EquiApi.Persistence.Model.Address", "Address")
                         .WithMany("Persons")
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Address");
