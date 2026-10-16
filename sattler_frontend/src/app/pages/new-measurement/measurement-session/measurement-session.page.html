@@ -5,16 +5,50 @@
     <button type="button" class="back-link" aria-label="Zurück zur Auswahl" (click)="backToSelection()">←</button>
     <div class="session-layout">
       <section class="session-main">
-        <section class="segment-list" aria-label="Teilmessungen">
+        <section
+          class="segment-list"
+          aria-label="Teilmessungen"
+          cdkDropList
+          (cdkDropListDropped)="reorderSegments($event)"
+        >
           @for (segment of current.segments; track segment.id; let index = $index) {
-            <article class="session-card segment-card" [class.complete]="segment.completed">
+            <article class="session-card segment-card" [class.complete]="segment.completed" cdkDrag>
               <header class="segment-heading">
                 <span class="step-icon">{{ index + 1 }}</span>
                 <strong>{{ segment.gait }} {{ segment.side === 'Links' ? 'linke Hand' : 'rechte Hand' }}</strong>
                 @if (segment.completed) {
                   <span class="status">Abgeschlossen</span>
                 }
-                <span class="expand-icon">{{ segment.completed ? '✓' : '⌃' }}</span>
+                <div class="segment-actions">
+                  <button
+                    type="button"
+                    class="segment-action drag-handle"
+                    cdkDragHandle
+                    aria-label="Teilmessung verschieben"
+                    title="Zum Verschieben ziehen"
+                  >⠿</button>
+                  <button
+                    type="button"
+                    class="segment-action"
+                    aria-label="Teilmessung nach oben verschieben"
+                    [disabled]="index === 0"
+                    (click)="moveSegment(segment.id, -1)"
+                  >↑</button>
+                  <button
+                    type="button"
+                    class="segment-action"
+                    aria-label="Teilmessung nach unten verschieben"
+                    [disabled]="index === current.segments.length - 1"
+                    (click)="moveSegment(segment.id, 1)"
+                  >↓</button>
+                  <button
+                    type="button"
+                    class="segment-action remove-segment"
+                    aria-label="Teilmessung löschen"
+                    title="Teilmessung löschen"
+                    (click)="removeSegment(segment.id)"
+                  ><span class="material-icons" aria-hidden="true">delete_outline</span></button>
+                </div>
               </header>
 
               @if (!segment.completed) {
@@ -42,7 +76,6 @@
                 <div class="completed-segment">
                   <span>{{ segment.gait }} {{ segment.side === 'Links' ? 'linke Hand' : 'rechte Hand' }}</span>
                   <strong>{{ formatDuration(segment.durationSeconds) }}</strong>
-                  <button type="button" class="remove-segment" aria-label="Teilmessung löschen" (click)="removeSegment(segment.id)">×</button>
                 </div>
               }
             </article>
@@ -97,5 +130,10 @@
     <button type="button" class="finish-button" [disabled]="completedCount() === 0" (click)="finish()">
       Messung beenden
     </button>
+  </main>
+} @else {
+  <main class="session-page session-error">
+    <p>Die Messung konnte nicht geladen werden. Bitte wähle Reiter:in, Pferd und Sattel erneut aus.</p>
+    <button type="button" class="finish-button" (click)="returnToSelection()">Zur Auswahl</button>
   </main>
 }

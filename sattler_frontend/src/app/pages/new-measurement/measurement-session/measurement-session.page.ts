@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PageHeaderComponent } from '../../../shared/page-header/page-header';
@@ -12,7 +13,7 @@ import { fullName } from '../../../models/customer.model';
 @Component({
   selector: 'app-measurement-session-page',
   standalone: true,
-  imports: [PageHeaderComponent],
+  imports: [PageHeaderComponent, CdkDropList, CdkDrag, CdkDragHandle],
   templateUrl: './measurement-session.page.html',
   styleUrl: './measurement-session.page.scss',
 })
@@ -98,7 +99,23 @@ export class MeasurementSessionPage {
   }
 
   removeSegment(segmentId: string): void {
+    if (!window.confirm('Möchtest du diese Teilmessung wirklich löschen?')) return;
     this.sessionService.removeSegment(segmentId);
+  }
+
+  reorderSegments(event: CdkDragDrop<MeasurementSegment[]>): void {
+    this.sessionService.moveSegment(event.previousIndex, event.currentIndex);
+  }
+
+  moveSegment(segmentId: string, offset: number): void {
+    const segments = this.session()?.segments;
+    if (!segments) return;
+    const index = segments.findIndex(segment => segment.id === segmentId);
+    if (index >= 0) this.sessionService.moveSegment(index, index + offset);
+  }
+
+  returnToSelection(): void {
+    void this.router.navigate(['/new-measurement']);
   }
 
   backToSelection(): void {
