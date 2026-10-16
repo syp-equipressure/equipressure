@@ -1052,10 +1052,47 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     return;
                   }
 
+                  if (breedController.text.trim().isEmpty ||
+                      breedController.text.trim().toLowerCase() == 'unbekannt') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte eine unterstützte Pferderasse eingeben'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (stableCityController.text.trim().isEmpty ||
+                      stablePostalCodeController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte Stallort und Postleitzahl ausfüllen'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
                   if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Bitte Geburtsdatum ausfüllen'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                    final parsedHeight = double.tryParse(heightController.text.trim());
+                    final parsedWeight = double.tryParse(weightController.text.trim());
+                    if (parsedHeight == null ||
+                      parsedHeight <= 0 ||
+                      parsedWeight == null ||
+                      parsedWeight <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte eine gültige Größe und ein gültiges Gewicht eingeben'),
                         duration: Duration(seconds: 2),
                       ),
                     );

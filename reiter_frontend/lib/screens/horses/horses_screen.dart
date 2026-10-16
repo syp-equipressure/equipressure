@@ -49,7 +49,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   // ✅ AKTUALISIERT: Jetzt mit 12 Parametern (inkl. Stalladresse)
-  void _addHorse(
+  Future<void> _addHorse(
     String name,
     File? image,
     String age,
@@ -64,28 +64,36 @@ class _HorsesScreenState extends State<HorsesScreen> {
     String stableHouseNumber,// ← NEU
   ) async {
     final newHorse = Horse(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
+      id: '',
+      name: name.trim(),
       image: image,
-      breed: breed,
+      breed: breed.trim(),
       birthDate: birthDate,
       weight: weight,
       height: height,
       sex: sex,
-      stableCity: stableCity.isEmpty ? null : stableCity,
-      stablePostalCode: stablePostalCode.isEmpty ? null : stablePostalCode,
-      stableStreet: stableStreet.isEmpty ? null : stableStreet,
-      stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber,
+      stableCity: stableCity.trim(),
+      stablePostalCode: stablePostalCode.trim(),
+      stableStreet: stableStreet.trim().isEmpty ? null : stableStreet.trim(),
+      stableHouseNumber: stableHouseNumber.trim().isEmpty
+          ? null
+          : stableHouseNumber.trim(),
     );
 
-    await _horseService.addHorse(newHorse);
-    
-    setState(() {
-      view = HorsesView.list;
-    });
-    
-    // Lade die Pferde neu, um die Liste zu aktualisieren
-    await _loadHorses();
+    try {
+      final savedHorse = await _horseService.addHorse(newHorse);
+      if (!mounted) return;
+      setState(() {
+        horses = [...horses, savedHorse];
+        view = HorsesView.list;
+        isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pferd konnte nicht gespeichert werden: $error')),
+      );
+    }
   }
 
   @override

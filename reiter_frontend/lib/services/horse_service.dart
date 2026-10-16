@@ -8,6 +8,16 @@ import 'package:reiterappfrontend/services/backend_person_context_service.dart';
 class HorseService {
   static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 5);
+  static const Map<String, int> _developmentBreedIds = {
+    'hannoveraner': 1,
+    'holsteiner': 2,
+    'westfale': 3,
+    'trakehner': 4,
+    'haflinger': 5,
+    'noriker': 6,
+    'lipizzaner': 7,
+    'quarter horse': 8,
+  };
 
   static final HorseService _instance = HorseService._internal();
   factory HorseService() => _instance;
@@ -18,8 +28,7 @@ class HorseService {
 
   /// Lädt die Pferde einer Person aus dem Backend.
   Future<List<Horse>> getHorses() async {
-    final personIdStr = await BackendPersonContextService.loadPersonId() ?? '1';
-    final personId = int.tryParse(personIdStr) ?? 1;
+    final personId = await currentPersonId();
     if (_cachedHorses != null && _cachedPersonId == personId) {
       return _cachedHorses!;
     }
@@ -30,17 +39,13 @@ class HorseService {
   }
 
   /// Fügt ein neues Pferd hinzu
-  Future<void> addHorse(Horse horse) async {
-    _cachedHorses ??= [];
-    _cachedHorses!.add(horse);
-
-    try {
-      final personIdStr = await BackendPersonContextService.loadPersonId() ?? '1';
-      final personId = int.tryParse(personIdStr) ?? 1;
-      await createHorseOnBackend(horse, personId);
-    } catch (_) {
-      // Ignoriere Netzwerkfehler beim Offline-Modus
+  Future<Horse> addHorse(Horse horse) async {
+    final personId = await currentPersonId();
+    final savedHorse = await createHorseOnBackend(horse, personId);
+    if (_cachedPersonId == personId && _cachedHorses != null) {
+      _cachedHorses!.add(savedHorse);
     }
+    return savedHorse;
   }
 
   /// Aktualisiert ein Pferd
@@ -137,19 +142,30 @@ class HorseService {
   }
 
   /// POST /api/horses -> AddHorseRequest
-  Future<Horse?> createHorseOnBackend(Horse horse, int ownerId) async {
+  Future<Horse> createHorseOnBackend(Horse horse, int ownerId) async {
     final url = Uri.parse('$baseUrl/horses');
+    final breedIds = _breedIdsForNames(horse.breed);
+    final cityName = horse.stableCity?.trim() ?? '';
+    final postalCode = horse.stablePostalCode?.trim() ?? '';
+    if (cityName.isEmpty || postalCode.isEmpty) {
+      throw ArgumentError('Stallort und Postleitzahl müssen angegeben werden.');
+    }
+    final street = [horse.stableStreet?.trim(), horse.stableHouseNumber?.trim()]
+        .where((part) => part != null && part.isNotEmpty)
+        .join(' ');
+
     final body = jsonEncode({
       'name': horse.name,
       'dateOfBirth': _dotToIsoDate(horse.birthDate),
-      'weight': double.tryParse(horse.weight) ?? 500,
-      'height': double.tryParse(horse.height) ?? 160,
-      'gender': horse.sex.toLowerCase().contains('hengst') || horse.sex.toLowerCase().contains('male')
-          ? 'male'
-          : horse.sex.toLowerCase().contains('wallach')
-              ? 'gelding'
-              : 'female',
-      'breedNames': horse.breed.isNotEmpty ? [horse.breed] : ['Unbekannt'],
+      'weight': double.tryParse(horse.weight),
+      'height': double.tryParse(horse.height),
+      'gender': horse.sex.toLowerCase() == 'male' ? 'Male' : 'Female',
+      'address': {
+        'addressName': street.isEmpty ? null : street,
+        'cityName': cityName,
+        'plz': postalCode,
+      },
+      'breedIds': breedIds,
       'ownerId': ownerId,
     });
 
@@ -162,7 +178,28 @@ class HorseService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return _horseFromBackend(jsonDecode(response.body) as Map<String, dynamic>);
     }
-    return null;
+    throw Exception(
+      'Pferd konnte nicht gespeichert werden (HTTP ${response.statusCode}): ${response.body}',
+    );
+  }
+
+  static List<int> _breedIdsForNames(String breedNames) {
+    final names = breedNames
+        .split(',')
+        .map((name) => name.trim().toLowerCase())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    if (names.isEmpty) {
+      throw ArgumentError('Bitte eine unterstützte Pferderasse angeben.');
+    }
+
+    final unknownNames = names.where((name) => !_developmentBreedIds.containsKey(name));
+    if (unknownNames.isNotEmpty) {
+      throw ArgumentError(
+        'Unbekannte Rasse: ${unknownNames.join(', ')}. Unterstützt werden die Rassen aus den Entwicklungsdaten.',
+      );
+    }
+    return names.map((name) => _developmentBreedIds[name]!).toList();
   }
 
   Future<int> currentPersonId() async {
@@ -190,6 +227,7 @@ class HorseService {
   }
 
   static Horse _horseFromBackend(Map<String, dynamic> json) {
+    final address = json['address'] as Map<String, dynamic>?;
     return Horse(
       id: json['id']?.toString() ?? '',
       name: (json['name'] ?? '') as String,
@@ -198,6 +236,9 @@ class HorseService {
       weight: json['weight']?.toString() ?? '',
       height: json['height']?.toString() ?? '',
       sex: (json['gender'] ?? 'female').toString(),
+      stableCity: address?['cityName']?.toString(),
+      stablePostalCode: address?['plz']?.toString(),
+      stableStreet: address?['addressName']?.toString(),
     );
   }
 
