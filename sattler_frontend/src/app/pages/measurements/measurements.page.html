@@ -200,7 +200,7 @@
               <div class="scale-gradient">
                 <div class="marker" [style.bottom.%]="(statisticMaximum() / 10) * 100">
                   <span class="marker-line"></span>
-                  <span class="marker-value">{{ statisticMaximum().toString().replace('.', ',') }}</span>
+                  <span class="marker-value">{{ statisticMaximum().toFixed(2).replace('.', ',') }}</span>
                 </div>
               </div>
               <span class="scale-bot">0</span>
@@ -284,7 +284,7 @@
       <article class="note-card">
         <header class="note-header">
           <h2>{{ m.date }} · {{ m.deviceName }}</h2>
-          <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toString().replace('.', ',') }} N/cm²</p>
+          <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toFixed(2).replace('.', ',') }} N/cm²</p>
         </header>
         <textarea
           [value]="m.notes"
