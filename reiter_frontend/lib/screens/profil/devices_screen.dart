@@ -93,7 +93,9 @@ class _DevicesScreenState extends State<DevicesScreen> {
         categoryId: categoryId,
       );
       if (!mounted) return;
-      setState(() => widget.devices.add(device));
+      if (device != null) {
+        setState(() => widget.devices.add(device));
+      }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Gerät wurde hinzugefügt.')));
