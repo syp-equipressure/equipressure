@@ -56,56 +56,100 @@
           <div class="controls">
             <div class="control-group">
               <span class="control-label">Gangart</span>
-              <div class="toggle">
-                @for (g of ['Schritt', 'Trab', 'Galopp']; track g) {
-                  <button
-                    type="button"
-                    class="toggle-btn"
-                    [class.active]="activeGait() === g"
-                    (click)="toggleGait($any(g))"
-                  >{{ g }}</button>
-                }
+              <div class="select-shell">
+                <select [value]="activeGait()" aria-label="Nach Gangart filtern" (change)="selectGait($any($event.target).value)">
+                  <option value="">Alle Gangarten</option>
+                  @for (gait of gaitOptions(); track gait) {
+                    <option [value]="gait">{{ gait }}</option>
+                  }
+                </select>
               </div>
             </div>
 
             <div class="control-group">
-              <span class="control-label">Seite</span>
-              <div class="toggle">
-                @for (s of ['Links', 'Rechts']; track s) {
-                  <button
-                    type="button"
-                    class="toggle-btn"
-                    [class.active]="activeSide() === s"
-                    (click)="toggleSide($any(s))"
-                  >{{ s }}</button>
-                }
+              <span class="control-label">Hand</span>
+              <div class="select-shell">
+                <select [value]="activeSide()" aria-label="Nach Hand filtern" (change)="selectSide($any($event.target).value)">
+                  <option value="">Alle Hände</option>
+                  @for (side of sideOptions(); track side) {
+                    <option [value]="side">{{ side }}</option>
+                  }
+                </select>
               </div>
             </div>
 
-            <button type="button" class="reset-link" (click)="resetView()">Auf Ø zurücksetzen</button>
+            <div class="control-group">
+              <span class="control-label">Ansicht</span>
+              <div class="select-shell">
+                <select [value]="pressureStatistic()" aria-label="Druckstatistik auswählen" (change)="selectPressureStatistic($any($event.target).value)">
+                  <option value="average">Durchschnitt</option>
+                  <option value="maximum">Maximum</option>
+                  <option value="pro" [disabled]="!isProAvailable()">Profi</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" class="reset-link" (click)="resetView()">Filter zurücksetzen</button>
           </div>
 
           <div class="visual-row">
-            <div class="heatmap-wrap">
-              <div class="filter-chip"><span class="dot"></span>{{ activeGait() }} · {{ activeSide() }}</div>
-              <app-pressure-heatmap
-                [grid]="pressureGrid()"
-                [mode]="heatmapMode()"
-                [max]="m.detail.maxNcm2"
-              ></app-pressure-heatmap>
-              <div class="heatmap-label">Druckverteilung</div>
-              <button class="heatmap-expand" aria-label="Vergrößern">
-                <span class="material-icons">open_in_full</span>
-              </button>
+            <div class="heatmap-column">
+              <div class="heatmap-wrap">
+                <div class="filter-chip">
+                  <span class="dot"></span>
+                  {{ activeGait() || 'Alle Gangarten' }} · {{ activeSide() || 'Alle Hände' }}
+                </div>
+                @if (isProSelectionMissing()) {
+                  <div class="heatmap-message">Für den Profimodus bitte Gangart und Hand auswählen.</div>
+                } @else if (pressureGrid().length > 0) {
+                  <app-pressure-heatmap
+                    [grid]="pressureGrid()"
+                    [mode]="heatmapMode()"
+                    [max]="statisticMaximum() || m.detail.maxNcm2"
+                  ></app-pressure-heatmap>
+                } @else {
+                  <div class="heatmap-message">Für diese Filter gibt es keine Teilmessungen.</div>
+                }
+                <div class="heatmap-label">{{ pressureStatistic() === 'pro' ? 'Laufende Druckverteilung' : 'Druckverteilung' }}</div>
+                <button class="heatmap-expand" aria-label="Vergrößern">
+                  <span class="material-icons">open_in_full</span>
+                </button>
+              </div>
+              @if (pressureStatistic() === 'pro' && isProAvailable()) {
+                <div class="playback-controls" aria-label="Profimodus-Steuerung">
+                  <div class="playback-buttons">
+                    <button type="button" class="playback-button" aria-label="5 Sekunden zurück" title="5 Sekunden zurück" (click)="skipPlayback(-5)">|◀</button>
+                    <button
+                      type="button"
+                      class="playback-button primary"
+                      [attr.aria-label]="isPlaying() ? 'Pause' : 'Wiedergabe'"
+                      (click)="togglePlayback()"
+                    >{{ isPlaying() ? 'Ⅱ' : '▶' }}</button>
+                    <button type="button" class="playback-button" aria-label="Stop" title="Stop" (click)="stopPlayback()">■</button>
+                    <button type="button" class="playback-button" aria-label="5 Sekunden vor" title="5 Sekunden vor" (click)="skipPlayback(5)">▶|</button>
+                  </div>
+                  <span class="playback-time">{{ playbackTime() }} / {{ formatDuration(playbackDuration()) }}</span>
+                  <input
+                    class="playback-seek"
+                    type="range"
+                    min="0"
+                    [max]="playbackDuration()"
+                    step="0.25"
+                    [value]="phase()"
+                    aria-label="Messung spulen"
+                    (input)="seekPlayback($event)"
+                  />
+                </div>
+              }
             </div>
 
             <div class="scale">
               <span class="unit">N/cm²</span>
               <span class="scale-top">10+</span>
               <div class="scale-gradient">
-                <div class="marker" [style.bottom.%]="(m.detail.maxNcm2 / 10) * 100">
+                <div class="marker" [style.bottom.%]="(statisticMaximum() / 10) * 100">
                   <span class="marker-line"></span>
-                  <span class="marker-value">{{ m.detail.maxNcm2 }}</span>
+                  <span class="marker-value">{{ statisticMaximum().toString().replace('.', ',') }}</span>
                 </div>
               </div>
               <span class="scale-bot">0</span>
@@ -156,14 +200,14 @@
               <div class="stat">
                 <div class="stat-label">MAX</div>
                 <div class="stat-value red">
-                  {{ m.detail.maxNcm2.toString().replace('.', ',') }}
+                  {{ statisticMaximum().toFixed(2).replace('.', ',') }}
                   <span class="stat-unit">N/cm²</span>
                 </div>
               </div>
               <div class="stat">
                 <div class="stat-label">&Oslash; MITTEL</div>
                 <div class="stat-value">
-                  {{ m.detail.meanNcm2.toString().replace('.', ',') }}
+                  {{ statisticAverage().toFixed(2).replace('.', ',') }}
                   <span class="stat-unit">N/cm²</span>
                 </div>
               </div>
