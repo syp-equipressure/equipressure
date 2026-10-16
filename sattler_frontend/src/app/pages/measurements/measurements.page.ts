@@ -9,7 +9,7 @@ import { Gait, Side, Measurement, MeasurementSegmentResult } from '../../models/
 import { fullName } from '../../models/customer.model';
 import { formatDuration } from '../../utils/time-format';
 
-type TabKey = 'messungen' | 'notizen';
+type TabKey = 'profil' | 'messungen' | 'notizen';
 type PressureStatistic = 'average' | 'maximum' | 'pro';
 
 @Component({
@@ -43,7 +43,7 @@ export class MeasurementsPage implements OnDestroy {
   });
 
   // ─── UI state ──────────────────────────────────────────────────────────────
-  readonly tab = signal<TabKey>('messungen');
+  readonly tab = signal<TabKey>('profil');
   readonly selectedId = signal<string | null>(null);
 
   readonly selected = computed<Measurement | null>(() => {
@@ -225,6 +225,14 @@ export class MeasurementsPage implements OnDestroy {
     if (!h) return;
     this.router.navigate(['/new-measurement'], {
       queryParams: { ownerId: h.ownerId, horseId: h.id },
+    });
+  }
+
+  startMeasurement() {
+    const horse = this.horse();
+    if (!horse) return;
+    void this.router.navigate(['/new-measurement'], {
+      queryParams: { ownerId: horse.ownerId, horseId: horse.id },
     });
   }
 

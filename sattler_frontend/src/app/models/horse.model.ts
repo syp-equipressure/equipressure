@@ -7,4 +7,7 @@ export interface Horse {
   ownerId: string;
   heightCm: number;
   weightKg: number;
+  sex?: 'Stute' | 'Wallach' | 'Hengst';
+  birthDate?: string;
+  address?: string;
 }

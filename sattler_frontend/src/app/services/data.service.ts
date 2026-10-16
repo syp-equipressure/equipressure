@@ -80,6 +80,7 @@ export class DataService {
       ownerId: 'max',
       heightCm: 165,
       weightKg: 520,
+      address: 'Hauptstraße 12, 1010 Wien',
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhcJ4yrtCZcwZc1TLgAuVvcN_P_nOTSFNroA&s',
     },
@@ -90,7 +91,10 @@ export class DataService {
       breed: 'Haflinger',
       ownerId: 'max',
       heightCm: 152,
-      weightKg: 480,
+      weightKg: 452,
+      sex: 'Stute',
+      birthDate: '12.10.2015',
+      address: 'Musterstraße 1, 1111 Musterdorf',
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWt6wuJmZQE2BDls6b8qBH9tZn53jbqvx2xg&s',
     },
@@ -102,6 +106,7 @@ export class DataService {
       ownerId: 'max',
       heightCm: 168,
       weightKg: 540,
+      address: 'Am Reitplatz 4, 2340 Mödling',
       imageUrl:
         'https://www.landtiere.de/assets/images/34/738/34738694-haflinger-pferd-feld-gelb-fell-langhaar-2o4uhwbOmce9.jpg',
     },
@@ -113,6 +118,7 @@ export class DataService {
       ownerId: 'max',
       heightCm: 145,
       weightKg: 410,
+      address: 'Wiesenweg 8, 5020 Salzburg',
       imageUrl:
         'https://www.peta.de/wp-content/uploads/2020/11/horse-721136_1920-1024x682.jpg',
     },
@@ -124,6 +130,7 @@ export class DataService {
       ownerId: 'max',
       heightCm: 164,
       weightKg: 505,
+      address: 'Feldgasse 21, 8010 Graz',
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBLATKZfxrR8DGubqewwirncrMtwXZzF02sQ&s',
     },
@@ -135,6 +142,7 @@ export class DataService {
       ownerId: 'max',
       heightCm: 163,
       weightKg: 500,
+      address: 'Mühlenweg 6, 4020 Linz',
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkqcEdRShL_kALpMAucGhIcsUs7yABkEZpng&s',
     },
@@ -146,6 +154,7 @@ export class DataService {
       ownerId: 'me',
       heightCm: 160,
       weightKg: 470,
+      address: 'Birkenstraße 3, 3100 St. Pölten',
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSw0pJRnJEQ5mLbJk_DsEoMDyGIdkVhxua3w&s',
     },
@@ -157,6 +166,7 @@ export class DataService {
       ownerId: 'me',
       heightCm: 138,
       weightKg: 320,
+      address: 'Am Sonnenhang 15, 7000 Eisenstadt',
       imageUrl:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ30aD8kRv-jJmBgc6toXFbMnbpogQFtagj4w&s',
     },
