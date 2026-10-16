@@ -2,6 +2,7 @@
   <Folder Name="/SolutionItems/">
     <File Path=".gitattributes" />
     <File Path="global.json" />
+    <File Path="DevelopmentSeedData.md" />
     <File Path="Directory.Build.props" />
     <File Path="ManageMigration.ps1" />
   </Folder>

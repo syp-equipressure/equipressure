@@ -210,7 +210,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
     /// <summary>
     ///     Configures the account roles and the PersonRoleAssignment association.
-    ///     The roles are fixed and seeded, the name of a role has to be unique.
+    ///     The roles are fixed and seeded, the name of a role is persisted as a string and has to be unique.
     /// </summary>
     /// <param name="mb">The model builder to use</param>
     private static void ConfigureAccountRole(ModelBuilder mb)
@@ -220,13 +220,15 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         var accountRole = mb.Entity<AccountRole>();
         accountRole.HasKey(ar => ar.Id);
         accountRole.Property(ar => ar.Id).ValueGeneratedOnAdd();
+        accountRole.Property(ar => ar.Name)
+                   .HasConversion(new EnumToStringConverter<RoleName>());
         accountRole.HasIndex(ar => ar.Name).IsUnique();
 
         accountRole.HasMany(ar => ar.RoleAssignments)
                    .WithOne(pra => pra.Role)
                    .HasForeignKey(pra => pra.RoleId)
                    .OnDelete(DeleteBehavior.Cascade);
-
+        
         accountRole.HasData(new { Id = 1, Name = RoleName.Equestrian },
                             new { Id = 2, Name = RoleName.Saddler },
                             new { Id = 3, Name = RoleName.Guest });

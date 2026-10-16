@@ -30,6 +30,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+if (isDev && settings.SeedDevelopmentData)
+{
+    await app.SeedDevelopmentDataAsync();
+}
+
 await app.RunAsync();
 
 return;

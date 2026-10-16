@@ -19,6 +19,9 @@ internal sealed class WebAppFactory(string connectionString) : WebApplicationFac
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // every test creates its own data, see DevelopmentSeedDataTests for the development test data
+        builder.UseSetting("General:SeedDevelopmentData", "false");
+
         builder.ConfigureTestServices(services =>
         {
             SetTestDbContext(services);
