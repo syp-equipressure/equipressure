@@ -74,6 +74,15 @@ export class MeasurementsPage implements OnDestroy {
     const gaits = measurement.detail.segments?.map(segment => segment.gait) ?? measurement.detail.gaits;
     return unique(gaits);
   });
+
+  constructor() {
+    const measurementId = this.route.snapshot.queryParamMap.get('measurementId');
+    if (measurementId) {
+      this.tab.set('messungen');
+      this.selectedId.set(measurementId);
+    }
+  }
+
   readonly sideOptions = computed<Side[]>(() => {
     const segments = this.selected()?.detail.segments ?? [];
     return unique(
