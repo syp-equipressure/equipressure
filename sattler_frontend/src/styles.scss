@@ -138,7 +138,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .horse-profile-portrait { min-height: 300px; background: var(--bg-panel); }
 .horse-profile-image { display: block; width: 100%; height: 100%; min-height: 300px; object-fit: cover; object-position: center; }
 .horse-profile-main { display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: clamp(20px, 3vw, 36px); }
+.horse-profile-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .horse-profile-heading { display: grid; justify-items: start; gap: 8px; }
+.horse-profile-manage { display: flex; flex: 0 0 auto; gap: 6px; }
+.horse-profile-manage button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.horse-profile-manage button:hover { border-color: var(--purple-200); background: var(--purple-50); color: var(--purple-600); }
+.horse-profile-manage button:last-child:hover { border-color: #f1c4c4; background: #fff4f4; color: var(--accent-red); }
+.horse-profile-manage .material-icons { font-size: 19px; }
 .horse-profile-eyebrow { color: var(--purple-600); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
 .horse-profile-heading h1 { margin: 0; color: var(--text-strong); font-size: clamp(28px, 3vw, 36px); line-height: 1.1; }
 .horse-profile-tags { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -182,6 +198,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .horse-profile-portrait,
   .horse-profile-image { min-height: 260px; }
   .horse-profile-main { gap: 16px; padding: 18px; }
+  .horse-profile-heading-row { gap: 8px; }
+  .horse-profile-manage { gap: 4px; }
+  .horse-profile-manage button { width: 32px; height: 32px; }
   .horse-profile-actions { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
 

@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, effect, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Horse } from '../../../models/horse.model';
 
@@ -11,6 +11,7 @@ import { Horse } from '../../../models/horse.model';
 })
 export class AddHorse {
   readonly ownerId = input.required<string>();
+  readonly horse = input<Horse | null>(null);
 
   readonly saved = output<Horse>();
   readonly cancelled = output<void>();
@@ -20,12 +21,30 @@ export class AddHorse {
   breed = signal('');
   heightCm = signal<number | null>(null);
   weightKg = signal<number | null>(null);
+  sex = signal<Horse['sex'] | ''>('');
+  birthDate = signal('');
+  address = signal('');
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
   }
   errors = signal<Partial<Record<keyof Horse, string>>>({});
+
+  constructor() {
+    effect(() => {
+      const horse = this.horse();
+      if (!horse) return;
+      this.name.set(horse.name);
+      this.age.set(horse.age);
+      this.breed.set(horse.breed);
+      this.heightCm.set(horse.heightCm);
+      this.weightKg.set(horse.weightKg);
+      this.sex.set(horse.sex ?? '');
+      this.birthDate.set(horse.birthDate ?? '');
+      this.address.set(horse.address ?? '');
+    });
+  }
 
   private validate(): boolean {
     const e: Partial<Record<keyof Horse, string>> = {};
@@ -46,22 +65,21 @@ export class AddHorse {
   submit(): void {
     if (!this.validate()) return;
 
-    const horse = {
-      id: crypto.randomUUID(),
+    const existing = this.horse();
+    const horse: Horse = {
+      ...existing,
+      id: existing?.id ?? crypto.randomUUID(),
       ownerId: this.ownerId(),
       name: this.name().trim(),
       age: this.age()!,
       breed: this.breed().trim(),
       heightCm: this.heightCm()!,
       weightKg: this.weightKg()!,
-      imageUrl: ""
+      imageUrl: existing?.imageUrl ?? '',
+      ...(this.sex() ? { sex: this.sex() as Exclude<Horse['sex'], undefined> } : {}),
+      ...(this.birthDate().trim() ? { birthDate: this.birthDate().trim() } : {}),
+      ...(this.address().trim() ? { address: this.address().trim() } : {}),
     };
-
-    console.log('submit called');
-    console.log('valid:', this.validate());
-    console.log('age:', this.age(), typeof this.age());
-    console.log('heightCm:', this.heightCm(), typeof this.heightCm());
-    console.log('weightKg:', this.weightKg(), typeof this.weightKg());
 
     this.saved.emit(horse);
     this.reset();
@@ -78,6 +96,9 @@ export class AddHorse {
     this.breed.set('');
     this.heightCm.set(null);
     this.weightKg.set(null);
+    this.sex.set('');
+    this.birthDate.set('');
+    this.address.set('');
     this.errors.set({});
   }
 }

@@ -23,15 +23,27 @@
           <img class="horse-profile-image" [src]="h.imageUrl" [alt]="'Porträt von ' + h.name" />
         </div>
         <div class="horse-profile-main">
-          <div class="horse-profile-heading">
-            <span class="horse-profile-eyebrow">PFERDEPROFIL</span>
-            <h1>{{ h.name }}</h1>
-            <div class="horse-profile-tags">
-              <span class="horse-profile-breed">{{ h.breed }}</span>
-              @if (h.sex) {
-                <span class="horse-profile-sex">{{ h.sex }}</span>
-              }
+          <div class="horse-profile-heading-row">
+            <div class="horse-profile-heading">
+              <span class="horse-profile-eyebrow">PFERDEPROFIL</span>
+              <h1>{{ h.name }}</h1>
+              <div class="horse-profile-tags">
+                <span class="horse-profile-breed">{{ h.breed }}</span>
+                @if (h.sex) {
+                  <span class="horse-profile-sex">{{ h.sex }}</span>
+                }
+              </div>
             </div>
+            @if (customer()?.isMe) {
+              <div class="horse-profile-manage">
+                <button type="button" aria-label="Pferd bearbeiten" title="Pferd bearbeiten" (click)="editHorse()">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button type="button" aria-label="Pferd löschen" title="Pferd löschen" (click)="deleteHorse()">
+                  <span class="material-icons">delete_outline</span>
+                </button>
+              </div>
+            }
           </div>
 
           <section class="horse-profile-stats" aria-label="Pferdedaten">
@@ -65,19 +77,42 @@
   }
 }
 
+@if (showHorseForm()) {
+  @if (horse(); as h) {
+    <add-horse
+      [ownerId]="h.ownerId"
+      [horse]="h"
+      (saved)="saveHorse($event)"
+      (cancelled)="showHorseForm.set(false)"
+    />
+  }
+}
+
 @if (tab() === 'messungen') {
   <section class="layout">
     <aside class="sidebar">
       @for (m of measurements(); track m.id) {
-        <button
-          class="measurement-card"
-          [class.active]="selected()?.id === m.id"
-          (click)="selectMeasurement(m.id)"
-        >
-          <div class="date">{{ m.date }}</div>
-          <div class="device">{{ m.deviceName }}</div>
-          <div class="meta">{{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%</div>
-        </button>
+        <div class="measurement-entry" [class.active]="selected()?.id === m.id">
+          <button
+            type="button"
+            class="measurement-card"
+            [class.active]="selected()?.id === m.id"
+            (click)="selectMeasurement(m.id)"
+          >
+            <div class="date">{{ m.date }}</div>
+            <div class="device">{{ m.deviceName }}</div>
+            <div class="meta">{{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%</div>
+          </button>
+          <button
+            type="button"
+            class="icon-btn ghost delete-measurement"
+            aria-label="Messung vom {{ m.date }} löschen"
+            title="Messung löschen"
+            (click)="deleteMeasurement(m.id, $event)"
+          >
+            <span class="material-icons">delete_outline</span>
+          </button>
+        </div>
       }
 
       <button type="button" class="new-measurement" (click)="newMeasurement()">+ Neue Messung</button>

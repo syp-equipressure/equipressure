@@ -8,6 +8,8 @@ import { VideoTileComponent } from '../../shared/video-tile/video-tile';
 import { Gait, Side, Measurement, MeasurementSegmentResult } from '../../models/measurement.model';
 import { fullName } from '../../models/customer.model';
 import { formatDuration } from '../../utils/time-format';
+import { AddHorse } from '../horses/add-horse/add-horse';
+import { Horse as HorseModel } from '../../models/horse.model';
 
 type TabKey = 'profil' | 'messungen' | 'notizen';
 type PressureStatistic = 'average' | 'maximum' | 'pro';
@@ -15,7 +17,7 @@ type PressureStatistic = 'average' | 'maximum' | 'pro';
 @Component({
   selector: 'app-measurements-page',
   standalone: true,
-  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent],
+  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent, AddHorse],
   templateUrl: './measurements.page.html',
   styleUrl: './measurements.page.scss',
 })
@@ -45,6 +47,7 @@ export class MeasurementsPage implements OnDestroy {
   // ─── UI state ──────────────────────────────────────────────────────────────
   readonly tab = signal<TabKey>('profil');
   readonly selectedId = signal<string | null>(null);
+  readonly showHorseForm = signal(false);
 
   readonly selected = computed<Measurement | null>(() => {
     const id = this.selectedId();
@@ -154,6 +157,24 @@ export class MeasurementsPage implements OnDestroy {
     this.tab.set(t);
   }
 
+  editHorse(): void {
+    if (this.customer()?.isMe) this.showHorseForm.set(true);
+  }
+
+  saveHorse(horse: HorseModel): void {
+    if (!this.customer()?.isMe) return;
+    this.data.updateHorse(horse);
+    this.showHorseForm.set(false);
+  }
+
+  deleteHorse(): void {
+    const horse = this.horse();
+    if (!horse || !this.customer()?.isMe) return;
+    if (!window.confirm(`Möchtest du ${horse.name} und alle zugehörigen Messungen und Sättel wirklich löschen?`)) return;
+    this.data.removeHorse(horse.id);
+    void this.router.navigate(['/my-horses']);
+  }
+
   selectGait(value: string): void {
     const gait = isGait(value) ? value : '';
     this.activeGait.set(gait);
@@ -163,6 +184,18 @@ export class MeasurementsPage implements OnDestroy {
     }
     this.resetPlayback();
     this.resetProModeWithoutSelection();
+  }
+
+  deleteMeasurement(id: string, event: Event): void {
+    event.stopPropagation();
+    const measurement = this.data.getMeasurement(id);
+    if (!measurement) return;
+    if (!window.confirm(`Möchtest du die Messung vom ${measurement.date} wirklich löschen?`)) return;
+    this.data.removeMeasurement(id);
+    if (this.selectedId() === id) {
+      const remaining = this.measurements();
+      this.selectedId.set(remaining[0]?.id ?? null);
+    }
   }
 
   selectSide(value: string): void {

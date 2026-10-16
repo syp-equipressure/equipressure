@@ -62,11 +62,24 @@
   gap: 12px;
 }
 
-.measurement-card {
-  background: #ffffff;
+.measurement-entry {
+  position: relative;
   border: 1px solid t.$border-soft;
   border-radius: 12px;
-  padding: 16px 18px;
+  background: #fff;
+  overflow: hidden;
+
+  &.active { border-color: t.$purple-200; background: t.$purple-50; }
+}
+
+.measurement-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 48px 16px 18px;
   text-align: left;
   cursor: pointer;
   font: inherit;
@@ -93,13 +106,21 @@
   }
 
   &.active {
-    background: t.$purple-50;
-    border-color: t.$purple-200;
+    background: transparent;
   }
 
   &:hover:not(.active) {
     background: t.$bg-page;
   }
+}
+
+.delete-measurement {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: t.$text-soft;
+
+  &:hover { background: #fff0f0; color: t.$accent-red; }
 }
 
 .new-measurement {

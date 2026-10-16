@@ -346,6 +346,16 @@ export class DataService {
     this._horses.update(list => [...list, horse]);
   }
 
+  updateHorse(horse: Horse): void {
+    this._horses.update(list => list.map(item => item.id === horse.id ? horse : item));
+  }
+
+  removeHorse(horseId: string): void {
+    this._horses.update(list => list.filter(horse => horse.id !== horseId));
+    this._saddles.update(list => list.filter(saddle => saddle.horseId !== horseId));
+    this._measurements.update(list => list.filter(measurement => measurement.horseId !== horseId));
+  }
+
   // ── Measurements ───────────────────────────────────────────────────────────
 
   getMeasurementsOf(horseId: string): Measurement[] {
@@ -354,6 +364,10 @@ export class DataService {
 
   getMeasurement(id: string): Measurement | undefined {
     return this._measurements().find(m => m.id === id);
+  }
+
+  removeMeasurement(id: string): void {
+    this._measurements.update(list => list.filter(measurement => measurement.id !== id));
   }
 
   getSamplePressureGrid(): number[][] {
