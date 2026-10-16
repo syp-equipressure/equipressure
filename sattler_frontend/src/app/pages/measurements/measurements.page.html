@@ -8,10 +8,61 @@
   <div class="tab-bar">
     <div class="horse-ribbon">{{ h.name }}</div>
     <div class="tabs">
+      <button class="tab" [class.active]="tab() === 'profil'" (click)="setTab('profil')">Pferde-Profil</button>
       <button class="tab" [class.active]="tab() === 'messungen'" (click)="setTab('messungen')">Messungen</button>
       <button class="tab" [class.active]="tab() === 'notizen'" (click)="setTab('notizen')">Notizen</button>
     </div>
   </div>
+}
+
+@if (horse(); as h) {
+  @if (tab() === 'profil') {
+    <section class="horse-profile">
+      <article class="horse-profile-card">
+        <div class="horse-profile-portrait">
+          <img class="horse-profile-image" [src]="h.imageUrl" [alt]="'Porträt von ' + h.name" />
+        </div>
+        <div class="horse-profile-main">
+          <div class="horse-profile-heading">
+            <span class="horse-profile-eyebrow">PFERDEPROFIL</span>
+            <h1>{{ h.name }}</h1>
+            <div class="horse-profile-tags">
+              <span class="horse-profile-breed">{{ h.breed }}</span>
+              @if (h.sex) {
+                <span class="horse-profile-sex">{{ h.sex }}</span>
+              }
+            </div>
+          </div>
+
+          <section class="horse-profile-stats" aria-label="Pferdedaten">
+            <div class="horse-profile-stat">
+              <span class="horse-profile-stat-label">Geburtsdatum</span>
+              <strong>{{ h.birthDate || h.age + ' Jahre' }}</strong>
+            </div>
+            <div class="horse-profile-stat">
+              <span class="horse-profile-stat-label">Stockmaß</span>
+              <strong>{{ h.heightCm }} <small>cm</small></strong>
+            </div>
+            <div class="horse-profile-stat">
+              <span class="horse-profile-stat-label">Gewicht</span>
+              <strong>{{ h.weightKg }} <small>kg</small></strong>
+            </div>
+          </section>
+
+          <div class="horse-profile-address">
+            <div>
+              <span class="horse-profile-stat-label">Standort</span>
+              <strong>{{ h.address || customer()?.address || 'Keine Adresse hinterlegt' }}</strong>
+            </div>
+          </div>
+
+          <footer class="horse-profile-actions">
+            <button type="button" class="profile-measurement-button" (click)="startMeasurement()">Messung starten</button>
+          </footer>
+        </div>
+      </article>
+    </section>
+  }
 }
 
 @if (tab() === 'messungen') {
