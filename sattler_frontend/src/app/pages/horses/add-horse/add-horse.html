@@ -1,8 +1,8 @@
 <div class="form-overlay" (click)="cancel()"></div>
 
-<div class="form-panel" role="dialog" aria-modal="true" aria-label="Neues Pferd hinzufügen">
+<div class="form-panel" role="dialog" aria-modal="true" [attr.aria-label]="horse() ? 'Pferd bearbeiten' : 'Neues Pferd hinzufügen'">
   <div class="form-header">
-    <h2 class="form-title">Neues Pferd</h2>
+    <h2 class="form-title">{{ horse() ? 'Pferd bearbeiten' : 'Neues Pferd' }}</h2>
     <button class="close-btn" (click)="cancel()" aria-label="Schließen">
       <span class="material-icons">close</span>
     </button>
@@ -58,6 +58,29 @@
     </div>
 
     <div class="form-row">
+      <div class="form-field">
+        <label class="form-label" for="sex">Geschlecht</label>
+        <select id="sex" class="form-input" [ngModel]="sex()" (ngModelChange)="sex.set($event)">
+          <option value="">Nicht angegeben</option>
+          <option value="Stute">Stute</option>
+          <option value="Wallach">Wallach</option>
+          <option value="Hengst">Hengst</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="birthDate">Geburtsdatum</label>
+        <input
+          id="birthDate"
+          class="form-input"
+          type="text"
+          placeholder="z. B. 12.10.2015"
+          [ngModel]="birthDate()"
+          (ngModelChange)="birthDate.set($event)"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
       <div class="form-field" [class.has-error]="errors()['age']">
         <label class="form-label" for="age">Alter (Jahre) *</label>
         <input
@@ -108,6 +131,18 @@
       @if (errors()['weightKg']) {
         <span class="form-error">{{ errors()['weightKg'] }}</span>
       }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="address">Standort / Adresse</label>
+      <input
+        id="address"
+        class="form-input"
+        type="text"
+        placeholder="Straße, PLZ Ort"
+        [ngModel]="address()"
+        (ngModelChange)="address.set($event)"
+      />
     </div>
 
   </div>

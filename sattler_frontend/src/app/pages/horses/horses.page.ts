@@ -53,11 +53,13 @@ export class HorsesPage {
 
   addHorse(horse: Horse): void {
     const c = this.customer();
-    console.log('customer:', c);
-    console.log('customer id:', c?.id);
     if (!c) return;
     this.data.addHorse({ ...horse, ownerId: c.id });
     this.showForm.set(false);
+  }
+
+  openAddHorseForm(): void {
+    this.showForm.set(true);
   }
 
   back(): void {
