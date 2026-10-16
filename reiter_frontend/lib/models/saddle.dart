@@ -13,10 +13,10 @@ class Saddle {
 
   factory Saddle.fromJson(Map<String, dynamic> json) {
     return Saddle(
-      id: json['id'],
-      name: json['name'],
-      category: json['category'],
-      horseId: json['horseId']
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      category: (json['categoryName'] ?? json['category'] ?? '').toString(),
+      horseId: (json['horseId'] ?? '').toString(),
     );
   }
 

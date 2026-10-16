@@ -220,14 +220,14 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
       if (weight < minWeight) {
         setState(() {
-          heightWeightErrorMessage = 'Gewicht zu niedrig für diese Größe (mind. ${minWeight} kg)';
+          heightWeightErrorMessage = 'Gewicht zu niedrig für diese Größe (mind. $minWeight kg)';
         });
         return;
       }
 
       if (weight > maxWeight) {
         setState(() {
-          heightWeightErrorMessage = 'Gewicht zu hoch für diese Größe (max. ${maxWeight} kg)';
+          heightWeightErrorMessage = 'Gewicht zu hoch für diese Größe (max. $maxWeight kg)';
         });
         return;
       }
