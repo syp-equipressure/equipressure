@@ -188,7 +188,11 @@ export class StubPage {
       return;
     }
 
-    this.router.navigate(['/new-measurement/session'], {
+    if (!this.measurementSession.start(owner.owner.id, horse.id, saddle.id)) {
+      return;
+    }
+
+    void this.router.navigate(['/new-measurement/session'], {
       queryParams: {
         ownerId: owner.owner.id,
         horseId: horse.id,

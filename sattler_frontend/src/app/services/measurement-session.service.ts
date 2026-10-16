@@ -74,6 +74,26 @@ export class MeasurementSessionService {
     );
   }
 
+  moveSegment(fromIndex: number, toIndex: number): void {
+    this._session.update(session => {
+      if (
+        !session ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= session.segments.length ||
+        toIndex >= session.segments.length ||
+        fromIndex === toIndex
+      ) {
+        return session;
+      }
+
+      const segments = [...session.segments];
+      const [segment] = segments.splice(fromIndex, 1);
+      segments.splice(toIndex, 0, segment);
+      return { ...session, segments };
+    });
+  }
+
   complete(): string | null {
     const session = this._session();
     if (!session || !session.segments.some(segment => segment.completed)) return null;

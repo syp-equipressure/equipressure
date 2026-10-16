@@ -23,7 +23,7 @@
           <h2>Gangart</h2>
           <div class="button-group">
             @for (option of ['Schritt', 'Trab', 'Galopp']; track option) {
-              <button type="button" [class.active]="gait() === option" (click)="gait.set($any(option))">{{ option }}</button>
+              <button type="button" [class.active]="gait() === option" disabled>{{ option }}</button>
             }
           </div>
         </section>
@@ -32,7 +32,7 @@
           <h2>Aufnahme-Seite</h2>
           <div class="button-group">
             @for (option of ['Links', 'Rechts']; track option) {
-              <button type="button" [class.active]="side() === option" (click)="side.set($any(option))">{{ option }}</button>
+              <button type="button" [class.active]="side() === option" disabled>{{ option }}</button>
             }
           </div>
         </section>
