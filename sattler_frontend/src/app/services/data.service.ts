@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
-import { Measurement, MeasurementDetail } from '../models/measurement.model';
+import { Measurement, MeasurementDetail, MeasurementSegmentResult } from '../models/measurement.model';
 import { Sattler } from '../models/sattler.model';
 import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
@@ -367,6 +367,15 @@ export class DataService {
     detail.saddleName = saddle?.name ?? detail.saddleName;
     detail.durationFull = `${duration} min`;
     detail.gaits = [...new Set(completedSegments.map(segment => segment.gait))];
+    detail.segments = completedSegments.map(segment => ({
+      gait: segment.gait,
+      side: segment.side,
+      durationSeconds: segment.durationSeconds,
+      pressureGrid: createSegmentPressureGrid(segment.gait, segment.side),
+    }));
+    detail.pressureGrid = averageGrids(detail.segments.map(segment => segment.pressureGrid));
+    detail.maxNcm2 = gridMaximum(detail.pressureGrid);
+    detail.meanNcm2 = gridMean(detail.pressureGrid);
 
     const measurement: Measurement = {
       id: `m${Date.now()}`,
@@ -390,16 +399,30 @@ export class DataService {
 }
 
 function buildPetziDetail(): MeasurementDetail {
+  const segments: MeasurementSegmentResult[] = ([
+    ['Schritt', 'Links'],
+    ['Trab', 'Links'],
+    ['Schritt', 'Rechts'],
+    ['Trab', 'Rechts'],
+  ] as const).map(([gait, side]) => ({
+    gait,
+    side,
+    durationSeconds: 30,
+    pressureGrid: createSegmentPressureGrid(gait, side),
+  }));
+  const pressureGrid = averageGrids(segments.map(segment => segment.pressureGrid));
+
   return {
-    maxNcm2: 5.8,
-    meanNcm2: 2.1,
+    maxNcm2: gridMaximum(pressureGrid),
+    meanNcm2: gridMean(pressureGrid),
     riderName: 'Max Mustermann',
     riderHeightM: 1.75,
     riderWeightKg: 78,
     durationFull: '09:22 min',
     saddleName: 'Prestige X-D2',
-    gaits: ['Schritt', 'Trab', 'Galopp'],
-    pressureGrid: buildPetziPressureGrid(),
+    gaits: [...new Set(segments.map(segment => segment.gait))],
+    pressureGrid,
+    segments,
     videos: {
       main:
         'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=800&q=80',
@@ -444,4 +467,26 @@ function bell(x: number, center: number, sigma: number): number {
 function bellVertical(r: number, rows: number): number {
   const mid = rows / 2;
   return Math.max(0, 1 - Math.abs(r - mid) / (rows * 0.7));
+}
+
+function createSegmentPressureGrid(gait: MeasurementSegmentResult['gait'], side: MeasurementSegmentResult['side']): number[][] {
+  const gaitScale = gait === 'Schritt' ? 0.75 : gait === 'Galopp' ? 1.2 : 1;
+  const grid = buildPetziPressureGrid().map(row => row.map(value => value * gaitScale));
+  return side === 'Rechts' ? grid.map(row => row.reverse()) : grid;
+}
+
+function averageGrids(grids: number[][][]): number[][] {
+  if (grids.length === 0) return buildPetziPressureGrid();
+  return grids[0].map((row, y) =>
+    row.map((_, x) => grids.reduce((total, grid) => total + (grid[y]?.[x] ?? 0), 0) / grids.length),
+  );
+}
+
+function gridMaximum(grid: number[][]): number {
+  return Math.max(0, ...grid.flat());
+}
+
+function gridMean(grid: number[][]): number {
+  const values = grid.flat();
+  return values.length ? values.reduce((total, value) => total + value, 0) / values.length : 0;
 }
