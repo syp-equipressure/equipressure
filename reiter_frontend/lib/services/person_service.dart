@@ -1,12 +1,14 @@
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
-import 'package:reiterappfrontend/services/auth_service.dart';
 import 'package:reiterappfrontend/models/user_data.dart';
 import 'package:reiterappfrontend/services/device_service.dart';
+import 'package:reiterappfrontend/services/auth_service.dart';
+import 'package:reiterappfrontend/services/backend_person_context_service.dart';
+
+import 'package:reiterappfrontend/services/api_config.dart';
 
 /// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert
 /// (400/404/409). Schaut so aus dass aufrufende Screens unterscheiden können
@@ -26,7 +28,7 @@ class PersonApiException implements Exception {
 }
 
 class PersonService {
-  static const String baseUrl = 'http://localhost:5200/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 10);
   static const Map<String, String> _jsonHeaders = {
     'Content-Type': 'application/json',
@@ -38,6 +40,7 @@ class PersonService {
   PersonService._internal();
 
   List<Person>? _cachedPersons;
+  String? _cachedPersonContext;
 
   // ---------------------------------------------------------------------------
   // Helper
@@ -71,34 +74,24 @@ class PersonService {
   }
 
   // ---------------------------------------------------------------------------
-  // 1. GET /persons/equestrians/{id}
+  // 1. GET /persons/{id}
   // ---------------------------------------------------------------------------
   static Future<Map<String, dynamic>> getEquestrian(String personId) async {
-    final url = Uri.parse('$baseUrl/persons/equestrians/$personId');
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    }
-    _throwForStatus(response, 'load equestrian');
+    return _fetchPersonDetails(personId);
   }
 
   // ---------------------------------------------------------------------------
-  // 2. GET /persons/equestrians/{equestrianId}/saddlers/{saddlerId}
+  // 2. GET /persons/{equestrianId}/contacts + GET /persons/{saddlerId}
   // ---------------------------------------------------------------------------
   static Future<Map<String, dynamic>> getSaddler(
     String equestrianId,
     String saddlerId,
   ) async {
-    final url = Uri.parse(
-      '$baseUrl/persons/equestrians/$equestrianId/saddlers/$saddlerId',
-    );
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+    final contacts = await loadPersonContacts(equestrianId);
+    if (!contacts.any((contact) => contact['id'].toString() == saddlerId)) {
+      throw PersonApiException(404, 'Saddler $saddlerId is not a contact of $equestrianId');
     }
-    _throwForStatus(response, 'load saddler');
+    return _fetchPersonDetails(saddlerId);
   }
 
   // ---------------------------------------------------------------------------
@@ -129,6 +122,30 @@ class PersonService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
     _throwForStatus(response, 'load person location');
+  }
+
+  static Future<Map<String, dynamic>> updatePersonLocation(
+    String personId, {
+    String? addressName,
+    required String cityName,
+    required String plz,
+  }) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/location');
+    final response = await http
+        .put(
+          url,
+          headers: _jsonHeaders,
+          body: jsonEncode({
+            'addressName': addressName,
+            'cityName': cityName,
+            'plz': plz,
+          }),
+        )
+        .timeout(_timeout);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    _throwForStatus(response, 'update person location');
   }
 
   // ---------------------------------------------------------------------------
@@ -192,35 +209,27 @@ class PersonService {
   }
 
   // ---------------------------------------------------------------------------
-  // 9. GET /persons/equestrians/{equestrianId}/saddlers/locations
-  //    (SaddlersListResponse)
+  // 9. GET /persons/{equestrianId}/contacts (ContactListResponse)
   // ---------------------------------------------------------------------------
   static Future<List<Map<String, dynamic>>> getSaddlersWithLocations(
     String equestrianId,
   ) async {
-    final url = Uri.parse(
-      '$baseUrl/persons/equestrians/$equestrianId/saddlers/locations',
-    );
-    final response = await http.get(url).timeout(_timeout);
-
-    if (response.statusCode == 200) {
-      return _extractList(jsonDecode(response.body));
-    }
-    _throwForStatus(response, 'load saddlers with locations');
+    return loadPersonContacts(equestrianId);
   }
 
   // ---------------------------------------------------------------------------
-  // 10. POST /persons  (AddPersonRequest)
-  //     Backend liefert 201 Created OHNE body, 400 oder 409.
+  // 10. POST /persons (AddPersonRequest)
   // ---------------------------------------------------------------------------
-  static Future<void> addPersonData(Map<String, dynamic> personData) async {
+  static Future<Person> addPersonData(Map<String, dynamic> personData) async {
     final url = Uri.parse('$baseUrl/persons');
     final response = await http
         .post(url, headers: _jsonHeaders, body: jsonEncode(personData))
         .timeout(_timeout);
 
     if (response.statusCode == 201) {
-      return;
+      return _personFromBackend(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     }
     _throwForStatus(response, 'add person');
   }
@@ -262,6 +271,26 @@ class PersonService {
       return;
     }
     _throwForStatus(response, 'delete person');
+  }
+
+  static Future<void> addContact(String personId, String contactId) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/contacts/$contactId');
+    final response = await http.put(url).timeout(_timeout);
+    if (response.statusCode == 204) {
+      PersonService().clearCache();
+      return;
+    }
+    _throwForStatus(response, 'add contact');
+  }
+
+  static Future<void> removeContact(String personId, String contactId) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/contacts/$contactId');
+    final response = await http.delete(url).timeout(_timeout);
+    if (response.statusCode == 204) {
+      PersonService().clearCache();
+      return;
+    }
+    _throwForStatus(response, 'remove contact');
   }
 
   // ---------------------------------------------------------------------------
@@ -334,15 +363,15 @@ class PersonService {
   }
 
   static Future<void> addDeviceUser(String deviceId, String userId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/add/$userId');
+    final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
     final response = await http.post(url).timeout(_timeout);
-    if (response.statusCode != 201 && response.statusCode != 200) {
+    if (response.statusCode != 201 && response.statusCode != 200 && response.statusCode != 204) {
       _throwForStatus(response, 'add device user');
     }
   }
 
   static Future<void> removeDeviceUser(String deviceId, String userId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/remove/$userId');
+    final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
     final response = await http.delete(url).timeout(_timeout);
     if (response.statusCode != 200 && response.statusCode != 204) {
       _throwForStatus(response, 'remove device user');
@@ -406,42 +435,96 @@ class PersonService {
 
   // ---------------------------------------------------------------------------
   // Instanzmethoden für bestehende Screens.
-  // Achtung: GET /persons (Liste aller Personen) existiert NICHT im aktuellen
-  // PersonController. `getPersons` und `getNextId` werden daher fehlschlagen
-  // sobald das Backend live ist. Sind hier nur weil sie von new_measurement.dart
-  // verwendet werden.
-  // TODO: mit Backend abklären wie eine Personenliste geladen werden soll.
   // ---------------------------------------------------------------------------
 
-  // Backend hat (noch) kein GET /api/persons (Liste). Solange das nicht da ist
-  // fallen wir auf die lokale user.json zurück, damit Screens nicht crashen.
+  // The backend has no global person list, so use the selected person and their
+  // contacts, hydrating each entry through the existing person-detail route.
   Future<List<Person>> getPersons() async {
-    if (_cachedPersons != null) {
+    final personId = await BackendPersonContextService.loadPersonId() ??
+        AuthService().currentUserId()?.toString();
+    if (personId == null) throw StateError('No backend person is selected.');
+    if (_cachedPersons != null && _cachedPersonContext == personId) {
       return _cachedPersons!;
     }
 
-    final raw = await rootBundle.loadString('assets/data/user.json');
-    final List<dynamic> data = jsonDecode(raw);
-    _cachedPersons = data
-        .map((json) => Person.fromJson(json as Map<String, dynamic>))
-        .toList();
+    final contacts = await loadPersonContacts(personId);
+    final personIds = <String>{
+      personId,
+      ...contacts.map((contact) => contact['id'].toString()),
+    };
+    final details = await Future.wait(
+      personIds.map(_fetchPersonDetails),
+    );
+    _cachedPersons = details.map(_personFromBackend).toList();
+    _cachedPersonContext = personId;
     return _cachedPersons!;
   }
 
-  Future<int> getNextId() async {
-    final persons = await getPersons();
-    if (persons.isEmpty) return 1;
-    return persons.map((p) => p.id).reduce((a, b) => a > b ? a : b) + 1;
-  }
+  Future<Person> addPerson(Person person) async {
+    final dateOfBirth = person.dob;
+    if (dateOfBirth == null) {
+      throw ArgumentError('A date of birth is required to create a person.');
+    }
 
-  // Solange das Backend kein Listing hat, halten wir Neuanlagen nur im
-  // In-Memory Cache. Wird beim App-Reload zurückgesetzt.
-  Future<void> addPerson(Person person) async {
-    _cachedPersons ??= [];
-    _cachedPersons!.add(person);
+    final createdPerson = await addPersonData({
+      'firstName': person.firstname,
+      'lastName': person.lastname,
+      'height': person.heightCm,
+      'weight': person.weightKg,
+      'dateOfBirth': dateOfBirth.toIso8601String().split('T').first,
+      'email': person.email.trim().isEmpty ? null : person.email.trim(),
+      'websiteLink': person.websiteLink,
+      'description': person.description,
+      'address': {
+        'addressName': person.street.trim().isEmpty ? null : person.street.trim(),
+        'cityName': person.city,
+        'plz': person.plz.toString(),
+      },
+      'role': 'Equestrian',
+    });
+
+    if (_cachedPersons != null &&
+        !_cachedPersons!.any((cached) => cached.id == createdPerson.id)) {
+      _cachedPersons!.add(createdPerson);
+    }
+    return createdPerson;
   }
 
   void clearCache() {
     _cachedPersons = null;
+    _cachedPersonContext = null;
+  }
+
+  static Future<Map<String, dynamic>> _fetchPersonDetails(String personId) async {
+    final url = Uri.parse('$baseUrl/persons/$personId');
+    final response = await http.get(url).timeout(_timeout);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    _throwForStatus(response, 'load person $personId');
+  }
+
+  static Person _personFromBackend(Map<String, dynamic> json) {
+    final address = json['address'] as Map<String, dynamic>? ?? const {};
+    final dateOfBirth = json['dateOfBirth']?.toString();
+    final height = json['height'];
+    final weight = json['weight'];
+    final postalCode = (address['plz'] ?? '').toString();
+
+    return Person(
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      firstname: (json['firstName'] ?? '').toString(),
+      lastname: (json['lastName'] ?? '').toString(),
+      heightCm: height is num ? height.round() : int.tryParse('$height') ?? 0,
+      weightKg: weight is num ? weight.round() : int.tryParse('$weight') ?? 0,
+      plz: int.tryParse(postalCode) ?? 0,
+      city: (address['cityName'] ?? '').toString(),
+      street: (address['addressName'] ?? '').toString(),
+      housenumber: 0,
+      email: (json['email'] ?? '').toString(),
+      websiteLink: json['websiteLink']?.toString(),
+      description: json['description']?.toString(),
+      dob: dateOfBirth == null ? null : DateTime.tryParse(dateOfBirth),
+    );
   }
 }
