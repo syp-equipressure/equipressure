@@ -16,7 +16,6 @@
 .back-button, .stop-button { border: 0; cursor: pointer; font: inherit; }
 .back-button { background: transparent; font-size: 22px; color: t.$text-soft; }
 .stop-button {
-  border: 0;
   border-radius: 11px;
   padding: 16px 20px;
   background: t.$purple-500;
@@ -35,20 +34,17 @@
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: 22px;
 }
-.heatmap-card, .control-card {
+.heatmap-card, .control-card, .live-stats {
   border: 1px solid t.$border-soft;
   border-radius: 14px;
   background: white;
 }
 .heatmap-card { display: flex; flex-direction: column; padding: 14px; background: #f3f3f3; }
 .heatmap-heading { display: flex; justify-content: space-between; padding: 4px 4px 12px; color: t.$text-strong; font-size: 13px; font-weight: 600; }
-.measurement-empty {
-  flex: 1;
-  min-height: 380px;
-  display: grid;
-  place-items: center;
-  color: t.$text-soft;
-}
+.live-indicator { color: #44a94b; font-size: 11px; }
+app-pressure-heatmap { display: block; flex: 1; min-height: 380px; border-radius: 8px; overflow: hidden; }
+.heatmap-legend { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 0 2px; color: t.$text-soft; font-size: 11px; }
+.legend-gradient { width: min(300px, 60%); height: 7px; border-radius: 8px; background: linear-gradient(90deg, blue, cyan, lime, yellow, red); }
 .live-controls { display: flex; flex-direction: column; gap: 14px; }
 .control-card { padding: 14px; }
 .control-card h2 { margin: 0 0 12px; color: t.$text-soft; font-size: 12px; }
@@ -66,5 +62,5 @@
   .live-toolbar { grid-template-columns: 32px 1fr auto; gap: 8px; }
   .stop-button { grid-column: 1 / -1; margin-bottom: 10px; }
   .live-layout { grid-template-columns: 1fr; }
-  .measurement-empty { min-height: 260px; }
+  app-pressure-heatmap { min-height: 300px; }
 }

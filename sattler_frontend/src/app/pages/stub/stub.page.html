@@ -105,9 +105,15 @@
 
       <div class="bottom-grid">
         <article class="card saddle-card">
+        <div class="saddle-heading">
           <h3>Sattel</h3>
+          <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
+            <span class="material-icons" aria-hidden="true">add</span>
+            Sattel anlegen
+          </button>
+        </div>
 
-          <div class="saddle-grid">
+        <div class="saddle-grid">
             <label class="field">
               <span class="field-label">Modell</span>
               <div class="select-shell">
@@ -125,7 +131,7 @@
                     <option [value]="saddle.id">{{ saddle.name }}</option>
                   }
                 </select>
-                <span class="select-icon material-icons">chevron_right</span>
+                <span class="select-icon material-icons" [class.disabled]="!selectedHorse() || availableSaddles().length === 0">chevron_right</span>
               </div>
               @if (saddlesLoading()) {
                 <small role="status">Sättel werden geladen …</small>
@@ -144,6 +150,9 @@
               </div>
             </label>
           </div>
+          @if (availableSaddles().length === 0 && selectedHorse()) {
+            <p class="saddle-empty">Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.</p>
+          }
         </article>
 
         <article class="card recent-card">
@@ -187,5 +196,42 @@
       <h2>{{ resolvedTitle() }}</h2>
       <p>Keine Einträge vorhanden.</p>
     </div>
+  </section>
+}
+
+@if (saddleFormOpen()) {
+  <div class="form-overlay" (click)="cancelSaddleForm()"></div>
+  <section class="saddle-form" role="dialog" aria-modal="true" aria-label="Sattel anlegen">
+    <header>
+      <h2>Sattel für {{ selectedHorse()?.name }} anlegen</h2>
+      <button type="button" class="form-close" aria-label="Schließen" (click)="cancelSaddleForm()">
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <form (ngSubmit)="saveSaddle()">
+      <label>
+        <span>Sattelmodell</span>
+        <input type="text" name="saddleName" [ngModel]="saddleName()"
+          (ngModelChange)="saddleName.set($event)" placeholder="z. B. Prestige X-D2" required />
+      </label>
+      <label>
+        <span>Kategorie</span>
+        <select name="saddleCategory" [ngModel]="saddleCategory()"
+          (ngModelChange)="saddleCategory.set($event)">
+          <option value="Dressur">Dressur</option>
+          <option value="Springen">Springen</option>
+          <option value="Vielseitigkeit">Vielseitigkeit</option>
+          <option value="Gangpferd">Gangpferd</option>
+          <option value="Sonstige">Sonstige</option>
+        </select>
+      </label>
+      @if (saddleError()) {
+        <p class="saddle-error" role="alert">{{ saddleError() }}</p>
+      }
+      <footer>
+        <button type="button" class="cancel-saddle" (click)="cancelSaddleForm()">Abbrechen</button>
+        <button type="submit" class="save-saddle">Sattel speichern</button>
+      </footer>
+    </form>
   </section>
 }

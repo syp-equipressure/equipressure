@@ -45,7 +45,7 @@
 .segment-card.cdk-drag-animating { transition: transform 180ms ease; }
 .segment-heading { display: flex; align-items: center; gap: 10px; min-height: 28px; }
 .segment-heading > strong { flex: 1; color: #161616; font-size: 14px; font-weight: 700; }
-.segment-actions { display: flex; align-items: center; gap: 3px; }
+.segment-actions { display: flex; align-items: center; gap: 2px; }
 .segment-action {
   display: inline-grid;
   place-items: center;
@@ -57,13 +57,14 @@
   color: t.$text-soft;
   cursor: pointer;
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
 }
 .segment-action:hover:not(:disabled) { background: t.$purple-50; color: t.$purple-600; }
 .segment-action:disabled { color: t.$text-muted; cursor: not-allowed; opacity: 0.45; }
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
-.segment-action.remove-segment { color: #999; font-size: 20px; }
+.segment-action.remove-segment { color: #999; }
+.segment-action.remove-segment .material-icons { font-size: 17px; }
 .segment-action.remove-segment:hover { background: #fff0f0; color: #b94343; }
 .step-icon, .progress-number {
   display: inline-grid;

@@ -24,9 +24,17 @@ export interface MeasurementDetail {
   gaits: Gait[];
   /** A simple 18x18 grid of pressure values used for both views. */
   pressureGrid: number[][];
+  segments?: MeasurementSegmentResult[];
   videos: {
     main?: string;
     sideRight?: string;
     sideLeft?: string;
   };
+}
+
+export interface MeasurementSegmentResult {
+  gait: Gait;
+  side: Side;
+  durationSeconds: number;
+  pressureGrid: number[][];
 }

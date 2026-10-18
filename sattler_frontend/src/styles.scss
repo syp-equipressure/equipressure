@@ -116,6 +116,110 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 ::selection { background: #eae6f7; color: #18212f; }
 
+.horse-profile {
+  box-sizing: border-box;
+  min-height: calc(100dvh - 128px);
+  display: grid;
+  align-items: center;
+  padding: clamp(12px, 3vh, 28px) clamp(14px, 4vw, 42px);
+}
+.horse-profile-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+  width: 100%;
+  max-width: 1040px;
+  min-height: 300px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+.horse-profile-portrait { min-height: 300px; background: var(--bg-panel); }
+.horse-profile-image { display: block; width: 100%; height: 100%; min-height: 300px; object-fit: cover; object-position: center; }
+.horse-profile-main { display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: clamp(20px, 3vw, 36px); }
+.horse-profile-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.horse-profile-heading { display: grid; justify-items: start; gap: 8px; }
+.horse-profile-manage { display: flex; flex: 0 0 auto; gap: 6px; }
+.horse-profile-manage button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.horse-profile-manage button:hover { border-color: var(--purple-200); background: var(--purple-50); color: var(--purple-600); }
+.horse-profile-manage button:last-child:hover { border-color: #f1c4c4; background: #fff4f4; color: var(--accent-red); }
+.horse-profile-manage .material-icons { font-size: 19px; }
+.horse-profile-eyebrow { color: var(--purple-600); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
+.horse-profile-heading h1 { margin: 0; color: var(--text-strong); font-size: clamp(28px, 3vw, 36px); line-height: 1.1; }
+.horse-profile-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.horse-profile-breed,
+.horse-profile-sex { color: var(--text-soft); font-size: 13px; }
+.horse-profile-sex::before { content: "·"; margin-right: 7px; color: var(--purple-500); }
+.horse-profile-stats { display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--border-soft); }
+.horse-profile-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.horse-profile-stat-label { color: var(--text-soft); font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; }
+.horse-profile-stat strong,
+.horse-profile-address strong { color: var(--text-strong); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.horse-profile-stat strong { font-size: 16px; }
+.horse-profile-stat small { color: var(--text-soft); font-size: 12px; font-weight: 500; }
+.horse-profile-address > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+.horse-profile-address .horse-profile-stat-label { display: block; }
+.horse-profile-address strong { display: block; line-height: 1.45; }
+.horse-profile-actions { display: flex; align-items: center; gap: 18px; margin-top: auto; }
+.history-link { border: 0; padding: 10px 0; background: transparent; color: var(--purple-600); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; }
+.history-link:hover { color: var(--purple-700); }
+.history-link span { margin-left: 6px; }
+.profile-measurement-button { min-width: 180px; min-height: 40px; border: 0; border-radius: 6px; background: var(--purple-500); color: #fff; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; }
+.profile-measurement-button:hover { background: var(--purple-600); }
+
+@media (max-width: 700px) {
+  .horse-profile-card { grid-template-columns: minmax(150px, 0.65fr) minmax(0, 1.35fr); min-height: 260px; }
+  .horse-profile-portrait,
+  .horse-profile-image { min-height: 260px; }
+  .horse-profile-main { gap: 16px; padding: 18px; }
+  .horse-profile-heading-row { gap: 8px; }
+  .horse-profile-manage { gap: 4px; }
+  .horse-profile-manage button { width: 32px; height: 32px; }
+  .horse-profile-actions { align-items: flex-start; flex-direction: column; gap: 4px; }
+}
+
+@media (max-width: 480px) {
+  .horse-profile { min-height: calc(100dvh - 142px); padding: 10px; }
+  .horse-profile-card { grid-template-columns: 1fr; }
+  .horse-profile-portrait,
+  .horse-profile-image { height: clamp(120px, 20vh, 170px); min-height: 0; max-height: 170px; }
+  .horse-profile-main { gap: 14px; padding: 16px; }
+  .horse-profile-stats { grid-template-columns: 1fr; }
+  .horse-profile-stat { min-height: 36px; }
+  .horse-profile-stat-label { font-size: 9px; letter-spacing: 0; }
+  .horse-profile-stat strong { font-size: 13px; }
+  .horse-profile-address strong { font-size: 13px; }
+  .horse-profile-actions { align-items: center; flex-direction: row; gap: 12px; }
+  .profile-measurement-button { min-width: 0; flex: 1; }
+  .history-link { flex: 0 0 auto; font-size: 11px; }
+}
+
 html[data-theme='dark'] .workspace,
 html[data-theme='dark'] .sidenav,
 html[data-theme='dark'] .page-header,

@@ -1,8 +1,8 @@
 <div class="form-overlay" (click)="cancel()"></div>
 
-<div class="form-panel" role="dialog" aria-modal="true" aria-label="Neues Pferd hinzufügen">
+<div class="form-panel" role="dialog" aria-modal="true" [attr.aria-label]="horse() ? 'Pferd bearbeiten' : 'Neues Pferd hinzufügen'">
   <div class="form-header">
-    <h2 class="form-title">Neues Pferd</h2>
+    <h2 class="form-title">{{ horse() ? 'Pferd bearbeiten' : 'Neues Pferd' }}</h2>
     <button class="close-btn" (click)="cancel()" aria-label="Schließen">
       <span class="material-icons">close</span>
     </button>
@@ -64,23 +64,61 @@
     </div>
 
     <div class="form-row">
-      <div class="form-field" [class.has-error]="errors()['age']">
-        <label class="form-label" for="age">Alter (Jahre) *</label>
+      <div class="form-field">
+        <span class="form-label" id="sex-label">Geschlecht</span>
+        <div class="sex-toggle" role="group" aria-labelledby="sex-label">
+          <button
+            type="button"
+            class="sex-option female"
+            [class.selected]="sex() === 'Weiblich'"
+            [attr.aria-pressed]="sex() === 'Weiblich'"
+            aria-label="Weiblich"
+            title="Weiblich"
+            (click)="sex.set('Weiblich')"
+          >
+            <span class="material-icons" aria-hidden="true">female</span>
+          </button>
+          <button
+            type="button"
+            class="sex-option male"
+            [class.selected]="sex() === 'Männlich'"
+            [attr.aria-pressed]="sex() === 'Männlich'"
+            aria-label="Männlich"
+            title="Männlich"
+            (click)="sex.set('Männlich')"
+          >
+            <span class="material-icons" aria-hidden="true">male</span>
+          </button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="birthDate">Geburtsdatum *</label>
+        <input
+          id="birthDate"
+          class="form-input"
+          type="date"
+          [max]="today"
+          [ngModel]="birthDate()"
+          (ngModelChange)="birthDate.set($event)"
+        />
+        @if (errors()['birthDate']) {
+          <span class="form-error">{{ errors()['birthDate'] }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="form-label" for="age">Alter (wird berechnet)</label>
         <input
           id="age"
           name="age"
           autocomplete="off"
           class="form-input"
-          type="number"
-          placeholder="z. B. 8"
-          min="0"
-          max="40"
-          [ngModel]="age()"
-          (ngModelChange)="setNumber(age.set.bind(age), $event)"
+          type="text"
+          [value]="calculatedAge() === null ? 'Geburtsdatum auswählen' : calculatedAge() + (calculatedAge() === 1 ? ' Jahr' : ' Jahre')"
+          readonly
         />
-        @if (errors()['age']) {
-          <span class="form-error">{{ errors()['age'] }}</span>
-        }
       </div>
 
       <div class="form-field" [class.has-error]="errors()['heightCm']">
@@ -120,6 +158,18 @@
       @if (errors()['weightKg']) {
         <span class="form-error">{{ errors()['weightKg'] }}</span>
       }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="address">Standort / Adresse</label>
+      <input
+        id="address"
+        class="form-input"
+        type="text"
+        placeholder="Straße, PLZ Ort"
+        [ngModel]="address()"
+        (ngModelChange)="address.set($event)"
+      />
     </div>
 
   </div>

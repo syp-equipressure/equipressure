@@ -62,11 +62,24 @@
   gap: 12px;
 }
 
-.measurement-card {
-  background: #ffffff;
+.measurement-entry {
+  position: relative;
   border: 1px solid t.$border-soft;
   border-radius: 12px;
-  padding: 16px 18px;
+  background: #fff;
+  overflow: hidden;
+
+  &.active { border-color: t.$purple-200; background: t.$purple-50; }
+}
+
+.measurement-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 48px 16px 18px;
   text-align: left;
   cursor: pointer;
   font: inherit;
@@ -93,13 +106,21 @@
   }
 
   &.active {
-    background: t.$purple-50;
-    border-color: t.$purple-200;
+    background: transparent;
   }
 
   &:hover:not(.active) {
     background: t.$bg-page;
   }
+}
+
+.delete-measurement {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: t.$text-soft;
+
+  &:hover { background: #fff0f0; color: t.$accent-red; }
 }
 
 .new-measurement {
@@ -244,18 +265,19 @@
 
 // ─── Controls row ───────────────────────────────────────────────────────────
 .controls {
-  display: flex;
-  align-items: center;
-  gap: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 14px;
   background: t.$bg-page;
   border-radius: 12px;
   padding: 10px 14px;
 }
 
 .control-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  min-width: 0;
+  gap: 6px;
 
   .control-label {
     font-size: 13px;
@@ -264,34 +286,27 @@
   }
 }
 
-.toggle {
-  display: inline-flex;
-  gap: 6px;
+.select-shell {
+  position: relative;
 }
 
-.toggle-btn {
-  border: none;
-  background: #ffffff;
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 500;
+.select-shell select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  border: 1px solid t.$border-soft;
+  border-radius: 8px;
+  padding: 0 30px 0 10px;
+  background: white;
   color: t.$text;
+  font: inherit;
+  font-size: 13px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-
-  &.active {
-    background: t.$purple-500;
-    color: white;
-  }
-
-  &:hover:not(.active) {
-    background: t.$border-soft;
-  }
 }
 
 .reset-link {
-  margin-left: auto;
+  align-self: end;
   background: transparent;
   border: 0;
   padding: 0;
@@ -304,6 +319,67 @@
   &:hover {
     color: t.$text;
   }
+}
+
+.heatmap-column {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 8px;
+}
+
+.playback-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: t.$bg-page;
+}
+
+.playback-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.playback-button {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid t.$border-soft;
+  border-radius: 50%;
+  background: white;
+  color: t.$text-strong;
+  cursor: pointer;
+  font-size: 13px;
+
+  &:hover { background: t.$purple-50; }
+
+  &.primary {
+    border-color: t.$purple-500;
+    background: t.$purple-500;
+    color: white;
+  }
+}
+
+.playback-time {
+  justify-self: end;
+  color: t.$text-soft;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.playback-seek {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 60px;
+  accent-color: t.$purple-500;
+  cursor: pointer;
 }
 
 // ─── Heatmap + scale + videos ───────────────────────────────────────────────
@@ -322,6 +398,16 @@
   min-height: 280px;
   display: flex;
   min-width: 0;
+}
+
+.heatmap-message {
+  position: absolute;
+  inset: 50% 18px auto;
+  transform: translateY(-50%);
+  color: white;
+  text-align: center;
+  font-size: 14px;
+  z-index: 1;
 }
 
 app-pressure-heatmap {
@@ -648,5 +734,7 @@ app-pressure-heatmap {
 @media (max-width: 600px) {
   .tab-bar { grid-template-columns: 1fr; }
   .horse-ribbon { clip-path: none; }
-  .controls { align-items: flex-start; flex-direction: column; }
+  .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reset-link { justify-self: start; min-height: 36px; }
+  .playback-controls { grid-template-columns: 1fr auto; }
 }

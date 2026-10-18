@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PageHeaderComponent } from '../../../shared/page-header/page-header';
@@ -104,22 +104,18 @@ export class MeasurementSessionPage {
   }
 
   reorderSegments(event: CdkDragDrop<MeasurementSegment[]>): void {
-    if (event.previousIndex === event.currentIndex) return;
-    const segments = [...event.container.data];
-    moveItemInArray(segments, event.previousIndex, event.currentIndex);
-    this.sessionService.reorderSegments(segments);
+    this.sessionService.moveSegment(event.previousIndex, event.currentIndex);
   }
 
   moveSegment(segmentId: string, offset: number): void {
     const segments = this.session()?.segments;
     if (!segments) return;
-    const previousIndex = segments.findIndex(segment => segment.id === segmentId);
-    const currentIndex = previousIndex + offset;
-    if (previousIndex < 0 || currentIndex < 0 || currentIndex >= segments.length) return;
+    const index = segments.findIndex(segment => segment.id === segmentId);
+    if (index >= 0) this.sessionService.moveSegment(index, index + offset);
+  }
 
-    const reordered = [...segments];
-    moveItemInArray(reordered, previousIndex, currentIndex);
-    this.sessionService.reorderSegments(reordered);
+  returnToSelection(): void {
+    void this.router.navigate(['/new-measurement']);
   }
 
   backToSelection(): void {
@@ -138,8 +134,16 @@ export class MeasurementSessionPage {
   finish(): void {
     const session = this.session();
     if (!session || this.completedCount() === 0) return;
-    this.sessionService.complete();
-    void this.router.navigate(['/customers', session.ownerId, 'horses', session.horseId]);
+    const measurementId = this.sessionService.complete();
+    if (measurementId) {
+      const owner = this.owner();
+      const destination = owner?.isMe
+        ? ['/my-horses', session.horseId]
+        : ['/customers', session.ownerId, 'horses', session.horseId];
+      void this.router.navigate(destination, {
+        queryParams: { measurementId },
+      });
+    }
   }
 
   readonly formatDuration = formatDuration;

@@ -204,6 +204,62 @@
   box-shadow: t.$shadow-card;
 }
 
+.profile-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 1px solid t.$border-soft;
+  border-radius: t.$radius-card;
+  background: t.$bg-card;
+  box-shadow: t.$shadow-card;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: t.$purple-300;
+    box-shadow: t.$shadow-elev;
+  }
+
+  .profile-option-icon {
+    display: grid;
+    flex: 0 0 42px;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: t.$purple-50;
+    color: t.$purple-500;
+    font-size: 23px;
+  }
+
+  .profile-option-copy {
+    display: grid;
+    flex: 1;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  strong { color: t.$text-strong; font-size: 15px; }
+  small { color: t.$text-soft; font-size: 13px; }
+
+  .profile-option-count {
+    display: grid;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 7px;
+    place-items: center;
+    border-radius: t.$radius-pill;
+    background: t.$purple-50;
+    color: t.$purple-600;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .profile-option-arrow { color: t.$text-muted; }
+}
+
 .info-title {
   margin: 0 0 16px;
   font-size: 18px;
@@ -368,6 +424,9 @@
     align-items: flex-start;
     flex-wrap: wrap;
   }
+
+  .profile-option { gap: 12px; padding: 16px; }
+  .profile-option small { line-height: 1.4; }
 
   .edit-btn {
     margin-left: 0;

@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Horse } from '../../../models/horse.model';
 
@@ -11,15 +11,20 @@ import { Horse } from '../../../models/horse.model';
 })
 export class AddHorse {
   readonly ownerId = input.required<string>();
+  readonly horse = input<Horse | null>(null);
 
   readonly saved = output<Horse>();
   readonly cancelled = output<void>();
 
   name = signal('');
-  age = signal<number | null>(null);
   breed = signal('');
   heightCm = signal<number | null>(null);
   weightKg = signal<number | null>(null);
+  sex = signal<Exclude<Horse['sex'], undefined>>('Weiblich');
+  birthDate = signal('');
+  readonly today = formatDateInput(new Date());
+  readonly calculatedAge = computed(() => calculateAge(this.birthDate()));
+  address = signal('');
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -27,10 +32,28 @@ export class AddHorse {
   }
   errors = signal<Partial<Record<keyof Horse, string>>>({});
 
+  constructor() {
+    effect(() => {
+      const horse = this.horse();
+      if (!horse) return;
+      this.name.set(horse.name);
+      this.breed.set(horse.breed);
+      this.heightCm.set(horse.heightCm);
+      this.weightKg.set(horse.weightKg);
+      this.sex.set(normalizeSex(horse.sex));
+      this.birthDate.set(toDateInputValue(horse.birthDate));
+      this.address.set(horse.address ?? '');
+    });
+  }
+
   private validate(): boolean {
     const e: Partial<Record<keyof Horse, string>> = {};
     if (!this.name().trim()) e.name = 'Name ist erforderlich.';
-    if (this.age() === null || this.age()! <= 0) e.age = 'Alter ist erforderlich.';
+    if (!this.birthDate()) {
+      e.birthDate = 'Geburtsdatum ist erforderlich.';
+    } else if (this.calculatedAge() === null) {
+      e.birthDate = 'Bitte ein gültiges Geburtsdatum in der Vergangenheit auswählen.';
+    }
     if (!this.breed().trim()) e.breed = 'Rasse ist erforderlich.';
     if (this.heightCm() === null || this.heightCm()! <= 0) e.heightCm = 'Stockmaß ist erforderlich.';
     if (this.weightKg() === null || this.weightKg()! <= 0) e.weightKg = 'Gewicht ist erforderlich.';
@@ -46,22 +69,21 @@ export class AddHorse {
   submit(): void {
     if (!this.validate()) return;
 
-    const horse = {
-      id: crypto.randomUUID(),
+    const existing = this.horse();
+    const horse: Horse = {
+      ...existing,
+      id: existing?.id ?? crypto.randomUUID(),
       ownerId: this.ownerId(),
       name: this.name().trim(),
-      age: this.age()!,
+      age: this.calculatedAge()!,
       breed: this.breed().trim(),
       heightCm: this.heightCm()!,
       weightKg: this.weightKg()!,
-      imageUrl: ""
+      imageUrl: existing?.imageUrl ?? '',
+      sex: this.sex(),
+      birthDate: toGermanDate(this.birthDate()),
+      ...(this.address().trim() ? { address: this.address().trim() } : {}),
     };
-
-    console.log('submit called');
-    console.log('valid:', this.validate());
-    console.log('age:', this.age(), typeof this.age());
-    console.log('heightCm:', this.heightCm(), typeof this.heightCm());
-    console.log('weightKg:', this.weightKg(), typeof this.weightKg());
 
     this.saved.emit(horse);
     this.reset();
@@ -74,10 +96,62 @@ export class AddHorse {
 
   private reset(): void {
     this.name.set('');
-    this.age.set(null);
     this.breed.set('');
     this.heightCm.set(null);
     this.weightKg.set(null);
+    this.sex.set('Weiblich');
+    this.birthDate.set('');
+    this.address.set('');
     this.errors.set({});
   }
+
+}
+
+function calculateAge(date: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return null;
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const birth = new Date(year, month - 1, day);
+  const today = new Date();
+  if (
+    birth.getFullYear() !== year ||
+    birth.getMonth() !== month - 1 ||
+    birth.getDate() !== day ||
+    birth > today
+  ) {
+    return null;
+  }
+
+  let age = today.getFullYear() - year;
+  if (today.getMonth() < month - 1 || (today.getMonth() === month - 1 && today.getDate() < day)) {
+    age--;
+  }
+  return age;
+}
+
+function toDateInputValue(date: string | undefined): string {
+  if (!date) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  const germanDate = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(date);
+  return germanDate ? `${germanDate[3]}-${germanDate[2]}-${germanDate[1]}` : '';
+}
+
+function toGermanDate(date: string): string {
+  const [, year, month, day] = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date) ?? [];
+  return year && month && day ? `${day}.${month}.${year}` : date;
+}
+
+function formatDateInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeSex(sex: string | undefined): Exclude<Horse['sex'], undefined> {
+  if (sex === 'Männlich' || sex === 'Hengst' || sex === 'Wallach') return 'Männlich';
+  return 'Weiblich';
 }

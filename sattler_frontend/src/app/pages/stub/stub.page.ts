@@ -1,8 +1,7 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Input, computed, effect, inject, signal } from '@angular/core';
+import { Component, Input, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Subscription, forkJoin } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
@@ -10,9 +9,6 @@ import { Horse } from '../../models/horse.model';
 import { Measurement } from '../../models/measurement.model';
 import { Saddle } from '../../models/saddle.model';
 import { MeasurementSessionService } from '../../services/measurement-session.service';
-import { BackendPersonContextService } from '../../services/backend-person-context.service';
-import { PersonApiService, BackendPerson } from '../../services/person-api.service';
-import { MeasurementService } from '../../services/measurement.service';
 
 interface OwnerCard {
   owner: Customer;
@@ -36,7 +32,7 @@ interface RecentRow {
 @Component({
   selector: 'app-stub-page',
   standalone: true,
-  imports: [PageHeaderComponent],
+  imports: [PageHeaderComponent, FormsModule],
   templateUrl: './stub.page.html',
   styleUrl: './stub.page.scss',
 })
@@ -47,9 +43,6 @@ export class StubPage {
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
   private readonly measurementSession = inject(MeasurementSessionService);
-  private readonly personContext = inject(BackendPersonContextService);
-  private readonly personApi = inject(PersonApiService);
-  private readonly measurementService = inject(MeasurementService);
   private readonly routeData = toSignal(this.route.data, { initialValue: {} });
 
   readonly resolvedTitle = computed(() => {
@@ -58,26 +51,40 @@ export class StubPage {
   });
 
   readonly isNewMeasurement = computed(() => this.resolvedTitle() === 'Neue Messung');
-  readonly owners = signal<OwnerCard[]>([]);
-  readonly selectionLoading = signal(false);
-  readonly selectionError = signal('');
-  readonly saddlesLoading = signal(false);
-  readonly saddlesError = signal('');
-  readonly availableSaddles = signal<Saddle[]>([]);
+
+  readonly owners = computed<OwnerCard[]>(() => {
+    const cards: OwnerCard[] = [];
+
+    for (const customer of this.data.getCustomers()) {
+      const horses = this.data.getHorsesOf(customer.id);
+      if (horses.length > 0) {
+        cards.push({ owner: customer, horses });
+      }
+    }
+
+    return cards;
+  });
+
   readonly selectedOwnerId = signal<string | null>(null);
   readonly selectedHorseId = signal<string | null>(null);
-  readonly selectedSaddleId = signal<string | null>(null);
 
   readonly selectedOwner = computed(() => {
+    const list = this.owners();
     const selectedId = this.selectedOwnerId();
-    return this.owners().find(entry => entry.owner.id === selectedId) ?? null;
+    return list.find(entry => entry.owner.id === selectedId) ?? null;
   });
 
   readonly availableHorses = computed(() => this.selectedOwner()?.horses ?? []);
 
   readonly selectedHorse = computed(() => {
+    const horses = this.availableHorses();
     const selectedId = this.selectedHorseId();
-    return this.availableHorses().find(horse => horse.id === selectedId) ?? null;
+    return horses.find(horse => horse.id === selectedId) ?? null;
+  });
+
+  readonly availableSaddles = computed(() => {
+    const horse = this.selectedHorse();
+    return horse ? this.data.getSaddlesOfHorse(horse.id) : [];
   });
 
   readonly selectedSaddle = computed<Saddle | null>(() => {
@@ -96,17 +103,24 @@ export class StubPage {
 
   readonly selectedHorseMeasurements = computed((): Measurement[] => {
     const horse = this.selectedHorse();
-    return horse ? this.measurementService.getMeasurementsForHorse(horse.id) : [];
+    return horse ? this.data.getMeasurementsOf(horse.id) : [];
   });
 
   readonly horseHeight = computed(() => this.selectedHorse()?.heightCm ?? 0);
   readonly horseWeight = computed(() => this.selectedHorse()?.weightKg ?? 0);
+
+  readonly selectedSaddleId = signal<string | null>(null);
+  readonly saddleFormOpen = signal(false);
+  readonly saddleName = signal('');
+  readonly saddleCategory = signal('Dressur');
+  readonly saddleError = signal('');
   readonly selectedSaddleName = computed(() => this.selectedSaddle()?.name ?? '');
   readonly selectedSaddleCategory = computed(() => this.selectedSaddle()?.category ?? '');
 
   readonly summaryRows = computed<SummaryRow[]>(() => {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
+
     return [
       { label: 'Reiter:in', value: owner ? fullName(owner.owner) : '' },
       { label: 'Pferd', value: horse?.name ?? '' },
@@ -119,148 +133,102 @@ export class StubPage {
     ];
   });
 
-  readonly recentMeasurements = computed<RecentRow[]>(() =>
-    this.selectedHorseMeasurements().slice(0, 2).map(measurement => ({
+  readonly recentMeasurements = computed<RecentRow[]>(() => {
+    const horse = this.selectedHorse();
+    if (!horse) {
+      return [];
+    }
+
+    return this.selectedHorseMeasurements().slice(0, 2).map((measurement, index) => ({
       id: measurement.id,
-      label: `${this.selectedHorse()?.name ?? ''} · ${measurement.deviceName}`,
+      label: `${horse.name} · ${measurement.deviceName}`,
       date: measurement.date,
-      score: String(measurement.symmetryPct),
-      tone: measurement.symmetryPct >= 90 ? 'green' : 'red',
-    })),
-  );
+      score: index === 0 ? '92' : '51',
+      tone: index === 0 ? 'green' : 'red',
+    }));
+  });
 
   constructor() {
-    effect(onCleanup => {
-      if (!this.isNewMeasurement()) return;
+    if (this.route.snapshot.data['title'] === 'Neue Messung') {
       this.measurementSession.clear();
-      this.selectionError.set('');
-      this.owners.set([]);
-      this.selectedOwnerId.set(null);
-      this.selectedHorseId.set(null);
-      this.selectedSaddleId.set(null);
-      const personId = this.personContext.personId();
-      if (!personId) {
-        this.selectionLoading.set(false);
-        return;
-      }
+    }
 
-      this.selectionLoading.set(true);
-      const subscriptions = new Subscription();
-      subscriptions.add(this.personApi.getContacts(personId).subscribe({
-        next: contacts => {
-          // TODO Backend-Bug: contacts currently includes the requested person, not just riders.
-          const riderIds = contacts
-            .filter(contact => contact.id !== personId)
-            .map(contact => contact.id);
-          if (riderIds.length === 0) {
-            this.selectionLoading.set(false);
-            return;
-          }
+    const params = this.route.snapshot.queryParamMap;
+    const horseId = params.get('horseId');
+    const requestedHorse = horseId ? this.data.getHorse(horseId) : undefined;
+    const ownerId = requestedHorse?.ownerId ?? params.get('ownerId');
+    const owner = this.owners().find(entry => entry.owner.id === ownerId);
 
-          subscriptions.add(forkJoin(
-            riderIds.map(id =>
-              forkJoin({
-                details: this.personApi.getPersonDetails(id),
-                horses: this.personApi.getHorses(id),
-              }),
-            ),
-          ).subscribe({
-            next: riders => {
-              const ownerCards = riders.map(({ details, horses }) => ({
-                owner: toCustomer(details),
-                horses,
-              }));
-              this.owners.set(ownerCards);
-              this.data.upsertCustomers(ownerCards.map(entry => entry.owner));
-              this.data.upsertHorses(ownerCards.flatMap(entry => entry.horses));
-
-              const requestedOwner = this.route.snapshot.queryParamMap.get('ownerId');
-              const selectedOwner = ownerCards.find(entry => entry.owner.id === requestedOwner);
-              this.selectedOwnerId.set(selectedOwner?.owner.id ?? null);
-              const requestedHorse = this.route.snapshot.queryParamMap.get('horseId');
-              this.selectedHorseId.set(
-                selectedOwner?.horses.find(horse => horse.id === requestedHorse)?.id ?? null,
-              );
-              this.selectionLoading.set(false);
-            },
-            error: error => {
-              this.selectionError.set(
-                error instanceof Error
-                  ? error.message
-                  : 'Die Kundendaten konnten nicht geladen werden.',
-              );
-              this.selectionLoading.set(false);
-            },
-          }));
-        },
-        error: error => {
-          this.selectionError.set(
-            error instanceof Error ? error.message : 'Die Kontakte konnten nicht geladen werden.',
-          );
-          this.selectionLoading.set(false);
-        },
-      }));
-      onCleanup(() => subscriptions.unsubscribe());
-    });
-
-    effect(onCleanup => {
-      const horse = this.selectedHorse();
-      this.availableSaddles.set([]);
-      this.selectedSaddleId.set(null);
-      this.saddlesError.set('');
-      if (!this.isNewMeasurement() || !horse) {
-        this.saddlesLoading.set(false);
-        return;
-      }
-
-      this.saddlesLoading.set(true);
-      const subscription = this.personApi.getSaddles(horse.id).subscribe({
-        next: saddles => {
-          this.availableSaddles.set(saddles);
-          this.data.upsertSaddles(saddles);
-          const requestedSaddle = this.route.snapshot.queryParamMap.get('saddleId');
-          this.selectedSaddleId.set(
-            saddles.find(saddle => saddle.id === requestedSaddle)?.id ?? null,
-          );
-          this.saddlesLoading.set(false);
-        },
-        error: error => {
-          if (error instanceof HttpErrorResponse && error.status === 404) {
-            this.saddlesLoading.set(false);
-            return;
-          }
-          this.saddlesError.set(
-            error instanceof Error ? error.message : 'Die Sättel konnten nicht geladen werden.',
-          );
-          this.saddlesLoading.set(false);
-        },
-      });
-      onCleanup(() => subscription.unsubscribe());
-    });
+    this.selectedOwnerId.set(owner?.owner.id ?? null);
+    const selectedHorseId = owner?.horses.find(horse => horse.id === requestedHorse?.id)?.id ?? null;
+    this.selectedHorseId.set(selectedHorseId);
+    const saddleId = params.get('saddleId');
+    this.selectedSaddleId.set(
+      selectedHorseId
+        ? this.data.getSaddlesOfHorse(selectedHorseId).find(saddle => saddle.id === saddleId)?.id ?? null
+        : null,
+    );
   }
 
-  selectOwner(ownerId: string): void {
+  selectOwner(ownerId: string) {
     this.selectedOwnerId.set(ownerId || null);
     this.selectedHorseId.set(null);
     this.selectedSaddleId.set(null);
   }
 
-  selectHorse(horseId: string): void {
+  selectHorse(horseId: string) {
     this.selectedHorseId.set(horseId || null);
     this.selectedSaddleId.set(null);
   }
 
-  selectSaddle(saddleId: string): void {
+  selectSaddle(saddleId: string) {
     this.selectedSaddleId.set(saddleId || null);
   }
 
-  continueToMeasurement(): void {
+  openSaddleForm(): void {
+    this.saddleName.set('');
+    this.saddleCategory.set('Dressur');
+    this.saddleError.set('');
+    this.saddleFormOpen.set(true);
+  }
+
+  cancelSaddleForm(): void {
+    this.saddleFormOpen.set(false);
+    this.saddleError.set('');
+  }
+
+  saveSaddle(): void {
+    const horse = this.selectedHorse();
+    const name = this.saddleName().trim();
+    if (!horse || !name) {
+      this.saddleError.set('Bitte einen Sattelnamen eingeben.');
+      return;
+    }
+
+    const saddle: Saddle = {
+      id: crypto.randomUUID(),
+      horseId: horse.id,
+      name,
+      category: this.saddleCategory(),
+    };
+    this.data.addSaddle(saddle);
+    this.selectedSaddleId.set(saddle.id);
+    this.saddleFormOpen.set(false);
+  }
+
+  continueToMeasurement() {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
     const saddle = this.selectedSaddle();
-    if (!owner || !horse || !saddle) return;
+    if (!owner || !horse || !saddle) {
+      return;
+    }
 
-    this.router.navigate(['/new-measurement/session'], {
+    if (!this.measurementSession.start(owner.owner.id, horse.id, saddle.id)) {
+      return;
+    }
+
+    void this.router.navigate(['/new-measurement/session'], {
       queryParams: {
         ownerId: owner.owner.id,
         horseId: horse.id,
@@ -270,8 +238,4 @@ export class StubPage {
   }
 
   readonly fullName = fullName;
-}
-
-function toCustomer(person: BackendPerson): Customer {
-  return { ...person, isMe: false };
 }

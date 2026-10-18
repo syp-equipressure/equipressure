@@ -9,11 +9,10 @@
           class="segment-list"
           aria-label="Teilmessungen"
           cdkDropList
-          [cdkDropListData]="current.segments"
           (cdkDropListDropped)="reorderSegments($event)"
         >
           @for (segment of current.segments; track segment.id; let index = $index) {
-            <article class="session-card segment-card" [class.complete]="segment.completed" cdkDrag [cdkDragData]="segment">
+            <article class="session-card segment-card" [class.complete]="segment.completed" cdkDrag>
               <header class="segment-heading">
                 <span class="step-icon">{{ index + 1 }}</span>
                 <strong>{{ segment.gait }} {{ segment.side === 'Links' ? 'linke Hand' : 'rechte Hand' }}</strong>
@@ -46,8 +45,9 @@
                     type="button"
                     class="segment-action remove-segment"
                     aria-label="Teilmessung löschen"
+                    title="Teilmessung löschen"
                     (click)="removeSegment(segment.id)"
-                  >×</button>
+                  ><span class="material-icons" aria-hidden="true">delete_outline</span></button>
                 </div>
               </header>
 
@@ -55,9 +55,7 @@
                 <div class="segment-selectors">
                   <label>
                     <span>Gangart</span>
-                    <select id="segment-{{ segment.id }}-gait" name="segment-{{ segment.id }}-gait"
-                      autocomplete="off" [value]="segment.gait"
-                      (change)="updateSegment(segment, 'gait', $any($event.target).value)">
+                    <select [value]="segment.gait" (change)="updateSegment(segment, 'gait', $any($event.target).value)">
                       <option value="Schritt">Schritt</option>
                       <option value="Trab">Trab</option>
                       <option value="Galopp">Galopp</option>
@@ -65,9 +63,7 @@
                   </label>
                   <label>
                     <span>Hand</span>
-                    <select id="segment-{{ segment.id }}-side" name="segment-{{ segment.id }}-side"
-                      autocomplete="off" [value]="segment.side"
-                      (change)="updateSegment(segment, 'side', $any($event.target).value)">
+                    <select [value]="segment.side" (change)="updateSegment(segment, 'side', $any($event.target).value)">
                       <option value="Links">Links</option>
                       <option value="Rechts">Rechts</option>
                     </select>
@@ -93,9 +89,6 @@
         <label class="session-card notes-card">
           <span class="field-label">Notizen</span>
           <textarea
-            id="measurementNotes"
-            name="measurementNotes"
-            autocomplete="off"
             [value]="current.notes"
             (input)="updateNotes($event)"
             placeholder="Beobachtungen, Auffälligkeiten, ..."
@@ -137,5 +130,10 @@
     <button type="button" class="finish-button" [disabled]="completedCount() === 0" (click)="finish()">
       Messung beenden
     </button>
+  </main>
+} @else {
+  <main class="session-page session-error">
+    <p>Die Messung konnte nicht geladen werden. Bitte wähle Reiter:in, Pferd und Sattel erneut aus.</p>
+    <button type="button" class="finish-button" (click)="returnToSelection()">Zur Auswahl</button>
   </main>
 }
