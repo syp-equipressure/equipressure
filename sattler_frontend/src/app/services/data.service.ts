@@ -227,12 +227,14 @@ export class DataService {
 
   reportActionError(error: unknown): void {
     const detail =
-      error instanceof HttpErrorResponse && typeof error.error === 'object' && error.error !== null
-        ? ('detail' in error.error && typeof error.error.detail === 'string'
-            ? error.error.detail
-            : 'title' in error.error && typeof error.error.title === 'string'
-              ? error.error.title
-              : error.message)
+      error instanceof HttpErrorResponse && error.status === 0
+        ? 'Keine Antwort vom Backend. Prüfe, ob es auf localhost:5200 läuft und ob die Frontend-Adresse in den CORS-Einstellungen des Backends erlaubt ist.'
+        : error instanceof HttpErrorResponse && typeof error.error === 'object' && error.error !== null
+          ? ('detail' in error.error && typeof error.error.detail === 'string'
+              ? error.error.detail
+              : 'title' in error.error && typeof error.error.title === 'string'
+                ? error.error.title
+                : error.message)
         : error instanceof Error
           ? error.message
           : 'Unbekannter Fehler';
@@ -350,9 +352,10 @@ export class DataService {
       gender,
       address,
       breedIds: [breedId],
+      breeds: [{ breedId }],
       ownerId,
     });
-    this.addHorse(mapHorse(created, ownerId));
+    this.addHorse({ ...horse, id: String(created.id), ownerId: String(ownerId) });
   }
 
   updateHorse(horse: Horse): void {

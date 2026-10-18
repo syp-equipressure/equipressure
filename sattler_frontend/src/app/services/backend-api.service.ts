@@ -131,8 +131,9 @@ export class BackendApiService {
     gender: BackendHorse['gender'];
     address: BackendAddressRequest;
     breedIds: number[];
+    breeds: { breedId: number }[];
     ownerId: number;
-  }): Promise<BackendHorse> {
-    return firstValueFrom(this.http.post<BackendHorse>(`${this.baseUrl}/horses`, request));
+  }): Promise<{ id: number }> {
+    return firstValueFrom(this.http.post<{ id: number }>(`${this.baseUrl}/horses`, request));
   }
 }
