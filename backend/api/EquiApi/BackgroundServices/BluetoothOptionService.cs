@@ -24,13 +24,15 @@ internal sealed class BluetoothOptions
     ///     Gets or sets the UUID of the GATT service containing the data characteristic.
     ///     Default: Nordic UART Service.
     /// </summary>
-    public Guid ServiceUuid { get; set; } = Guid.Parse("6E400001-B5A0-F393-E0A9-E50E24DCCA9E");
+    public Guid ServiceUuid { get; set; } = Guid.Parse("12345678-1234-1234-1234-1234567890ab");
+
 
     /// <summary>
     ///     Gets or sets the UUID of the characteristic which sends notifications with the data.
     ///     Default: Nordic UART TX characteristic.
     /// </summary>
-    public Guid CharacteristicUuid { get; set; } = Guid.Parse("6E400003-B5A0-F393-E0A9-E50E24DCCA9E");
+    public Guid CharacteristicUuid { get; set; } = Guid.Parse("abcd1234-5678-90ab-cdef-1234567890ab");
+
 }
 
 /// <summary>

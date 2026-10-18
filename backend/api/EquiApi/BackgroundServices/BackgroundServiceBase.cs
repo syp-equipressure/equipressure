@@ -46,8 +46,18 @@ internal abstract class BackgroundServiceBase<T>(
 
             // if execution took longer than the interval we would get an issue - ignored for simplicity for now
             // mitigation would be to pass the runtime and possibly skip the next run, log errors,...
-            var nextTimeToRun = GetNextTimeToRun(lastRunTime);
             // timestamp with planned value to avoid drift
+            var nextTimeToRun = GetNextTimeToRun(lastRunTime);
+
+            // if the execution took longer than the interval, skip the missed slots
+            var now = Clock.GetCurrentInstant();
+            while (nextTimeToRun < now)
+            {
+                Logger.LogDebug("Skipping missed run of {ServiceName} planned at {@TimeToRun}", ServiceName,
+                                nextTimeToRun);
+                nextTimeToRun = GetNextTimeToRun(nextTimeToRun);
+            }
+
             lastRunTime = nextTimeToRun;
             await WaitForNextRunAsync(nextTimeToRun, stoppingToken);
         }
@@ -86,4 +96,5 @@ internal abstract class BackgroundServiceBase<T>(
         Logger.LogDebug("Scheduled next run of {ServiceName} at {@TimeToRun}", ServiceName, timeToRun);
         await Task.Delay(waitTime.ToTimeSpan(), stoppingToken);
     }
+    
 }

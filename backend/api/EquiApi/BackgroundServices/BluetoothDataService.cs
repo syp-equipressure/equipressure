@@ -22,6 +22,9 @@ internal sealed class BluetoothConnectionService(
     ILogger<BluetoothConnectionService> logger)
     : BackgroundServiceBase<BluetoothConnectionService>(clock, scopeFactory, logger)
 {
+    private static readonly TimeSpan ScanTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(15);
+
     private readonly BluetoothOptions _options = options.Value;
     private BluetoothDevice? _device;
     private Task? _sessionTask;
@@ -61,9 +64,12 @@ internal sealed class BluetoothConnectionService(
             Logger.LogInformation("Connecting to {DeviceName} ({Id})", deviceName, device.Id);
 
             var gatt = device.Gatt;
-            await gatt.ConnectAsync();
 
-            var service = await gatt.GetPrimaryServiceAsync(BluetoothUuid.FromGuid(_options.ServiceUuid));
+            // ConnectAsync has no cancellation/timeout support, so enforce both here
+            await gatt.ConnectAsync().WaitAsync(ConnectTimeout, stoppingToken);
+
+            var service = await gatt.GetPrimaryServiceAsync(BluetoothUuid.FromGuid(_options.ServiceUuid))
+                .WaitAsync(ConnectTimeout, stoppingToken);
             if (service is null)
             {
                 Logger.LogWarning("Service {Service} not found on {DeviceName}", _options.ServiceUuid, deviceName);
@@ -71,7 +77,8 @@ internal sealed class BluetoothConnectionService(
                 return;
             }
 
-            characteristic = await service.GetCharacteristicAsync(BluetoothUuid.FromGuid(_options.CharacteristicUuid));
+            characteristic = await service.GetCharacteristicAsync(BluetoothUuid.FromGuid(_options.CharacteristicUuid))
+                .WaitAsync(ConnectTimeout, stoppingToken);
             if (characteristic is null)
             {
                 Logger.LogWarning("Characteristic {Characteristic} not found on {DeviceName}",
@@ -85,10 +92,26 @@ internal sealed class BluetoothConnectionService(
             SafeDisconnect(device);
             throw;
         }
+        catch (TimeoutException)
+        {
+            SafeDisconnect(device);
+            Logger.LogWarning("Connect to {DeviceName} timed out after {Timeout}", deviceName, ConnectTimeout);
+            return;
+        }
         catch (Exception ex)
         {
             SafeDisconnect(device);
             Logger.LogWarning("Connect to {DeviceName} failed: {Message}", deviceName, ex.Message);
+
+            if (ex.Message.Contains("br-connection", StringComparison.OrdinalIgnoreCase))
+            {
+                Logger.LogWarning(
+                    "BlueZ tried a classic (BR/EDR) connection instead of BLE. " +
+                    "Set 'ControllerMode = le' in /etc/bluetooth/main.conf, run " +
+                    "'bluetoothctl remove {Id}' and restart the bluetooth service",
+                    device.Id);
+            }
+
             return;
         }
 
@@ -113,10 +136,23 @@ internal sealed class BluetoothConnectionService(
     {
         // BLE devices have to be discovered by scanning, there is no SPP-like "paired devices" shortcut
         var scanOptions = new RequestDeviceOptions { AcceptAllDevices = true };
-        var devices = await Bluetooth.ScanForDevicesAsync(scanOptions, stoppingToken);
 
-        return devices.FirstOrDefault(d =>
-            string.Equals(d.Name?.Trim(), _options.DeviceName, StringComparison.OrdinalIgnoreCase));
+        // safety net so a hanging scan cannot block the service forever
+        using var scanCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        scanCts.CancelAfter(ScanTimeout);
+
+        try
+        {
+            var devices = await Bluetooth.ScanForDevicesAsync(scanOptions, scanCts.Token);
+
+            return devices.FirstOrDefault(d =>
+                string.Equals(d.Name?.Trim(), _options.DeviceName, StringComparison.OrdinalIgnoreCase));
+        }
+        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+        {
+            Logger.LogWarning("BLE scan timed out after {Timeout}", ScanTimeout);
+            return null;
+        }
     }
 
     private async Task RunSessionAsync(
@@ -186,7 +222,12 @@ internal sealed class BluetoothConnectionService(
 
             SafeDisconnect(device);
             Logger.LogWarning("Connection to {DeviceName} closed", deviceName);
-            await Task.Delay(TimeSpan.FromSeconds(3), CancellationToken.None);
+
+            // short pause before the next reconnect attempt (skipped on shutdown)
+            if (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3), CancellationToken.None);
+            }
         }
     }
 
