@@ -229,6 +229,8 @@ export class DataService {
     const detail =
       error instanceof HttpErrorResponse && error.status === 0
         ? 'Keine Antwort vom Backend. Prüfe, ob es auf localhost:5200 läuft und ob die Frontend-Adresse in den CORS-Einstellungen des Backends erlaubt ist.'
+        : error instanceof HttpErrorResponse && error.status === 409
+          ? 'Der Eintrag steht bereits im Konflikt mit vorhandenen Daten. Prüfe insbesondere, ob die E-Mail-Adresse schon verwendet wird.'
         : error instanceof HttpErrorResponse && typeof error.error === 'object' && error.error !== null
           ? ('detail' in error.error && typeof error.error.detail === 'string'
               ? error.error.detail
@@ -332,14 +334,25 @@ export class DataService {
     this.actionError.set('');
     const ownerId = Number(horse.ownerId);
     const address = parseAddress(horse.address);
-    const breedId = breedIds.get(horse.breed.trim().toLocaleLowerCase('de'));
     const dateOfBirth = parseHorseDate(horse.birthDate);
     const gender = genderToBackend(horse.sex);
 
-    if (!Number.isInteger(ownerId) || ownerId <= 0 || !address || !breedId || !dateOfBirth || !gender) {
+    if (!Number.isInteger(ownerId) || ownerId <= 0 || !address || !dateOfBirth || !gender) {
       this.addHorse(horse);
       this.actionError.set(
-        'Dieses Pferd wurde nur lokal angelegt. Für das Backend werden eine zuordenbare Rasse, Geschlecht, Geburtsdatum und eine Adresse mit PLZ und Ort benötigt.',
+        'Dieses Pferd wurde nur lokal angelegt. Für das Backend werden Geschlecht, Geburtsdatum und eine Adresse mit PLZ und Ort benötigt.',
+      );
+      return;
+    }
+
+    const breeds = await this.api.getBreeds();
+    const breedId = breeds.find(
+      breed => breed.name.trim().toLocaleLowerCase('de') === horse.breed.trim().toLocaleLowerCase('de'),
+    )?.id;
+    if (!breedId) {
+      this.addHorse(horse);
+      this.actionError.set(
+        `Die Rasse „${horse.breed}“ ist im Backend nicht hinterlegt. Das Pferd wurde nur lokal angelegt.`,
       );
       return;
     }
@@ -618,17 +631,6 @@ function genderToBackend(value: Horse['sex']): BackendHorse['gender'] | null {
   if (value === 'Wallach' || value === 'Hengst') return 'Male';
   return null;
 }
-
-const breedIds = new Map<string, number>([
-  ['hannoveraner', 1],
-  ['holsteiner', 2],
-  ['westfale', 3],
-  ['trakehner', 4],
-  ['haflinger', 5],
-  ['noriker', 6],
-  ['lipizzaner', 7],
-  ['quarter horse', 8],
-]);
 
 function buildPetziDetail(): MeasurementDetail {
   const segments: MeasurementSegmentResult[] = ([

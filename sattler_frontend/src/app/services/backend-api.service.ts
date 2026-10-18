@@ -53,6 +53,11 @@ export interface BackendSaddle {
   categoryName: string;
 }
 
+export interface BackendBreed {
+  id: number;
+  name: string;
+}
+
 export interface BackendAddressRequest {
   addressName: string | null;
   cityName: string;
@@ -86,6 +91,10 @@ export class BackendApiService {
     return firstValueFrom(
       this.http.get<{ saddles: BackendSaddle[] }>(`${this.baseUrl}/horses/${horseId}/saddles`),
     );
+  }
+
+  getBreeds(): Promise<BackendBreed[]> {
+    return firstValueFrom(this.http.get<BackendBreed[]>(`${this.baseUrl}/breeds`));
   }
 
   createPerson(request: {
