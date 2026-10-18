@@ -356,13 +356,24 @@ export class DataService {
   }
 
   updateHorse(horse: Horse): void {
+    this.actionError.set('Pferde bearbeiten wird vom Backend noch nicht unterstützt; die Änderung ist nur lokal.');
     this._horses.update(list => list.map(item => item.id === horse.id ? horse : item));
   }
 
   removeHorse(horseId: string): void {
+    this.actionError.set('Pferde löschen wird vom Backend noch nicht unterstützt; die Änderung ist nur lokal.');
+    const horse = this.getHorse(horseId);
     this._horses.update(list => list.filter(horse => horse.id !== horseId));
     this._saddles.update(list => list.filter(saddle => saddle.horseId !== horseId));
     this._measurements.update(list => list.filter(measurement => measurement.horseId !== horseId));
+    if (horse) {
+      this._customers.update(customers =>
+        customers.map(customer => ({
+          ...customer,
+          horseIds: customer.horseIds.filter(id => id !== horseId),
+        })),
+      );
+    }
   }
 
   // ── Measurements ───────────────────────────────────────────────────────────
