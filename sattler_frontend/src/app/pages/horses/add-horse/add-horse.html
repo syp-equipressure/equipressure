@@ -49,11 +49,20 @@
         class="form-input"
         type="text"
         placeholder="z. B. Hannoveraner"
+        list="supported-horse-breeds"
         [ngModel]="breed()"
         (ngModelChange)="breed.set($event)"
       />
+      <datalist id="supported-horse-breeds">
+        @for (supportedBreed of supportedBreeds; track supportedBreed) {
+          <option [value]="supportedBreed"></option>
+        }
+      </datalist>
       @if (errors()['breed']) {
         <span class="form-error">{{ errors()['breed'] }}</span>
+      }
+      @if (backendMode()) {
+        <span class="form-hint">Unterstützte Rassen: {{ supportedBreeds.join(', ') }}. Mehrere Rassen mit Komma trennen.</span>
       }
     </div>
 
@@ -148,8 +157,8 @@
       }
     </div>
 
-    <div class="form-field">
-      <label class="form-label" for="address">Standort / Adresse</label>
+    <div class="form-field" [class.has-error]="errors()['address']">
+      <label class="form-label" for="address">Standort / Adresse{{ backendMode() ? ' *' : '' }}</label>
       <input
         id="address"
         class="form-input"
@@ -158,15 +167,21 @@
         [ngModel]="address()"
         (ngModelChange)="address.set($event)"
       />
+      @if (errors()['address']) {
+        <span class="form-error">{{ errors()['address'] }}</span>
+      }
     </div>
 
   </div>
 
   <div class="form-footer">
-    <button class="secondary-btn" (click)="cancel()">Abbrechen</button>
-    <button class="primary-btn" (click)="submit()">
+    @if (saveError()) {
+      <p class="form-error" role="alert">{{ saveError() }}</p>
+    }
+    <button class="secondary-btn" (click)="cancel()" [disabled]="saving()">Abbrechen</button>
+    <button class="primary-btn" (click)="submit()" [disabled]="saving()">
       <span class="material-icons">check</span>
-      Speichern
+      {{ saving() ? 'Wird gespeichert …' : 'Speichern' }}
     </button>
   </div>
 </div>

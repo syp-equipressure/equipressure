@@ -1,6 +1,7 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Horse } from '../../../models/horse.model';
+import { BackendApiService, DEVELOPMENT_HORSE_BREEDS } from '../../../services/backend-api.service';
 
 @Component({
   selector: 'add-horse',
@@ -11,6 +12,7 @@ import { Horse } from '../../../models/horse.model';
 })
 export class AddHorse {
   readonly ownerId = input.required<string>();
+  readonly backendMode = input(false);
   readonly horse = input<Horse | null>(null);
 
   readonly saved = output<Horse>();
@@ -23,8 +25,12 @@ export class AddHorse {
   sex = signal<Exclude<Horse['sex'], undefined>>('Weiblich');
   birthDate = signal('');
   readonly today = formatDateInput(new Date());
+  readonly supportedBreeds = DEVELOPMENT_HORSE_BREEDS.map(breed => breed.name);
   readonly calculatedAge = computed(() => calculateAge(this.birthDate()));
   address = signal('');
+  readonly saving = signal(false);
+  readonly saveError = signal('');
+  private readonly api = inject(BackendApiService);
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -55,6 +61,12 @@ export class AddHorse {
       e.birthDate = 'Bitte ein gültiges Geburtsdatum in der Vergangenheit auswählen.';
     }
     if (!this.breed().trim()) e.breed = 'Rasse ist erforderlich.';
+    if (this.backendMode() && !isSupportedBreedList(this.breed())) {
+      e.breed = `Bitte nur unterstützte Rassen verwenden: ${this.supportedBreeds.join(', ')}.`;
+    }
+    if (this.backendMode() && !parseHorseAddress(this.address())) {
+      e.address = 'Bitte den Standort als „Straße, PLZ Ort“ angeben.';
+    }
     if (this.heightCm() === null || this.heightCm()! <= 0) e.heightCm = 'Stockmaß ist erforderlich.';
     if (this.weightKg() === null || this.weightKg()! <= 0) e.weightKg = 'Gewicht ist erforderlich.';
     this.errors.set(e);
@@ -85,11 +97,29 @@ export class AddHorse {
       ...(this.address().trim() ? { address: this.address().trim() } : {}),
     };
 
-    this.saved.emit(horse);
-    this.reset();
+    if (this.backendMode()) {
+      if (this.saving()) return;
+      this.saving.set(true);
+      this.saveError.set('');
+      this.api.createHorse(this.ownerId(), horse).subscribe({
+        next: savedHorse => {
+          this.saving.set(false);
+          this.saved.emit(savedHorse);
+          this.reset();
+        },
+        error: error => {
+          this.saving.set(false);
+          this.saveError.set(error instanceof Error ? error.message : 'Pferd konnte nicht gespeichert werden.');
+        },
+      });
+    } else {
+      this.saved.emit(horse);
+      this.reset();
+    }
   }
 
   cancel(): void {
+    if (this.saving()) return;
     this.reset();
     this.cancelled.emit();
   }
@@ -103,6 +133,7 @@ export class AddHorse {
     this.birthDate.set('');
     this.address.set('');
     this.errors.set({});
+    this.saveError.set('');
   }
 
 }
@@ -154,4 +185,15 @@ function formatDateInput(date: Date): string {
 function normalizeSex(sex: string | undefined): Exclude<Horse['sex'], undefined> {
   if (sex === 'Männlich' || sex === 'Hengst' || sex === 'Wallach') return 'Männlich';
   return 'Weiblich';
+}
+
+function isSupportedBreedList(value: string): boolean {
+  const names = value.split(',').map(name => name.trim().toLocaleLowerCase('de')).filter(Boolean);
+  return names.length > 0 && names.every(name =>
+    DEVELOPMENT_HORSE_BREEDS.some(breed => breed.name.toLocaleLowerCase('de') === name),
+  );
+}
+
+function parseHorseAddress(value: string): boolean {
+  return /^(.*?),\s*(\d{4,10})\s+(.+)$/.test(value.trim());
 }

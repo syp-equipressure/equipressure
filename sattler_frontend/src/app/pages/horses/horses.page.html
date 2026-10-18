@@ -1,6 +1,11 @@
 <app-page-header [title]="title()" [showBack]="true"></app-page-header>
 
 <section class="page-body">
+  @if (backendLoading()) {
+    <div class="load-state" role="status">Pferde werden geladen …</div>
+  } @else if (backendError()) {
+    <div class="load-state error" role="alert">{{ backendError() }}</div>
+  } @else {
   <div class="grid">
     @for (h of horses(); track h.id) {
       <button class="card" type="button" (click)="openHorse(h.id)">
@@ -33,9 +38,11 @@
 
   @if (showForm()) {
     <add-horse
-      [ownerId]="customer()?.id ?? ''"
+      [ownerId]="backendOwnerId() || customer()?.id || ''"
+      [backendMode]="backendMode()"
       (saved)="addHorse($event)"
       (cancelled)="showForm.set(false)"
     />
+  }
   }
 </section>
