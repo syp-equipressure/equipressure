@@ -49,7 +49,7 @@
           <section class="horse-profile-stats" aria-label="Pferdedaten">
             <div class="horse-profile-stat">
               <span class="horse-profile-stat-label">Geburtsdatum</span>
-              <strong>{{ h.birthDate || h.age + ' Jahre' }}</strong>
+              <strong>{{ h.age }} {{ h.age === 1 ? 'Jahr' : 'Jahre' }}{{ h.birthDate ? ' · ' + h.birthDate : '' }}</strong>
             </div>
             <div class="horse-profile-stat">
               <span class="horse-profile-stat-label">Stockmaß</span>

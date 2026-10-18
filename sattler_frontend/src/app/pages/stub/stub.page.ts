@@ -1,4 +1,5 @@
 import { Component, Input, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
@@ -31,7 +32,7 @@ interface RecentRow {
 @Component({
   selector: 'app-stub-page',
   standalone: true,
-  imports: [PageHeaderComponent],
+  imports: [PageHeaderComponent, FormsModule],
   templateUrl: './stub.page.html',
   styleUrl: './stub.page.scss',
 })
@@ -109,6 +110,10 @@ export class StubPage {
   readonly horseWeight = computed(() => this.selectedHorse()?.weightKg ?? 0);
 
   readonly selectedSaddleId = signal<string | null>(null);
+  readonly saddleFormOpen = signal(false);
+  readonly saddleName = signal('');
+  readonly saddleCategory = signal('Dressur');
+  readonly saddleError = signal('');
   readonly selectedSaddleName = computed(() => this.selectedSaddle()?.name ?? '');
   readonly selectedSaddleCategory = computed(() => this.selectedSaddle()?.category ?? '');
 
@@ -178,6 +183,37 @@ export class StubPage {
 
   selectSaddle(saddleId: string) {
     this.selectedSaddleId.set(saddleId || null);
+  }
+
+  openSaddleForm(): void {
+    this.saddleName.set('');
+    this.saddleCategory.set('Dressur');
+    this.saddleError.set('');
+    this.saddleFormOpen.set(true);
+  }
+
+  cancelSaddleForm(): void {
+    this.saddleFormOpen.set(false);
+    this.saddleError.set('');
+  }
+
+  saveSaddle(): void {
+    const horse = this.selectedHorse();
+    const name = this.saddleName().trim();
+    if (!horse || !name) {
+      this.saddleError.set('Bitte einen Sattelnamen eingeben.');
+      return;
+    }
+
+    const saddle: Saddle = {
+      id: crypto.randomUUID(),
+      horseId: horse.id,
+      name,
+      category: this.saddleCategory(),
+    };
+    this.data.addSaddle(saddle);
+    this.selectedSaddleId.set(saddle.id);
+    this.saddleFormOpen.set(false);
   }
 
   continueToMeasurement() {

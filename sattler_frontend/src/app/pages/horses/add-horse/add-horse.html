@@ -86,34 +86,31 @@
         </div>
       </div>
       <div class="form-field">
-        <label class="form-label" for="birthDate">Geburtsdatum</label>
+        <label class="form-label" for="birthDate">Geburtsdatum *</label>
         <input
           id="birthDate"
           class="form-input"
-          type="text"
-          placeholder="z. B. 12.10.2015"
+          type="date"
+          [max]="today"
           [ngModel]="birthDate()"
           (ngModelChange)="birthDate.set($event)"
         />
+        @if (errors()['birthDate']) {
+          <span class="form-error">{{ errors()['birthDate'] }}</span>
+        }
       </div>
     </div>
 
     <div class="form-row">
-      <div class="form-field" [class.has-error]="errors()['age']">
-        <label class="form-label" for="age">Alter (Jahre) *</label>
+      <div class="form-field">
+        <label class="form-label" for="age">Alter (wird berechnet)</label>
         <input
           id="age"
           class="form-input"
-          type="number"
-          placeholder="z. B. 8"
-          min="0"
-          max="40"
-          [ngModel]="age()"
-          (ngModelChange)="setNumber(age.set.bind(age), $event)"
+          type="text"
+          [value]="calculatedAge() === null ? 'Geburtsdatum auswählen' : calculatedAge() + (calculatedAge() === 1 ? ' Jahr' : ' Jahre')"
+          readonly
         />
-        @if (errors()['age']) {
-          <span class="form-error">{{ errors()['age'] }}</span>
-        }
       </div>
 
       <div class="form-field" [class.has-error]="errors()['heightCm']">
