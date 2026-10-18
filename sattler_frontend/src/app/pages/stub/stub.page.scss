@@ -75,6 +75,84 @@
 .saddle-card { grid-column: span 2; }
 .recent-card { grid-column: 3; }
 
+.saddle-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  h3 { margin: 0; color: t.$text-strong; font-size: 18px; }
+}
+
+.add-saddle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 9px;
+  background: t.$purple-50;
+  color: t.$purple-600;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  .material-icons { font-size: 17px; }
+  &:hover:not(:disabled) { background: t.$purple-100; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+.saddle-empty { margin: 0 0 12px; color: t.$text-soft; font-size: 13px; }
+
+.form-overlay { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / 45%); }
+.saddle-form {
+  position: fixed;
+  z-index: 101;
+  top: 50%;
+  left: 50%;
+  width: min(440px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 22px;
+  transform: translate(-50%, -50%);
+  border: 1px solid t.$border;
+  border-radius: 14px;
+  background: t.$bg-card;
+  box-shadow: t.$shadow-elev;
+
+  header, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  header { margin-bottom: 20px; }
+  h2 { margin: 0; color: t.$text-strong; font-size: 18px; }
+  form { display: grid; gap: 16px; }
+  label { display: grid; gap: 7px; color: t.$text-soft; font-size: 13px; font-weight: 600; }
+  input, select {
+    box-sizing: border-box;
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid t.$border;
+    border-radius: 8px;
+    background: t.$bg-panel;
+    color: t.$text-strong;
+    font: inherit;
+    font-weight: 400;
+  }
+  footer { justify-content: flex-end; margin-top: 4px; }
+}
+
+.form-close, .cancel-saddle, .save-saddle {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+.form-close { display: grid; width: 36px; height: 36px; place-items: center; padding: 0; background: transparent; color: t.$text-soft; }
+.cancel-saddle { border: 1px solid t.$border; background: t.$bg-panel; color: t.$text; }
+.save-saddle { background: t.$purple-500; color: #fff; }
+.saddle-error { margin: 0; color: t.$accent-red; font-size: 13px; }
+
 .card {
   border: 1px solid t.$border;
   border-radius: 14px;

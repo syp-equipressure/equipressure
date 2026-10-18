@@ -397,6 +397,10 @@ export class DataService {
     return this._saddles().filter(saddle => saddle.horseId === horseId);
   }
 
+  addSaddle(saddle: Saddle): void {
+    this._saddles.update(list => [...list, saddle]);
+  }
+
   addHorse(horse: Horse): void {
     this._horses.update(list => [...list, horse]);
   }

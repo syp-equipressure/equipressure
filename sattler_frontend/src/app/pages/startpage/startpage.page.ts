@@ -43,7 +43,7 @@ export class StartPage {
 
   connectDevice(device: PressureDevice): void {
     this.bluetoothNotice.set(
-      `Die Bluetooth-Verbindung mit „${device.name}“ wird in einer späteren Version verfügbar sein.`,
+      device.name
     );
   }
 }
