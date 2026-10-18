@@ -291,7 +291,7 @@ export class DataService {
       websiteLink: null,
       description: null,
       address,
-      role: 'Equestrian',
+      role: { name: 'Equestrian' },
     });
     await this.api.addContact(this.api.currentPersonId, created.id);
     this.addCustomer(mapCustomer(created, false));

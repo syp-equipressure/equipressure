@@ -98,7 +98,7 @@ export class BackendApiService {
     websiteLink: string | null;
     description: string | null;
     address: BackendAddressRequest;
-    role: 'Equestrian';
+    role: { name: 'Equestrian' };
   }): Promise<BackendPerson> {
     return firstValueFrom(this.http.post<BackendPerson>(`${this.baseUrl}/persons`, request));
   }
