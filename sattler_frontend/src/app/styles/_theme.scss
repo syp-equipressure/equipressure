@@ -1,0 +1,35 @@
+// Product palette: restrained violet accents with neutral workspace surfaces.
+$purple-50:  var(--purple-50);
+$purple-100: var(--purple-100);
+$purple-200: var(--purple-200);
+$purple-300: var(--purple-300);
+$purple-400: var(--purple-400);
+$purple-500: var(--purple-500);
+$purple-600: var(--purple-600);
+$purple-700: var(--purple-700);
+
+// Neutrals
+$bg-page:    var(--bg-page);
+$bg-card:    var(--bg-card);
+$bg-panel:   var(--bg-panel);
+$border:     var(--border);
+$border-soft:var(--border-soft);
+$text-strong:var(--text-strong);
+$text:       var(--text);
+$text-soft:  var(--text-soft);
+$text-muted: var(--text-muted);
+
+// Accent colors used on the measurement detail
+$accent-red:    var(--accent-red);
+$accent-orange: var(--accent-orange);
+$accent-purple: $purple-500;
+
+// Layout
+$sidenav-width: 256px;
+$header-height: 68px;
+$radius-card: 14px;
+$radius-pill: 999px;
+
+// Shadows
+$shadow-card: var(--shadow-card);
+$shadow-elev: var(--shadow-elev);

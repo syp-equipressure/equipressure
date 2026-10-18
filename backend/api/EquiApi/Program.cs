@@ -1,10 +1,7 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using EquiApi;
+﻿using EquiApi;
 using EquiApi.Shared;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
-using NodaTime.Serialization.SystemTextJson;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +13,7 @@ builder.AddLogging();
 builder.Services.AddApplicationServices(configurationManager, isDev);
 builder.Services.AddOpenApi();
 builder.Services.AddCors(settings);
+builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => { o.ModelBinderProviders.Insert(0, new NodaTimeModelBinderProvider()); })
        .AddJsonOptions(o => ConfigureJsonSerialization(o, isDev));
 builder.Services.ConfigureAdditionalRouteConstraints();
@@ -32,6 +30,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+if (isDev && settings.SeedDevelopmentData)
+{
+    await app.SeedDevelopmentDataAsync();
+}
+
 await app.RunAsync();
 
 return;
@@ -42,4 +45,4 @@ static void ConfigureJsonSerialization(JsonOptions options, bool isDev)
 }
 
 // used for integration testing
-public partial class Program { }
+public partial class Program;

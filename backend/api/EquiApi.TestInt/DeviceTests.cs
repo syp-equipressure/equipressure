@@ -1,190 +1,341 @@
 ﻿using System.Net;
-using EquiApi.Persistence.Model;
+using EquiApi.Dtos;
 using EquiApi.TestInt.Util;
-using EquiApi.Util;
 
 namespace EquiApi.TestInt;
 
 public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBase(webApiFixture)
 {
-    // Note: make sure you have created a migration before running the tests!
-    private const string BaseUrl = "/api/devices";
-
-    private async ValueTask<(Person owner, Person user, DeviceCategory category, MeasurementDevice device)>
-        SeedDefaultDataAsync(string deviceId = "AB13CH")
-    {
-        Address address = new()
-        {
-            Id = 1,
-            PLZ = "4040",
-            CityName = "Linz"
-        };
-
-        Person owner = new()
-        {
-            Id = 1, FirstName = "Flora", LastName = "Dellinger",
-            Height = 60, Weight = 3,
-            DateOfBirth = new LocalDate(2008, 08, 11),
-            AddressId = address.Id
-        };
-
-        Person user = new()
-        {
-            Id = 2, FirstName = "Niklaus", LastName = "Michaelson",
-            Height = 120, Weight = 67,
-            DateOfBirth = new LocalDate(1920, 02, 06),
-            AddressId = address.Id
-        };
-
-        DeviceCategory category = new()
-        {
-            Id = 1,
-            NumOfAllowedPeople = 5,
-            Name = "BasicDevice"
-        };
-
-        MeasurementDevice device = new()
-        {
-            Id = deviceId,
-            OwnerId = owner.Id,
-            CategoryId = category.Id,
-            Users = [new DeviceUser { DeviceId = deviceId, UserId = owner.Id }]
-        };
-
-        await ModifyDatabaseContentAsync(async ctx =>
-        {
-            ctx.Addresses.Add(address); 
-            ctx.Persons.Add(owner);
-            ctx.Persons.Add(user);
-            ctx.DeviceCategories.Add(category);
-            ctx.Devices.Add(device);
-            await ctx.SaveChangesAsync(TestCancellationToken);
-        });
-
-        return (owner, user, category, device);
-    }
+    private const string DeviceId = "device-1";
 
     [Fact]
-    public async ValueTask GetAllDevicesByUserId_Success()
+    public async ValueTask GetDeviceById_ExistingDevice_ReturnsDeviceWithOwnerAndUsers()
     {
-        var (owner, _, _, _) = await SeedDefaultDataAsync();
- 
-        var response = await ApiClient.GetAsync($"{BaseUrl}/{owner.Id}", TestCancellationToken);
+        var owner = TestData.CreatePerson("Max");
+        var user = TestData.CreatePerson("Anna");
+        var category = TestData.CreateDeviceCategory();
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, category, user));
+
+        var response = await ApiClient.GetAsync($"api/devices/{DeviceId}", TestCancellationToken);
+
         response.StatusCode.Should().Be(HttpStatusCode.OK);
- 
-        var content = await response.Content
-                                    .ReadFromJsonAsync<DataTransfer.DeviceListResponse>(JsonOptions, TestCancellationToken);
- 
-        content.Should().NotBeNull();
-        content.Devices.Should().NotBeEmpty().And.HaveCount(1);
-        content.Devices.Should().ContainSingle(d =>
-                                                   d.Id == "AB13CH"
-                                                   && d.Owner.Id == owner.Id
-                                                   && d.CategoryId == 1
-                                                   && d.DeviceUser.Count == 1);
-    }
-    
-        [Fact]
-    public async ValueTask GetAllDevicesByUserId_NotFound()
-    {
-        var response = await ApiClient.GetAsync($"{BaseUrl}/9999", TestCancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
- 
-    [Fact]
-    public async ValueTask GetAllDevicesByUserId_InvalidId_BadRequest()
-    {
-        var response = await ApiClient.GetAsync($"{BaseUrl}/-1", TestCancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var content = await ReadContentAsync<DeviceDto>(response);
+        content.Id.Should().Be(DeviceId);
+        content.CategoryId.Should().Be(category.Id);
+        content.CategoryName.Should().Be(category.Name);
+        content.Owner.Id.Should().Be(owner.Id);
+        content.Users.Should().ContainSingle().Which.Id.Should().Be(user.Id);
     }
 
     [Fact]
-    public async ValueTask GetOwnerByDeviceId_Success()
+    public async ValueTask GetDeviceById_NonExistingDevice_ReturnsNotFound()
     {
-        var (owner, _, _, device) = await SeedDefaultDataAsync();
- 
-        var response = await ApiClient.GetAsync($"{BaseUrl}/{device.Id}/owner", TestCancellationToken);
+        var response = await ApiClient.GetAsync("api/devices/non-existing-device", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask GetOwner_ExistingDevice_ReturnsOwner()
+    {
+        var owner = TestData.CreatePerson("Max", "Mustermann", "max@reiter.at");
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.GetAsync($"api/devices/{DeviceId}/owner", TestCancellationToken);
+
         response.StatusCode.Should().Be(HttpStatusCode.OK);
- 
-        var content = await response.Content
-                                    .ReadFromJsonAsync<DataTransfer.PersonDto>(JsonOptions, TestCancellationToken);
- 
-        content.Should().NotBeNull();
-        content.Id.Should().Be(owner.Id);
-        content.FirstName.Should().Be(owner.FirstName);
-        content.LastName.Should().Be(owner.LastName);
+        var content = await ReadContentAsync<PersonDto>(response);
+        content.Should().Be(new PersonDto(owner.Id, "Max", "Mustermann", "max@reiter.at"));
     }
 
     [Fact]
-    public async ValueTask GetOwnerByDeviceId_DeviceNotFound()
+    public async ValueTask GetOwner_NonExistingDevice_ReturnsNotFound()
     {
-        var response = await ApiClient.GetAsync($"{BaseUrl}/UNKNOWN/owner", TestCancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var response = await ApiClient.GetAsync("api/devices/non-existing-device/owner", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
-    
+
     [Fact]
-    public async ValueTask GetUsersByDeviceId_Success()
+    public async ValueTask GetUsers_DeviceWithUsers_ReturnsUsersWithoutOwner()
     {
-        var (owner, user, _, device) = await SeedDefaultDataAsync();
- 
-        await ModifyDatabaseContentAsync(async ctx =>
-        {
-            ctx.DeviceUsers.Add(new DeviceUser { DeviceId = device.Id, UserId = user.Id });
-            await ctx.SaveChangesAsync(TestCancellationToken);
-        });
- 
-        var response = await ApiClient.GetAsync($"{BaseUrl}/{device.Id}/users", TestCancellationToken);
+        var owner = TestData.CreatePerson("Max");
+        var firstUser = TestData.CreatePerson("Anna", "Auer");
+        var secondUser = TestData.CreatePerson("Berta", "Berger");
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, TestData.CreateDeviceCategory(), secondUser,
+                                              firstUser));
+
+        var response = await ApiClient.GetAsync($"api/devices/{DeviceId}/users", TestCancellationToken);
+
         response.StatusCode.Should().Be(HttpStatusCode.OK);
- 
-        var content = await response.Content
-                                    .ReadFromJsonAsync<DataTransfer.PersonListResponse>(JsonOptions, TestCancellationToken);
- 
-        content.Should().NotBeNull();
-        content.Persons.Should().NotBeEmpty().And.HaveCount(2);
-        content.Persons.Select(p => p.Id).Should().Contain([owner.Id, user.Id]);
+        var content = await ReadContentAsync<PersonListResponse>(response);
+        content.Persons.Select(p => p.Id).Should().Equal(firstUser.Id, secondUser.Id);
     }
 
+    [Fact]
+    public async ValueTask GetUsers_DeviceWithoutUsers_ReturnsEmptyList()
+    {
+        await SeedAsync(TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.GetAsync($"api/devices/{DeviceId}/users", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<PersonListResponse>(response);
+        content.Persons.Should().BeEmpty();
+    }
 
     [Fact]
-    public async ValueTask CreateDevice_Success()
+    public async ValueTask GetUsers_NonExistingDevice_ReturnsNotFound()
     {
-        var (owner, _, category, _) = await SeedDefaultDataAsync();
+        var response = await ApiClient.GetAsync("api/devices/non-existing-device/users", TestCancellationToken);
 
-        var request = new DataTransfer.AddDeviceRequest("NEW-01", owner.Id, category.Id);
- 
-        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask CreateDevice_ValidData_ReturnsCreatedDevice()
+    {
+        var owner = TestData.CreatePerson();
+        var category = TestData.CreateDeviceCategory();
+        await SeedAsync(owner, category);
+        var request = new AddDeviceRequest("device-new", owner.Id, category.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/devices", request, JsonOptions, TestCancellationToken);
+
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-    
-    [Fact]
-    public async ValueTask CreateDevice_OwnerNotFound()
-    {
-        await SeedDefaultDataAsync();
-        var request = new DataTransfer.AddDeviceRequest("NEW-02", 9999, 1);
- 
-        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-    [Fact]
-    public async ValueTask CreateDevice_CategoryNotFound()
-    {
-        await SeedDefaultDataAsync();
-        var request = new DataTransfer.AddDeviceRequest("NEW-02", 1, 9999);
- 
-        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var content = await ReadContentAsync<DeviceDto>(response);
+        content.Id.Should().Be("device-new");
+        content.Owner.Id.Should().Be(owner.Id);
+        content.CategoryId.Should().Be(category.Id);
+        content.Users.Should().BeEmpty();
+
+        response.Headers.Location.Should().NotBeNull();
+        var getResponse = await ApiClient.GetAsync(response.Headers.Location, TestCancellationToken);
+        var storedDevice = await ReadContentAsync<DeviceDto>(getResponse);
+        storedDevice.Should().BeEquivalentTo(content);
     }
 
     [Fact]
-    public async ValueTask CreateDevice_InvalidRequest_BadRequest()
+    public async ValueTask CreateDevice_OwnerNotFound_ReturnsNotFound()
     {
-        await SeedDefaultDataAsync();
-        var request = new DataTransfer.AddDeviceRequest
-        ( string.Empty, 1, 1);
- 
-        var response = await ApiClient.PostAsJsonAsync(BaseUrl, request, TestCancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var category = TestData.CreateDeviceCategory();
+        await SeedAsync(category);
+        var request = new AddDeviceRequest("device-new", TestData.NonExistingId, category.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/devices", request, JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async ValueTask CreateDevice_CategoryNotFound_ReturnsNotFound()
+    {
+        var owner = TestData.CreatePerson();
+        await SeedAsync(owner);
+        var request = new AddDeviceRequest("device-new", owner.Id, TestData.NonExistingId);
 
+        var response = await ApiClient.PostAsJsonAsync("api/devices", request, JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask CreateDevice_DeviceAlreadyExists_ReturnsConflict()
+    {
+        var owner = TestData.CreatePerson();
+        var category = TestData.CreateDeviceCategory();
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, category));
+        var request = new AddDeviceRequest(DeviceId, owner.Id, category.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/devices", request, JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask CreateDevice_InvalidData_ReturnsBadRequest()
+    {
+        var request = new AddDeviceRequest("", 1, 1);
+
+        var response = await ApiClient.PostAsJsonAsync("api/devices", request, JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_ValidData_AddsUser()
+    {
+        var newUser = TestData.CreatePerson("Anna");
+        await SeedAsync(newUser, TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.PostAsync($"api/devices/{DeviceId}/users/{newUser.Id}", null,
+                                                 TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var usersResponse = await ApiClient.GetAsync($"api/devices/{DeviceId}/users", TestCancellationToken);
+        var content = await ReadContentAsync<PersonListResponse>(usersResponse);
+        content.Persons.Should().ContainSingle().Which.Id.Should().Be(newUser.Id);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_NonExistingDevice_ReturnsNotFound()
+    {
+        var newUser = TestData.CreatePerson();
+        await SeedAsync(newUser);
+
+        var response = await ApiClient.PostAsync($"api/devices/non-existing-device/users/{newUser.Id}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_NonExistingPerson_ReturnsNotFound()
+    {
+        await SeedAsync(TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.PostAsync($"api/devices/{DeviceId}/users/{TestData.NonExistingId}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_PersonAlreadyUser_ReturnsConflict()
+    {
+        var user = TestData.CreatePerson("Anna");
+        await SeedAsync(TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory(),
+                                              user));
+
+        var response = await ApiClient.PostAsync($"api/devices/{DeviceId}/users/{user.Id}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_PersonIsOwner_ReturnsConflict()
+    {
+        var owner = TestData.CreatePerson();
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.PostAsync($"api/devices/{DeviceId}/users/{owner.Id}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_LimitReached_ReturnsConflict()
+    {
+        var newUser = TestData.CreatePerson("Berta");
+        await SeedAsync(newUser, TestData.CreateDevice(DeviceId, TestData.CreatePerson(),
+                                                       TestData.CreateDeviceCategory(numOfAllowedPeople: 1),
+                                                       TestData.CreatePerson("Anna")));
+
+        var response = await ApiClient.PostAsync($"api/devices/{DeviceId}/users/{newUser.Id}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask AddUser_InvalidUserId_ReturnsBadRequest()
+    {
+        var response = await ApiClient.PostAsync($"api/devices/{DeviceId}/users/-1", null, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask RemoveUser_ExistingUser_RemovesUser()
+    {
+        var user = TestData.CreatePerson("Anna");
+        var remainingUser = TestData.CreatePerson("Berta");
+        await SeedAsync(TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory(),
+                                              user, remainingUser));
+
+        var response = await ApiClient.DeleteAsync($"api/devices/{DeviceId}/users/{user.Id}", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var usersResponse = await ApiClient.GetAsync($"api/devices/{DeviceId}/users", TestCancellationToken);
+        var content = await ReadContentAsync<PersonListResponse>(usersResponse);
+        content.Persons.Should().ContainSingle().Which.Id.Should().Be(remainingUser.Id);
+    }
+
+    [Fact]
+    public async ValueTask RemoveUser_PersonIsOwner_ReturnsConflict()
+    {
+        var owner = TestData.CreatePerson();
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, TestData.CreateDeviceCategory(),
+                                              TestData.CreatePerson("Anna")));
+
+        var response = await ApiClient.DeleteAsync($"api/devices/{DeviceId}/users/{owner.Id}", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask RemoveUser_PersonIsNotUser_ReturnsNotFound()
+    {
+        var otherPerson = TestData.CreatePerson("Anna");
+        await SeedAsync(otherPerson,
+                        TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.DeleteAsync($"api/devices/{DeviceId}/users/{otherPerson.Id}",
+                                                   TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask RemoveUser_NonExistingDevice_ReturnsNotFound()
+    {
+        var response = await ApiClient.DeleteAsync($"api/devices/non-existing-device/users/{TestData.NonExistingId}",
+                                                   TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask ChangeOwner_UserBecomesOwner_SwapsOwnerAndUser()
+    {
+        var previousOwner = TestData.CreatePerson("Max");
+        var newOwner = TestData.CreatePerson("Anna");
+        await SeedAsync(TestData.CreateDevice(DeviceId, previousOwner, TestData.CreateDeviceCategory(), newOwner));
+
+        var response = await ApiClient.PatchAsync($"api/devices/{DeviceId}/owner/{newOwner.Id}", null,
+                                                  TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var deviceResponse = await ApiClient.GetAsync($"api/devices/{DeviceId}", TestCancellationToken);
+        var content = await ReadContentAsync<DeviceDto>(deviceResponse);
+        content.Owner.Id.Should().Be(newOwner.Id);
+        content.Users.Should().ContainSingle().Which.Id.Should().Be(previousOwner.Id);
+    }
+
+    [Fact]
+    public async ValueTask ChangeOwner_NonExistingPerson_ReturnsNotFound()
+    {
+        await SeedAsync(TestData.CreateDevice(DeviceId, TestData.CreatePerson(), TestData.CreateDeviceCategory()));
+
+        var response = await ApiClient.PatchAsync($"api/devices/{DeviceId}/owner/{TestData.NonExistingId}", null,
+                                                  TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask ChangeOwner_NoRoomForPreviousOwner_ReturnsConflict()
+    {
+        var newOwner = TestData.CreatePerson("Berta");
+        await SeedAsync(newOwner, TestData.CreateDevice(DeviceId, TestData.CreatePerson("Max"),
+                                                        TestData.CreateDeviceCategory(numOfAllowedPeople: 1),
+                                                        TestData.CreatePerson("Anna")));
+
+        var response = await ApiClient.PatchAsync($"api/devices/{DeviceId}/owner/{newOwner.Id}", null,
+                                                  TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
 }

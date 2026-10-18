@@ -1,266 +1,352 @@
 ﻿using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
-using OneOf.Types;
 using OneOf;
+using OneOf.Types;
 
 namespace EquiApi.Core.Services;
 
 public interface IDeviceService
 {
     /// <summary>
-    /// returns all devices of a specific user
+    ///     Gets a device including its owner, category and users
     /// </summary>
-    /// <param name="userId">id of the user</param>
-    /// <returns>
-    /// returns a list of all devices or a not found if there are none
-    /// </returns>
-    public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
-        (int userId);
-    
-    /// <summary>
-    /// returns the owner of a specific user
-    /// </summary>
-    /// <param name="deviceId">serial number of the device</param>
-    /// <returns>
-    /// the person object who is the owner, notFound if the deviceId does not exist and
-    /// NoOwnerFound if there is no owner registered
-    /// </returns>
-    public ValueTask<OneOf<Success<Person>, NotFound, NoOwnerFound>> GetOwnerOfDevice(string deviceId);
-    
-    /// <summary>
-    /// gets all the users of a specific device
-    /// </summary>
-    /// <param name="deviceId">the id of the device</param>
-    /// <returns>
-    ///a list of all the person objects which are registered for the device or a notFound if the device with the id does
-    /// not exist or a NoUsersFound if there are no Users registered for the device
-    /// </returns>
-    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, NoUsersFound>> GetUsersOfDevice
-        (string deviceId);
-    
-    /// <summary>
-    /// Adds a new Device
-    /// </summary>
-    /// <param name="deviceId">serial number of the device</param>
-    /// <param name="ownerId"></param>
-    /// <param name="categoryId"></param>
-    /// <returns>the added device or notFound if one of the corresponding objects to the given ids does not exist</returns>
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync
-        (string deviceId, int ownerId, int categoryId);
-    
-    /// <summary>
-    /// Adds a User to a device
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="deviceId">serial number of the device</param>
-    /// <returns>
-    /// the newly updated device or notFound if the user or the device doesn't exist or tooManyUsers
-    /// if the count of users conflicts with the category
-    /// </returns>
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooManyUsers>> AddUserToDevice
-        (int userId, string deviceId);
-    
-    /// <summary>
-    /// Removes a User from a device
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="deviceId">serial number of the device</param>
-    /// <returns>
-    /// the newly updated device or notFound if the user or the device doesn't exist or  TooLittleUsers
-    /// if there would be only one user left or OwnerCantBeDeleted if the user you want to delete is the owner
-    /// </returns>
-    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, TooLittleUsers, OwnerCantBeDeleted>> 
-        RemoveUserFromDevice(int userId, string deviceId);
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <returns>The device or <see cref="NotFound" /> if it does not exist</returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> GetDeviceByIdAsync(string deviceId);
 
     /// <summary>
-    /// returned when no Owner was found -> repo sent back null
+    ///     Gets all devices a person owns or uses
     /// </summary>
-    /// <param name="DeviceId">serial number of the device</param>
-    public record NoOwnerFound(string DeviceId);
-    
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The devices (may be empty) or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesOfPersonAsync(
+        int personId);
+
     /// <summary>
-    /// returned when the list of users is < 1
+    ///     Gets the owner of a device
     /// </summary>
-    /// <param name="DeviceId">serial number of the device</param>
-    public record NoUsersFound(string DeviceId);
-    
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <returns>The owner or <see cref="NotFound" /> if the device does not exist</returns>
+    public ValueTask<OneOf<Success<Person>, NotFound>> GetOwnerOfDeviceAsync(string deviceId);
+
     /// <summary>
-    /// returned if there are too little users in order to delete one. There has to be at least one user incl owner
+    ///     Gets the users of a device, the owner is not included
     /// </summary>
-    public record TooLittleUsers();
-    
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <returns>The users (may be empty) or <see cref="NotFound" /> if the device does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetUsersOfDeviceAsync(string deviceId);
+
     /// <summary>
-    /// returned when the given number of users from the devicecategory is passed when adding one user 
+    ///     Adds a new device
     /// </summary>
-    public record TooManyUsers();
-    
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <param name="ownerId">The id of the owner</param>
+    /// <param name="categoryId">The id of the device category</param>
+    /// <returns>
+    ///     The new device, <see cref="NotFound" /> if the owner or the category does not exist
+    ///     or <see cref="DeviceAlreadyExists" /> if a device with the serial number already exists
+    /// </returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, DeviceAlreadyExists>> AddDeviceAsync(
+        string deviceId, int ownerId, int categoryId);
+
     /// <summary>
-    /// returned if someone tries to delete the owner of a device
+    ///     Adds a user to a device
     /// </summary>
-    public record OwnerCantBeDeleted();
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <param name="userId">The id of the new user</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the device or the person does not exist,
+    ///     <see cref="UserAlreadyAssigned" /> if the person already is the owner or a user of the device
+    ///     or <see cref="TooManyUsers" /> if the category of the device does not allow another user
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, UserAlreadyAssigned, TooManyUsers>> AddUserToDeviceAsync(
+        string deviceId, int userId);
+
+    /// <summary>
+    ///     Removes a user from a device
+    /// </summary>
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <param name="userId">The id of the user</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the device does not exist or the person is not a user of it
+    ///     or <see cref="OwnerCannotBeRemoved" /> if the person is the owner of the device
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, OwnerCannotBeRemoved>> RemoveUserFromDeviceAsync(
+        string deviceId, int userId);
+
+    /// <summary>
+    ///     Makes another person the owner of a device, the previous owner becomes a user of the device
+    /// </summary>
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <param name="newOwnerId">The id of the new owner</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the device or the person does not exist
+    ///     or <see cref="TooManyUsers" /> if the previous owner cannot become a user because of the user limit
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, TooManyUsers>> ChangeOwnerOfDeviceAsync(string deviceId,
+                                                                                    int newOwnerId);
+
+    /// <summary>
+    ///     Returned if a device with the same serial number already exists
+    /// </summary>
+    public readonly record struct DeviceAlreadyExists;
+
+    /// <summary>
+    ///     Returned if a person already is the owner or a user of a device
+    /// </summary>
+    public readonly record struct UserAlreadyAssigned;
+
+    /// <summary>
+    ///     Returned if the category of a device does not allow another user
+    /// </summary>
+    public readonly record struct TooManyUsers;
+
+    /// <summary>
+    ///     Returned if someone tries to remove the owner from a device
+    /// </summary>
+    public readonly record struct OwnerCannotBeRemoved;
 }
 
-public class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDeviceService
+internal sealed class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logger) : IDeviceService
 {
-    public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesFromUserIdAsync
-        (int userId)
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> GetDeviceByIdAsync(string deviceId)
     {
-        var user = await uow.PersonRepository.GetPersonByIdAsync(userId);
-        if (user == null)
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
         {
-            logger.LogWarning("User {UserId} not found", userId);
+            LogDeviceNotFound(deviceId);
+
             return new NotFound();
         }
-        
-        var devices = await uow.DeviceRepository.GetDevicesFromUserIdAsync(userId);
+
+        return new Success<MeasurementDevice>(device);
+    }
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementDevice>>, NotFound>> GetDevicesOfPersonAsync(
+        int personId)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
+        {
+            logger.LogInformation("Person {PersonId} not found", personId);
+
+            return new NotFound();
+        }
+
+        var devices = await uow.DeviceRepository.GetDevicesOfPersonAsync(personId);
+
         return new Success<IReadOnlyCollection<MeasurementDevice>>(devices);
     }
 
-    public async ValueTask<OneOf<Success<Person>, NotFound, IDeviceService.NoOwnerFound>> GetOwnerOfDevice(string deviceId)
+    public async ValueTask<OneOf<Success<Person>, NotFound>> GetOwnerOfDeviceAsync(string deviceId)
     {
-        var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
-        if (!exists)
-        {
-            logger.LogWarning("Device {DeviceId} not found", deviceId);
-            return new NotFound();
-        }
-        
+        // every device has an owner, so no owner means that the device does not exist
         var owner = await uow.DeviceRepository.GetOwnerOfDeviceAsync(deviceId);
         if (owner is null)
-        { 
-            logger.LogWarning("No owner registered for device {DeviceId}", deviceId);
-            return new IDeviceService.NoOwnerFound(deviceId);
+        {
+            LogDeviceNotFound(deviceId);
+
+            return new NotFound();
         }
 
         return new Success<Person>(owner);
     }
 
-    public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound, IDeviceService.NoUsersFound>> 
-        GetUsersOfDevice(string deviceId)
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetUsersOfDeviceAsync(
+        string deviceId)
     {
-        var exists = await uow.DeviceRepository.DeviceExistsAsync(deviceId);
-        if (!exists)
+        if (!await uow.DeviceRepository.DeviceExistsAsync(deviceId))
         {
-            logger.LogWarning("Device {DeviceId} not found", deviceId);
+            LogDeviceNotFound(deviceId);
+
             return new NotFound();
         }
-        
-        var users = await uow.DeviceRepository.GetPersonsOfDeviceAsync(deviceId);
 
-        if (users.Count < 1)
-        {
-            logger.LogWarning("No users registered for device {DeviceId}", deviceId);
-            return new IDeviceService.NoUsersFound(deviceId);
-        }
+        var users = await uow.DeviceRepository.GetUsersOfDeviceAsync(deviceId);
 
         return new Success<IReadOnlyCollection<Person>>(users);
     }
 
-    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound>> AddDeviceAsync(string deviceId, int ownerId, 
-        int categoryId)
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.DeviceAlreadyExists>>
+        AddDeviceAsync(string deviceId, int ownerId, int categoryId)
     {
-        if (!(await uow.PersonRepository.PersonExistsAsync(ownerId)))
+        if (await uow.DeviceRepository.DeviceExistsAsync(deviceId))
         {
-            logger.LogWarning("Person with id {id} could not be found", ownerId);
+            logger.LogWarning("Cannot add device {DeviceId}, it already exists", deviceId);
+
+            return new IDeviceService.DeviceAlreadyExists();
+        }
+
+        var owner = await uow.PersonRepository.GetPersonByIdAsync(ownerId);
+        if (owner is null)
+        {
+            logger.LogInformation("Cannot add device {DeviceId}, owner {PersonId} not found", deviceId, ownerId);
+
             return new NotFound();
         }
 
-        if (!(await uow.DeviceRepository.CategoryExistsAsync(categoryId)))
+        var category = await uow.DeviceRepository.GetCategoryByIdAsync(categoryId);
+        if (category is null)
         {
-            logger.LogWarning("Category with id {id} could not be found", categoryId);
+            logger.LogInformation("Cannot add device {DeviceId}, category {CategoryId} not found", deviceId,
+                                  categoryId);
+
             return new NotFound();
         }
 
         var device = new MeasurementDevice
         {
             Id = deviceId,
-            OwnerId = ownerId,
-            CategoryId = categoryId
+            Owner = owner,
+            Category = category
         };
 
         uow.DeviceRepository.AddDevice(device);
         await uow.SaveChangesAsync();
-        logger.LogInformation("User {id} has been successfully added with the owner {oId}", deviceId, ownerId);
+        logger.LogInformation("Device {DeviceId} added for owner {PersonId}", deviceId, ownerId);
 
         return new Success<MeasurementDevice>(device);
     }
 
-    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooManyUsers>> 
-        AddUserToDevice(int userId, string deviceId)
+    public async ValueTask<OneOf<Success, NotFound, IDeviceService.UserAlreadyAssigned, IDeviceService.TooManyUsers>>
+        AddUserToDeviceAsync(string deviceId, int userId)
     {
         var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
         if (device is null)
         {
-            logger.LogWarning("Device with id {id} could not be found", deviceId);
+            LogDeviceNotFound(deviceId);
+
             return new NotFound();
         }
 
         if (!await uow.PersonRepository.PersonExistsAsync(userId))
         {
-            logger.LogWarning("User with id {id} could not be found", userId);
+            logger.LogInformation("Person {PersonId} not found", userId);
+
             return new NotFound();
         }
 
-        if (device.Category.NumOfAllowedPeople > device.Users.Count + 1)
+        if (device.OwnerId == userId || device.Users.Any(du => du.UserId == userId))
         {
-            logger.LogWarning("Device {id} would pass the limited number of users {allowedPeople}"
-                              , deviceId, device.Category.NumOfAllowedPeople);
+            logger.LogWarning("Person {PersonId} already is the owner or a user of device {DeviceId}", userId,
+                              deviceId);
+
+            return new IDeviceService.UserAlreadyAssigned();
+        }
+
+        // TODO: confirm with Flora that the owner does not count towards the limit
+        if (device.Users.Count >= device.Category.NumOfAllowedPeople)
+        {
+            logger.LogWarning("Device {DeviceId} already has the maximum of {AllowedPeople} users", deviceId,
+                              device.Category.NumOfAllowedPeople);
+
             return new IDeviceService.TooManyUsers();
         }
 
-        var dU = new DeviceUser
+        device.Users.Add(new DeviceUser
         {
             DeviceId = deviceId,
             UserId = userId
-        };
-        
-        
-        device.Users.Add(dU);
-        await uow.SaveChangesAsync();
-        logger.LogInformation("User {id} has been successfully added to device {dId}", userId, deviceId);
+        });
 
-        return new Success<MeasurementDevice>(device);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Person {PersonId} added as user of device {DeviceId}", userId, deviceId);
+
+        return new Success();
     }
 
-    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.TooLittleUsers, 
-        IDeviceService.OwnerCantBeDeleted>> RemoveUserFromDevice(int userId, string deviceId)
+    public async ValueTask<OneOf<Success, NotFound, IDeviceService.OwnerCannotBeRemoved>> RemoveUserFromDeviceAsync(
+        string deviceId, int userId)
     {
         var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
         if (device is null)
         {
-            logger.LogWarning("Device with id {id} could not be found", deviceId);
+            LogDeviceNotFound(deviceId);
+
             return new NotFound();
         }
 
-        if (!await uow.PersonRepository.PersonExistsAsync(userId))
+        if (device.OwnerId == userId)
         {
-            logger.LogWarning("User with id {id} could not be found", userId);
+            logger.LogWarning("Person {PersonId} is the owner of device {DeviceId} and cannot be removed", userId,
+                              deviceId);
+
+            return new IDeviceService.OwnerCannotBeRemoved();
+        }
+
+        var deviceUser = device.Users.FirstOrDefault(du => du.UserId == userId);
+        if (deviceUser is null)
+        {
+            logger.LogInformation("Person {PersonId} is not a user of device {DeviceId}", userId, deviceId);
+
             return new NotFound();
         }
 
-        if (device.Users.Count - 1 < 1)
-        {
-            logger.LogWarning("user cant be deleted since its the only user left for {deviceId}", deviceId);
-            
-            return new IDeviceService.TooLittleUsers();
-        }
-
-        if (userId == device.OwnerId)
-        {
-            logger.LogWarning("Owner cant be deleted from device {deviceId}", deviceId);
-            return new IDeviceService.OwnerCantBeDeleted();
-        }
-        
-        var dU = await uow.DeviceRepository.GetDeviceUserEntryAsync(deviceId, userId);
-        if (dU is null)
-        {
-            return new NotFound();
-        }
-        device.Users.Remove(dU);
+        device.Users.Remove(deviceUser);
         await uow.SaveChangesAsync();
-        logger.LogInformation("User {id} has been successfully removed from device {dId}", userId, deviceId);
-        
+        logger.LogInformation("Person {PersonId} removed from device {DeviceId}", userId, deviceId);
 
-        return new Success<MeasurementDevice>(device);
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IDeviceService.TooManyUsers>> ChangeOwnerOfDeviceAsync(
+        string deviceId, int newOwnerId)
+    {
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            LogDeviceNotFound(deviceId);
+
+            return new NotFound();
+        }
+
+        var newOwner = await uow.PersonRepository.GetPersonByIdAsync(newOwnerId);
+        if (newOwner is null)
+        {
+            logger.LogInformation("Person {PersonId} not found", newOwnerId);
+
+            return new NotFound();
+        }
+
+        if (device.OwnerId == newOwnerId)
+        {
+            return new Success();
+        }
+
+        int previousOwnerId = device.OwnerId;
+        bool newOwnerIsUser = device.Users.Any(du => du.UserId == newOwnerId);
+        bool previousOwnerIsUser = device.Users.Any(du => du.UserId == previousOwnerId);
+
+        // the previous owner becomes a user, which is only possible if the new owner frees a spot or there is room left
+        if (!newOwnerIsUser && !previousOwnerIsUser && device.Users.Count >= device.Category.NumOfAllowedPeople)
+        {
+            logger.LogWarning("Cannot change owner of device {DeviceId}, the previous owner cannot become a user",
+                              deviceId);
+
+            return new IDeviceService.TooManyUsers();
+        }
+
+        device.Users.RemoveAll(du => du.UserId == newOwnerId);
+
+        if (!previousOwnerIsUser)
+        {
+            device.Users.Add(new DeviceUser
+            {
+                DeviceId = deviceId,
+                UserId = previousOwnerId
+            });
+        }
+
+        device.OwnerId = newOwnerId;
+        device.Owner = newOwner;
+
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Person {PersonId} is the new owner of device {DeviceId}", newOwnerId, deviceId);
+
+        return new Success();
+    }
+
+    private void LogDeviceNotFound(string deviceId)
+    {
+        logger.LogInformation("Device {DeviceId} not found", deviceId);
     }
 }

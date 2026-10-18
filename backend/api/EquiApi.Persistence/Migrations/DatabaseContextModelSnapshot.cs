@@ -18,7 +18,7 @@ namespace EquiApi.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("EquiPressure")
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -31,12 +31,33 @@ namespace EquiApi.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Name")
-                        .HasColumnType("integer");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("AccountRole", "EquiPressure");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Equestrian"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Saddler"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Guest"
+                        });
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Address", b =>
@@ -227,7 +248,6 @@ namespace EquiApi.Persistence.Migrations
             modelBuilder.Entity("EquiApi.Persistence.Model.MeasurementDevice", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("text");
 
                     b.Property<int>("CategoryId")
@@ -433,33 +453,6 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("Release", "EquiPressure");
                 });
 
-            modelBuilder.Entity("EquiApi.Persistence.Model.Rocket", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Manufacturer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("MaxThrust")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("ModelName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("PayloadDeltaV")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Rocket", "EquiPressure");
-                });
-
             modelBuilder.Entity("EquiApi.Persistence.Model.Saddle", b =>
                 {
                     b.Property<int>("Id")
@@ -528,7 +521,7 @@ namespace EquiApi.Persistence.Migrations
                     b.HasOne("EquiApi.Persistence.Model.Address", "Address")
                         .WithMany("Horses")
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Address");
@@ -653,7 +646,7 @@ namespace EquiApi.Persistence.Migrations
                     b.HasOne("EquiApi.Persistence.Model.Address", "Address")
                         .WithMany("Persons")
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Address");

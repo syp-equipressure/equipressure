@@ -1,0 +1,114 @@
+<app-page-header title="Einstellungen"></app-page-header>
+
+<section class="settings-page">
+  <article class="settings-card">
+    <header class="card-header">
+      <div>
+        <h2>Benachrichtigungen</h2>
+        <p>Lege fest, worüber du per E-Mail informiert werden möchtest.</p>
+      </div>
+      <span class="material-icons card-icon" aria-hidden="true">notifications_none</span>
+    </header>
+
+    <div class="toggle-list">
+      <label class="toggle-row">
+        <span><strong>Neue Chat-Nachrichten</strong><small>Wenn dir jemand eine Nachricht sendet</small></span>
+        <input type="checkbox" role="switch" [checked]="preferences().notifications.chatMessages"
+          (change)="updateNotification('chatMessages', $any($event.target).checked)" />
+      </label>
+      <label class="toggle-row">
+        <span><strong>Messungs-Updates</strong><small>Wenn neue Messergebnisse verfügbar sind</small></span>
+        <input type="checkbox" role="switch" [checked]="preferences().notifications.measurementUpdates"
+          (change)="updateNotification('measurementUpdates', $any($event.target).checked)" />
+      </label>
+      <label class="toggle-row">
+        <span><strong>Konto und Sicherheit</strong><small>Wichtige Änderungen an deinem Konto</small></span>
+        <input type="checkbox" role="switch" [checked]="preferences().notifications.accountSecurity"
+          (change)="updateNotification('accountSecurity', $any($event.target).checked)" />
+      </label>
+    </div>
+    @if (notificationsFeedback()) {
+      <p class="feedback" [class.error]="notificationsFeedbackIsError()" [class.success]="!notificationsFeedbackIsError()"
+        [attr.role]="notificationsFeedbackIsError() ? 'alert' : 'status'">{{ notificationsFeedback() }}</p>
+    }
+    <div class="card-actions">
+      <button class="primary-button" type="button" [disabled]="preferencesSaving()" (click)="savePreferences('notifications')">
+        {{ preferencesSaving() ? 'Wird gespeichert …' : 'Speichern' }}
+      </button>
+    </div>
+  </article>
+
+  <article class="settings-card">
+    <header class="card-header">
+      <div>
+        <h2>Sprache &amp; Region</h2>
+        <p>Wähle die Sprache sowie das Datums- und Zeitformat.</p>
+      </div>
+      <span class="material-icons card-icon" aria-hidden="true">language</span>
+    </header>
+
+    <div class="field-grid">
+      <label class="field">
+        <span class="field-label">Sprache</span>
+        <select class="field-input" [ngModel]="preferences().language" (ngModelChange)="updateLanguage($event)"
+          name="language">
+          <option value="de">Deutsch</option>
+          <option value="en">Englisch</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Datumsformat</span>
+        <select class="field-input" [ngModel]="preferences().dateFormat" (ngModelChange)="updateDateFormat($event)"
+          name="dateFormat">
+          <option value="dd.mm.yyyy">TT.MM.JJJJ (13.10.2026)</option>
+          <option value="yyyy-mm-dd">JJJJ-MM-TT (2026-10-13)</option>
+          <option value="mm/dd/yyyy">MM/TT/JJJJ (10/13/2026)</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Zeitformat</span>
+        <select class="field-input" [ngModel]="preferences().timeFormat" (ngModelChange)="updateTimeFormat($event)"
+          name="timeFormat">
+          <option value="24h">24-Stunden-Format (14:30)</option>
+          <option value="12h">12-Stunden-Format (2:30 PM)</option>
+        </select>
+      </label>
+    </div>
+    @if (localeFeedback()) {
+      <p class="feedback" [class.error]="localeFeedbackIsError()" [class.success]="!localeFeedbackIsError()"
+        [attr.role]="localeFeedbackIsError() ? 'alert' : 'status'">{{ localeFeedback() }}</p>
+    }
+    <div class="card-actions">
+      <button class="primary-button" type="button" [disabled]="preferencesSaving()" (click)="savePreferences('locale')">
+        {{ preferencesSaving() ? 'Wird gespeichert …' : 'Speichern' }}
+      </button>
+    </div>
+  </article>
+
+  <article class="settings-card">
+    <header class="card-header">
+      <div>
+        <h2>Backend-Verbindung</h2>
+        <p>Gib deine Personen-ID ein, um verfügbare Kontakte, Pferde, Sättel und Messgeräte zu laden.</p>
+      </div>
+      <span class="material-icons card-icon" aria-hidden="true">cloud</span>
+    </header>
+    <label class="field">
+      <span class="field-label">Backend-Personen-ID</span>
+      <input class="field-input" type="text" inputmode="numeric" autocomplete="off"
+        [ngModel]="backendPersonId()" (ngModelChange)="backendPersonId.set($event)"
+        name="backendPersonId" placeholder="z. B. 7" />
+    </label>
+    @if (backendPersonFeedback()) {
+      <p class="feedback" [class.error]="backendPersonFeedbackIsError()"
+        [class.success]="!backendPersonFeedbackIsError()"
+        [attr.role]="backendPersonFeedbackIsError() ? 'alert' : 'status'">
+        {{ backendPersonFeedback() }}
+      </p>
+    }
+    <div class="card-actions">
+      <button class="primary-button" type="button" (click)="saveBackendPersonId()">Verbinden</button>
+    </div>
+  </article>
+
+</section>

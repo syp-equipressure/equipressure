@@ -1,3 +1,4 @@
+﻿using System.Net;
 using System.Text.Json;
 using EquiApi.Persistence.Util;
 using EquiApi.Shared;
@@ -6,6 +7,8 @@ namespace EquiApi.TestInt.Util;
 
 public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFixture<WebApiTestFixture>, IAsyncLifetime
 {
+    private const string ProblemJsonMediaType = "application/problem+json";
+
     private static readonly Lazy<JsonSerializerOptions> jsonOptions = new(() =>
     {
         var options = new JsonSerializerOptions(JsonSerializerOptions.Web);
@@ -19,7 +22,7 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
     protected HttpClient ApiClient => webApiFixture.Client;
     protected IClock TestClock => webApiFixture.Clock;
     protected CancellationToken TestCancellationToken => TestContext.Current.CancellationToken;
-    
+
     public async ValueTask InitializeAsync()
     {
         await webApiFixture.RestoreDatabaseAsync(ImportSeedDataAsync);
@@ -41,5 +44,37 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
     protected async ValueTask ModifyDatabaseContentAsync(Func<DatabaseContext, ValueTask> modifier)
     {
         await webApiFixture.ModifyDatabaseContentAsync(modifier);
+    }
+
+    /// <summary>
+    ///     Adds the given entities (including all entities reachable from them) to the database.
+    ///     Generated ids are set on the passed instances afterwards.
+    /// </summary>
+    protected async ValueTask SeedAsync(params IEnumerable<object> entities)
+    {
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            context.AddRange(entities);
+            await context.SaveChangesAsync();
+        });
+    }
+
+    protected async ValueTask<T> ReadContentAsync<T>(HttpResponseMessage response)
+    {
+        var content = await response.Content.ReadFromJsonAsync<T>(JsonOptions, TestCancellationToken);
+        content.Should().NotBeNull();
+
+        return content;
+    }
+
+    /// <summary>
+    ///     Asserts that the response is a problem details response with the expected status code.
+    ///     This also makes sure that the endpoint exists, because a missing route results in a 404 without a body.
+    /// </summary>
+    protected static void ShouldBeProblem(HttpResponseMessage response, HttpStatusCode expectedStatusCode)
+    {
+        response.StatusCode.Should().Be(expectedStatusCode);
+        response.Content.Headers.ContentType.Should().NotBeNull();
+        response.Content.Headers.ContentType.MediaType.Should().Be(ProblemJsonMediaType);
     }
 }

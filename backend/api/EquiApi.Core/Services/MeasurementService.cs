@@ -1,6 +1,5 @@
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
-using EquiPressure.Core.Service;
 using OneOf.Types;
 
 namespace EquiApi.Core.Services;
@@ -14,13 +13,13 @@ using GetMeasurementsByGroupResult =
 using GetMeasurementByFilterResult =
     OneOf.OneOf<OneOf.Types.Success<Measurement>, OneOf.Types.NotFound>;
 using GetMeasurementAggregateResult =
-    OneOf.OneOf<OneOf.Types.Success<double>, OneOf.Types.NotFound, IBaseService.InvalidData>;
+    OneOf.OneOf<OneOf.Types.Success<double>, OneOf.Types.NotFound, IMeasurementService.InvalidMeasurementData>;
 using GetAllDataByMeasurementResult =
     OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<MeasurementData>>, OneOf.Types.None, OneOf.Types.NotFound>;
 using GetDataByIdResult =
     OneOf.OneOf<OneOf.Types.Success<MeasurementData>, OneOf.Types.NotFound>;
 using AddMeasurementResult =
-    OneOf.OneOf<OneOf.Types.Success<Measurement>, OneOf.Types.NotFound, IBaseService.Conflict>;
+    OneOf.OneOf<OneOf.Types.Success<Measurement>, OneOf.Types.NotFound, IMeasurementService.MeasurementAlreadyExists>;
 using DeleteMeasurementResult =
     OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound>;
 
@@ -80,7 +79,7 @@ public interface IMeasurementService
     /// <returns>
     /// A <see cref="Success{Double}"/> containing the average,
     /// <see cref="NotFound"/> if the group or matching measurement does not exist,
-    /// or <see cref="IBaseService.InvalidData"/> if the data cannot be parsed as numbers.
+    /// or <see cref="IMeasurementService.InvalidMeasurementData"/> if the data cannot be parsed as numbers.
     /// </returns>
     public ValueTask<GetMeasurementAggregateResult> GetAverageAsync(int mgId, string? pace, string? hand);
 
@@ -93,7 +92,7 @@ public interface IMeasurementService
     /// <returns>
     /// A <see cref="Success{Double}"/> containing the minimum,
     /// <see cref="NotFound"/> if the group or matching measurement does not exist,
-    /// or <see cref="IBaseService.InvalidData"/> if the data cannot be parsed as numbers.
+    /// or <see cref="IMeasurementService.InvalidMeasurementData"/> if the data cannot be parsed as numbers.
     /// </returns>
     public ValueTask<GetMeasurementAggregateResult> GetMinAsync(int mgId, string? pace, string? hand);
 
@@ -106,7 +105,7 @@ public interface IMeasurementService
     /// <returns>
     /// A <see cref="Success{Double}"/> containing the maximum,
     /// <see cref="NotFound"/> if the group or matching measurement does not exist,
-    /// or <see cref="IBaseService.InvalidData"/> if the data cannot be parsed as numbers.
+    /// or <see cref="IMeasurementService.InvalidMeasurementData"/> if the data cannot be parsed as numbers.
     /// </returns>
     public ValueTask<GetMeasurementAggregateResult> GetMaxAsync(int mgId, string? pace, string? hand);
 
@@ -144,7 +143,7 @@ public interface IMeasurementService
     /// <returns>
     /// A <see cref="Success{Measurement}"/> if created,
     /// <see cref="NotFound"/> if the group does not exist,
-    /// or <see cref="IBaseService.Conflict"/> if a measurement with the same pace and hand already exists.
+    /// or <see cref="IMeasurementService.MeasurementAlreadyExists"/> if a measurement with the same pace and hand already exists.
     /// </returns>
     public ValueTask<AddMeasurementResult> AddMeasurementAsync(int mgId, string pace, string hand, string? description);
 
@@ -158,6 +157,16 @@ public interface IMeasurementService
     /// or <see cref="NotFound"/> if the group or measurement does not exist.
     /// </returns>
     public ValueTask<DeleteMeasurementResult> DeleteMeasurementAsync(int mgId, int mId);
+
+    /// <summary>
+    ///     Returned if the measurement data cannot be parsed as numbers
+    /// </summary>
+    public readonly record struct InvalidMeasurementData;
+
+    /// <summary>
+    ///     Returned if a measurement with the same pace and hand already exists in the group
+    /// </summary>
+    public readonly record struct MeasurementAlreadyExists;
 }
 
 public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
@@ -254,7 +263,7 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         {
             logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
                               measurementResult.Id);
-            return new IBaseService.InvalidData();
+            return new IMeasurementService.InvalidMeasurementData();
         }
 
         return new Success<double>(values.Average());
@@ -275,7 +284,7 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         {
             logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
                               measurementResult.Id);
-            return new IBaseService.InvalidData();
+            return new IMeasurementService.InvalidMeasurementData();
         }
 
         return new Success<double>(values.Min());
@@ -296,7 +305,7 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         {
             logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
                               measurementResult.Id);
-            return new IBaseService.InvalidData();
+            return new IMeasurementService.InvalidMeasurementData();
         }
 
         return new Success<double>(values.Max());
@@ -372,7 +381,7 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
         if (existing is not null)
         {
             logger.LogWarning("Measurement with pace={Pace} hand={Hand} already exists in group {MgId}", pace, hand, mgId);
-            return new IBaseService.Conflict();
+            return new IMeasurementService.MeasurementAlreadyExists();
         }
 
         var measurement = new Measurement

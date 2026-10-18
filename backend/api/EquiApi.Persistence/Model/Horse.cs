@@ -1,6 +1,4 @@
-﻿using NodaTime;
-
-namespace EquiApi.Persistence.Model;
+﻿namespace EquiApi.Persistence.Model;
 
 public class Horse
 {
@@ -25,7 +23,7 @@ public class HorseBreed
 {
     public int BreedId { get; set; }
     public Breed Breed { get; set; } = null!;
-    
+
     public int HorseId { get; set; }
     public Horse Horse { get; set; } = null!;
 }
