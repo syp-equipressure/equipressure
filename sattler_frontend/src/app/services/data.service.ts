@@ -9,7 +9,7 @@ import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
 import { PressureDevice } from '../models/device.model';
 import { formatDuration } from '../utils/time-format';
-import { BackendApiService, BackendHorse, BackendPerson, BackendSaddle } from './backend-api.service';
+import { BackendAddress, BackendApiService, BackendHorse, BackendPerson, BackendSaddle } from './backend-api.service';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -528,7 +528,7 @@ function mapCustomer(person: BackendPerson, isMe: boolean): Customer {
     birthDate: person.dateOfBirth,
     heightCm: person.height,
     weightKg: person.weight,
-    address: formatAddress(person.address),
+    address: formatAddress(person.address ?? person),
     isMe,
     horseIds: [],
   };
@@ -540,7 +540,7 @@ function mapSattler(person: BackendPerson): Sattler {
     firstName: person.firstName,
     lastName: person.lastName,
     email: person.email ?? '',
-    address: formatAddress(person.address),
+    address: formatAddress(person.address ?? person),
     website: person.websiteLink ?? undefined,
     description: person.description ?? undefined,
     memberSince: '',
@@ -580,7 +580,8 @@ function mapSaddle(saddle: BackendSaddle): Saddle {
   };
 }
 
-function formatAddress(address: BackendPerson['address']): string {
+function formatAddress(address?: Partial<BackendAddress> | Partial<BackendPerson> | null): string {
+  if (!address) return '';
   const locality = [address.plz, address.cityName].filter(Boolean).join(' ');
   return [address.addressName, locality].filter(Boolean).join(', ');
 }

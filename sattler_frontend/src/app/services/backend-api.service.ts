@@ -13,14 +13,17 @@ export interface BackendPerson {
   id: number;
   firstName: string;
   lastName: string;
-  dateOfBirth: string;
+  dateOfBirth?: string;
   height: number;
   weight: number;
   email: string | null;
-  websiteLink: string | null;
-  description: string | null;
-  address: BackendAddress;
-  roles: string[];
+  websiteLink?: string | null;
+  description?: string | null;
+  address?: BackendAddress | null;
+  addressName?: string | null;
+  cityName?: string;
+  plz?: string;
+  roles?: string[];
 }
 
 export interface BackendContact {
@@ -38,7 +41,8 @@ export interface BackendHorse {
   height: number;
   gender: 'Female' | 'Male';
   breedNames: string[];
-  address: BackendAddress;
+  address?: BackendAddress | null;
+  addressId?: number;
 }
 
 export interface BackendSaddle {
