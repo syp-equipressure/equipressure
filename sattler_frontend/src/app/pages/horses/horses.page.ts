@@ -51,11 +51,15 @@ export class HorsesPage {
     this.router.navigate(['/customers', c.id, 'horses', horseId]);
   }
 
-  addHorse(horse: Horse): void {
+  async addHorse(horse: Horse): Promise<void> {
     const c = this.customer();
     if (!c) return;
-    this.data.addHorse({ ...horse, ownerId: c.id });
-    this.showForm.set(false);
+    try {
+      await this.data.createHorse({ ...horse, ownerId: c.id });
+      this.showForm.set(false);
+    } catch (error) {
+      this.data.reportActionError(error);
+    }
   }
 
   openAddHorseForm(): void {

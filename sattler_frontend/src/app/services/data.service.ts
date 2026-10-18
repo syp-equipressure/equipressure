@@ -317,6 +317,42 @@ export class DataService {
 
   addHorse(horse: Horse): void {
     this._horses.update(list => [...list, horse]);
+    this._customers.update(customers =>
+      customers.map(customer =>
+        customer.id === horse.ownerId && !customer.horseIds.includes(horse.id)
+          ? { ...customer, horseIds: [...customer.horseIds, horse.id] }
+          : customer,
+      ),
+    );
+  }
+
+  async createHorse(horse: Horse): Promise<void> {
+    this.actionError.set('');
+    const ownerId = Number(horse.ownerId);
+    const address = parseAddress(horse.address);
+    const breedId = breedIds.get(horse.breed.trim().toLocaleLowerCase('de'));
+    const dateOfBirth = parseHorseDate(horse.birthDate);
+    const gender = genderToBackend(horse.sex);
+
+    if (!Number.isInteger(ownerId) || ownerId <= 0 || !address || !breedId || !dateOfBirth || !gender) {
+      this.addHorse(horse);
+      this.actionError.set(
+        'Dieses Pferd wurde nur lokal angelegt. Für das Backend werden eine zuordenbare Rasse, Geschlecht, Geburtsdatum und eine Adresse mit PLZ und Ort benötigt.',
+      );
+      return;
+    }
+
+    const created = await this.api.createHorse({
+      name: horse.name,
+      dateOfBirth,
+      weight: horse.weightKg,
+      height: horse.heightCm,
+      gender,
+      address,
+      breedIds: [breedId],
+      ownerId,
+    });
+    this.addHorse(mapHorse(created, ownerId));
   }
 
   updateHorse(horse: Horse): void {
@@ -553,6 +589,31 @@ function parseAddress(value: string | undefined): {
     cityName: match[3].trim(),
   };
 }
+
+function parseHorseDate(value: string | undefined): string | null {
+  if (!value) return null;
+  const isoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (isoDate) return value;
+  const localDate = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  return localDate ? `${localDate[3]}-${localDate[2]}-${localDate[1]}` : null;
+}
+
+function genderToBackend(value: Horse['sex']): BackendHorse['gender'] | null {
+  if (value === 'Stute') return 'Female';
+  if (value === 'Wallach' || value === 'Hengst') return 'Male';
+  return null;
+}
+
+const breedIds = new Map<string, number>([
+  ['hannoveraner', 1],
+  ['holsteiner', 2],
+  ['westfale', 3],
+  ['trakehner', 4],
+  ['haflinger', 5],
+  ['noriker', 6],
+  ['lipizzaner', 7],
+  ['quarter horse', 8],
+]);
 
 function buildPetziDetail(): MeasurementDetail {
   const segments: MeasurementSegmentResult[] = ([
