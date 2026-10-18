@@ -352,7 +352,6 @@ export class DataService {
       gender,
       address,
       breedIds: [breedId],
-      breeds: [{ breedId }],
       ownerId,
     });
     this.addHorse({ ...horse, id: String(created.id), ownerId: String(ownerId) });
