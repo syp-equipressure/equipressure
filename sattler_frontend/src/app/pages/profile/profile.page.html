@@ -2,6 +2,18 @@
 
 <section class="page-body">
   <div class="panel">
+    @if (backendProfileLoading()) {
+      <p role="status">Sattlerprofil wird geladen …</p>
+    }
+    @if (backendProfileError()) {
+      <p class="field-error" role="alert">{{ backendProfileError() }}</p>
+    }
+    @if (backendProfileNotice()) {
+      <p role="status">{{ backendProfileNotice() }}</p>
+    }
+    @if (backendPersonId()) {
+      <p>Telefon und Betrieb werden vom Backend derzeit nicht unterstützt.</p>
+    }
     <div class="profile-card">
       <div class="avatar-actions">
         <div class="avatar">
@@ -67,14 +79,14 @@
           <label class="field">
             <span class="field-label">Telefon</span>
             <input class="field-input" type="tel" [ngModel]="phoneNumber()"
-              (ngModelChange)="phoneNumber.set($event)" name="phoneNumber" />
+              (ngModelChange)="phoneNumber.set($event)" name="phoneNumber" [disabled]="!!backendPersonId()" />
             @if (errors().phoneNumber) { <span class="field-error">{{ errors().phoneNumber }}</span> }
           </label>
 
           <label class="field">
             <span class="field-label">Betrieb</span>
             <input class="field-input" type="text" [ngModel]="companyName()"
-              (ngModelChange)="companyName.set($event)" name="companyName" />
+              (ngModelChange)="companyName.set($event)" name="companyName" [disabled]="!!backendPersonId()" />
           </label>
 
           <label class="field">
@@ -99,7 +111,9 @@
 
         <div class="form-actions">
           <button class="ghost-btn" type="button" (click)="cancel()">Abbrechen</button>
-          <button class="primary-btn" type="submit">Speichern</button>
+          <button class="primary-btn" type="submit" [disabled]="backendProfileSaving()">
+            {{ backendProfileSaving() ? 'Wird gespeichert …' : 'Speichern' }}
+          </button>
         </div>
       </form>
     } @else {

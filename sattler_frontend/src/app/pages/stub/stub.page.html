@@ -6,6 +6,11 @@
       <header class="page-title-row">
       </header>
 
+      @if (selectionLoading()) {
+        <p role="status">Kontakte und Pferde werden geladen …</p>
+      } @else if (selectionError()) {
+        <p class="error" role="alert">{{ selectionError() }}</p>
+      } @else {
       <div class="top-grid">
         <article class="card rider-card">
           <div class="card-head">
@@ -93,10 +98,12 @@
         <article class="card saddle-card">
         <div class="saddle-heading">
           <h3>Sattel</h3>
-          <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
-            <span class="material-icons" aria-hidden="true">add</span>
-            Sattel anlegen
-          </button>
+          @if (!selectedOwner()?.backend) {
+            <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
+              <span class="material-icons" aria-hidden="true">add</span>
+              Sattel anlegen
+            </button>
+          }
         </div>
 
         <div class="saddle-grid">
@@ -116,6 +123,11 @@
                 </select>
                 <span class="select-icon material-icons" [class.disabled]="!selectedHorse() || availableSaddles().length === 0">chevron_right</span>
               </div>
+              @if (saddlesLoading()) {
+                <small role="status">Sättel werden geladen …</small>
+              } @else if (saddlesError()) {
+                <small class="error" role="alert">{{ saddlesError() }}</small>
+              }
             </label>
 
             <label class="field">
@@ -126,7 +138,13 @@
             </label>
           </div>
           @if (availableSaddles().length === 0 && selectedHorse()) {
-            <p class="saddle-empty">Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.</p>
+            <p class="saddle-empty">
+              @if (selectedOwner()?.backend) {
+                Für dieses Pferd sind keine Sättel hinterlegt.
+              } @else {
+                Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.
+              }
+            </p>
           }
         </article>
 
@@ -162,6 +180,7 @@
       >
         Weiter zur Messung
       </button>
+      }
     </div>
   </section>
 } @else {

@@ -32,6 +32,12 @@
         } @empty {
           <p class="no-devices">Noch keine Geräte hinterlegt.</p>
         }
+        @if (backendDeviceError()) {
+          <p class="bluetooth-notice" role="alert">{{ backendDeviceError() }}</p>
+        }
+        @if (backendProfileError()) {
+          <p class="bluetooth-notice" role="alert">{{ backendProfileError() }}</p>
+        }
         @if (bluetoothNotice()) {
           <p class="bluetooth-notice" role="status">{{ bluetoothNotice() }}</p>
         }

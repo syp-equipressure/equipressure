@@ -9,10 +9,7 @@ import { Saddle } from '../models/saddle.model';
 import { PressureDevice } from '../models/device.model';
 import { formatDuration } from '../utils/time-format';
 
-/**
- * Mock data service. Once backend ships GET /api/persons + UserController,
- * swap this for an HttpClient-based version.
- */
+/** Local demo and measurement-session data; backend-backed entities are cached here for the UI. */
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private readonly document = inject(DOCUMENT);
@@ -286,6 +283,7 @@ export class DataService {
       detail: buildPetziDetail(),
     },
   ]);
+  private readonly _recordedMeasurements = signal<Measurement[]>([]);
 
   private readonly _sattler = signal<Sattler>({
     id: 'sattler-1',
@@ -381,6 +379,25 @@ export class DataService {
     this._customers.update(list => [...list, customer]);
   }
 
+  upsertCustomers(customers: Customer[]): void {
+    this._customers.update(current => {
+      const byId = new Map(current.map(customer => [customer.id, customer]));
+      for (const customer of customers) {
+        const existing = byId.get(customer.id);
+        byId.set(customer.id, {
+          ...existing,
+          ...customer,
+          heightCm: customer.heightCm || existing?.heightCm || 0,
+          weightKg: customer.weightKg || existing?.weightKg || 0,
+          birthDate: customer.birthDate ?? existing?.birthDate,
+          address: customer.address ?? existing?.address,
+          phoneNumber: customer.phoneNumber ?? existing?.phoneNumber,
+        });
+      }
+      return [...byId.values()];
+    });
+  }
+
   // ── Horses ─────────────────────────────────────────────────────────────────
 
   readonly horses = this._horses.asReadonly();
@@ -405,6 +422,26 @@ export class DataService {
     this._horses.update(list => [...list, horse]);
   }
 
+  upsertHorses(horses: Horse[]): void {
+    this._horses.update(current => {
+      const byId = new Map(current.map(horse => [horse.id, horse]));
+      for (const horse of horses) {
+        byId.set(horse.id, { ...byId.get(horse.id), ...horse });
+      }
+      return [...byId.values()];
+    });
+  }
+
+  upsertSaddles(saddles: Saddle[]): void {
+    this._saddles.update(current => {
+      const byId = new Map(current.map(saddle => [saddle.id, saddle]));
+      for (const saddle of saddles) {
+        byId.set(saddle.id, { ...byId.get(saddle.id), ...saddle });
+      }
+      return [...byId.values()];
+    });
+  }
+
   updateHorse(horse: Horse): void {
     this._horses.update(list => list.map(item => item.id === horse.id ? horse : item));
   }
@@ -413,9 +450,12 @@ export class DataService {
     this._horses.update(list => list.filter(horse => horse.id !== horseId));
     this._saddles.update(list => list.filter(saddle => saddle.horseId !== horseId));
     this._measurements.update(list => list.filter(measurement => measurement.horseId !== horseId));
+    this._recordedMeasurements.update(list => list.filter(measurement => measurement.horseId !== horseId));
   }
 
   // ── Measurements ───────────────────────────────────────────────────────────
+
+  readonly recordedMeasurements = this._recordedMeasurements.asReadonly();
 
   getMeasurementsOf(horseId: string): Measurement[] {
     return this._measurements().filter(m => m.horseId === horseId);
@@ -427,6 +467,7 @@ export class DataService {
 
   removeMeasurement(id: string): void {
     this._measurements.update(list => list.filter(measurement => measurement.id !== id));
+    this._recordedMeasurements.update(list => list.filter(measurement => measurement.id !== id));
   }
 
   getSamplePressureGrid(): number[][] {
@@ -471,6 +512,7 @@ export class DataService {
       detail,
     };
     this._measurements.update(list => [measurement, ...list]);
+    this._recordedMeasurements.update(list => [measurement, ...list]);
     return measurement;
   }
 

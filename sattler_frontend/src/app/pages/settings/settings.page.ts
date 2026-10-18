@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, UserPreferences } from '../../services/settings.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -12,7 +13,11 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 })
 export class SettingsPage {
   private readonly settings = inject(SettingsService);
+  private readonly personContext = inject(BackendPersonContextService);
 
+  readonly backendPersonId = signal(this.personContext.personId());
+  readonly backendPersonFeedback = signal('');
+  readonly backendPersonFeedbackIsError = signal(false);
   readonly preferences = signal<UserPreferences>(copyPreferences(this.settings.preferences()));
   readonly preferencesSaving = signal(false);
   readonly notificationsFeedback = signal('');
@@ -57,6 +62,21 @@ export class SettingsPage {
 
   updateTimeFormat(timeFormat: UserPreferences['timeFormat']): void {
     this.preferences.update(preferences => ({ ...preferences, timeFormat }));
+  }
+
+  saveBackendPersonId(): void {
+    const id = this.backendPersonId();
+    if (!this.personContext.savePersonId(id)) {
+      this.backendPersonFeedback.set('Bitte eine positive numerische Personen-ID eingeben.');
+      this.backendPersonFeedbackIsError.set(true);
+      return;
+    }
+    this.backendPersonFeedback.set(
+      id.trim()
+        ? 'Personen-ID gespeichert. Kontakte, Pferde und Messgeräte verwenden diese ID.'
+        : 'Personen-ID entfernt. Es werden wieder Demo-Daten angezeigt.',
+    );
+    this.backendPersonFeedbackIsError.set(false);
   }
 
 }

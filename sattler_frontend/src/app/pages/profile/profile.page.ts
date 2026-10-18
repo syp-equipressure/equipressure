@@ -1,11 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Sattler, sattlerFullName } from '../../models/sattler.model';
+import { BackendApiService } from '../../services/backend-api.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
 
-type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website';
+type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website' | 'address';
 
 @Component({
   selector: 'app-profile-page',
@@ -16,8 +18,15 @@ type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'websi
 })
 export class ProfilePage {
   private readonly data = inject(DataService);
+  private readonly api = inject(BackendApiService);
+  private readonly personContext = inject(BackendPersonContextService);
 
   readonly sattler = this.data.sattler;
+  readonly backendPersonId = this.personContext.personId;
+  readonly backendProfileLoading = signal(false);
+  readonly backendProfileSaving = signal(false);
+  readonly backendProfileError = signal('');
+  readonly backendProfileNotice = signal('');
   readonly deviceCount = computed(() => this.data.devices().length);
 
   readonly fullName = computed(() => sattlerFullName(this.sattler()));
@@ -42,6 +51,42 @@ export class ProfilePage {
 
   readonly errors = signal<Partial<Record<EditableField, string>>>({});
   readonly avatarError = signal('');
+
+  constructor() {
+    effect(onCleanup => {
+      const personId = this.backendPersonId();
+      this.backendProfileError.set('');
+      this.backendProfileNotice.set('');
+      if (!personId) {
+        this.backendProfileLoading.set(false);
+        return;
+      }
+      this.backendProfileLoading.set(true);
+      const subscription = this.api.getPerson(personId).subscribe({
+        next: customer => {
+          this.data.updateSattler({
+            id: customer.id,
+            firstName: customer.firstName,
+            lastName: customer.lastName,
+            email: customer.email ?? '',
+            address: customer.address,
+            website: customer.websiteLink,
+            description: customer.description,
+            phoneNumber: undefined,
+            companyName: undefined,
+          });
+          this.backendProfileLoading.set(false);
+        },
+        error: error => {
+          this.backendProfileError.set(
+            error instanceof Error ? error.message : 'Das Sattlerprofil konnte nicht geladen werden.',
+          );
+          this.backendProfileLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
 
   startEdit(): void {
     const s = this.sattler();
@@ -76,8 +121,50 @@ export class ProfilePage {
       description: this.description().trim() || undefined,
     };
 
-    this.data.updateSattler(patch);
-    this.editMode.set(false);
+    const personId = this.backendPersonId();
+    if (!personId) {
+      this.data.updateSattler(patch);
+      this.editMode.set(false);
+      return;
+    }
+
+    const changes: Record<string, unknown> = {
+      firstName: patch.firstName,
+      lastName: patch.lastName,
+      email: patch.email,
+      websiteLink: patch.website ?? '',
+      description: patch.description ?? '',
+    };
+    const addressChanged = patch.address !== this.sattler().address;
+    if (addressChanged) {
+      const address = parseAddress(patch.address ?? '');
+      if (!address) {
+        this.errors.update(errors => ({
+          ...errors,
+          address: 'Bitte Adresse als „Straße, PLZ Ort“ eingeben.',
+        }));
+        return;
+      }
+      changes['address'] = address;
+    }
+
+    this.backendProfileError.set('');
+    this.backendProfileNotice.set('');
+    this.backendProfileSaving.set(true);
+    this.api.updatePerson(personId, changes).subscribe({
+      next: () => {
+        this.data.updateSattler(patch);
+        this.backendProfileSaving.set(false);
+        this.backendProfileNotice.set('Profil im Backend gespeichert.');
+        this.editMode.set(false);
+      },
+      error: error => {
+        this.backendProfileSaving.set(false);
+        this.backendProfileError.set(
+          error instanceof Error ? error.message : 'Das Profil konnte nicht gespeichert werden.',
+        );
+      },
+    });
   }
 
   private validate(): boolean {
@@ -134,6 +221,12 @@ export class ProfilePage {
     reader.onerror = () => this.avatarError.set('Das Bild konnte nicht geladen werden.');
     reader.readAsDataURL(file);
   }
+}
+
+function parseAddress(value: string): { addressName: string; cityName: string; plz: string } | null {
+  const match = /^(.*?),\s*(\d{4,})\s+(.+)$/.exec(value.trim());
+  if (!match) return null;
+  return { addressName: match[1].trim(), plz: match[2], cityName: match[3].trim() };
 }
 
 function normalizeWebsite(website: string): string {

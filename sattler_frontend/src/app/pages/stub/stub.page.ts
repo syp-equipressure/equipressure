@@ -1,4 +1,4 @@
-import { Component, Input, computed, inject, signal } from '@angular/core';
+import { Component, Input, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -9,10 +9,15 @@ import { Horse } from '../../models/horse.model';
 import { Measurement } from '../../models/measurement.model';
 import { Saddle } from '../../models/saddle.model';
 import { MeasurementSessionService } from '../../services/measurement-session.service';
+import { BackendApiService } from '../../services/backend-api.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
+import { forkJoin, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 interface OwnerCard {
   owner: Customer;
   horses: Horse[];
+  backend: boolean;
 }
 
 interface SummaryRow {
@@ -43,7 +48,15 @@ export class StubPage {
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
   private readonly measurementSession = inject(MeasurementSessionService);
+  private readonly api = inject(BackendApiService);
+  private readonly personContext = inject(BackendPersonContextService);
   private readonly routeData = toSignal(this.route.data, { initialValue: {} });
+
+  readonly selectionLoading = signal(false);
+  readonly selectionError = signal('');
+  readonly saddlesLoading = signal(false);
+  readonly saddlesError = signal('');
+  private readonly backendOwners = signal<OwnerCard[] | null>(null);
 
   readonly resolvedTitle = computed(() => {
     const dataTitle = (this.routeData() as { title?: string }).title ?? '';
@@ -53,12 +66,14 @@ export class StubPage {
   readonly isNewMeasurement = computed(() => this.resolvedTitle() === 'Neue Messung');
 
   readonly owners = computed<OwnerCard[]>(() => {
+    const backendOwners = this.backendOwners();
+    if (backendOwners !== null) return backendOwners;
     const cards: OwnerCard[] = [];
 
     for (const customer of this.data.getCustomers()) {
       const horses = this.data.getHorsesOf(customer.id);
       if (horses.length > 0) {
-        cards.push({ owner: customer, horses });
+        cards.push({ owner: customer, horses, backend: false });
       }
     }
 
@@ -117,6 +132,71 @@ export class StubPage {
   readonly selectedSaddleName = computed(() => this.selectedSaddle()?.name ?? '');
   readonly selectedSaddleCategory = computed(() => this.selectedSaddle()?.category ?? '');
 
+  private readonly loadBackendOwners = effect(onCleanup => {
+    if (!this.isNewMeasurement()) {
+      this.backendOwners.set(null);
+      this.selectionLoading.set(false);
+      return;
+    }
+    const personId = this.personContext.personId();
+    this.selectionError.set('');
+    if (!personId) {
+      this.backendOwners.set(null);
+      this.selectionLoading.set(false);
+      return;
+    }
+    this.selectionLoading.set(true);
+    const subscription = this.api.getContacts(personId).pipe(
+      switchMap(contacts => contacts.length
+        ? forkJoin(contacts.map(owner =>
+            this.api.getHorses(owner.id).pipe(map(horses => ({ owner, horses, backend: true }))),
+          ))
+        : of([] as OwnerCard[]),
+      ),
+    ).subscribe({
+      next: owners => {
+        this.data.upsertCustomers(owners.map(item => item.owner));
+        this.data.upsertHorses(owners.flatMap(item => item.horses));
+        this.backendOwners.set(owners);
+        this.selectionLoading.set(false);
+        this.initializeSelection();
+      },
+      error: error => {
+        this.backendOwners.set([]);
+        this.selectionError.set(error instanceof Error ? error.message : 'Kontakte und Pferde konnten nicht geladen werden.');
+        this.selectionLoading.set(false);
+      },
+    });
+    onCleanup(() => subscription.unsubscribe());
+  });
+
+  private readonly loadBackendSaddles = effect(onCleanup => {
+    const horse = this.selectedHorse();
+    const owner = this.selectedOwner();
+    this.saddlesError.set('');
+    if (!horse || !owner?.backend) {
+      this.saddlesLoading.set(false);
+      return;
+    }
+    this.saddlesLoading.set(true);
+    const subscription = this.api.getSaddles(horse.id).subscribe({
+      next: saddles => {
+        this.data.upsertSaddles(saddles);
+        this.saddlesLoading.set(false);
+        const requestedId = this.route.snapshot.queryParamMap.get('saddleId');
+        const requestedSaddle = saddles.find(saddle => saddle.id === requestedId);
+        if (requestedSaddle && this.selectedHorse()?.id === horse.id) {
+          this.selectedSaddleId.set(requestedSaddle.id);
+        }
+      },
+      error: error => {
+        this.saddlesError.set(error instanceof Error ? error.message : 'Sättel konnten nicht geladen werden.');
+        this.saddlesLoading.set(false);
+      },
+    });
+    onCleanup(() => subscription.unsubscribe());
+  });
+
   readonly summaryRows = computed<SummaryRow[]>(() => {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
@@ -170,6 +250,21 @@ export class StubPage {
     );
   }
 
+  private initializeSelection(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const requestedHorseId = params.get('horseId');
+    const requestedHorse = requestedHorseId
+      ? this.owners().flatMap(entry => entry.horses).find(horse => horse.id === requestedHorseId)
+      : undefined;
+    const ownerId = requestedHorse?.ownerId ?? params.get('ownerId');
+    const owner = this.owners().find(entry => entry.owner.id === ownerId);
+    this.selectedOwnerId.set(owner?.owner.id ?? null);
+    this.selectedHorseId.set(
+      owner?.horses.find(horse => horse.id === requestedHorse?.id)?.id ?? null,
+    );
+    this.selectedSaddleId.set(null);
+  }
+
   selectOwner(ownerId: string) {
     this.selectedOwnerId.set(ownerId || null);
     this.selectedHorseId.set(null);
@@ -186,6 +281,10 @@ export class StubPage {
   }
 
   openSaddleForm(): void {
+    if (this.selectedOwner()?.backend) {
+      this.saddleError.set('Das Backend bietet derzeit keinen Endpunkt zum Anlegen von Sätteln.');
+      return;
+    }
     this.saddleName.set('');
     this.saddleCategory.set('Dressur');
     this.saddleError.set('');
