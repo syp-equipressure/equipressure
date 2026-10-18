@@ -158,7 +158,50 @@
 .side-column {
   display: grid;
   gap: 18px;
+  align-content: start;
 }
+
+.devices-panel .panel-header { margin-bottom: 8px; }
+.devices-panel .panel-header h2 { font-size: 17px; }
+.devices-panel .subtle-link { flex: 0 0 auto; }
+
+.dashboard-device {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid t.$border-soft;
+}
+
+.dashboard-device-info {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+
+  strong, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  strong { color: t.$text-strong; font-size: 12px; font-weight: 600; }
+  small { color: t.$text-soft; font-size: 11px; }
+}
+
+.connect-button {
+  flex: 0 0 auto;
+  border: 1px solid t.$purple-300;
+  border-radius: 7px;
+  padding: 7px 9px;
+  background: t.$purple-50;
+  color: t.$purple-600;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  &:hover { background: t.$purple-100; }
+}
+
+.no-devices, .bluetooth-notice { color: t.$text-soft; font-size: 12px; line-height: 1.5; }
+.bluetooth-notice { margin: 8px 0 0; padding: 10px; border-radius: 8px; background: t.$purple-50; }
 
 .actions-panel {
   h2 {

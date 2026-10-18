@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Sattler, sattlerFullName } from '../../models/sattler.model';
@@ -9,7 +10,7 @@ type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'websi
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent],
+  imports: [FormsModule, PageHeaderComponent, RouterLink],
   templateUrl: './profile.page.html',
   styleUrl: './profile.page.scss',
 })
@@ -17,6 +18,7 @@ export class ProfilePage {
   private readonly data = inject(DataService);
 
   readonly sattler = this.data.sattler;
+  readonly deviceCount = computed(() => this.data.devices().length);
 
   readonly fullName = computed(() => sattlerFullName(this.sattler()));
 

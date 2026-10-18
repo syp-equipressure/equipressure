@@ -21,7 +21,7 @@ export class AddHorse {
   breed = signal('');
   heightCm = signal<number | null>(null);
   weightKg = signal<number | null>(null);
-  sex = signal<Horse['sex'] | ''>('');
+  sex = signal<Exclude<Horse['sex'], undefined>>('Weiblich');
   birthDate = signal('');
   address = signal('');
   onFileSelected(event: Event): void {
@@ -40,7 +40,7 @@ export class AddHorse {
       this.breed.set(horse.breed);
       this.heightCm.set(horse.heightCm);
       this.weightKg.set(horse.weightKg);
-      this.sex.set(horse.sex ?? '');
+      this.sex.set(normalizeSex(horse.sex));
       this.birthDate.set(horse.birthDate ?? '');
       this.address.set(horse.address ?? '');
     });
@@ -76,7 +76,7 @@ export class AddHorse {
       heightCm: this.heightCm()!,
       weightKg: this.weightKg()!,
       imageUrl: existing?.imageUrl ?? '',
-      ...(this.sex() ? { sex: this.sex() as Exclude<Horse['sex'], undefined> } : {}),
+      sex: this.sex(),
       ...(this.birthDate().trim() ? { birthDate: this.birthDate().trim() } : {}),
       ...(this.address().trim() ? { address: this.address().trim() } : {}),
     };
@@ -96,9 +96,15 @@ export class AddHorse {
     this.breed.set('');
     this.heightCm.set(null);
     this.weightKg.set(null);
-    this.sex.set('');
+    this.sex.set('Weiblich');
     this.birthDate.set('');
     this.address.set('');
     this.errors.set({});
   }
+
+}
+
+function normalizeSex(sex: string | undefined): Exclude<Horse['sex'], undefined> {
+  if (sex === 'Männlich' || sex === 'Hengst' || sex === 'Wallach') return 'Männlich';
+  return 'Weiblich';
 }

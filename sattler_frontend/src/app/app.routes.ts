@@ -10,6 +10,7 @@ import { StubPage } from './pages/stub/stub.page';
 import { StartPage } from './pages/startpage/startpage.page';
 import { CustomerProfilePage } from './pages/customers/customer-profile.page';
 import { SettingsPage } from './pages/settings/settings.page';
+import { DevicesPage } from './pages/devices/devices.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'startpage' },
@@ -21,6 +22,7 @@ export const routes: Routes = [
   { path: 'my-horses', component: HorsesPage },
   { path: 'my-horses/:horseId', component: MeasurementsPage },
   { path: 'profile', component: ProfilePage },
+  { path: 'devices', component: DevicesPage },
   { path: 'new-measurement', component: StubPage, data: { title: 'Neue Messung' } },
   { path: 'new-measurement/session', component: MeasurementSessionPage },
   { path: 'new-measurement/live', component: LiveMeasurementPage },

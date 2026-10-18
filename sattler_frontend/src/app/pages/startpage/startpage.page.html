@@ -43,6 +43,33 @@
     </section>
 
     <aside class="side-column">
+      <section class="panel devices-panel">
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">Verbindung</p>
+            <h2>Satteldruckmessgeräte</h2>
+          </div>
+          <a class="subtle-link" routerLink="/devices">Verwalten</a>
+        </header>
+        @for (device of devices(); track device.id) {
+          <div class="dashboard-device">
+            <span class="action-icon material-icons" aria-hidden="true">sensors</span>
+            <span class="dashboard-device-info">
+              <strong>{{ device.name }}</strong>
+              <small>Nr. {{ device.number }}</small>
+            </span>
+            <button type="button" class="connect-button" (click)="connectDevice(device)">
+              Verbinden
+            </button>
+          </div>
+        } @empty {
+          <p class="no-devices">Noch keine Geräte hinterlegt.</p>
+        }
+        @if (bluetoothNotice()) {
+          <p class="bluetooth-notice" role="status">{{ bluetoothNotice() }}</p>
+        }
+      </section>
+
       <section class="panel actions-panel">
         <p class="eyebrow">Schnellzugriff</p>
         <h2>Was möchtest du tun?</h2>
