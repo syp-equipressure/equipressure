@@ -62,7 +62,7 @@ export class ProfilePage {
     this.errors.set({});
   }
 
-  save(): void {
+  async save(): Promise<void> {
     if (!this.validate()) return;
 
     const patch: Partial<Sattler> = {
@@ -76,8 +76,12 @@ export class ProfilePage {
       description: this.description().trim() || undefined,
     };
 
-    this.data.updateSattler(patch);
-    this.editMode.set(false);
+    try {
+      await this.data.saveSattler(patch);
+      this.editMode.set(false);
+    } catch (error) {
+      this.data.reportActionError(error);
+    }
   }
 
   private validate(): boolean {

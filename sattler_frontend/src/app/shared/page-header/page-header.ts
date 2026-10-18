@@ -32,7 +32,7 @@ export class PageHeaderComponent {
   }
 
   get backendError(): string {
-    return this.data.backendError();
+    return this.data.actionError() || this.data.backendError();
   }
 
   get profileActive(): boolean {

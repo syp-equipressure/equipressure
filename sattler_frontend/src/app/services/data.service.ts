@@ -191,6 +191,55 @@ export class DataService {
     return [];
   }
 
+  async saveSattler(patch: Partial<Sattler>): Promise<void> {
+    this.actionError.set('');
+    const current = this._sattler();
+    const id = Number(current.id);
+    const request: Parameters<BackendApiService['updatePerson']>[1] = {};
+    if (patch.firstName !== undefined) request.firstName = patch.firstName;
+    if (patch.lastName !== undefined) request.lastName = patch.lastName;
+    if (patch.email !== undefined) request.email = patch.email;
+    if (patch.website !== undefined) request.websiteLink = patch.website;
+    if (patch.description !== undefined) request.description = patch.description;
+    if (patch.address) {
+      const address = parseAddress(patch.address);
+      if (address) request.address = address;
+    }
+
+    if (Number.isInteger(id) && id > 0 && Object.keys(request).length > 0) {
+      await this.api.updatePerson(id, request);
+    }
+    this.updateSattler(patch);
+    this._customers.update(customers =>
+      customers.map(customer =>
+        customer.isMe
+          ? {
+              ...customer,
+              firstName: patch.firstName ?? customer.firstName,
+              lastName: patch.lastName ?? customer.lastName,
+              email: patch.email ?? customer.email,
+              address: patch.address ?? customer.address,
+            }
+          : customer,
+      ),
+    );
+  }
+
+  reportActionError(error: unknown): void {
+    const detail =
+      error instanceof HttpErrorResponse && typeof error.error === 'object' && error.error !== null
+        ? ('detail' in error.error && typeof error.error.detail === 'string'
+            ? error.error.detail
+            : 'title' in error.error && typeof error.error.title === 'string'
+              ? error.error.title
+              : error.message)
+        : error instanceof Error
+          ? error.message
+          : 'Unbekannter Fehler';
+    this.actionError.set(`Änderung konnte nicht gespeichert werden: ${detail}`);
+    console.error('Backend action failed', error);
+  }
+
   // ── Customers ──────────────────────────────────────────────────────────────
 
   readonly customers = this._customers.asReadonly();
