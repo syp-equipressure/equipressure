@@ -57,19 +57,23 @@
     </div>
 
     <div class="form-row">
-      <div class="form-field">
-        <label class="form-label" for="birthDate">Geburtsdatum</label>
+      <div class="form-field" [class.has-error]="errors()['birthDate']">
+        <label class="form-label" for="birthDate">Geburtsdatum{{ backendMode() ? ' *' : '' }}</label>
         <input
           id="birthDate"
           class="form-input"
           type="date"
+          [max]="backendMode() ? maxBirthDate : null"
           [ngModel]="birthDate()"
           (ngModelChange)="birthDate.set($event)"
         />
+        @if (errors()['birthDate']) {
+          <span class="form-error">{{ errors()['birthDate'] }}</span>
+        }
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="address">Adresse</label>
+      <div class="form-field" [class.has-error]="errors()['address']">
+        <label class="form-label" for="address">Adresse{{ backendMode() ? ' *' : '' }}</label>
         <input
           id="address"
           class="form-input"
@@ -78,8 +82,14 @@
           [ngModel]="address()"
           (ngModelChange)="address.set($event)"
         />
+        @if (errors()['address']) {
+          <span class="form-error">{{ errors()['address'] }}</span>
+        }
       </div>
     </div>
+    @if (backendMode()) {
+      <p class="form-hint">Adresse bitte als „Straße, PLZ Ort“ eingeben.</p>
+    }
 
     <div class="form-row">
       <div class="form-field" [class.has-error]="errors()['heightCm']">
@@ -119,10 +129,13 @@
   </div>
 
   <div class="form-footer">
-    <button class="secondary-btn" (click)="cancel()">Abbrechen</button>
-    <button class="primary-btn" (click)="submit()">
+    @if (saveError()) {
+      <p class="form-error" role="alert">{{ saveError() }}</p>
+    }
+    <button class="secondary-btn" (click)="cancel()" [disabled]="!!pendingContactId()">Abbrechen</button>
+    <button class="primary-btn" (click)="submit()" [disabled]="saving()">
       <span class="material-icons">check</span>
-      Speichern
+      {{ saving() ? 'Wird gespeichert …' : 'Speichern' }}
     </button>
   </div>
 </div>

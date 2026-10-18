@@ -22,6 +22,7 @@
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
+      @if (!backendPersonId()) {
       <div class="date-filter">
         <label>
           <span>Von</span>
@@ -42,16 +43,26 @@
           />
         </label>
       </div>
+      }
       <span class="result-count">{{ filtered().length }} Ergebnisse</span>
+      @if (backendPersonId()) {
+        <p class="source-notice">Kontakte werden aus dem Backend geladen. Messungsdaten sind dort noch nicht verfügbar.</p>
+      }
 
       @if (showForm()) {
         <app-new-customer-form
+          [backendMode]="!!backendPersonId()"
           (saved)="addCustomer($event)"
           (cancelled)="showForm.set(false)"
         />
       }
     </div>
 
+    @if (backendLoading()) {
+      <div class="load-state" role="status">Kontakte werden geladen …</div>
+    } @else if (backendError()) {
+      <div class="load-state error" role="alert">{{ backendError() }}</div>
+    } @else {
     <div class="customer-list">
       <div class="list-header" aria-hidden="true">
         <span>Name</span>
@@ -86,5 +97,6 @@
         </div>
       }
     </div>
+    }
   </div>
 </section>

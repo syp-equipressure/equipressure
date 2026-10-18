@@ -17,6 +17,14 @@
           <span>E-Mail</span>
           @if (customer.email) {
             <a [href]="'mailto:' + customer.email">{{ customer.email }}</a>
+          } @else if (loadingBackendCustomer()) {
+            <main class="profile-page">
+              <section class="panel not-found" role="status">Kundenprofil wird geladen …</section>
+            </main>
+          } @else if (backendCustomerError()) {
+            <main class="profile-page">
+              <section class="panel not-found" role="alert">{{ backendCustomerError() }}</section>
+            </main>
           } @else {
             <strong>–</strong>
           }

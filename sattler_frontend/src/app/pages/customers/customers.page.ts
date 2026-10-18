@@ -1,6 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DataService } from '../../services/data.service';
+import { BackendApiService } from '../../services/backend-api.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
 import {AddCustomer} from './add-customer/add-customer';
@@ -14,12 +16,47 @@ import {AddCustomer} from './add-customer/add-customer';
 })
 export class CustomersPage {
   private readonly data = inject(DataService);
+  private readonly api = inject(BackendApiService);
+  private readonly personContext = inject(BackendPersonContextService);
 
   readonly query = signal('');
   readonly measurementDateFrom = signal('');
   readonly measurementDateTo = signal('');
-  readonly customers = signal<Customer[]>(this.data.getCustomers().filter(customer => !customer.isMe));
+  readonly backendCustomers = signal<Customer[] | null>(null);
+  readonly backendLoading = signal(false);
+  readonly backendError = signal('');
+  readonly backendPersonId = this.personContext.personId;
+  readonly customers = computed(
+    () => this.backendCustomers() ?? this.data.getCustomers().filter(customer => !customer.isMe),
+  );
   readonly showForm = signal(false);
+
+  constructor() {
+    effect(onCleanup => {
+      const personId = this.backendPersonId();
+      this.backendError.set('');
+      if (!personId) {
+        this.backendCustomers.set(null);
+        this.backendLoading.set(false);
+        return;
+      }
+
+      this.backendLoading.set(true);
+      const subscription = this.api.getContacts(personId).subscribe({
+        next: customers => {
+          this.data.upsertCustomers(customers);
+          this.backendCustomers.set(customers);
+          this.backendLoading.set(false);
+        },
+        error: error => {
+          this.backendCustomers.set([]);
+          this.backendError.set(error instanceof Error ? error.message : 'Kontakte konnten nicht geladen werden.');
+          this.backendLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
 
   readonly filtered = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('de');
@@ -47,8 +84,12 @@ export class CustomersPage {
   });
 
   addCustomer(c: Customer): void {
-    this.data.addCustomer(c);
-    this.customers.update(list => [...list, c]);
+    if (this.backendPersonId()) {
+      this.data.upsertCustomers([c]);
+      this.backendCustomers.update(customers => [...(customers ?? []).filter(customer => customer.id !== c.id), c]);
+    } else {
+      this.data.addCustomer(c);
+    }
     this.showForm.set(false);
   }
 

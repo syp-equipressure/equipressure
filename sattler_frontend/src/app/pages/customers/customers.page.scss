@@ -69,6 +69,22 @@
   margin-bottom: 20px;
 }
 
+.source-notice,
+.load-state {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: t.$purple-50;
+  color: t.$text-soft;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.load-state.error {
+  background: #fff0ef;
+  color: #a52c27;
+}
+
 .search-input,
 .date-filter input {
   box-sizing: border-box;
