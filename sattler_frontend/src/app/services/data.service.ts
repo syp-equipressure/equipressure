@@ -1,4 +1,5 @@
 import { DOCUMENT } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
@@ -8,6 +9,7 @@ import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
 import { PressureDevice } from '../models/device.model';
 import { formatDuration } from '../utils/time-format';
+import { BackendApiService, BackendHorse, BackendPerson, BackendSaddle } from './backend-api.service';
 
 /**
  * Mock data service. Once backend ships GET /api/persons + UserController,
@@ -18,6 +20,9 @@ export class DataService {
   private readonly document = inject(DOCUMENT);
   private readonly devicesStorageKey = 'equipressure-sattler-devices';
   private readonly _devices = signal<PressureDevice[]>(this.readDevices());
+  private readonly api = inject(BackendApiService);
+  readonly backendLoading = signal(true);
+  readonly backendError = signal('');
 
   private readonly _customers = signal<Customer[]>([
     {
@@ -300,6 +305,20 @@ export class DataService {
     memberSince: '03/2024',
   });
 
+  constructor() {
+    this._customers.set([]);
+    this._horses.set([]);
+    this._saddles.set([]);
+    this._sattler.set({
+      id: String(this.api.currentPersonId),
+      firstName: '',
+      lastName: '',
+      email: '',
+      memberSince: '',
+    });
+    void this.loadBackendData();
+  }
+
   // ── Sattler ──────────────────────────────────────────────────────────────────
 
   readonly sattler = this._sattler.asReadonly();
@@ -374,7 +393,15 @@ export class DataService {
   }
 
   getMe(): Customer {
-    return this._customers().find(c => c.isMe)!;
+    return this._customers().find(c => c.isMe) ?? {
+      id: String(this.api.currentPersonId),
+      firstName: '',
+      lastName: '',
+      heightCm: 0,
+      weightKg: 0,
+      isMe: true,
+      horseIds: [],
+    };
   }
 
   addCustomer(customer: Customer): void {
@@ -479,6 +506,150 @@ export class DataService {
       list.map(measurement => measurement.id === id ? { ...measurement, notes } : measurement),
     );
   }
+
+  private async loadBackendData(): Promise<void> {
+    this.backendLoading.set(true);
+    this.backendError.set('');
+    try {
+      const personId = this.api.currentPersonId;
+      const [person, contactsResponse, ownHorsesResponse] = await Promise.all([
+        this.api.getPerson(personId),
+        this.api.getContacts(personId),
+        this.getHorsesOrEmpty(personId),
+      ]);
+      const contacts = contactsResponse.contacts.filter(contact => contact.id !== personId);
+      const customerData = await Promise.all(
+        contacts.map(async contact => {
+          const [detail, horseResponse] = await Promise.all([
+            this.api.getPerson(contact.id),
+            this.getHorsesOrEmpty(contact.id),
+          ]);
+          return {
+            customer: mapCustomer(detail, false),
+            horses: horseResponse.horses.map(horse => mapHorse(horse, contact.id)),
+          };
+        }),
+      );
+      const currentCustomer = mapCustomer(person, true);
+      const currentHorses = ownHorsesResponse.horses.map(horse => mapHorse(horse, personId));
+      const allHorses = [...currentHorses, ...customerData.flatMap(entry => entry.horses)];
+      const saddleLists = await Promise.all(
+        allHorses.map(horse => this.getSaddlesOrEmpty(Number(horse.id))),
+      );
+
+      this._customers.set([
+        {
+          ...currentCustomer,
+          horseIds: currentHorses.map(horse => horse.id),
+        },
+        ...customerData.map(({ customer, horses }) => ({
+          ...customer,
+          horseIds: horses.map(horse => horse.id),
+        })),
+      ]);
+      this._horses.set(allHorses);
+      this._saddles.set(saddleLists.flat().map(mapSaddle));
+      this._sattler.set(mapSattler(person));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      this.backendError.set(`Backend-Daten konnten nicht geladen werden: ${message}`);
+      console.error('Backend data loading failed', error);
+    } finally {
+      this.backendLoading.set(false);
+    }
+  }
+
+  private async getHorsesOrEmpty(personId: number): Promise<{ horses: BackendHorse[] }> {
+    try {
+      return await this.api.getHorses(personId);
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        return { horses: [] };
+      }
+      throw error;
+    }
+  }
+
+  private async getSaddlesOrEmpty(horseId: number): Promise<BackendSaddle[]> {
+    try {
+      return (await this.api.getSaddles(horseId)).saddles;
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        return [];
+      }
+      throw error;
+    }
+  }
+}
+
+function mapCustomer(person: BackendPerson, isMe: boolean): Customer {
+  return {
+    id: String(person.id),
+    firstName: person.firstName,
+    lastName: person.lastName,
+    email: person.email ?? undefined,
+    birthDate: person.dateOfBirth,
+    heightCm: person.height,
+    weightKg: person.weight,
+    address: formatAddress(person.address),
+    isMe,
+    horseIds: [],
+  };
+}
+
+function mapSattler(person: BackendPerson): Sattler {
+  return {
+    id: String(person.id),
+    firstName: person.firstName,
+    lastName: person.lastName,
+    email: person.email ?? '',
+    address: formatAddress(person.address),
+    website: person.websiteLink ?? undefined,
+    description: person.description ?? undefined,
+    memberSince: '',
+  };
+}
+
+function mapHorse(horse: BackendHorse, ownerId: number): Horse {
+  const birthDate = horse.dateOfBirth;
+  const parsedBirthDate = new Date(`${birthDate}T00:00:00`);
+  const today = new Date();
+  const age = Number.isNaN(parsedBirthDate.getTime())
+    ? 0
+    : today.getFullYear() - parsedBirthDate.getFullYear() -
+      (today < new Date(today.getFullYear(), parsedBirthDate.getMonth(), parsedBirthDate.getDate()) ? 1 : 0);
+
+  return {
+    id: String(horse.id),
+    name: horse.name,
+    age,
+    breed: horse.breedNames.join(', '),
+    imageUrl: '',
+    ownerId: String(ownerId),
+    heightCm: horse.height,
+    weightKg: horse.weight,
+    sex: horse.gender === 'Female' ? 'Stute' : 'Hengst',
+    birthDate: formatDate(birthDate),
+    address: formatAddress(horse.address),
+  };
+}
+
+function mapSaddle(saddle: BackendSaddle): Saddle {
+  return {
+    id: String(saddle.id),
+    horseId: String(saddle.horseId),
+    name: saddle.name,
+    category: saddle.categoryName,
+  };
+}
+
+function formatAddress(address: BackendPerson['address']): string {
+  return [address.addressName, address.plz, address.cityName].filter(Boolean).join(', ');
+}
+
+function formatDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
 }
 
 function buildPetziDetail(): MeasurementDetail {

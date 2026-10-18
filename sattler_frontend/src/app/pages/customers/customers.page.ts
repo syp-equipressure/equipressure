@@ -18,7 +18,7 @@ export class CustomersPage {
   readonly query = signal('');
   readonly measurementDateFrom = signal('');
   readonly measurementDateTo = signal('');
-  readonly customers = signal<Customer[]>(this.data.getCustomers().filter(customer => !customer.isMe));
+  readonly customers = computed(() => this.data.getCustomers().filter(customer => !customer.isMe));
   readonly showForm = signal(false);
 
   readonly filtered = computed(() => {
@@ -48,7 +48,6 @@ export class CustomersPage {
 
   addCustomer(c: Customer): void {
     this.data.addCustomer(c);
-    this.customers.update(list => [...list, c]);
     this.showForm.set(false);
   }
 
