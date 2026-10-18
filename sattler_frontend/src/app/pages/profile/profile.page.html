@@ -139,6 +139,18 @@
           </div>
         }
       </div>
+
+      <a class="profile-option" routerLink="/devices">
+        <span class="profile-option-icon material-icons" aria-hidden="true">sensors</span>
+        <span class="profile-option-copy">
+          <strong>Meine Satteldruckmessgeräte</strong>
+          <small>Geräte verwalten und Gerätenummern bearbeiten</small>
+        </span>
+        @if (deviceCount() > 0) {
+          <span class="profile-option-count">{{ deviceCount() }}</span>
+        }
+        <span class="profile-option-arrow material-icons" aria-hidden="true">chevron_right</span>
+      </a>
     }
   </div>
 </section>

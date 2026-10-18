@@ -1,10 +1,12 @@
-import { Injectable, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, signal } from '@angular/core';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { Measurement, MeasurementDetail, MeasurementSegmentResult } from '../models/measurement.model';
 import { Sattler } from '../models/sattler.model';
 import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
+import { PressureDevice } from '../models/device.model';
 import { formatDuration } from '../utils/time-format';
 
 /**
@@ -13,6 +15,10 @@ import { formatDuration } from '../utils/time-format';
  */
 @Injectable({ providedIn: 'root' })
 export class DataService {
+  private readonly document = inject(DOCUMENT);
+  private readonly devicesStorageKey = 'equipressure-sattler-devices';
+  private readonly _devices = signal<PressureDevice[]>(this.readDevices());
+
   private readonly _customers = signal<Customer[]>([
     {
       id: 'me',
@@ -92,7 +98,7 @@ export class DataService {
       ownerId: 'max',
       heightCm: 152,
       weightKg: 452,
-      sex: 'Stute',
+      sex: 'Weiblich',
       birthDate: '12.10.2015',
       address: 'Musterstraße 1, 1111 Musterdorf',
       imageUrl:
@@ -304,6 +310,55 @@ export class DataService {
 
   updateSattler(patch: Partial<Sattler>): void {
     this._sattler.update(current => ({ ...current, ...patch }));
+  }
+
+  // ── Druckmessgeräte ─────────────────────────────────────────────────────────
+
+  readonly devices = this._devices.asReadonly();
+
+  addDevice(device: PressureDevice): void {
+    this.saveDevices([...this._devices(), device]);
+  }
+
+  updateDevice(updatedDevice: PressureDevice): void {
+    this.saveDevices(this._devices().map(device =>
+      device.id === updatedDevice.id ? updatedDevice : device,
+    ));
+  }
+
+  deleteDevice(id: string): void {
+    this.saveDevices(this._devices().filter(device => device.id !== id));
+  }
+
+  private saveDevices(devices: PressureDevice[]): void {
+    this.document.defaultView?.localStorage.setItem(this.devicesStorageKey, JSON.stringify(devices));
+    this._devices.set(devices);
+  }
+
+  private readDevices(): PressureDevice[] {
+    const stored = this.document.defaultView?.localStorage.getItem(this.devicesStorageKey);
+    if (!stored) {
+      return [{ id: 'demo-device', name: 'EquiPressure Demo-Sensor', number: 'EP-DEMO-001' }];
+    }
+
+    try {
+      const value: unknown = JSON.parse(stored);
+      if (
+        Array.isArray(value) &&
+        value.every(device =>
+          !!device &&
+          typeof device.id === 'string' &&
+          typeof device.name === 'string' &&
+          typeof device.number === 'string',
+        )
+      ) {
+        return value;
+      }
+    } catch {
+      // Ignore malformed cached devices and start with an empty list.
+    }
+
+    return [];
   }
 
   // ── Customers ──────────────────────────────────────────────────────────────

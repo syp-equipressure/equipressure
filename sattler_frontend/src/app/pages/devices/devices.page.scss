@@ -1,0 +1,153 @@
+@use '../../styles/theme' as t;
+
+.devices-page {
+  width: min(100% - 48px, 1080px);
+  margin: 0 auto;
+  padding: 30px 0 56px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  h2 { margin: 5px 0 6px; color: t.$text-strong; font-size: 26px; }
+  p:last-child { margin: 0; color: t.$text-soft; font-size: 14px; }
+}
+
+.eyebrow {
+  margin: 0;
+  color: t.$text-muted;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.primary-button, .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.primary-button { background: t.$purple-500; color: #fff; }
+.primary-button:hover { background: t.$purple-600; }
+.secondary-button { border-color: t.$border; background: t.$bg-panel; color: t.$text; }
+
+.device-list { display: grid; gap: 12px; }
+
+.device-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid t.$border;
+  border-radius: 12px;
+  background: t.$bg-card;
+  box-shadow: t.$shadow-card;
+}
+
+.device-icon {
+  display: grid;
+  flex: 0 0 46px;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: t.$purple-50;
+  color: t.$purple-500;
+  font-size: 24px;
+}
+
+.device-details { flex: 1; min-width: 0; }
+.device-details h3 { margin: 0 0 7px; color: t.$text-strong; font-size: 16px; }
+.device-details p { display: flex; gap: 8px; margin: 0; color: t.$text; font-size: 13px; }
+.device-details p span { color: t.$text-muted; }
+.device-actions { display: flex; gap: 6px; }
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: t.$text-soft;
+  cursor: pointer;
+}
+.icon-button:hover { background: t.$purple-50; color: t.$purple-500; }
+.icon-button.delete:hover { background: #fff0ef; color: #b42318; }
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  border: 1px dashed t.$border;
+  border-radius: 14px;
+  background: t.$bg-card;
+  text-align: center;
+  .material-icons { color: t.$purple-400; font-size: 42px; }
+  h3 { margin: 0; color: t.$text-strong; font-size: 18px; }
+  p { margin: 0 0 8px; color: t.$text-soft; font-size: 14px; }
+}
+
+.feedback { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; font-size: 13px; }
+.feedback.error { background: #fff0ef; color: #a52c27; }
+
+.form-overlay { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / 45%); }
+.device-form {
+  position: fixed;
+  z-index: 101;
+  top: 50%;
+  left: 50%;
+  width: min(440px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 22px;
+  transform: translate(-50%, -50%);
+  border: 1px solid t.$border;
+  border-radius: 14px;
+  background: t.$bg-card;
+  box-shadow: t.$shadow-elev;
+
+  header, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  header { margin-bottom: 20px; }
+  h2 { margin: 0; color: t.$text-strong; font-size: 18px; }
+  form { display: grid; gap: 16px; }
+  label { display: grid; gap: 7px; color: t.$text-soft; font-size: 13px; font-weight: 600; }
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid t.$border;
+    border-radius: 8px;
+    background: t.$bg-panel;
+    color: t.$text-strong;
+    font: inherit;
+    font-weight: 400;
+  }
+  input:focus { outline: 2px solid t.$purple-300; outline-offset: 1px; }
+  footer { justify-content: flex-end; margin-top: 4px; }
+}
+
+@media (max-width: 640px) {
+  .devices-page { width: calc(100% - 28px); padding: 20px 0 36px; }
+  .page-heading { align-items: stretch; flex-direction: column; }
+  .page-heading .primary-button { width: 100%; }
+  .device-card { gap: 12px; padding: 14px; }
+  .device-details p { flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+}

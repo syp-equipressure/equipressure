@@ -59,13 +59,31 @@
 
     <div class="form-row">
       <div class="form-field">
-        <label class="form-label" for="sex">Geschlecht</label>
-        <select id="sex" class="form-input" [ngModel]="sex()" (ngModelChange)="sex.set($event)">
-          <option value="">Nicht angegeben</option>
-          <option value="Stute">Stute</option>
-          <option value="Wallach">Wallach</option>
-          <option value="Hengst">Hengst</option>
-        </select>
+        <span class="form-label" id="sex-label">Geschlecht</span>
+        <div class="sex-toggle" role="group" aria-labelledby="sex-label">
+          <button
+            type="button"
+            class="sex-option female"
+            [class.selected]="sex() === 'Weiblich'"
+            [attr.aria-pressed]="sex() === 'Weiblich'"
+            aria-label="Weiblich"
+            title="Weiblich"
+            (click)="sex.set('Weiblich')"
+          >
+            <span class="material-icons" aria-hidden="true">female</span>
+          </button>
+          <button
+            type="button"
+            class="sex-option male"
+            [class.selected]="sex() === 'Männlich'"
+            [attr.aria-pressed]="sex() === 'Männlich'"
+            aria-label="Männlich"
+            title="Männlich"
+            (click)="sex.set('Männlich')"
+          >
+            <span class="material-icons" aria-hidden="true">male</span>
+          </button>
+        </div>
       </div>
       <div class="form-field">
         <label class="form-label" for="birthDate">Geburtsdatum</label>

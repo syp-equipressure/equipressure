@@ -158,6 +158,38 @@
   .has-error & { border-color: var(--error, #ef4444); }
 }
 
+.sex-toggle {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+}
+
+.sex-option {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  height: 2.5rem;
+  border: 0;
+  background: var(--input-bg, #fff);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  transition: background 0.15s, color 0.15s;
+
+  + .sex-option { border-left: 1px solid var(--border, #e5e7eb); }
+  .material-icons { font-size: 1.125rem; }
+  &:focus-visible { outline: 2px solid var(--primary, #4f46e5); outline-offset: -2px; }
+
+  &.female.selected { background: #fce7f3; color: #be185d; }
+  &.male.selected { background: #dbeafe; color: #1d4ed8; }
+}
+
 .form-error {
   font-size: 0.75rem;
   color: var(--error, #ef4444);
