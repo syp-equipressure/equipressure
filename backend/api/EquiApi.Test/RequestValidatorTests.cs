@@ -204,9 +204,71 @@ public sealed class RequestValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.CategoryId);
     }
 
+    [Fact]
+    public void AddMeasurementRequest_ValidData_HasNoErrors()
+    {
+        var request = new AddMeasurementRequest("Schritt", "Links", null);
+
+        var result = new AddMeasurementRequest.Validator().TestValidate(request);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void AddMeasurementRequest_InvalidValues_HasErrors()
+    {
+        var request = new AddMeasurementRequest("", "", new string('x', 501));
+
+        var result = new AddMeasurementRequest.Validator().TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Pace);
+        result.ShouldHaveValidationErrorFor(x => x.Hand);
+        result.ShouldHaveValidationErrorFor(x => x.Description);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-30)]
+    public void AddMeasurementGroupRequest_DateTodayOrInPast_HasNoErrors(int daysFromToday)
+    {
+        var request = CreateAddMeasurementGroupRequest() with { Date = TestData.Today.PlusDays(daysFromToday) };
+
+        var result = new AddMeasurementGroupRequest.Validator(_clock).TestValidate(request);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void AddMeasurementGroupRequest_DateInFuture_HasError()
+    {
+        var request = CreateAddMeasurementGroupRequest() with { Date = TestData.Today.PlusDays(1) };
+
+        var result = new AddMeasurementGroupRequest.Validator(_clock).TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Date);
+    }
+
+    [Fact]
+    public void AddMeasurementGroupRequest_InvalidValues_HasErrors()
+    {
+        var request = new AddMeasurementGroupRequest("", TestData.Today, new string('x', 501), 0, -1, 0, "");
+
+        var result = new AddMeasurementGroupRequest.Validator(_clock).TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Name);
+        result.ShouldHaveValidationErrorFor(x => x.Notes);
+        result.ShouldHaveValidationErrorFor(x => x.PersonId);
+        result.ShouldHaveValidationErrorFor(x => x.HorseId);
+        result.ShouldHaveValidationErrorFor(x => x.SaddleId);
+        result.ShouldHaveValidationErrorFor(x => x.DeviceId);
+    }
+
     private static AddPersonRequest CreateAddPersonRequest() =>
         new("Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1), "max@example.com", null, null, validAddress,
             RoleName.Equestrian);
+
+    private static AddMeasurementGroupRequest CreateAddMeasurementGroupRequest() =>
+        new("Dressurtraining", TestData.Today, null, 1, 1, 1, "EP0701");
 
     private static AddHorseRequest CreateAddHorseRequest() =>
         new("Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, validAddress, [1], 1);

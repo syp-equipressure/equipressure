@@ -94,6 +94,49 @@ internal static class TestData
                                                      Users = users.Select(user => new DeviceUser { DeviceId = id, User = user }).ToList()
                                                  };
 
+    public static MeasurementGroup CreateMeasurementGroup(Person person, Horse horse, Saddle saddle,
+                                                          MeasurementDevice device, string name = "Dressurtraining",
+                                                          LocalDate? date = null, string? notes = null) => new()
+                                                          {
+                                                              Name = name,
+                                                              Date = date ?? new LocalDate(2026, 9, 2),
+                                                              Notes = notes,
+                                                              Person = person,
+                                                              Horse = horse,
+                                                              Saddle = saddle,
+                                                              DeviceId = device.Id,
+                                                              Device = device
+                                                          };
+
+    /// <summary>
+    ///     Creates a measurement with one data entry per given value, a data entry is either a single number or a JSON
+    ///     array of numbers. The data entries are one minute apart, starting with the first value.
+    /// </summary>
+    public static Measurement CreateMeasurement(MeasurementGroup group, string pace = "Schritt", string hand = "Links",
+                                                params string[] data) => new()
+                                                {
+                                                    Group = group,
+                                                    Pace = pace,
+                                                    Hand = hand,
+                                                    MeasurementDates = data.Select((value, index) =>
+                                                                                       new MeasurementData
+                                                                                       {
+                                                                                           Data = value,
+                                                                                           Timestamp = Instant.FromUtc(2026, 9, 2, 14, index)
+                                                                                       })
+                                                                           .ToList()
+                                                };
+
+    public static AddMeasurementGroupRequest CreateAddMeasurementGroupRequest(int personId, int horseId, int saddleId,
+                                                                              string deviceId,
+                                                                              string name = "Galopptraining",
+                                                                              LocalDate? date = null) =>
+        new(name, date ?? new LocalDate(2025, 12, 30), "Erste Messung", personId, horseId, saddleId, deviceId);
+
+    public static AddMeasurementRequest CreateAddMeasurementRequest(string pace = "Galopp", string hand = "Links",
+                                                                    string? description = null) =>
+        new(pace, hand, description);
+
     public static AddressRequest CreateAddressRequest(string? addressName = null, string cityName = "Steyr",
                                                       string plz = "4400") => new(addressName, cityName, plz);
 

@@ -31,8 +31,7 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
         field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds);
 
     public IMeasurementRepository MeasurementRepository =>
-        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements,
-                                            context.MeasurementDates, context.Horses);
+        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }

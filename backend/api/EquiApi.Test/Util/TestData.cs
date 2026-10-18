@@ -109,6 +109,48 @@ internal static class TestData
                                                      Users = userIds.Select(userId => new DeviceUser { DeviceId = id, UserId = userId }).ToList()
                                                  };
 
+    public static MeasurementGroup CreateMeasurementGroup(int id = 1, int horseId = 1) => new()
+    {
+        Id = id,
+        Name = "Dressurtraining",
+        Date = new LocalDate(2026, 9, 2),
+        PersonId = 1,
+        Person = CreatePerson(),
+        HorseId = horseId,
+        Horse = CreateHorse(horseId),
+        SaddleId = 1,
+        Saddle = CreateSaddle(horseId: horseId),
+        DeviceId = "device-1"
+    };
+
+    public static Measurement CreateMeasurement(int id = 1, int groupId = 1, string pace = "Schritt",
+                                                string hand = "Links") => new()
+                                                {
+                                                    Id = id,
+                                                    GroupId = groupId,
+                                                    Pace = pace,
+                                                    Hand = hand
+                                                };
+
+    /// <summary>
+    ///     Creates data entries for a measurement, a data entry is either a single number or a JSON array of numbers
+    /// </summary>
+    public static List<MeasurementData> CreateMeasurementData(int measurementId = 1, params string[] data) =>
+        data.Select((value, index) => new MeasurementData
+        {
+            Id = index + 1,
+            MeasurementId = measurementId,
+            Data = value,
+            Timestamp = Instant.FromUtc(2026, 9, 2, 14, index)
+        })
+            .ToList();
+
+    public static NewMeasurementGroupData CreateNewMeasurementGroupData(int personId = 1, int horseId = 1,
+                                                                        int saddleId = 1,
+                                                                        string deviceId = "device-1") =>
+        new("Dressurtraining", new LocalDate(2025, 12, 30), "Sehr ausbalanciert", personId, horseId, saddleId,
+            deviceId);
+
     public static NewPersonData CreateNewPersonData(string? email = "max@example.com",
                                                     RoleName role = RoleName.Equestrian) =>
         new("Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1), email, null, null, CreateAddressData(), role);

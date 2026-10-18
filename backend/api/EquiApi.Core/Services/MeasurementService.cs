@@ -1,165 +1,205 @@
+﻿using System.Globalization;
+using System.Text.Json;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
+using OneOf;
 using OneOf.Types;
 
 namespace EquiApi.Core.Services;
 
-using GetGroupsByHorseResult =
-    OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<MeasurementGroup>>, OneOf.Types.None, OneOf.Types.NotFound>;
-using GetGroupByIdResult =
-    OneOf.OneOf<OneOf.Types.Success<MeasurementGroup>, OneOf.Types.NotFound>;
-using GetMeasurementsByGroupResult =
-    OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<Measurement>>, OneOf.Types.None, OneOf.Types.NotFound>;
-using GetMeasurementByFilterResult =
-    OneOf.OneOf<OneOf.Types.Success<Measurement>, OneOf.Types.NotFound>;
-using GetMeasurementAggregateResult =
-    OneOf.OneOf<OneOf.Types.Success<double>, OneOf.Types.NotFound, IMeasurementService.InvalidMeasurementData>;
-using GetAllDataByMeasurementResult =
-    OneOf.OneOf<OneOf.Types.Success<IReadOnlyCollection<MeasurementData>>, OneOf.Types.None, OneOf.Types.NotFound>;
-using GetDataByIdResult =
-    OneOf.OneOf<OneOf.Types.Success<MeasurementData>, OneOf.Types.NotFound>;
-using AddMeasurementResult =
-    OneOf.OneOf<OneOf.Types.Success<Measurement>, OneOf.Types.NotFound, IMeasurementService.MeasurementAlreadyExists>;
-using DeleteMeasurementResult =
-    OneOf.OneOf<OneOf.Types.Success, OneOf.Types.NotFound>;
+/// <summary>
+///     The values of a new measurement group
+/// </summary>
+public sealed record NewMeasurementGroupData(
+    string Name,
+    LocalDate Date,
+    string? Notes,
+    int PersonId,
+    int HorseId,
+    int SaddleId,
+    string DeviceId);
 
 public interface IMeasurementService
 {
     /// <summary>
-    /// Returns all measurement groups for a given horse with minimal data (date, person, saddle).
+    ///     Gets all measurement groups of a horse including the person and the saddle
     /// </summary>
-    /// <param name="horseId">The id of the horse.</param>
-    /// <returns>
-    /// A <see cref="Success{T}"/> containing the groups,
-    /// <see cref="None"/> if no groups exist,
-    /// or <see cref="NotFound"/> if the horse does not exist.
-    /// </returns>
-    public ValueTask<GetGroupsByHorseResult> GetGroupsByHorseAsync(int horseId);
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The measurement groups (may be empty) or <see cref="NotFound" /> if the horse does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementGroup>>, NotFound>> GetGroupsOfHorseAsync(
+        int horseId);
 
     /// <summary>
-    /// Returns the full detail view of a measurement group including horse, rider, and saddle data.
+    ///     Gets a measurement group including the person, the horse with its breeds and the saddle
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <returns>
-    /// A <see cref="Success{T}"/> containing the group,
-    /// or <see cref="NotFound"/> if the group does not exist.
-    /// </returns>
-    public ValueTask<GetGroupByIdResult> GetGroupByIdAsync(int mgId);
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <returns>The measurement group or <see cref="NotFound" /> if it does not exist</returns>
+    public ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> GetGroupByIdAsync(int groupId);
 
     /// <summary>
-    /// Returns all measurements belonging to a measurement group.
+    ///     Adds a new measurement group
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
+    /// <param name="data">The values of the new measurement group</param>
     /// <returns>
-    /// A <see cref="Success{T}"/> containing the measurements,
-    /// <see cref="None"/> if no measurements exist,
-    /// or <see cref="NotFound"/> if the group does not exist.
+    ///     The new measurement group including the person, the horse with its breeds and the saddle
+    ///     or <see cref="NotFound" /> if the person, the horse or the device does not exist or the saddle does not
+    ///     belong to the horse
     /// </returns>
-    public ValueTask<GetMeasurementsByGroupResult> GetMeasurementsByGroupAsync(int mgId);
+    public ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> AddGroupAsync(NewMeasurementGroupData data);
 
     /// <summary>
-    /// Returns a single measurement from a group filtered by pace and/or hand.
-    /// Since pace+hand must be unique within a group, this returns at most one result.
+    ///     Gets all measurements of a measurement group
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="pace">Optional pace filter.</param>
-    /// <param name="hand">Optional hand filter.</param>
-    /// <returns>
-    /// A <see cref="Success{T}"/> containing the measurement,
-    /// or <see cref="NotFound"/> if no matching measurement exists.
-    /// </returns>
-    public ValueTask<GetMeasurementByFilterResult> GetMeasurementByFilterAsync(int mgId, string? pace, string? hand);
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <returns>The measurements (may be empty) or <see cref="NotFound" /> if the group does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Measurement>>, NotFound>> GetMeasurementsOfGroupAsync(
+        int groupId);
 
     /// <summary>
-    /// Returns the average of all measurement data values in a group, optionally filtered by pace and hand.
+    ///     Gets a measurement of a measurement group
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="pace">Optional pace filter.</param>
-    /// <param name="hand">Optional hand filter.</param>
-    /// <returns>
-    /// A <see cref="Success{Double}"/> containing the average,
-    /// <see cref="NotFound"/> if the group or matching measurement does not exist,
-    /// or <see cref="IMeasurementService.InvalidMeasurementData"/> if the data cannot be parsed as numbers.
-    /// </returns>
-    public ValueTask<GetMeasurementAggregateResult> GetAverageAsync(int mgId, string? pace, string? hand);
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
+    /// <returns>The measurement or <see cref="NotFound" /> if it does not exist in the group</returns>
+    public ValueTask<OneOf<Success<Measurement>, NotFound>> GetMeasurementByIdAsync(int groupId, int measurementId);
 
     /// <summary>
-    /// Returns the minimum of all measurement data values in a group, optionally filtered by pace and hand.
+    ///     Gets the measurement of a measurement group that matches the given pace and hand, pace and hand are unique
+    ///     within a group
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="pace">Optional pace filter.</param>
-    /// <param name="hand">Optional hand filter.</param>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="pace">The pace to filter by, null to not filter by pace</param>
+    /// <param name="hand">The hand to filter by, null to not filter by hand</param>
     /// <returns>
-    /// A <see cref="Success{Double}"/> containing the minimum,
-    /// <see cref="NotFound"/> if the group or matching measurement does not exist,
-    /// or <see cref="IMeasurementService.InvalidMeasurementData"/> if the data cannot be parsed as numbers.
+    ///     The measurement or <see cref="NotFound" /> if the group or a matching measurement does not exist
     /// </returns>
-    public ValueTask<GetMeasurementAggregateResult> GetMinAsync(int mgId, string? pace, string? hand);
+    public ValueTask<OneOf<Success<Measurement>, NotFound>> GetMeasurementByFilterAsync(
+        int groupId, string? pace, string? hand);
 
     /// <summary>
-    /// Returns the maximum of all measurement data values in a group, optionally filtered by pace and hand.
+    ///     Gets the average of all data values of the measurements of a group that match the given pace and hand
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="pace">Optional pace filter.</param>
-    /// <param name="hand">Optional hand filter.</param>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="pace">The pace to filter by, null to not filter by pace</param>
+    /// <param name="hand">The hand to filter by, null to not filter by hand</param>
     /// <returns>
-    /// A <see cref="Success{Double}"/> containing the maximum,
-    /// <see cref="NotFound"/> if the group or matching measurement does not exist,
-    /// or <see cref="IMeasurementService.InvalidMeasurementData"/> if the data cannot be parsed as numbers.
+    ///     The average, <see cref="NotFound" /> if the group does not exist or there are no matching data values
+    ///     or <see cref="InvalidMeasurementData" /> if a data entry cannot be parsed as numbers
     /// </returns>
-    public ValueTask<GetMeasurementAggregateResult> GetMaxAsync(int mgId, string? pace, string? hand);
+    public ValueTask<OneOf<Success<double>, NotFound, InvalidMeasurementData>> GetGroupAverageAsync(
+        int groupId, string? pace, string? hand);
 
     /// <summary>
-    /// Returns all measurement data entries for a given measurement.
+    ///     Gets the minimum of all data values of the measurements of a group that match the given pace and hand
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="mId">The id of the measurement.</param>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="pace">The pace to filter by, null to not filter by pace</param>
+    /// <param name="hand">The hand to filter by, null to not filter by hand</param>
     /// <returns>
-    /// A <see cref="Success{T}"/> containing the data entries,
-    /// <see cref="None"/> if no data exists,
-    /// or <see cref="NotFound"/> if the group or measurement does not exist.
+    ///     The minimum, <see cref="NotFound" /> if the group does not exist or there are no matching data values
+    ///     or <see cref="InvalidMeasurementData" /> if a data entry cannot be parsed as numbers
     /// </returns>
-    public ValueTask<GetAllDataByMeasurementResult> GetAllDataByMeasurementAsync(int mgId, int mId);
+    public ValueTask<OneOf<Success<double>, NotFound, InvalidMeasurementData>> GetGroupMinAsync(
+        int groupId, string? pace, string? hand);
 
     /// <summary>
-    /// Returns a single measurement data entry by id.
+    ///     Gets the maximum of all data values of the measurements of a group that match the given pace and hand
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="mId">The id of the measurement.</param>
-    /// <param name="dId">The id of the data entry.</param>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="pace">The pace to filter by, null to not filter by pace</param>
+    /// <param name="hand">The hand to filter by, null to not filter by hand</param>
     /// <returns>
-    /// A <see cref="Success{T}"/> containing the data entry,
-    /// or <see cref="NotFound"/> if the group, measurement, or data entry does not exist.
+    ///     The maximum, <see cref="NotFound" /> if the group does not exist or there are no matching data values
+    ///     or <see cref="InvalidMeasurementData" /> if a data entry cannot be parsed as numbers
     /// </returns>
-    public ValueTask<GetDataByIdResult> GetDataByIdAsync(int mgId, int mId, int dId);
-    
-    /// <summary>
-    /// Adds a new measurement to a measurement group.
-    /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="pace">The pace (Gangart) of the measurement.</param>
-    /// <param name="hand">The hand (Seite) of the measurement.</param>
-    /// <param name="description">Optional description.</param>
-    /// <returns>
-    /// A <see cref="Success{Measurement}"/> if created,
-    /// <see cref="NotFound"/> if the group does not exist,
-    /// or <see cref="IMeasurementService.MeasurementAlreadyExists"/> if a measurement with the same pace and hand already exists.
-    /// </returns>
-    public ValueTask<AddMeasurementResult> AddMeasurementAsync(int mgId, string pace, string hand, string? description);
+    public ValueTask<OneOf<Success<double>, NotFound, InvalidMeasurementData>> GetGroupMaxAsync(
+        int groupId, string? pace, string? hand);
 
     /// <summary>
-    /// Removes a measurement from a measurement group.
+    ///     Gets the average of all data values of a measurement
     /// </summary>
-    /// <param name="mgId">The id of the measurement group.</param>
-    /// <param name="mId">The id of the measurement.</param>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
     /// <returns>
-    /// A <see cref="Success"/> if deleted,
-    /// or <see cref="NotFound"/> if the group or measurement does not exist.
+    ///     The average, <see cref="NotFound" /> if the measurement does not exist in the group or has no data values
+    ///     or <see cref="InvalidMeasurementData" /> if a data entry cannot be parsed as numbers
     /// </returns>
-    public ValueTask<DeleteMeasurementResult> DeleteMeasurementAsync(int mgId, int mId);
+    public ValueTask<OneOf<Success<double>, NotFound, InvalidMeasurementData>> GetMeasurementAverageAsync(
+        int groupId, int measurementId);
 
     /// <summary>
-    ///     Returned if the measurement data cannot be parsed as numbers
+    ///     Gets the minimum of all data values of a measurement
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
+    /// <returns>
+    ///     The minimum, <see cref="NotFound" /> if the measurement does not exist in the group or has no data values
+    ///     or <see cref="InvalidMeasurementData" /> if a data entry cannot be parsed as numbers
+    /// </returns>
+    public ValueTask<OneOf<Success<double>, NotFound, InvalidMeasurementData>> GetMeasurementMinAsync(
+        int groupId, int measurementId);
+
+    /// <summary>
+    ///     Gets the maximum of all data values of a measurement
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
+    /// <returns>
+    ///     The maximum, <see cref="NotFound" /> if the measurement does not exist in the group or has no data values
+    ///     or <see cref="InvalidMeasurementData" /> if a data entry cannot be parsed as numbers
+    /// </returns>
+    public ValueTask<OneOf<Success<double>, NotFound, InvalidMeasurementData>> GetMeasurementMaxAsync(
+        int groupId, int measurementId);
+
+    /// <summary>
+    ///     Gets all data entries of a measurement, ordered by their timestamp
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
+    /// <returns>
+    ///     The data entries (may be empty) or <see cref="NotFound" /> if the measurement does not exist in the group
+    /// </returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementData>>, NotFound>> GetDataOfMeasurementAsync(
+        int groupId, int measurementId);
+
+    /// <summary>
+    ///     Gets a data entry of a measurement
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
+    /// <param name="dataId">The id of the data entry</param>
+    /// <returns>
+    ///     The data entry or <see cref="NotFound" /> if the measurement does not exist in the group or the data entry
+    ///     does not exist for the measurement
+    /// </returns>
+    public ValueTask<OneOf<Success<MeasurementData>, NotFound>> GetDataByIdAsync(
+        int groupId, int measurementId, int dataId);
+
+    /// <summary>
+    ///     Adds a new measurement to a measurement group
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="pace">The pace (Gangart) of the measurement</param>
+    /// <param name="hand">The hand (Seite) of the measurement</param>
+    /// <param name="description">An optional description of the measurement</param>
+    /// <returns>
+    ///     The new measurement, <see cref="NotFound" /> if the group does not exist
+    ///     or <see cref="MeasurementAlreadyExists" /> if a measurement with the same pace and hand already exists
+    /// </returns>
+    public ValueTask<OneOf<Success<Measurement>, NotFound, MeasurementAlreadyExists>> AddMeasurementAsync(
+        int groupId, string pace, string hand, string? description);
+
+    /// <summary>
+    ///     Deletes a measurement including its data entries
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <param name="measurementId">The id of the measurement</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the measurement does not exist in the group</returns>
+    public ValueTask<OneOf<Success, NotFound>> DeleteMeasurementAsync(int groupId, int measurementId);
+
+    /// <summary>
+    ///     Returned if a data entry cannot be parsed as numbers, a data entry is either a single number or a JSON
+    ///     array of numbers
     /// </summary>
     public readonly record struct InvalidMeasurementData;
 
@@ -169,224 +209,215 @@ public interface IMeasurementService
     public readonly record struct MeasurementAlreadyExists;
 }
 
-public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
+internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
 {
-    public async ValueTask<GetGroupsByHorseResult> GetGroupsByHorseAsync(int horseId)
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementGroup>>, NotFound>> GetGroupsOfHorseAsync(
+        int horseId)
     {
-        if (!await uow.MeasurementRepository.HorseExistsAsync(horseId))
+        if (!await uow.HorseRepository.HorseExistsAsync(horseId))
         {
-            logger.LogWarning("Horse with id {HorseId} not found", horseId);
+            logger.LogInformation("Horse {HorseId} not found", horseId);
+
             return new NotFound();
         }
 
-        var groups = await uow.MeasurementRepository.GetAllGroupsByHorseAsync(horseId);
+        var groups = await uow.MeasurementRepository.GetGroupsOfHorseAsync(horseId);
 
-        if (groups.Count <= 0)
-        {
-            logger.LogWarning("No measurement groups found for horse {HorseId}", horseId);
-            return new None();
-        }
-
-        logger.LogInformation("Successfully retrieved {Count} measurement groups for horse {HorseId}",
-                              groups.Count, horseId);
         return new Success<IReadOnlyCollection<MeasurementGroup>>(groups);
     }
-    
-    public async ValueTask<GetGroupByIdResult> GetGroupByIdAsync(int mgId)
-    {
-        var group = await uow.MeasurementRepository.GetGroupByIdAsync(mgId);
 
+    public async ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> GetGroupByIdAsync(int groupId)
+    {
+        var group = await uow.MeasurementRepository.GetGroupByIdAsync(groupId);
         if (group is null)
         {
-            logger.LogWarning("Measurement group with id {MgId} not found", mgId);
+            LogGroupNotFound(groupId);
+
             return new NotFound();
         }
 
-        logger.LogInformation("Successfully retrieved measurement group {MgId}", mgId);
         return new Success<MeasurementGroup>(group);
     }
-    
-    public async ValueTask<GetMeasurementsByGroupResult> GetMeasurementsByGroupAsync(int mgId)
+
+    public async ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> AddGroupAsync(NewMeasurementGroupData data)
     {
-        if (!await uow.MeasurementRepository.GroupExistsAsync(mgId))
+        if (!await uow.PersonRepository.PersonExistsAsync(data.PersonId))
         {
-            logger.LogWarning("Measurement group {MgId} not found", mgId);
+            logger.LogInformation("Cannot add measurement group, person {PersonId} not found", data.PersonId);
+
             return new NotFound();
         }
 
-        var measurements = await uow.MeasurementRepository.GetMeasurementsByGroupAsync(mgId);
-
-        if (measurements.Count <= 0)
+        if (!await uow.HorseRepository.SaddleOfHorseExistsAsync(data.HorseId, data.SaddleId))
         {
-            logger.LogWarning("No measurements found in group {MgId}", mgId);
-            return new None();
+            logger.LogInformation("Cannot add measurement group, saddle {SaddleId} of horse {HorseId} not found",
+                                  data.SaddleId, data.HorseId);
+
+            return new NotFound();
         }
 
-        logger.LogInformation("Successfully retrieved {Count} measurements for group {MgId}",
-                              measurements.Count, mgId);
+        if (!await uow.DeviceRepository.DeviceExistsAsync(data.DeviceId))
+        {
+            logger.LogInformation("Cannot add measurement group, device {DeviceId} not found", data.DeviceId);
+
+            return new NotFound();
+        }
+
+        var group = new MeasurementGroup
+        {
+            Name = data.Name,
+            Date = data.Date,
+            Notes = data.Notes,
+            PersonId = data.PersonId,
+            HorseId = data.HorseId,
+            SaddleId = data.SaddleId,
+            DeviceId = data.DeviceId
+        };
+
+        uow.MeasurementRepository.AddGroup(group);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Measurement group {GroupId} added for horse {HorseId}", group.Id, data.HorseId);
+
+        // loads the person, the horse and the saddle, which are only referenced by their ids
+        var addedGroup = await uow.MeasurementRepository.GetGroupByIdAsync(group.Id);
+
+        return new Success<MeasurementGroup>(addedGroup ?? group);
+    }
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<Measurement>>, NotFound>> GetMeasurementsOfGroupAsync(
+        int groupId)
+    {
+        if (!await uow.MeasurementRepository.GroupExistsAsync(groupId))
+        {
+            LogGroupNotFound(groupId);
+
+            return new NotFound();
+        }
+
+        var measurements = await uow.MeasurementRepository.GetMeasurementsOfGroupAsync(groupId);
+
         return new Success<IReadOnlyCollection<Measurement>>(measurements);
     }
-    
-    public async ValueTask<GetMeasurementByFilterResult> GetMeasurementByFilterAsync(int mgId, string? pace,
-                                                                                     string? hand)
+
+    public async ValueTask<OneOf<Success<Measurement>, NotFound>> GetMeasurementByIdAsync(int groupId,
+                                                                                        int measurementId)
     {
-        if (!await uow.MeasurementRepository.GroupExistsAsync(mgId))
-        {
-            logger.LogWarning("Measurement group {MgId} not found", mgId);
-            return new NotFound();
-        }
-
-        var measurement = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
-
+        var measurement = await uow.MeasurementRepository.GetMeasurementByIdAsync(groupId, measurementId);
         if (measurement is null)
         {
-            logger.LogWarning("No measurement found in group {MgId} with pace={Pace} hand={Hand}", mgId, pace, hand);
+            LogMeasurementNotFound(groupId, measurementId);
+
             return new NotFound();
         }
 
-        logger.LogInformation("Successfully retrieved measurement from group {MgId}", mgId);
         return new Success<Measurement>(measurement);
     }
-    
-    public async ValueTask<GetMeasurementAggregateResult> GetAverageAsync(int mgId, string? pace, string? hand)
+
+    public async ValueTask<OneOf<Success<Measurement>, NotFound>> GetMeasurementByFilterAsync(
+        int groupId, string? pace, string? hand)
     {
-        var measurementResult = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
-        if (measurementResult is null)
+        if (!await uow.MeasurementRepository.GroupExistsAsync(groupId))
         {
-            logger.LogWarning("No matching measurement found in group {MgId}", mgId);
+            LogGroupNotFound(groupId);
+
             return new NotFound();
         }
 
-        var data = await uow.MeasurementRepository.GetAllDataByMeasurementAsync(measurementResult.Id);
-
-        if (!TryParseAll(data, out var values))
+        var measurement = await uow.MeasurementRepository.GetMeasurementByFilterAsync(groupId, pace, hand);
+        if (measurement is null)
         {
-            logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
-                              measurementResult.Id);
-            return new IMeasurementService.InvalidMeasurementData();
+            logger.LogInformation("No measurement with pace {Pace} and hand {Hand} found in group {GroupId}",
+                                  pace, hand, groupId);
+
+            return new NotFound();
         }
 
-        return new Success<double>(values.Average());
+        return new Success<Measurement>(measurement);
     }
-    
-    public async ValueTask<GetMeasurementAggregateResult> GetMinAsync(int mgId, string? pace, string? hand)
+
+    public ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
+        GetGroupAverageAsync(int groupId, string? pace, string? hand) =>
+        GetAggregateOfGroupAsync(groupId, pace, hand, values => values.Average());
+
+    public ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>> GetGroupMinAsync(
+        int groupId, string? pace, string? hand) =>
+        GetAggregateOfGroupAsync(groupId, pace, hand, values => values.Min());
+
+    public ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>> GetGroupMaxAsync(
+        int groupId, string? pace, string? hand) =>
+        GetAggregateOfGroupAsync(groupId, pace, hand, values => values.Max());
+
+    public ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
+        GetMeasurementAverageAsync(int groupId, int measurementId) =>
+        GetAggregateOfMeasurementAsync(groupId, measurementId, values => values.Average());
+
+    public ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
+        GetMeasurementMinAsync(int groupId, int measurementId) =>
+        GetAggregateOfMeasurementAsync(groupId, measurementId, values => values.Min());
+
+    public ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
+        GetMeasurementMaxAsync(int groupId, int measurementId) =>
+        GetAggregateOfMeasurementAsync(groupId, measurementId, values => values.Max());
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<MeasurementData>>, NotFound>> GetDataOfMeasurementAsync(
+        int groupId, int measurementId)
     {
-        var measurementResult = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
-        if (measurementResult is null)
+        if (!await uow.MeasurementRepository.MeasurementExistsAsync(groupId, measurementId))
         {
-            logger.LogWarning("No matching measurement found in group {MgId}", mgId);
+            LogMeasurementNotFound(groupId, measurementId);
+
             return new NotFound();
         }
 
-        var data = await uow.MeasurementRepository.GetAllDataByMeasurementAsync(measurementResult.Id);
+        var data = await uow.MeasurementRepository.GetDataOfMeasurementAsync(measurementId);
 
-        if (!TryParseAll(data, out var values))
-        {
-            logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
-                              measurementResult.Id);
-            return new IMeasurementService.InvalidMeasurementData();
-        }
-
-        return new Success<double>(values.Min());
-    }
-        
-    public async ValueTask<GetMeasurementAggregateResult> GetMaxAsync(int mgId, string? pace, string? hand)
-    {
-        var measurementResult = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
-        if (measurementResult is null)
-        {
-            logger.LogWarning("No matching measurement found in group {MgId}", mgId);
-            return new NotFound();
-        }
-
-        var data = await uow.MeasurementRepository.GetAllDataByMeasurementAsync(measurementResult.Id);
-
-        if (!TryParseAll(data, out var values))
-        {
-            logger.LogWarning("Could not parse measurement data as numbers for measurement {MId}",
-                              measurementResult.Id);
-            return new IMeasurementService.InvalidMeasurementData();
-        }
-
-        return new Success<double>(values.Max());
-    }
-    
-    public async ValueTask<GetAllDataByMeasurementResult> GetAllDataByMeasurementAsync(int mgId, int mId)
-    {
-        if (!await uow.MeasurementRepository.MeasurementExistsAsync(mgId, mId))
-        {
-            logger.LogWarning("Measurement {MId} in group {MgId} not found", mId, mgId);
-            return new NotFound();
-        }
-
-        var data = await uow.MeasurementRepository.GetAllDataByMeasurementAsync(mId);
-
-        if (data.Count <= 0)
-        {
-            logger.LogWarning("No data found for measurement {MId}", mId);
-            return new None();
-        }
-
-        logger.LogInformation("Successfully retrieved {Count} data entries for measurement {MId}",
-                              data.Count, mId);
         return new Success<IReadOnlyCollection<MeasurementData>>(data);
     }
-    
-    public async ValueTask<GetDataByIdResult> GetDataByIdAsync(int mgId, int mId, int dId)
+
+    public async ValueTask<OneOf<Success<MeasurementData>, NotFound>> GetDataByIdAsync(
+        int groupId, int measurementId, int dataId)
     {
-        if (!await uow.MeasurementRepository.MeasurementExistsAsync(mgId, mId))
+        if (!await uow.MeasurementRepository.MeasurementExistsAsync(groupId, measurementId))
         {
-            logger.LogWarning("Measurement {MId} in group {MgId} not found", mId, mgId);
+            LogMeasurementNotFound(groupId, measurementId);
+
             return new NotFound();
         }
 
-        var data = await uow.MeasurementRepository.GetDataByIdAsync(mId, dId);
-
+        var data = await uow.MeasurementRepository.GetDataByIdAsync(measurementId, dataId);
         if (data is null)
         {
-            logger.LogWarning("Data entry {DId} for measurement {MId} not found", dId, mId);
+            logger.LogInformation("Data entry {DataId} of measurement {MeasurementId} not found",
+                                  dataId, measurementId);
+
             return new NotFound();
         }
 
-        logger.LogInformation("Successfully retrieved data entry {DId}", dId);
         return new Success<MeasurementData>(data);
     }
 
-    private static bool TryParseAll(IReadOnlyCollection<MeasurementData> data, out List<double> values)
+    public async ValueTask<OneOf<Success<Measurement>, NotFound, IMeasurementService.MeasurementAlreadyExists>>
+        AddMeasurementAsync(int groupId, string pace, string hand, string? description)
     {
-        values = new List<double>(data.Count);
-
-        foreach (var entry in data)
+        if (!await uow.MeasurementRepository.GroupExistsAsync(groupId))
         {
-            if (!double.TryParse(entry.Data, out var parsed))
-            {
-                return false;
-            }
+            LogGroupNotFound(groupId);
 
-            values.Add(parsed);
-        }
-
-        return values.Count > 0;
-    }
-    
-    public async ValueTask<AddMeasurementResult> AddMeasurementAsync(int mgId, string pace, string hand, string? description)
-    {
-        if (!await uow.MeasurementRepository.GroupExistsAsync(mgId))
-        {
-            logger.LogWarning("Measurement group {MgId} not found", mgId);
             return new NotFound();
         }
 
-        var existing = await uow.MeasurementRepository.GetMeasurementByFilterAsync(mgId, pace, hand);
-        if (existing is not null)
+        var existingMeasurement = await uow.MeasurementRepository.GetMeasurementByFilterAsync(groupId, pace, hand);
+        if (existingMeasurement is not null)
         {
-            logger.LogWarning("Measurement with pace={Pace} hand={Hand} already exists in group {MgId}", pace, hand, mgId);
+            logger.LogInformation("Cannot add measurement, pace {Pace} and hand {Hand} already exist in group {GroupId}",
+                                  pace, hand, groupId);
+
             return new IMeasurementService.MeasurementAlreadyExists();
         }
 
         var measurement = new Measurement
         {
-            GroupId = mgId,
+            GroupId = groupId,
             Pace = pace,
             Hand = hand,
             Description = description
@@ -394,23 +425,132 @@ public class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> log
 
         uow.MeasurementRepository.AddMeasurement(measurement);
         await uow.SaveChangesAsync();
-        logger.LogInformation("Measurement successfully added to group {MgId}", mgId);
+        logger.LogInformation("Measurement {MeasurementId} added to group {GroupId}", measurement.Id, groupId);
+
         return new Success<Measurement>(measurement);
     }
 
-    public async ValueTask<DeleteMeasurementResult> DeleteMeasurementAsync(int mgId, int mId)
+    public async ValueTask<OneOf<Success, NotFound>> DeleteMeasurementAsync(int groupId, int measurementId)
     {
-        var measurement = await uow.MeasurementRepository.GetMeasurementByIdAsync(mgId, mId);
-
+        var measurement = await uow.MeasurementRepository.GetMeasurementByIdAsync(groupId, measurementId);
         if (measurement is null)
         {
-            logger.LogWarning("Measurement {MId} in group {MgId} not found", mId, mgId);
+            LogMeasurementNotFound(groupId, measurementId);
+
             return new NotFound();
         }
 
         uow.MeasurementRepository.RemoveMeasurement(measurement);
         await uow.SaveChangesAsync();
-        logger.LogInformation("Measurement {MId} successfully removed", mId);
+        logger.LogInformation("Measurement {MeasurementId} deleted from group {GroupId}", measurementId, groupId);
+
         return new Success();
+    }
+
+    private async ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
+        GetAggregateOfGroupAsync(int groupId, string? pace, string? hand, Func<List<double>, double> aggregate)
+    {
+        if (!await uow.MeasurementRepository.GroupExistsAsync(groupId))
+        {
+            LogGroupNotFound(groupId);
+
+            return new NotFound();
+        }
+
+        var data = await uow.MeasurementRepository.GetDataOfGroupAsync(groupId, pace, hand);
+
+        return Aggregate(data, aggregate);
+    }
+
+    private async ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
+        GetAggregateOfMeasurementAsync(int groupId, int measurementId, Func<List<double>, double> aggregate)
+    {
+        if (!await uow.MeasurementRepository.MeasurementExistsAsync(groupId, measurementId))
+        {
+            LogMeasurementNotFound(groupId, measurementId);
+
+            return new NotFound();
+        }
+
+        var data = await uow.MeasurementRepository.GetDataOfMeasurementAsync(measurementId);
+
+        return Aggregate(data, aggregate);
+    }
+
+    private OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData> Aggregate(
+        IReadOnlyCollection<MeasurementData> data, Func<List<double>, double> aggregate)
+    {
+        List<double> values = [];
+        foreach (var entry in data)
+        {
+            if (!TryParseValues(entry.Data, values))
+            {
+                logger.LogInformation("Data entry {DataId} cannot be parsed as numbers", entry.Id);
+
+                return new IMeasurementService.InvalidMeasurementData();
+            }
+        }
+
+        if (values.Count == 0)
+        {
+            logger.LogInformation("No data values found to aggregate");
+
+            return new NotFound();
+        }
+
+        return new Success<double>(aggregate(values));
+    }
+
+    /// <summary>
+    ///     Parses a data entry, which is either a single number or a JSON array of numbers (e.g. a pressure curve).
+    ///     Numbers are always parsed with the invariant culture, so a decimal point is expected.
+    /// </summary>
+    /// <param name="data">The raw data of the entry</param>
+    /// <param name="values">The list the parsed values are added to</param>
+    /// <returns>True if the whole entry could be parsed into finite numbers, false otherwise</returns>
+    private static bool TryParseValues(string data, List<double> values)
+    {
+        var trimmedData = data.Trim();
+        if (!trimmedData.StartsWith('['))
+        {
+            if (!double.TryParse(trimmedData, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+                || !double.IsFinite(value))
+            {
+                return false;
+            }
+
+            values.Add(value);
+
+            return true;
+        }
+
+        double[]? arrayValues;
+        try
+        {
+            arrayValues = JsonSerializer.Deserialize<double[]>(trimmedData);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        if (arrayValues is null || !arrayValues.All(double.IsFinite))
+        {
+            return false;
+        }
+
+        values.AddRange(arrayValues);
+
+        return true;
+    }
+
+    private void LogGroupNotFound(int groupId)
+    {
+        logger.LogInformation("Measurement group {GroupId} not found", groupId);
+    }
+
+    private void LogMeasurementNotFound(int groupId, int measurementId)
+    {
+        logger.LogInformation("Measurement {MeasurementId} not found in group {GroupId}", measurementId, groupId);
     }
 }
