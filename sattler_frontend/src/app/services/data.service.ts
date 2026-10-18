@@ -454,7 +454,7 @@ export class DataService {
         this.api.getContacts(personId),
         this.getHorsesOrEmpty(personId),
       ]);
-      const contacts = contactsResponse.contacts.filter(contact => contact.id !== personId);
+      const contacts = contactsResponse.persons.filter(contact => contact.id !== personId);
       const customerData = await Promise.all(
         contacts.map(async contact => {
           const [detail, horseResponse] = await Promise.all([

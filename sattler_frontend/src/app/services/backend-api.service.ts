@@ -27,11 +27,7 @@ export interface BackendContact {
   id: number;
   firstName: string;
   lastName: string;
-  addressName: string | null;
-  cityName: string;
-  plz: string;
-  websiteLink: string | null;
-  description: string | null;
+  email: string | null;
 }
 
 export interface BackendHorse {
@@ -70,9 +66,9 @@ export class BackendApiService {
     return firstValueFrom(this.http.get<BackendPerson>(`${this.baseUrl}/persons/${id}`));
   }
 
-  getContacts(id: number): Promise<{ contacts: BackendContact[] }> {
+  getContacts(id: number): Promise<{ persons: BackendContact[] }> {
     return firstValueFrom(
-      this.http.get<{ contacts: BackendContact[] }>(`${this.baseUrl}/persons/${id}/contacts`),
+      this.http.get<{ persons: BackendContact[] }>(`${this.baseUrl}/persons/${id}/contacts`),
     );
   }
 
