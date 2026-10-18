@@ -461,21 +461,21 @@ export class DataService {
     this.backendError.set('');
     try {
       const personId = this.api.currentPersonId;
-      const [person, contactsResponse, ownHorsesResponse] = await Promise.all([
+      const [person, equestriansResponse, ownHorsesResponse] = await Promise.all([
         this.api.getPerson(personId),
-        this.api.getContacts(personId),
+        this.api.getEquestrians(),
         this.getHorsesOrEmpty(personId),
       ]);
-      const contacts = contactsResponse.persons.filter(contact => contact.id !== personId);
+      const customers = equestriansResponse.persons.filter(customer => customer.id !== personId);
       const customerData = await Promise.all(
-        contacts.map(async contact => {
+        customers.map(async customer => {
           const [detail, horseResponse] = await Promise.all([
-            this.api.getPerson(contact.id),
-            this.getHorsesOrEmpty(contact.id),
+            this.api.getPerson(customer.id),
+            this.getHorsesOrEmpty(customer.id),
           ]);
           return {
             customer: mapCustomer(detail, false),
-            horses: horseResponse.horses.map(horse => mapHorse(horse, contact.id)),
+            horses: horseResponse.horses.map(horse => mapHorse(horse, customer.id)),
           };
         }),
       );

@@ -81,6 +81,12 @@ export class BackendApiService {
     );
   }
 
+  getEquestrians(): Promise<{ persons: BackendContact[] }> {
+    return firstValueFrom(
+      this.http.get<{ persons: BackendContact[] }>(`${this.baseUrl}/persons/equestrians`),
+    );
+  }
+
   getHorses(id: number): Promise<{ horses: BackendHorse[] }> {
     return firstValueFrom(
       this.http.get<{ horses: BackendHorse[] }>(`${this.baseUrl}/persons/${id}/horses`),
