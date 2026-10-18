@@ -31,10 +31,6 @@ export class PageHeaderComponent {
     return this.data.getMe().email ?? '';
   }
 
-  get backendError(): string {
-    return this.data.actionError() || this.data.backendError();
-  }
-
   get profileActive(): boolean {
     return this.router.url.startsWith('/profile');
   }

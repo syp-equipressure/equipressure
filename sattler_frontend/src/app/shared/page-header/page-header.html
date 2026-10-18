@@ -14,9 +14,6 @@
 
   <div class="center">
     <h1 class="title">{{ title }}</h1>
-    @if (backendError) {
-      <span role="alert">{{ backendError }}</span>
-    }
     @if (subtitle) {
       <a class="subtitle" [href]="'mailto:' + subtitle">{{ subtitle }}</a>
     }
