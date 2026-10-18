@@ -69,7 +69,7 @@ export class BackendApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'http://localhost:5200/api';
 
-  readonly currentPersonId = 1;
+  readonly currentPersonId = 5;
 
   getPerson(id: number): Promise<BackendPerson> {
     return firstValueFrom(this.http.get<BackendPerson>(`${this.baseUrl}/persons/${id}`));
