@@ -46,9 +46,13 @@ export class CustomersPage {
       .sort((left, right) => fullName(left).localeCompare(fullName(right), 'de', { sensitivity: 'base' }));
   });
 
-  addCustomer(c: Customer): void {
-    this.data.addCustomer(c);
-    this.showForm.set(false);
+  async addCustomer(c: Customer): Promise<void> {
+    try {
+      await this.data.createCustomer(c);
+      this.showForm.set(false);
+    } catch (error) {
+      this.data.reportActionError(error);
+    }
   }
 
   fullName = fullName;

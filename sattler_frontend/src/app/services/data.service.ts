@@ -268,6 +268,33 @@ export class DataService {
     this._customers.update(list => [...list, customer]);
   }
 
+  async createCustomer(customer: Customer): Promise<void> {
+    this.actionError.set('');
+    const address = parseAddress(customer.address);
+    if (!customer.birthDate || !address) {
+      this.addCustomer(customer);
+      this.actionError.set(
+        'Diese Kundin wurde nur lokal angelegt. Für das Backend sind Geburtsdatum und eine Adresse mit PLZ und Ort erforderlich.',
+      );
+      return;
+    }
+
+    const created = await this.api.createPerson({
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      height: customer.heightCm,
+      weight: customer.weightKg,
+      dateOfBirth: customer.birthDate,
+      email: customer.email ?? null,
+      websiteLink: null,
+      description: null,
+      address,
+      role: 'Equestrian',
+    });
+    await this.api.addContact(this.api.currentPersonId, created.id);
+    this.addCustomer(mapCustomer(created, false));
+  }
+
   // ── Horses ─────────────────────────────────────────────────────────────────
 
   readonly horses = this._horses.asReadonly();
@@ -510,6 +537,21 @@ function formatAddress(address: BackendPerson['address']): string {
 function formatDate(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
+}
+
+function parseAddress(value: string | undefined): {
+  addressName: string | null;
+  cityName: string;
+  plz: string;
+} | null {
+  if (!value) return null;
+  const match = /^(?:(.+?),\s*)?(\d{4,5})\s+(.+)$/.exec(value.trim());
+  if (!match) return null;
+  return {
+    addressName: match[1]?.trim() || null,
+    plz: match[2],
+    cityName: match[3].trim(),
+  };
 }
 
 function buildPetziDetail(): MeasurementDetail {
