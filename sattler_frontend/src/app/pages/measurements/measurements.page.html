@@ -321,7 +321,12 @@
           <h2>{{ m.date }} · {{ m.deviceName }}</h2>
           <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toFixed(2).replace('.', ',') }} N/cm²</p>
         </header>
-        <p>{{ m.notes }}</p>
+        <textarea
+          [value]="m.notes"
+          placeholder="Notizen..."
+          aria-label="Notizen zur Messung vom {{ m.date }}"
+          (input)="updateNotes(m.id, $event)"
+        ></textarea>
       </article>
     } @empty {
       <p class="notes-empty">Keine Notizen vorhanden.</p>

@@ -5,25 +5,16 @@
     <header class="directory-heading">
       <div>
         <p class="eyebrow">Verwaltung</p>
-        <h2>{{ activeList() === 'contacts' ? 'Kontakte' : 'Favoriten' }}</h2>
+        <h2>Kundschaft</h2>
       </div>
+      <button class="primary-btn" type="button" (click)="showForm.set(true)">
+        <span class="material-icons">add</span>
+        Neue Kund*in
+      </button>
     </header>
 
     <div class="filters">
-      <div class="list-tabs" role="tablist" aria-label="Personenliste">
-        <button type="button" role="tab" [attr.aria-selected]="activeList() === 'contacts'"
-          [class.active]="activeList() === 'contacts'" (click)="activeList.set('contacts')">
-          Kontakte
-        </button>
-        <button type="button" role="tab" [attr.aria-selected]="activeList() === 'favourites'"
-          [class.active]="activeList() === 'favourites'" (click)="activeList.set('favourites')">
-          Favoriten
-        </button>
-      </div>
       <input
-        id="customerSearch"
-        name="customerSearch"
-        autocomplete="off"
         class="search-input"
         type="search"
         placeholder="Name oder E-Mail suchen"
@@ -31,20 +22,36 @@
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
+      <div class="date-filter">
+        <label>
+          <span>Von</span>
+          <input
+            type="date"
+            aria-label="Messungen ab diesem Datum"
+            [value]="measurementDateFrom()"
+            (input)="measurementDateFrom.set($any($event.target).value)"
+          />
+        </label>
+        <label>
+          <span>Bis</span>
+          <input
+            type="date"
+            aria-label="Messungen bis zu diesem Datum"
+            [value]="measurementDateTo()"
+            (input)="measurementDateTo.set($any($event.target).value)"
+          />
+        </label>
+      </div>
       <span class="result-count">{{ filtered().length }} Ergebnisse</span>
 
-      @if (!backendPersonId()) {
-        <p class="source-notice">Demo-Daten. Hinterlege deine Backend-Personen-ID in den Einstellungen,
-          um Kontakte und Favoriten aus dem Backend zu laden.</p>
+      @if (showForm()) {
+        <app-new-customer-form
+          (saved)="addCustomer($event)"
+          (cancelled)="showForm.set(false)"
+        />
       }
-
     </div>
 
-    @if (loadingBackendCustomers()) {
-      <div class="load-state" role="status">Personen werden geladen …</div>
-    } @else if (backendCustomersError()) {
-      <div class="load-state error" role="alert">{{ backendCustomersError() }}</div>
-    } @else {
     <div class="customer-list">
       <div class="list-header" aria-hidden="true">
         <span>Name</span>
@@ -79,6 +86,5 @@
         </div>
       }
     </div>
-    }
   </div>
 </section>

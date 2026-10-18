@@ -20,8 +20,6 @@
       </label>
       <input
         id="imageFile"
-        name="imageFile"
-        autocomplete="off"
         class="file-input-hidden"
         type="file"
         accept="image/*"
@@ -33,8 +31,6 @@
       <label class="form-label" for="horseName">Name *</label>
       <input
         id="horseName"
-        name="horseName"
-        autocomplete="off"
         class="form-input"
         type="text"
         placeholder="z. B. Wolke"
@@ -50,8 +46,6 @@
       <label class="form-label" for="breed">Rasse *</label>
       <input
         id="breed"
-        name="breed"
-        autocomplete="off"
         class="form-input"
         type="text"
         placeholder="z. B. Hannoveraner"
@@ -112,8 +106,6 @@
         <label class="form-label" for="age">Alter (wird berechnet)</label>
         <input
           id="age"
-          name="age"
-          autocomplete="off"
           class="form-input"
           type="text"
           [value]="calculatedAge() === null ? 'Geburtsdatum auswählen' : calculatedAge() + (calculatedAge() === 1 ? ' Jahr' : ' Jahre')"
@@ -125,8 +117,6 @@
         <label class="form-label" for="heightCm">Stockmaß (cm) *</label>
         <input
           id="heightCm"
-          name="heightCm"
-          autocomplete="off"
           class="form-input"
           type="number"
           placeholder="z. B. 168"
@@ -145,8 +135,6 @@
       <label class="form-label" for="weightKg">Gewicht (kg) *</label>
       <input
         id="weightKg"
-        name="weightKg"
-        autocomplete="off"
         class="form-input"
         type="number"
         placeholder="z. B. 580"

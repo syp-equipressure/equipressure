@@ -1,10 +1,9 @@
-import { Component, Input, effect, inject, signal } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { SidenavService } from '../../services/sidenav.service';
-import { BackendPersonContextService } from '../../services/backend-person-context.service';
-import { PersonApiService } from '../../services/person-api.service';
+import { DataService } from '../../services/data.service';
+import { fullName } from '../../models/customer.model';
 
 @Component({
   selector: 'app-page-header',
@@ -22,38 +21,18 @@ export class PageHeaderComponent {
   private readonly location = inject(Location);
   private readonly sidenav = inject(SidenavService);
   private readonly router = inject(Router);
-  private readonly personContext = inject(BackendPersonContextService);
-  private readonly personApi = inject(PersonApiService);
+  private readonly data = inject(DataService);
 
-  readonly accountName = signal('Konto');
-  readonly accountEmail = signal('');
+  get accountName(): string {
+    return fullName(this.data.getMe());
+  }
+
+  get accountEmail(): string {
+    return this.data.getMe().email ?? '';
+  }
 
   get profileActive(): boolean {
     return this.router.url.startsWith('/profile');
-  }
-
-  constructor() {
-    effect(onCleanup => {
-      const personId = this.personContext.personId();
-      this.accountName.set('Konto');
-      this.accountEmail.set('');
-      if (!personId) return;
-
-      const subscription = forkJoin({
-        person: this.personApi.getPersonDetails(personId),
-        profile: this.personApi.getProfileData(personId),
-      }).subscribe({
-        next: ({ person, profile }) => {
-          this.accountName.set(`${profile.firstName} ${profile.lastName}`);
-          this.accountEmail.set(person.email ?? '');
-        },
-        error: () => {
-          this.accountName.set('Konto');
-          this.accountEmail.set('');
-        },
-      });
-      onCleanup(() => subscription.unsubscribe());
-    });
   }
 
   get sidenavIsOpen(): boolean {

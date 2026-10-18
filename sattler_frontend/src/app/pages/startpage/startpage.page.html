@@ -4,13 +4,7 @@
   <section class="welcome">
     <div class="welcome-copy">
       <p class="eyebrow">Dein Arbeitsbereich</p>
-      <h2>
-        @if (firstName()) {
-          Willkommen zurück, {{ firstName() }}.
-        } @else {
-          Willkommen zurück.
-        }
-      </h2>
+      <h2>Willkommen zurück, {{ customer().firstName }}.</h2>
     </div>
   </section>
 
