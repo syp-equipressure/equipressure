@@ -578,7 +578,8 @@ function mapSaddle(saddle: BackendSaddle): Saddle {
 }
 
 function formatAddress(address: BackendPerson['address']): string {
-  return [address.addressName, address.plz, address.cityName].filter(Boolean).join(', ');
+  const locality = [address.plz, address.cityName].filter(Boolean).join(' ');
+  return [address.addressName, locality].filter(Boolean).join(', ');
 }
 
 function formatDate(value: string): string {
