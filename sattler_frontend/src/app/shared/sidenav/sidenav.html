@@ -1,0 +1,45 @@
+<aside class="sidenav">
+  <div class="brand">
+    <a class="brand-link" routerLink="/startpage" aria-label="Zur Startseite" (click)="onNavigate()">
+      <img class="brand-logo" src="/assets/equipressure-logo.png" alt="EquiPressure" />
+    </a>
+  </div>
+
+  <nav class="nav">
+    @for (item of items; track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="onNavigate()"
+      >
+          @if (item.icon === 'horse') {
+            <img class="icon-image" src="/assets/horse-icon.svg" alt="" />
+          } @else {
+            <span class="material-icons icon">{{ item.icon }}</span>
+          }
+        <span class="label">{{ item.label }}</span>
+        @if (item.badge) {
+          <span class="badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <div class="spacer"></div>
+
+  <a
+    [routerLink]="settings.route"
+    routerLinkActive="active"
+    class="nav-item settings"
+    (click)="onNavigate()"
+  >
+    <span class="material-icons icon">{{ settings.icon }}</span>
+    <span class="label">{{ settings.label }}</span>
+  </a>
+
+  <button class="theme-toggle" type="button" (click)="theme.toggle()" [attr.aria-pressed]="theme.isDark()">
+    <span class="material-icons">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+    <span class="label">{{ theme.isDark() ? 'Lightmode' : 'Darkmode' }}</span>
+  </button>
+</aside>

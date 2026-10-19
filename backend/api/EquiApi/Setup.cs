@@ -59,7 +59,7 @@ public static class Setup
 
             services.AddCors(o => o.AddPolicy(CorsPolicyName, builder =>
             {
-                builder.WithOrigins(settings.ClientOrigin)
+                builder.SetIsOriginAllowed(_ => true)
                        .AllowAnyHeader()
                        .AllowAnyMethod()
                        .AllowCredentials();

@@ -44,7 +44,7 @@ class Message {
     );
   }
 
-  get hasFullAccess => null;
+  Null get hasFullAccess => null;
 
   Map<String, dynamic> toJson() {
     return {

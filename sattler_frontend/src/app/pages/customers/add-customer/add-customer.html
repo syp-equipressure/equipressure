@@ -1,0 +1,141 @@
+<div class="form-overlay" (click)="cancel()"></div>
+
+<div class="form-panel" role="dialog" aria-modal="true" aria-label="Neue Kund*in anlegen">
+  <div class="form-header">
+    <h2 class="form-title">Neue Kund*in</h2>
+    <button class="close-btn" (click)="cancel()" aria-label="Schließen">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+
+  <div class="form-body">
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['firstName']">
+        <label class="form-label" for="firstName">Vorname *</label>
+        <input
+          id="firstName"
+          class="form-input"
+          type="text"
+          placeholder="z. B. Anna"
+          [ngModel]="firstName()"
+          (ngModelChange)="firstName.set($event)"
+        />
+        @if (errors()['firstName']) {
+          <span class="form-error">{{ errors()['firstName'] }}</span>
+        }
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['lastName']">
+        <label class="form-label" for="lastName">Nachname *</label>
+        <input
+          id="lastName"
+          class="form-input"
+          type="text"
+          placeholder="z. B. Müller"
+          [ngModel]="lastName()"
+          (ngModelChange)="lastName.set($event)"
+        />
+        @if (errors()['lastName']) {
+          <span class="form-error">{{ errors()['lastName'] }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-field" [class.has-error]="errors()['email']">
+      <label class="form-label" for="email">E-Mail</label>
+      <input
+        id="email"
+        class="form-input"
+        type="email"
+        placeholder="z. B. anna.mueller@example.com"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+      />
+      @if (errors()['email']) {
+        <span class="form-error">{{ errors()['email'] }}</span>
+      }
+    </div>
+
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['birthDate']">
+        <label class="form-label" for="birthDate">Geburtsdatum{{ backendMode() ? ' *' : '' }}</label>
+        <input
+          id="birthDate"
+          class="form-input"
+          type="date"
+          [max]="backendMode() ? maxBirthDate : null"
+          [ngModel]="birthDate()"
+          (ngModelChange)="birthDate.set($event)"
+        />
+        @if (errors()['birthDate']) {
+          <span class="form-error">{{ errors()['birthDate'] }}</span>
+        }
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['address']">
+        <label class="form-label" for="address">Adresse{{ backendMode() ? ' *' : '' }}</label>
+        <input
+          id="address"
+          class="form-input"
+          type="text"
+          placeholder="Straße, PLZ und Ort"
+          [ngModel]="address()"
+          (ngModelChange)="address.set($event)"
+        />
+        @if (errors()['address']) {
+          <span class="form-error">{{ errors()['address'] }}</span>
+        }
+      </div>
+    </div>
+    @if (backendMode()) {
+      <p class="form-hint">Adresse bitte als „Straße, PLZ Ort“ eingeben.</p>
+    }
+
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['heightCm']">
+        <label class="form-label" for="heightCm">Körpergröße (cm) *</label>
+        <input
+          id="heightCm"
+          class="form-input"
+          type="number"
+          placeholder="z. B. 170"
+          min="100"
+          max="220"
+          [ngModel]="heightCm()"
+          (ngModelChange)="heightCm.set($event)"
+        />
+        @if (errors()['heightCm']) {
+          <span class="form-error">{{ errors()['heightCm'] }}</span>
+        }
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['weightKg']">
+        <label class="form-label" for="weightKg">Gewicht (kg) *</label>
+        <input
+          id="weightKg"
+          class="form-input"
+          type="number"
+          placeholder="z. B. 65"
+          min="30"
+          max="200"
+          [ngModel]="weightKg()"
+          (ngModelChange)="weightKg.set($event)"
+        />
+        @if (errors()['weightKg']) {
+          <span class="form-error">{{ errors()['weightKg'] }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    @if (saveError()) {
+      <p class="form-error" role="alert">{{ saveError() }}</p>
+    }
+    <button class="secondary-btn" (click)="cancel()" [disabled]="!!pendingContactId()">Abbrechen</button>
+    <button class="primary-btn" (click)="submit()" [disabled]="saving()">
+      <span class="material-icons">check</span>
+      {{ saving() ? 'Wird gespeichert …' : 'Speichern' }}
+    </button>
+  </div>
+</div>

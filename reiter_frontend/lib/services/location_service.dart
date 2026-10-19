@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'package:reiterappfrontend/services/api_config.dart';
+
 /// Geworfen wenn das Backend einen erwarteten Fehlerstatus liefert.
 class LocationApiException implements Exception {
   final int statusCode;
@@ -18,11 +20,11 @@ class LocationApiException implements Exception {
 /// Spricht den LocationController (`api/locations`) des Backends an.
 ///
 ///   GET  /api/locations?length={n}&nameFilter={s}  -> [ AddressDto ]
-///   POST /api/locations                            (AddressDto)  201
+///   POST /api/locations                            (AddressRequest)  201
 ///
 /// AddressDto: { "address": string?, "cityName": string, "plz": string }
 class LocationService {
-  static const String baseUrl = 'http://localhost:5200/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 10);
   static const Map<String, String> _jsonHeaders = {
     'Content-Type': 'application/json',
@@ -67,6 +69,15 @@ class LocationService {
     _throwForStatus(response, 'load cities');
   }
 
+  static Future<Map<String, dynamic>> getAddressById(int id) async {
+    final url = Uri.parse('$baseUrl/locations/$id');
+    final response = await http.get(url).timeout(_timeout);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    _throwForStatus(response, 'load address $id');
+  }
+
   // ---------------------------------------------------------------------------
   // POST /api/locations  (AddressDto)
   //   Validierung im Backend: cityName + plz dürfen nicht leer sein.
@@ -79,7 +90,7 @@ class LocationService {
   }) async {
     final url = Uri.parse('$baseUrl/locations');
     final body = jsonEncode({
-      'address': address,
+      'addressName': address,
       'cityName': cityName,
       'plz': plz,
     });

@@ -7,11 +7,11 @@ class InfoButton extends StatelessWidget {
   final Color? iconColor;
 
   const InfoButton({
-    Key? key,
+    super.key,
     required this.infoText,
     this.size = 20.0,
     this.iconColor,
-  }) : super(key: key);
+  });
 
   void _showInfoDialog(BuildContext context) {
     showDialog(

@@ -1,58 +1,73 @@
 import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/models/saddle.dart';
+import 'package:reiterappfrontend/services/api_config.dart';
+import 'package:reiterappfrontend/services/horse_service.dart';
 
 class SaddleService {
+  static String get baseUrl => ApiConfig.baseUrl;
+  static const Duration _timeout = Duration(seconds: 5);
+
   static final SaddleService _instance = SaddleService._internal();
   factory SaddleService() => _instance;
   SaddleService._internal();
 
   List<Saddle>? _cachedSaddles;
+  int? _cachedPersonId;
 
-  /// Lädt Sättel aus dem JSON (später aus der Datenbank)
+  /// Lädt die Sättel der Pferde des aktuellen Reiters aus dem Backend.
   Future<List<Saddle>> getSaddles() async {
-    if (_cachedSaddles != null) {
+    final personId = await HorseService().currentPersonId();
+    if (_cachedSaddles != null && _cachedPersonId == personId) {
       return _cachedSaddles!;
     }
 
-    try {
-      final String response = await rootBundle.loadString('assets/data/saddle.json');
-      final List<dynamic> data = json.decode(response);
-      _cachedSaddles = data.map((json) => Saddle.fromJson(json)).toList();
-      return _cachedSaddles!;
-    } catch (e) {
-      return [];
-    }
+    final horses = await HorseService().getHorses();
+    final saddlesByHorse = await Future.wait(
+      horses.map((horse) => _fetchSaddlesForHorse(horse.id)),
+    );
+    _cachedSaddles = saddlesByHorse.expand((saddles) => saddles).toList();
+    _cachedPersonId = personId;
+    return _cachedSaddles!;
   }
 
-  /// Fügt einen neuen Sattel hinzu (später zur Datenbank)
+  Future<List<Saddle>> _fetchSaddlesForHorse(String horseId) async {
+    final url = Uri.parse('$baseUrl/horses/$horseId/saddles');
+    final response = await http.get(url).timeout(_timeout);
+    if (response.statusCode == 404) return const [];
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load saddles of horse $horseId: HTTP ${response.statusCode}');
+    }
+
+    final decoded = jsonDecode(response.body);
+    final List<dynamic> data = decoded is List
+        ? decoded
+        : decoded is Map<String, dynamic> && decoded['saddles'] is List
+            ? decoded['saddles'] as List<dynamic>
+            : const [];
+    return data
+        .map((json) => Saddle.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Sattel-Anlage wird vom Backend derzeit nicht unterstützt.
   Future<void> addSaddle(Saddle saddle) async {
-    _cachedSaddles ??= [];
-    _cachedSaddles!.add(saddle);
-    // TODO: Später hier zur Datenbank hinzufügen
+    throw UnsupportedError('The backend does not provide a saddle creation endpoint.');
   }
 
-  /// Aktualisiert einen Sattel (später in der Datenbank)
+  /// Sattel-Änderungen werden vom Backend derzeit nicht unterstützt.
   Future<void> updateSaddle(Saddle saddle) async {
-    if (_cachedSaddles == null) return;
-    
-    final index = _cachedSaddles!.indexWhere((s) => s.id == saddle.id);
-    if (index != -1) {
-      _cachedSaddles![index] = saddle;
-      // TODO: Später hier in der Datenbank aktualisieren
-    }
+    throw UnsupportedError('The backend does not provide a saddle update endpoint.');
   }
 
-  /// Löscht einen Sattel (später aus der Datenbank)
+  /// Sattel-Löschung wird vom Backend derzeit nicht unterstützt.
   Future<void> deleteSaddle(String id) async {
-    if (_cachedSaddles == null) return;
-    
-    _cachedSaddles!.removeWhere((s) => s.id == id);
-    // TODO: Später hier aus der Datenbank löschen
+    throw UnsupportedError('The backend does not provide a saddle deletion endpoint.');
   }
 
   /// Cache leeren (z.B. beim Logout)
   void clearCache() {
     _cachedSaddles = null;
+    _cachedPersonId = null;
   }
 }

@@ -18,8 +18,12 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
   final _height = TextEditingController();
   final _weight = TextEditingController();
   final _email = TextEditingController();
+  final _birthDate = TextEditingController();
+  final _city = TextEditingController();
+  final _postalCode = TextEditingController();
+  final _street = TextEditingController();
 
-  bool hidden = false;
+  DateTime? _selectedBirthDate;
   bool _isLoading = false;
 
   @override
@@ -62,21 +66,20 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                         const SizedBox(height: 24),
                         _buildTextField('Nachname', _lastname),
                         const SizedBox(height: 24),
+                        _buildBirthDateField(),
+                        const SizedBox(height: 24),
                         _buildNumberField('Größe', _height, 'cm'),
                         const SizedBox(height: 24),
                         _buildNumberField('Gewicht', _weight, 'kg'),
                         const SizedBox(height: 24),
-                        CheckboxListTile(
-                          value: hidden,
-                          onChanged: (v) => setState(() => hidden = v!),
-                          title: const Text(
-                            'Als versteckter Benutzer anzeigen',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: Colors.deepPurple,
-                        ),
+                        _buildTextField('Ort', _city),
+                        const SizedBox(height: 24),
+                        _buildNumberField('PLZ', _postalCode, ''),
+                        const SizedBox(height: 24),
+                        _buildTextField('Straße und Hausnummer (optional)', _street,
+                            requiredField: false),
+                        const SizedBox(height: 24),
+                        _buildTextField('E-Mail', _email, requiredField: false),
                         const SizedBox(height: 200),
                         SizedBox(
                           width: double.infinity,
@@ -116,7 +119,11 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool requiredField = true,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -145,10 +152,53 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
               borderSide: const BorderSide(color: Colors.deepPurple),
             ),
           ),
-          validator: (v) => v == null || v.isEmpty ? 'Pflichtfeld' : null,
+          validator: (v) => requiredField && (v == null || v.isEmpty)
+              ? 'Pflichtfeld'
+              : null,
         ),
       ],
     );
+  }
+
+  Widget _buildBirthDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Geburtsdatum',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _birthDate,
+          readOnly: true,
+          onTap: _pickBirthDate,
+          decoration: InputDecoration(
+            hintText: 'TT.MM.JJJJ',
+            suffixIcon: const Icon(Icons.calendar_today_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          validator: (_) => _selectedBirthDate == null ? 'Pflichtfeld' : null,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickBirthDate() async {
+    final today = DateTime.now();
+    final latestDate = DateTime(today.year, today.month, today.day - 1);
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthDate ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: latestDate,
+    );
+    if (selected == null) return;
+    setState(() {
+      _selectedBirthDate = selected;
+      _birthDate.text =
+          '${selected.day.toString().padLeft(2, '0')}.${selected.month.toString().padLeft(2, '0')}.${selected.year}';
+    });
   }
 
   Widget _buildNumberField(String label, TextEditingController controller, String unit) {
@@ -199,27 +249,23 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
 
     try {
       final service = PersonService();
-      final nextId = await service.getNextId();
-
       final person = Person(
-          id: nextId,
-          firstname: _firstname.text,
-          lastname: _lastname.text,
-          heightCm: int.parse(_height.text),
-          weightKg: int.parse(_weight.text),
-          plz: 0,
-          city: '',
-          street: '',
-          housenumber: 0,
-          email: _email.text,
-          hidden: hidden,
-        );
-
-      await service.addPerson(person);
-        
+        id: 0,
+        firstname: _firstname.text.trim(),
+        lastname: _lastname.text.trim(),
+        heightCm: int.parse(_height.text),
+        weightKg: int.parse(_weight.text),
+        plz: int.parse(_postalCode.text),
+        city: _city.text.trim(),
+        street: _street.text.trim(),
+        housenumber: 0,
+        email: _email.text.trim(),
+        dob: _selectedBirthDate,
+      );
+      final createdPerson = await service.addPerson(person);
 
       if (mounted) {
-        Navigator.pop(context, person); 
+        Navigator.pop(context, createdPerson);
       }
     } catch (e) {
       if (mounted) {
@@ -241,6 +287,10 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
     _height.dispose();
     _weight.dispose();
     _email.dispose();
+    _birthDate.dispose();
+    _city.dispose();
+    _postalCode.dispose();
+    _street.dispose();
     super.dispose();
   }
 }

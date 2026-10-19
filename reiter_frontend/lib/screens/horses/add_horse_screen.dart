@@ -220,14 +220,14 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
       if (weight < minWeight) {
         setState(() {
-          heightWeightErrorMessage = 'Gewicht zu niedrig für diese Größe (mind. ${minWeight} kg)';
+          heightWeightErrorMessage = 'Gewicht zu niedrig für diese Größe (mind. $minWeight kg)';
         });
         return;
       }
 
       if (weight > maxWeight) {
         setState(() {
-          heightWeightErrorMessage = 'Gewicht zu hoch für diese Größe (max. ${maxWeight} kg)';
+          heightWeightErrorMessage = 'Gewicht zu hoch für diese Größe (max. $maxWeight kg)';
         });
         return;
       }
@@ -254,7 +254,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       final birthDate = DateTime(year, month, day);
       final now = DateTime.now();
       final age = now.year - birthDate.year;
-      return '${age}yo';
+      return '$age J';
     } catch (e) {
       return '';
     }
@@ -1052,10 +1052,47 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     return;
                   }
 
+                  if (breedController.text.trim().isEmpty ||
+                      breedController.text.trim().toLowerCase() == 'unbekannt') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte eine unterstützte Pferderasse eingeben'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (stableCityController.text.trim().isEmpty ||
+                      stablePostalCodeController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte Stallort und Postleitzahl ausfüllen'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
                   if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Bitte Geburtsdatum ausfüllen'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                    final parsedHeight = double.tryParse(heightController.text.trim());
+                    final parsedWeight = double.tryParse(weightController.text.trim());
+                    if (parsedHeight == null ||
+                      parsedHeight <= 0 ||
+                      parsedWeight == null ||
+                      parsedWeight <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bitte eine gültige Größe und ein gültiges Gewicht eingeben'),
                         duration: Duration(seconds: 2),
                       ),
                     );

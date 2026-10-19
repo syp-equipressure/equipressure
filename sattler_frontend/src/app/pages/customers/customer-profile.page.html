@@ -1,0 +1,59 @@
+<app-page-header [title]="title()" [showBack]="true"></app-page-header>
+
+@if (customer(); as customer) {
+  <main class="profile-page">
+    <section class="panel contact-panel">
+      <header class="profile-heading">
+        <div class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</div>
+        <div class="identity">
+          <p class="eyebrow">Kundenprofil</p>
+          <h2>{{ fullName(customer) }}</h2>
+          <p>{{ customer.email || 'Keine E-Mail-Adresse hinterlegt' }}</p>
+        </div>
+      </header>
+      <div class="details-grid">
+        <div class="detail-row"><span>Name</span><strong>{{ fullName(customer) }}</strong></div>
+        <div class="detail-row">
+          <span>E-Mail</span>
+          @if (customer.email) {
+            <a [href]="'mailto:' + customer.email">{{ customer.email }}</a>
+          } @else if (loadingBackendCustomer()) {
+            <main class="profile-page">
+              <section class="panel not-found" role="status">Kundenprofil wird geladen …</section>
+            </main>
+          } @else if (backendCustomerError()) {
+            <main class="profile-page">
+              <section class="panel not-found" role="alert">{{ backendCustomerError() }}</section>
+            </main>
+          } @else {
+            <strong>–</strong>
+          }
+        </div>
+        <div class="detail-row">
+          <span>Geburtstag</span>
+          <strong>{{ formatBirthDate(customer.birthDate) }}</strong>
+        </div>
+        <div class="detail-row">
+          <span>Adresse</span>
+          <strong>{{ customer.address || '–' }}</strong>
+        </div>
+        <div class="detail-row"><span>Gewicht</span><strong>{{ customer.weightKg }} kg</strong></div>
+        <div class="detail-row"><span>Größe</span><strong>{{ customer.heightCm }} cm</strong></div>
+      </div>
+      <a class="horses-overview-link" [routerLink]="['horses']">
+        <span class="horse-avatar">
+          <img class="horse-symbol" src="/assets/horse-icon.svg" alt="" />
+        </span>
+        <span class="overview-link-text">
+          <strong>Pferdeübersicht öffnen</strong>
+          <small>Pferde und Messverläufe ansehen</small>
+        </span>
+        <span class="material-icons row-arrow">arrow_forward</span>
+      </a>
+    </section>
+  </main>
+} @else {
+  <main class="profile-page">
+    <section class="panel not-found">Kundenprofil nicht gefunden.</section>
+  </main>
+}

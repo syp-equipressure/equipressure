@@ -8,6 +8,7 @@ public interface IUnitOfWork
     public ILocationRepository LocationRepository { get; }
     public IDeviceRepository DeviceRepository { get; }
     public IHorseRepository HorseRepository { get; }
+    public IMeasurementRepository MeasurementRepository { get; }
     public ISaddleRepository SaddleRepository { get; }
 
     /// <summary>
@@ -32,6 +33,9 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
     
     public ISaddleRepository SaddleRepository =>
         field ??= new SaddleRepository(context.SaddleCategories);
+
+    public IMeasurementRepository MeasurementRepository =>
+        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }
