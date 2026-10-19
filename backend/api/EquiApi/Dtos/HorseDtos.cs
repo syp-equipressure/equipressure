@@ -105,3 +105,41 @@ public sealed record AddHorseRequest(
         }
     }
 }
+
+/// <summary>
+///     Request to add a saddle to a horse
+/// </summary>
+/// <param name="Name">The name of the saddle</param>
+/// <param name="CategoryId">The id of the saddle category</param>
+public sealed record AddSaddleRequest(string Name, int CategoryId)
+{
+    public sealed class Validator : AbstractValidator<AddSaddleRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+            RuleFor(x => x.CategoryId).GreaterThan(0);
+        }
+    }
+}
+
+/// <summary>
+///     A saddle category
+/// </summary>
+/// <param name="Id">The id of the saddle category</param>
+/// <param name="Name">The name of the saddle category</param>
+public sealed record SaddleCategoryDto(int Id, string Name)
+{
+    public static SaddleCategoryDto FromCategory(SaddleCategory category) =>
+        new(category.Id, category.Name);
+}
+
+/// <summary>
+///     A list of saddle categories
+/// </summary>
+/// <param name="Categories">The saddle categories</param>
+public sealed record SaddleCategoryListResponse(IReadOnlyList<SaddleCategoryDto> Categories)
+{
+    public static SaddleCategoryListResponse FromCategories(IEnumerable<SaddleCategory> categories) =>
+        new(categories.Select(SaddleCategoryDto.FromCategory).ToList());
+}
