@@ -19,6 +19,7 @@ public interface IUnitOfWork
     public ILocationRepository LocationRepository { get; }
     public  IDeviceRepository DeviceRepository { get; }
     public  IHorseRepository HorseRepository { get; }
+    public  ISaddleRepository SaddleRepository { get; }
     public Task SaveChangesAsync();
 }
 
@@ -30,7 +31,8 @@ internal sealed class UnitOfWork(DatabaseContext context, ILogger<UnitOfWork> lo
     public IRocketRepository RocketRepository => new RocketRepository(context.Rockets);
     public IPersonRepository PersonRepository => new PersonRepository(context.Persons, context.PersonRoleAssignments, context.PersonRoles);
     public ILocationRepository LocationRepository => new LocationRepository(context.Addresses);
-    public IHorseRepository HorseRepository => new HorseRepository(context.Horses, context.PersonHorses, context.SaddleCategories);
+    public IHorseRepository HorseRepository => new HorseRepository(context.Horses, context.PersonHorses);
+    public ISaddleRepository SaddleRepository => new SaddleRepository(context.SaddleCategories);
     public IDeviceRepository DeviceRepository => new DeviceRepository(context.Devices, context.DeviceCategories);
 
     public async ValueTask BeginTransactionAsync()
