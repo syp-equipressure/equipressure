@@ -150,6 +150,13 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
             return new NotFound();
         }
 
+        var saddleExists = await uow.HorseRepository.DoesSaddleCategoryExist(categoryId);
+        if (!saddleExists)
+        {
+            logger.LogWarning("Saddle category with id {id} could not be found", categoryId);
+            return new NotFound();
+        }
+
         var saddle = new Saddle
         {
             CategoryId = categoryId,
