@@ -217,7 +217,7 @@ PATCH {{BaseUrl}}/devices/{{deviceId}}/owner/{{userId}}
 ### ===================== Measurement Endpoints =====================
 
 ### 35. Alle Messgruppen eines Pferdes abrufen (minimale Daten: Datum, Person, Sattel)
-GET {{BaseUrl}}/measurementgroups/horse/{{horseId}}
+GET {{BaseUrl}}/measurementgroups/horse/{{groupHorseId}}
 
 ### 36. Detailansicht einer Messgruppe (Pferd, Reiter, Sattel, Datum, Notizen)
 GET {{BaseUrl}}/measurementgroups/{{groupId}}
@@ -285,10 +285,10 @@ Content-Type: application/json
     "name": "Galopptraining",
     "date": "2026-10-12",
     "notes": "Erste Messung mit neuem Pad",
-    "personId": 6,
-    "horseId": {{horseId}},
-    "saddleId": 1,
-    "deviceId": "EP0701"
+    "personId": 7,
+    "horseId": 8,
+    "saddleId": 8,
+    "deviceId": "EP0799"
 }
 
 ### 52. Messgruppe mit einem Sattel eines anderen Pferdes anlegen (404, Sattel 4 gehört Apollo)
