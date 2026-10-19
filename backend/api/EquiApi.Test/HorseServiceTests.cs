@@ -218,4 +218,64 @@ public sealed class HorseServiceTests
         result.Value.Should().BeOfType<Success<IReadOnlyCollection<Person>>>()
               .Which.Value.Should().Equal(riders);
     }
+
+    [Fact]
+    public async Task AddSaddleToHorse_HorseNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns((Horse?) null);
+
+        var result = await _sut.AddSaddleToHorse("Dressursattel", HorseId, 1);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.SaddleRepository.DidNotReceive().DoesSaddleCategoryExist(Arg.Any<int>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddSaddleToHorse_CategoryNotFound_ReturnsNotFound()
+    {
+        const int CategoryId = 5;
+        var horse = TestData.CreateHorse(HorseId);
+        _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns(horse);
+        _uowMock.SaddleRepository.DoesSaddleCategoryExist(CategoryId).Returns(false);
+
+        var result = await _sut.AddSaddleToHorse("Dressursattel", HorseId, CategoryId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        horse.Saddles.Should().BeEmpty();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddSaddleToHorse_ValidData_AddsSaddleToHorse()
+    {
+        const int CategoryId = 5;
+        var horse = TestData.CreateHorse(HorseId);
+        _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns(horse);
+        _uowMock.SaddleRepository.DoesSaddleCategoryExist(CategoryId).Returns(true);
+
+        var result = await _sut.AddSaddleToHorse("Dressursattel", HorseId, CategoryId);
+
+        var saddle = result.Value.Should().BeOfType<Success<Saddle>>().Which.Value;
+        saddle.Name.Should().Be("Dressursattel");
+        saddle.HorseId.Should().Be(HorseId);
+        saddle.CategoryId.Should().Be(CategoryId);
+        horse.Saddles.Should().ContainSingle().Which.Should().Be(saddle);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task GetAllSaddleCategories_ReturnsCategories()
+    {
+        var categories = new List<SaddleCategory>
+        {
+            TestData.CreateSaddleCategory(1, "Dressage"),
+            TestData.CreateSaddleCategory(2, "Jumping")
+        };
+        _uowMock.SaddleRepository.GetAllSaddleCategories().Returns(categories);
+
+        var result = await _sut.GetAllSaddleCategories();
+
+        result.Should().BeEquivalentTo(categories);
+    }
 }
