@@ -61,6 +61,21 @@ public interface IHorseService
     /// <param name="horseId">The id of the horse</param>
     /// <returns>The hidden riders (may be empty) or <see cref="NotFound" /> if the horse does not exist</returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetHiddenRidersOfHorseAsync(int horseId);
+
+    /// <summary>
+    /// Adds a new saddle to an existing horse
+    /// </summary>
+    /// <param name="name">name of the saddle</param>
+    /// <param name="horseId">id of the horse</param>
+    /// <param name="categoryId">id of the saddle category</param>
+    /// <returns>the saddle if it worked, not found if the horse or the category does not exist</returns>
+    public ValueTask<OneOf<Success<Saddle>, NotFound>> AddSaddleToHorse(string name, int horseId, int categoryId);
+
+    /// <summary>
+    /// Gets all saddle categories
+    /// </summary>
+    /// <returns>a list of the saddle categories</returns>
+    public ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories();
 }
 
 internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
@@ -188,4 +203,37 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
     {
         logger.LogInformation("Horse {HorseId} not found", horseId);
     }
+    
+    public async ValueTask<OneOf<Success<Saddle>, NotFound>> AddSaddleToHorse(string name, int horseId, int categoryId)
+    {
+        var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);
+
+        if (horse == null)
+        {
+            logger.LogWarning("Horse with id {id} could not be found", horseId);
+            return new NotFound();
+        }
+
+        var saddleExists = await uow.SaddleRepository.DoesSaddleCategoryExist(categoryId);
+        if (!saddleExists)
+        {
+            logger.LogWarning("Saddle category with id {id} could not be found", categoryId);
+            return new NotFound();
+        }
+
+        var saddle = new Saddle
+        {
+            CategoryId = categoryId,
+            HorseId = horseId,
+            Name = name
+        };
+        horse.Saddles.Add(saddle);
+        logger.LogInformation("Saddle was added to horse {id}", horseId);
+        await uow.SaveChangesAsync();
+
+        return new Success<Saddle>(saddle);
+    }
+
+    public async ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories()
+        => await uow.SaddleRepository.GetAllSaddleCategories();
 }

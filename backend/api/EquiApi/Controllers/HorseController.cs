@@ -93,4 +93,39 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             success => Ok(PersonListResponse.FromPersons(success.Value)),
             _ => NotFound());
     }
+    
+    /// <summary>
+    ///     Adds a saddle to a horse
+    /// </summary>
+    [HttpPost("{id:int}/saddles")]
+    [ProducesResponseType<SaddleDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<SaddleDto>> AddSaddleToHorse([FromRoute][ValidId] int id,
+                                                                     [FromBody] AddSaddleRequest request)
+    {
+        if (!IsValid<AddSaddleRequest.Validator, AddSaddleRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await horseService.AddSaddleToHorse(request.Name, id, request.CategoryId);
+
+        return result.Match<ActionResult<SaddleDto>>(
+                                                     success => CreatedAtAction(nameof(GetSaddles), new { id },
+                                                                                SaddleDto.FromSaddle(success.Value)),
+                                                     _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Gets all saddle categories
+    /// </summary>
+    [HttpGet("saddles/categories")]
+    [ProducesResponseType<SaddleCategoryListResponse>(StatusCodes.Status200OK)]
+    public async ValueTask<ActionResult<SaddleCategoryListResponse>> GetAllSaddleCategories()
+    {
+        var categories = await horseService.GetAllSaddleCategories();
+
+        return Ok(SaddleCategoryListResponse.FromCategories(categories));
+    }
 }

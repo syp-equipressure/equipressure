@@ -89,6 +89,12 @@ internal static class TestData
         Name = name
     };
 
+    public static SaddleCategory CreateSaddleCategory(int id = 1, string name = "Dressage") => new()
+    {
+        Id = id,
+        Name = name
+    };
+    
     public static Saddle CreateSaddle(int id = 1, int horseId = 1) => new()
     {
         Id = id,
