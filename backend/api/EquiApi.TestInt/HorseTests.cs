@@ -252,4 +252,101 @@ public sealed class HorseTests(WebApiTestFixture webApiFixture) : WebApiTestBase
 
         ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async ValueTask AddSaddleToHorse_ValidData_ReturnsCreatedSaddle()
+    {
+        var horse = TestData.CreateHorse();
+        var category = TestData.CreateSaddleCategory();
+        await SeedAsync(horse, category);
+        var request = new AddSaddleRequest("Dressursattel", category.Id);
+
+        var response = await ApiClient.PostAsJsonAsync($"api/horses/{horse.Id}/saddles", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var content = await ReadContentAsync<SaddleDto>(response);
+        content.Should().Be(new SaddleDto(content.Id, "Dressursattel", horse.Id, category.Id, "Dressage"));
+
+        response.Headers.Location.Should().NotBeNull();
+        var getResponse = await ApiClient.GetAsync(response.Headers.Location, TestCancellationToken);
+        var saddles = await ReadContentAsync<SaddleListResponse>(getResponse);
+        saddles.Saddles.Should().ContainSingle().Which.Should().Be(content);
+    }
+
+    [Fact]
+    public async ValueTask AddSaddleToHorse_NonExistingHorse_ReturnsNotFound()
+    {
+        var category = TestData.CreateSaddleCategory();
+        await SeedAsync(category);
+        var request = new AddSaddleRequest("Dressursattel", category.Id);
+
+        var response = await ApiClient.PostAsJsonAsync($"api/horses/{TestData.NonExistingId}/saddles", request,
+                                                       JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask AddSaddleToHorse_NonExistingCategory_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse();
+        await SeedAsync(horse);
+        var request = new AddSaddleRequest("Dressursattel", TestData.NonExistingId);
+
+        var response = await ApiClient.PostAsJsonAsync($"api/horses/{horse.Id}/saddles", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask AddSaddleToHorse_InvalidHorseId_ReturnsBadRequest()
+    {
+        var request = new AddSaddleRequest("Dressursattel", 1);
+
+        var response = await ApiClient.PostAsJsonAsync("api/horses/-1/saddles", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask AddSaddleToHorse_EmptyName_ReturnsBadRequest()
+    {
+        var request = new AddSaddleRequest("", 1);
+
+        var response = await ApiClient.PostAsJsonAsync("api/horses/1/saddles", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask AddSaddleToHorse_InvalidCategoryId_ReturnsBadRequest()
+    {
+        var request = new AddSaddleRequest("Dressursattel", 0);
+
+        var response = await ApiClient.PostAsJsonAsync("api/horses/1/saddles", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask GetAllSaddleCategories_ReturnsCategories()
+    {
+        var dressage = TestData.CreateSaddleCategory("Dressage");
+        var jumping = TestData.CreateSaddleCategory("Jumping");
+        await SeedAsync(dressage, jumping);
+
+        var response = await ApiClient.GetAsync("api/horses/saddles/categories", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<SaddleCategoryListResponse>(response);
+        content.Categories.Should().Contain([
+            new SaddleCategoryDto(dressage.Id, "Dressage"),
+            new SaddleCategoryDto(jumping.Id, "Jumping")
+        ]);
+    }
 }
