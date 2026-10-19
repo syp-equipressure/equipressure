@@ -163,6 +163,9 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
             HorseId = horseId,
             Name = name
         };
+        horse.Saddles.Add(saddle);
+        logger.LogInformation("Saddle was added to horse {id}", horseId);
+        await uow.SaveChangesAsync();
 
         return new Success<Saddle>(saddle);
     }
