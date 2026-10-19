@@ -49,8 +49,15 @@ public interface IHorseRepository
     /// <returns>A Read only Collection of hidden users</returns>
     public ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId);
 
+    /// <summary>
+    /// Checks if the the category exists
+    /// </summary>
+    /// <param name="saddleCategoryId">id of the category it should check</param>
+    /// <returns>true if the category exists, false if not</returns>
+    public ValueTask<bool> DoesSaddleCategoryExist(int saddleCategoryId);
+
 }
-public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorses) : IHorseRepository
+public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorses, DbSet<SaddleCategory> saddleCategories) : IHorseRepository
 {
     public async ValueTask<IReadOnlyCollection<Horse>> GetAllHorsesOfUserAsync(int userId) 
         => await horses.Include(h => h.Persons)
@@ -83,5 +90,8 @@ public class HorseRepository(DbSet<Horse> horses, DbSet<PersonHorse> personHorse
                              .Include(ph => ph.Person)
                              .Select(ph => ph.Person)
                              .ToListAsync();
+
+    public async ValueTask<bool> DoesSaddleCategoryExist(int saddleCategoryId) =>
+        await saddleCategories.AnyAsync(sc => sc.Id == saddleCategoryId);
 
 }
