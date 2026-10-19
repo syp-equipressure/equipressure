@@ -139,4 +139,24 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
 
     public async ValueTask<IReadOnlyCollection<Person>> GetAllHiddenUsersOfHorse(int horseId) 
         => (await uow.HorseRepository.GetAllHiddenUsersOfHorse(horseId)).ToArray();
+
+    public async ValueTask<OneOf<Success<Saddle>, NotFound>> AddSaddleToHorse(string name, int horseId, int categoryId)
+    {
+        var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);
+
+        if (horse == null)
+        {
+            logger.LogWarning("Horse with id {id} could not be found", horseId);
+            return new NotFound();
+        }
+
+        var saddle = new Saddle
+        {
+            CategoryId = categoryId,
+            HorseId = horseId,
+            Name = name
+        };
+
+        return new Success<Saddle>(saddle);
+    }
 }
