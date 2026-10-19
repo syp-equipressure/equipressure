@@ -169,5 +169,8 @@ public class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHors
 
         return new Success<Saddle>(saddle);
     }
+
+    public async ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories()
+    => await uow.SaddleRepository.GetAllSaddleCategories();
     
 }
