@@ -8,6 +8,7 @@ public interface IUnitOfWork
     public ILocationRepository LocationRepository { get; }
     public IDeviceRepository DeviceRepository { get; }
     public IHorseRepository HorseRepository { get; }
+    public ISaddleRepository SaddleRepository { get; }
 
     /// <summary>
     ///     Saves all pending changes in a single database transaction
@@ -28,6 +29,9 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IHorseRepository HorseRepository =>
         field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds);
+    
+    public ISaddleRepository SaddleRepository =>
+        field ??= new SaddleRepository(context.SaddleCategories);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }
