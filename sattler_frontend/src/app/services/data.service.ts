@@ -577,7 +577,7 @@ function mapHorse(horse: BackendHorse, ownerId: number): Horse {
     ownerId: String(ownerId),
     heightCm: horse.height,
     weightKg: horse.weight,
-    sex: horse.gender === 'Female' ? 'Stute' : 'Hengst',
+    sex: horse.gender === 'Female' ? 'Weiblich' : 'Männlich',
     birthDate: formatDate(birthDate),
     address: formatAddress(horse.address),
   };
@@ -627,8 +627,8 @@ function parseHorseDate(value: string | undefined): string | null {
 }
 
 function genderToBackend(value: Horse['sex']): BackendHorse['gender'] | null {
-  if (value === 'Stute') return 'Female';
-  if (value === 'Wallach' || value === 'Hengst') return 'Male';
+  if (value === 'Weiblich') return 'Female';
+  if (value === 'Männlich') return 'Male';
   return null;
 }
 
