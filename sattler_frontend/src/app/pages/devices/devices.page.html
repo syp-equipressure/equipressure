@@ -5,7 +5,6 @@
     <div>
       <p class="eyebrow">Geräteverwaltung</p>
       <h2>Meine Messgeräte</h2>
-      <p>Verwalte deine Satteldruckmessgeräte und ihre Gerätenummern.</p>
     </div>
     @if (!backendPersonId()) {
     <button type="button" class="primary-button" (click)="openAddForm()">
@@ -22,7 +21,6 @@
     <p class="feedback error" role="alert">{{ backendError() }}</p>
   }
   @if (backendPersonId() && !backendLoading() && !backendError()) {
-    <p class="feedback">Backend-Geräte sind hier schreibgeschützt. Die API bietet derzeit keinen passenden Kategorie-Endpunkt zum sicheren Anlegen.</p>
   }
   @if (saveError()) {
     <p class="feedback error" role="alert">{{ saveError() }}</p>
