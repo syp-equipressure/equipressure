@@ -10,6 +10,15 @@
 @deletePersonId = 11
 @userId = 9
 @locationId = 1
+# Messungsgruppe 1 (Luna) mit den Messungen 1-3 (Schritt Links, Schritt Rechts, Trab Links), je ein Messdatum
+@groupHorseId = 3
+@groupId = 3
+@measurementId = 6
+@dataId = 6
+@pace = Schritt
+@hand = Links
+# Messung, die von Request 50 gelöscht wird: die von Request 49 neu angelegte Messung
+@deleteMeasurementId = 11
 
 ### ===================== Person Endpoints =====================
 
@@ -203,3 +212,94 @@ DELETE {{BaseUrl}}/devices/{{deviceId}}/users/{{userId}}
 
 ### 34. Besitzer eines Geräts ändern
 PATCH {{BaseUrl}}/devices/{{deviceId}}/owner/{{userId}}
+
+
+### ===================== Measurement Endpoints =====================
+
+### 35. Alle Messgruppen eines Pferdes abrufen (minimale Daten: Datum, Person, Sattel)
+GET {{BaseUrl}}/measurementgroups/horse/{{groupHorseId}}
+
+### 36. Detailansicht einer Messgruppe (Pferd, Reiter, Sattel, Datum, Notizen)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}
+
+### 37. Alle Messungen einer Messgruppe abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+
+### 38. Eine Messung abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}
+
+### 39. Eine Messung nach Pace und Hand filtern
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/filter?pace={{pace}}&hand={{hand}}
+
+### 40. Durchschnitt der Messwerte einer Gruppe (optional nach Pace und Hand filtern)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/average?pace={{pace}}
+
+### 41. Minimum der Messwerte einer Gruppe (optional nach Pace und Hand filtern)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/min?hand={{hand}}
+
+### 42. Maximum der Messwerte einer Gruppe (optional nach Pace und Hand filtern)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/max
+
+### 43. Durchschnitt der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/average
+
+### 44. Minimum der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/min
+
+### 45. Maximum der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/max
+
+### 46. Alle Messdaten einer Messung abrufen (sortiert nach Zeitstempel)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/measurementData
+
+### 47. Ein Messdatum abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/measurementData/{{dataId}}
+
+### 48. Messung mit bereits vorhandener Pace und Hand anlegen (409)
+POST {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+Content-Type: application/json
+
+{
+    "pace": "{{pace}}",
+    "hand": "{{hand}}"
+}
+
+### 49. Neue Messung anlegen
+POST {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+Content-Type: application/json
+
+{
+    "pace": "Galopp",
+    "hand": "Links",
+    "description": "Gleichmäßiger Galopp"
+}
+
+### 50. Messung löschen (löscht auch ihre Messdaten)
+DELETE {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{deleteMeasurementId}}
+
+### 51. Neue Messgruppe anlegen (Lena reitet Luna mit Sattel 1 und Gerät EP0701)
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-12",
+    "notes": "Erste Messung mit neuem Pad",
+    "personId": 7,
+    "horseId": 8,
+    "saddleId": 8,
+    "deviceId": "EP0799"
+}
+
+### 52. Messgruppe mit einem Sattel eines anderen Pferdes anlegen (404, Sattel 4 gehört Apollo)
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-12",
+    "personId": 6,
+    "horseId": {{horseId}},
+    "saddleId": 4,
+    "deviceId": "EP0701"
+}

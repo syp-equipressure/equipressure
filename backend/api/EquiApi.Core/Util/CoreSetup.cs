@@ -12,5 +12,6 @@ public static class CoreSetup
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<IHorseService, HorseService>();
         services.AddScoped<IDeviceService, DeviceService>();
+        services.AddScoped<IMeasurementService, MeasurementService>();
     }
 }

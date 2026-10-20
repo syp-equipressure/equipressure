@@ -34,6 +34,14 @@ public interface IHorseRepository
     public ValueTask<IReadOnlyCollection<Saddle>> GetSaddlesOfHorseAsync(int horseId);
 
     /// <summary>
+    ///     Checks if a saddle belongs to a horse
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="saddleId">The id of the saddle</param>
+    /// <returns>True if the saddle exists and belongs to the horse, false otherwise</returns>
+    public ValueTask<bool> SaddleOfHorseExistsAsync(int horseId, int saddleId);
+
+    /// <summary>
     ///     Gets the owner and all riders of a horse that are not hidden, the owner is always the first entry
     /// </summary>
     /// <param name="horseId">The id of the horse</param>
@@ -89,6 +97,9 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
                       .Include(s => s.Category)
                       .OrderBy(s => s.Name)
                       .ToListAsync();
+
+    public async ValueTask<bool> SaddleOfHorseExistsAsync(int horseId, int saddleId) =>
+        await horseSet.AnyAsync(h => h.Id == horseId && h.Saddles.Any(s => s.Id == saddleId));
 
     public async ValueTask<IReadOnlyCollection<Person>> GetRidersOfHorseAsync(int horseId) =>
         await personHorseSet.AsNoTracking()
