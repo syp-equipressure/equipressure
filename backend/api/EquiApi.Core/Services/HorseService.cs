@@ -42,6 +42,13 @@ public interface IHorseService
     public ValueTask<OneOf<Success<Horse>, NotFound>> AddHorseAsync(NewHorseData data);
 
     /// <summary>
+    ///     Deletes a horse
+    /// </summary>
+    /// <param name="horseId">the id of the horse that should be deleted</param>
+    /// <returns>success if it works, not found if it does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> RemoveHorseAsync(int horseId);
+    
+    /// <summary>
     ///     Gets all saddles of a horse
     /// </summary>
     /// <param name="horseId">The id of the horse</param>
@@ -154,6 +161,22 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
         logger.LogInformation("Horse {HorseId} added for owner {PersonId}", horse.Id, owner.Id);
 
         return new Success<Horse>(horse);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RemoveHorseAsync(int horseId)
+    {
+        var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);
+        if (horse == null)
+        {
+            logger.LogWarning("Horse with id {horseId} was not found", horseId);
+            return new NotFound();
+        }
+
+        uow.HorseRepository.DeleteHorse(horse);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Horse with id {id} was deleted successfully", horseId);
+
+        return new Success();
     }
 
     public async ValueTask<OneOf<Success<IReadOnlyCollection<Saddle>>, NotFound>> GetSaddlesOfHorseAsync(int horseId)
