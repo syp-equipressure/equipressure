@@ -65,7 +65,7 @@ class SelectionDropdown<T> extends StatelessWidget {
                 ...items.map((T item) {
                   return DropdownMenuItem<String>(
                     value: getItemId(item),
-                    child: Text(getItemText(item)),
+                    child: Text(getItemText(item), overflow: TextOverflow.ellipsis),
                   );
                 }),
                 if (onAddNew != null)

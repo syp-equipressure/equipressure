@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/models/device.dart';
-import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/models/user_data.dart';
 import 'package:reiterappfrontend/services/device_service.dart';
@@ -291,99 +290,6 @@ class PersonService {
       return;
     }
     _throwForStatus(response, 'remove contact');
-  }
-
-  // ---------------------------------------------------------------------------
-  // Hilfsmethoden für Screens — diese Endpoints sind NICHT im PersonController
-  // dokumentiert und gehören vermutlich in eigene Services. Vorerst hier
-  // belassen damit existierende Screens nicht brechen.
-  // TODO: in passende Services verschieben sobald Backend-Endpoints klar sind.
-  // ---------------------------------------------------------------------------
-
-  static Future<List<GroupMember>> loadGroupMembers(String deviceId) async {
-    final usersUrl = Uri.parse('$baseUrl/devices/$deviceId/users');
-    final ownerUrl = Uri.parse('$baseUrl/devices/$deviceId/owner');
-    final responses = await Future.wait([
-      http.get(usersUrl).timeout(_timeout),
-      http.get(ownerUrl).timeout(_timeout),
-    ]);
-    final usersResponse = responses[0];
-    final ownerResponse = responses[1];
-
-    if (usersResponse.statusCode != 200) {
-      _throwForStatus(usersResponse, 'load device users');
-    }
-    if (ownerResponse.statusCode != 200) {
-      _throwForStatus(ownerResponse, 'load device owner');
-    }
-
-    final owner = jsonDecode(ownerResponse.body) as Map<String, dynamic>;
-    final ownerIdValue = owner['id'] ?? owner['person_id'] ?? owner['personId'];
-    if (ownerIdValue == null) {
-      throw const FormatException('Invalid device owner response');
-    }
-    final ownerId = ownerIdValue.toString();
-    final decodedUsers = jsonDecode(usersResponse.body);
-    final List<dynamic> users;
-    if (decodedUsers is List) {
-      users = decodedUsers;
-    } else if (decodedUsers is Map<String, dynamic>) {
-      users =
-          (decodedUsers['persons'] ??
-                  decodedUsers['users'] ??
-                  decodedUsers['members'] ??
-                  [])
-              as List<dynamic>;
-    } else {
-      throw const FormatException('Invalid device users response');
-    }
-
-    final members = users.map((user) {
-      final member = GroupMember.fromJson(user as Map<String, dynamic>);
-      return GroupMember(
-        id: member.id,
-        name: member.name,
-        imageUrl: member.imageUrl,
-        isCurrentUser: member.isCurrentUser,
-        isOwner: member.id == ownerId,
-      );
-    }).toList();
-    if (!members.any((member) => member.id == ownerId)) {
-      members.add(
-        GroupMember(
-          id: ownerId,
-          name: GroupMember.fromJson(owner).name,
-          imageUrl: (owner['imageUrl'] ?? owner['image_url']) as String?,
-          isCurrentUser: false,
-          isOwner: true,
-        ),
-      );
-    }
-    return members;
-  }
-
-  static Future<void> addDeviceUser(String deviceId, String userId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
-    final response = await http.post(url).timeout(_timeout);
-    if (response.statusCode != 201 && response.statusCode != 200 && response.statusCode != 204) {
-      _throwForStatus(response, 'add device user');
-    }
-  }
-
-  static Future<void> removeDeviceUser(String deviceId, String userId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
-    final response = await http.delete(url).timeout(_timeout);
-    if (response.statusCode != 200 && response.statusCode != 204) {
-      _throwForStatus(response, 'remove device user');
-    }
-  }
-
-  static Future<void> changeDeviceOwner(String deviceId, String userId) async {
-    final url = Uri.parse('$baseUrl/devices/$deviceId/owner/$userId');
-    final response = await http.patch(url).timeout(_timeout);
-    if (response.statusCode != 200) {
-      _throwForStatus(response, 'change device owner');
-    }
   }
 
   static Future<UserData> loadUserData(String personId) async {

@@ -15,7 +15,7 @@ class AuthService {
 
   /// Demo-userId solange noch kein Login da ist. Muss eine Person im Backend
   /// mit dieser Id sein (oder lokaler JSON-Fallback greift).
-  static const int demoUserId = 1;
+  static const int demoUserId = 6;
 
   /// Aktuell gespeicherter JWT-Token. Solange Login fehlt: null.
   String? _token;

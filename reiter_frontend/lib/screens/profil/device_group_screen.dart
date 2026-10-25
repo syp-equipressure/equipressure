@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
-import 'package:reiterappfrontend/services/person_service.dart';
+import 'package:reiterappfrontend/services/device_service.dart';
 
 class DeviceGroupScreen extends StatefulWidget {
   final String deviceId;
@@ -23,7 +23,7 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
   @override
   void initState() {
     super.initState();
-    _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+    _membersFuture = DeviceService.getGroupMembers(widget.deviceId);
   }
 
   @override
@@ -321,10 +321,10 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
 
     setState(() => _isUpdating = true);
     try {
-      await PersonService.addDeviceUser(widget.deviceId, userId.toString());
+      await DeviceService.addUserToDevice(widget.deviceId, userId);
       if (!mounted) return;
       setState(() {
-        _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+        _membersFuture = DeviceService.getGroupMembers(widget.deviceId);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Mitglied wurde hinzugefügt.')),
@@ -344,10 +344,10 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
   Future<void> _removeMember(GroupMember member) async {
     setState(() => _isUpdating = true);
     try {
-      await PersonService.removeDeviceUser(widget.deviceId, member.id);
+      await DeviceService.removeUserFromDevice(widget.deviceId, int.parse(member.id));
       if (!mounted) return;
       setState(() {
-        _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+        _membersFuture = DeviceService.getGroupMembers(widget.deviceId);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -398,10 +398,10 @@ class _DeviceGroupScreenState extends State<DeviceGroupScreen> {
 
     setState(() => _isUpdating = true);
     try {
-      await PersonService.changeDeviceOwner(widget.deviceId, selectedMember.id);
+      await DeviceService.changeDeviceOwner(widget.deviceId, int.parse(selectedMember.id));
       if (!mounted) return;
       setState(() {
-        _membersFuture = PersonService.loadGroupMembers(widget.deviceId);
+        _membersFuture = DeviceService.getGroupMembers(widget.deviceId);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

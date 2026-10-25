@@ -44,11 +44,8 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
     setState(() => isLoading = true);
 
     try {
-      final loadedMeasurements = await _measurementService.getMeasurements();
-
-      final horseMeasurements = loadedMeasurements
-          .where((m) => m.horseName.toLowerCase() == widget.horse.name.toLowerCase())
-          .toList();
+      final horseMeasurements =
+          await _measurementService.getMeasurementsForHorse(widget.horse.id);
 
       horseMeasurements.sort((a, b) => b.date.compareTo(a.date));
 
@@ -182,14 +179,18 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
                   ); }
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '${widget.horse.name}\'s Historie',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    '${widget.horse.name}\'s Historie',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Text(
                   '${filteredMeasurements.length} Messungen',
                   style: TextStyle(

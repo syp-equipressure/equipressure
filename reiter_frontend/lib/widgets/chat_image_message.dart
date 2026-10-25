@@ -30,8 +30,8 @@ class ChatImageMessage extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: attachments.length == 1
-                  ? _buildSingleImage(attachments.first)
-                  : _buildImageGrid(attachments),
+                  ? _buildSingleImage(context, attachments.first)
+                  : _buildImageGrid(context, attachments),
             ),
             // Optional caption
             if (message.content.isNotEmpty)
@@ -56,9 +56,9 @@ class ChatImageMessage extends StatelessWidget {
     );
   }
 
-  Widget _buildSingleImage(MessageAttachment attachment) {
+  Widget _buildSingleImage(BuildContext context, MessageAttachment attachment) {
     return GestureDetector(
-      onTap: () => _openImageViewer(attachment),
+      onTap: () => _openImageViewer(context, attachment),
       child: Container(
         constraints: const BoxConstraints(maxHeight: 250),
         child: _buildImageWidget(attachment),
@@ -66,7 +66,7 @@ class ChatImageMessage extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGrid(List<MessageAttachment> attachments) {
+  Widget _buildImageGrid(BuildContext context, List<MessageAttachment> attachments) {
     if (attachments.length == 2) {
       return Row(
         children: attachments.map((a) {
@@ -76,7 +76,7 @@ class ChatImageMessage extends StatelessWidget {
               child: AspectRatio(
                 aspectRatio: 1,
                 child: GestureDetector(
-                  onTap: () => _openImageViewer(a),
+                  onTap: () => _openImageViewer(context, a),
                   child: _buildImageWidget(a),
                 ),
               ),
@@ -95,7 +95,7 @@ class ChatImageMessage extends StatelessWidget {
           width: 120,
           height: 120,
           child: GestureDetector(
-            onTap: () => _openImageViewer(a),
+            onTap: () => _openImageViewer(context, a),
             child: _buildImageWidget(a),
           ),
         );
@@ -148,7 +148,29 @@ class ChatImageMessage extends StatelessWidget {
     );
   }
 
-  void _openImageViewer(MessageAttachment attachment) {
-    // TODO: Implement full-screen image viewer
+  void _openImageViewer(BuildContext context, MessageAttachment attachment) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            title: Text(
+              attachment.fileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 5,
+              child: _buildImageWidget(attachment),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

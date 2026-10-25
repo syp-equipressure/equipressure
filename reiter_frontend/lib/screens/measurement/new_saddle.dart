@@ -20,10 +20,11 @@ class NewSaddleScreen extends StatefulWidget {
 class _NewSaddleScreenState extends State<NewSaddleScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _categoryController = TextEditingController();
-  
+
   Horse? _selectedHorse;
   List<Horse> _horses = [];
+  SaddleCategory? _selectedCategory;
+  List<SaddleCategory> _categories = [];
   bool _isLoading = false;
 
   @override
@@ -31,6 +32,18 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
     super.initState();
     _selectedHorse = widget.preselectedHorse;
     _loadHorses();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await SaddleService().getSaddleCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      // Fehler beim Laden ignorieren
+    }
   }
 
   Future<void> _loadHorses() async {
@@ -90,7 +103,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
                       children: [
                         _buildTextField('Name', _nameController),
                         const SizedBox(height: 24),
-                        _buildTextField('Kategorie', _categoryController),
+                        _buildCategoryDropdownField(),
                         const SizedBox(height: 24),
                         _buildHorseDropdownField(),
                         const SizedBox(height: 200),
@@ -197,13 +210,60 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
               items: _horses.map((Horse horse) {
                 return DropdownMenuItem<String>(
                   value: horse.id,
-                  child: Text(horse.name),
+                  child: Text(horse.name, overflow: TextOverflow.ellipsis),
                 );
               }).toList(),
               onChanged: (String? newValue) {
                 if (newValue != null) {
                   setState(() {
                     _selectedHorse = _horses.firstWhere((h) => h.id == newValue);
+                  });
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryDropdownField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Kategorie',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: _selectedCategory?.id,
+              isExpanded: true,
+              icon: Icon(Icons.expand_more, color: Colors.grey[600]),
+              hint: Text(
+                'Kategorie auswählen',
+                style: TextStyle(color: Colors.grey[400]),
+              ),
+              items: _categories.map((SaddleCategory category) {
+                return DropdownMenuItem<int>(
+                  value: category.id,
+                  child: Text(category.name),
+                );
+              }).toList(),
+              onChanged: (int? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedCategory = _categories.firstWhere((c) => c.id == newValue);
                   });
                 }
               },
@@ -222,6 +282,12 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
       );
       return;
     }
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte Kategorie auswählen')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -231,14 +297,14 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
       final saddle = Saddle(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
-        category: _categoryController.text,
+        category: _selectedCategory!.name,
         horseId: _selectedHorse!.id,
       );
 
-      await service.addSaddle(saddle);
+      final savedSaddle = await service.addSaddle(saddle);
 
       if (mounted) {
-        Navigator.pop(context, saddle); // Gib den erstellten Sattel zurück
+        Navigator.pop(context, savedSaddle); // Gib den erstellten Sattel zurück
       }
     } catch (e) {
       if (mounted) {
@@ -256,7 +322,6 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _categoryController.dispose();
     super.dispose();
   }
 }

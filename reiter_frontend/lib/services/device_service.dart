@@ -107,38 +107,38 @@ class DeviceService {
 
   /// Lädt Gruppenmitglieder für ein Gerät
   static Future<List<GroupMember>> getGroupMembers(String deviceId) async {
-    try {
-      final users = await getDeviceUsers(deviceId);
-      final owner = await getDeviceOwner(deviceId);
-      final ownerId = owner?['id']?.toString();
+    final results = await Future.wait([
+      getDeviceUsers(deviceId),
+      getDeviceOwner(deviceId),
+    ]);
+    final users = results[0] as List<Map<String, dynamic>>;
+    final owner = results[1] as Map<String, dynamic>?;
+    final ownerId = owner?['id']?.toString();
 
-      final members = users.map((json) {
-        final member = GroupMember.fromJson(json);
-        return GroupMember(
-          id: member.id,
-          name: member.name,
-          imageUrl: member.imageUrl,
-          isCurrentUser: member.isCurrentUser,
-          isOwner: member.id == ownerId,
-        );
-      }).toList();
+    final members = users.map((json) {
+      final member = GroupMember.fromJson(json);
+      return GroupMember(
+        id: member.id,
+        name: member.name,
+        imageUrl: member.imageUrl,
+        isCurrentUser: member.isCurrentUser,
+        isOwner: member.id == ownerId,
+      );
+    }).toList();
 
-      if (owner != null && ownerId != null && !members.any((m) => m.id == ownerId)) {
-        final ownerMember = GroupMember.fromJson(owner);
-        members.add(
-          GroupMember(
-            id: ownerId,
-            name: ownerMember.name,
-            imageUrl: ownerMember.imageUrl,
-            isCurrentUser: false,
-            isOwner: true,
-          ),
-        );
-      }
-      return members;
-    } catch (e) {
-      return const [];
+    if (owner != null && ownerId != null && !members.any((m) => m.id == ownerId)) {
+      final ownerMember = GroupMember.fromJson(owner);
+      members.add(
+        GroupMember(
+          id: ownerId,
+          name: ownerMember.name,
+          imageUrl: ownerMember.imageUrl,
+          isCurrentUser: false,
+          isOwner: true,
+        ),
+      );
     }
+    return members;
   }
 
   /// Fügt ein neues Gerät hinzu (`POST /api/devices`)
