@@ -158,13 +158,13 @@
           <div class="recent-list">
             @for (item of recentMeasurements(); track item.id) {
               <div class="recent-row">
-                <span class="dot" [class.green]="item.tone === 'green'" [class.red]="item.tone === 'red'"></span>
+                <span class="dot"></span>
                 <div class="recent-meta">
                   <div class="recent-label">{{ item.label }}</div>
                   <div class="recent-date">{{ item.date }}</div>
                 </div>
-                <div class="recent-score" [class.green]="item.tone === 'green'" [class.red]="item.tone === 'red'">
-                  {{ item.score }}
+                <div class="recent-score" title="Ø Druck in N/cm²">
+                  {{ item.score }} <small>N/cm²</small>
                 </div>
               </div>
             } @empty {

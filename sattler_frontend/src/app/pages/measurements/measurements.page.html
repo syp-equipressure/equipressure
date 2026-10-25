@@ -107,8 +107,14 @@
             (click)="selectMeasurement(m.id)"
           >
             <div class="date">{{ m.date }}</div>
-            <div class="device">{{ m.deviceName }}</div>
-            <div class="meta">{{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%</div>
+            <div class="device">{{ m.detail.riderName }}</div>
+            <div class="meta">
+              @if (isLoaded(m.id)) {
+                {{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%
+              } @else {
+                Wird geladen …
+              }
+            </div>
           </button>
           <button
             type="button"
@@ -144,6 +150,11 @@
                 (click)="downloadReport(m)">
                 <span class="material-icons">file_download</span>
                 PDF-Bericht
+              </button>
+              <button type="button" class="pill-btn light" title="Alle Messdaten als CSV für Excel herunterladen"
+                [disabled]="!isLoaded(m.id)" (click)="downloadCsv(m)">
+                <span class="material-icons">table_view</span>
+                CSV
               </button>
               <button type="button" class="round-btn" aria-label="Teilen" title="Teilen" (click)="shareMeasurement(m)">
                 <span class="material-icons">ios_share</span>
@@ -197,7 +208,9 @@
                   <span class="dot"></span>
                   {{ activeGait() || 'Alle Gangarten' }} · {{ activeSide() || 'Alle Hände' }}
                 </div>
-                @if (isProSelectionMissing()) {
+                @if (!isLoaded(m.id)) {
+                  <div class="heatmap-message">Messdaten werden geladen …</div>
+                } @else if (isProSelectionMissing()) {
                   <div class="heatmap-message">Für den Profimodus bitte Gangart und Hand auswählen.</div>
                 } @else if (pressureGrid().length > 0) {
                   <app-pressure-heatmap
@@ -357,7 +370,7 @@
     @for (m of measurements(); track m.id) {
       <article class="note-card">
         <header class="note-header">
-          <h2>{{ m.date }} · {{ m.deviceName }}</h2>
+          <h2>Messung vom {{ m.date }}</h2>
           <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toFixed(2).replace('.', ',') }} N/cm²</p>
         </header>
         <textarea

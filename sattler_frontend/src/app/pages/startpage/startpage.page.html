@@ -52,26 +52,34 @@
         </header>
 
         <div class="recent-list">
-          @for (item of recentMeasurements(); track item.measurement.id) {
-            <a
-              class="recent-row"
-              [routerLink]="item.horse.ownerId === customer().id ? ['/my-horses', item.horse.id] : ['/customers', item.horse.ownerId, 'horses', item.horse.id]"
-            >
+          @for (item of recentMeasurements(); track item.id) {
+            <a class="recent-row" [routerLink]="item.link" [queryParams]="{ measurementId: item.id }">
               <span class="recent-info">
-                <strong>{{ item.horse.name }}</strong>
-                <span>{{ item.owner ? fullName(item.owner) : 'Unbekannte Kundschaft' }} · {{ item.measurement.deviceName }}</span>
+                <strong>{{ item.horseName }}</strong>
+                <span>{{ item.ownerName }}</span>
               </span>
               <span class="recent-meta">
-                <strong>{{ item.measurement.date }}</strong>
-                <span>Ø Druck {{ item.measurement.detail.meanNcm2.toFixed(2).replace('.', ',') }} N/cm²</span>
+                <strong>{{ item.date }}</strong>
+                @if (item.meanNcm2 !== null) {
+                  <span>Ø Druck {{ item.meanNcm2.toFixed(2).replace('.', ',') }} N/cm²</span>
+                } @else {
+                  <span>Keine Messdaten</span>
+                }
               </span>
             </a>
           } @empty {
+            @if (recentLoading()) {
+              <div class="empty-state" role="status">
+                <span class="material-icons">hourglass_empty</span>
+                <strong>Messungen werden geladen …</strong>
+              </div>
+            } @else {
             <div class="empty-state">
               <span class="material-icons">analytics</span>
               <strong>Noch keine Messungen</strong>
               <span>Deine abgeschlossenen Messungen werden hier angezeigt.</span>
             </div>
+            }
           }
         </div>
       </section>

@@ -34,8 +34,20 @@ interface RecentRow {
   id: string;
   label: string;
   date: string;
+  /** Ø Druck in N/cm² */
   score: string;
-  tone: 'green' | 'red';
+}
+
+const RECENT_COUNT = 2;
+
+function formatPressure(value: number): string {
+  return value.toFixed(2).replace('.', ',');
+}
+
+/** yyyy-mm-dd → dd.mm.yyyy */
+function toGermanDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
 }
 
 @Component({
@@ -232,6 +244,7 @@ export class StubPage {
   readonly summaryRows = computed<SummaryRow[]>(() => {
     const owner = this.selectedOwner();
     const horse = this.selectedHorse();
+    const count = this.backendHorseMeasurements()?.count ?? this.selectedHorseMeasurements().length;
 
     return [
       { label: 'Reiter:in', value: owner ? fullName(owner.owner) : '' },
@@ -239,25 +252,55 @@ export class StubPage {
       { label: 'Sattel', value: this.selectedSaddleName() },
       {
         label: 'Messungen',
-        value: horse ? `${this.selectedHorseMeasurements().length} vorhanden` : '',
+        value: horse ? `${count} vorhanden` : '',
         accent: true,
       },
     ];
   });
+
+  /** Anzahl und die zwei neuesten Messungen des gewählten Backend-Pferdes. */
+  private readonly backendHorseMeasurements = signal<{ count: number; recent: RecentRow[] } | null>(null);
 
   readonly recentMeasurements = computed<RecentRow[]>(() => {
     const horse = this.selectedHorse();
     if (!horse) {
       return [];
     }
+    const backend = this.backendHorseMeasurements();
+    if (backend) return backend.recent;
 
-    return this.selectedHorseMeasurements().slice(0, 2).map((measurement, index) => ({
+    return this.selectedHorseMeasurements().slice(0, RECENT_COUNT).map(measurement => ({
       id: measurement.id,
       label: `${horse.name} · ${measurement.deviceName}`,
       date: measurement.date,
-      score: index === 0 ? '92' : '51',
-      tone: index === 0 ? 'green' : 'red',
+      score: formatPressure(measurement.detail.meanNcm2),
     }));
+  });
+
+  private readonly loadBackendHorseMeasurements = effect(onCleanup => {
+    const horse = this.selectedHorse();
+    this.backendHorseMeasurements.set(null);
+    if (!horse || !this.selectedOwner()?.backend) return;
+
+    const subscription = this.api.getMeasurementSummariesOfHorse(horse.id).pipe(
+      switchMap(summaries => {
+        const latest = summaries.slice(0, RECENT_COUNT);
+        const rows$ = latest.length
+          ? forkJoin(latest.map(summary => this.api.getMeasurementGroupOverview(summary.id).pipe(
+              catchError(() => of({ name: '', meanNcm2: null })),
+              map((overview): RecentRow => ({
+                id: summary.id,
+                label: `${horse.name} · ${overview.name || summary.saddleName}`,
+                date: toGermanDate(summary.date),
+                score: overview.meanNcm2 === null ? '–' : formatPressure(overview.meanNcm2),
+              })),
+            )))
+          : of([] as RecentRow[]);
+        return rows$.pipe(map(recent => ({ count: summaries.length, recent })));
+      }),
+      catchError(() => of(null)),
+    ).subscribe(result => this.backendHorseMeasurements.set(result));
+    onCleanup(() => subscription.unsubscribe());
   });
 
   constructor() {

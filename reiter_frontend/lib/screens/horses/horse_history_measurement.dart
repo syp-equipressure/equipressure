@@ -15,6 +15,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/measurement_service.dart';
 
 class MeasurementDetailScreen extends StatefulWidget {
   final Measurement measurement;
@@ -68,8 +69,42 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   // GlobalKey for capturing heatmap
   final GlobalKey _heatmapKey = GlobalKey();
 
+  /// Die Liste liefert Messungen ohne Aufnahmen, die werden hier nachgeladen.
+  late Measurement _measurement = widget.measurement;
+  bool _loadingData = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFullMeasurement();
+  }
+
+  Future<void> _loadFullMeasurement() async {
+    // eine gerade aufgenommene Messung hat ihre Daten schon
+    if (_measurement.sections.any((s) => s.pressureData.isNotEmpty)) return;
+    setState(() => _loadingData = true);
+    try {
+      final full = await MeasurementService().getMeasurementById(
+        _measurement.id,
+        horseId: _measurement.horseId,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (full != null) _measurement = full;
+        _loadingData = false;
+        _invalidateCache();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingData = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Messdaten konnten nicht geladen werden: $e')),
+      );
+    }
+  }
+
   /// Teilmessungen mit Heatmap-Daten, nur deren Gangarten und Hände stehen zur Auswahl.
-  List<MeasurementSectionData> get _recordedSections => widget.measurement.sections
+  List<MeasurementSectionData> get _recordedSections => _measurement.sections
       .where((s) => s.pressureData.length >= gridSize * gridSize)
       .toList();
 
@@ -86,7 +121,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   /// Profi geht nur mit gewählter Gangart und Hand, für die es eine Teilmessung gibt.
   bool get _isProAvailable =>
-      _selectedGait != null && _selectedHand != null && _matchedSections.isNotEmpty;
+      _selectedGait != null &&
+      _selectedHand != null &&
+      _matchedSections.isNotEmpty;
 
   @override
   void dispose() {
@@ -173,8 +210,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Color _getHeatmapColor(double value, double minVal, double maxVal) {
-    final double normalized =
-        (maxVal == minVal) ? (value > 0 ? 0.5 : 0.0) : (value - minVal) / (maxVal - minVal);
+    final double normalized = (maxVal == minVal)
+        ? (value > 0 ? 0.5 : 0.0)
+        : (value - minVal) / (maxVal - minVal);
     int r, g, b;
 
     if (normalized < 0.2) {
@@ -211,7 +249,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   /// Teilmessungen mit Heatmap-Daten, die zu den gewählten Filtern passen.
   List<MeasurementSectionData> get _matchedSections {
-    return widget.measurement.sections
+    return _measurement.sections
         .where((s) => s.pressureData.length >= gridSize * gridSize)
         .where((s) => _selectedGait == null || s.gait == _selectedGait)
         .where((s) => _selectedHand == null || s.hand == _selectedHand)
@@ -220,8 +258,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   /// Die einzelnen Aufnahmen einer Teilmessung, ohne Aufnahmen nur der Durchschnitt.
   List<List<double>> _framesOf(MeasurementSectionData section) {
-    final frames =
-        section.frames.where((f) => f.length >= gridSize * gridSize).toList();
+    final frames = section.frames
+        .where((f) => f.length >= gridSize * gridSize)
+        .toList();
     return frames.isNotEmpty ? frames : [section.pressureData];
   }
 
@@ -234,7 +273,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Duration get _totalDuration => _matchedSections.fold(
-      Duration.zero, (sum, section) => sum + _durationOf(section));
+    Duration.zero,
+    (sum, section) => sum + _durationOf(section),
+  );
 
   List<double> _getFilteredPressureData() {
     final frames = _matchedSections.expand(_framesOf).toList();
@@ -300,8 +341,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       final base = frames.first;
       final wave = sin(progress * 2 * pi);
       return List.generate(gridSize * gridSize, (i) {
-        final variation = base[i] * 0.08 * wave *
-            sin((i % gridSize) * 0.5 + progress * pi);
+        final variation =
+            base[i] * 0.08 * wave * sin((i % gridSize) * 0.5 + progress * pi);
         return (base[i] + variation).clamp(0.0, double.infinity);
       });
     }
@@ -312,8 +353,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
     final a = frames[idx];
     final b = frames[idx + 1];
-    return List.generate(
-        gridSize * gridSize, (i) => a[i] * (1 - t) + b[i] * t);
+    return List.generate(gridSize * gridSize, (i) => a[i] * (1 - t) + b[i] * t);
   }
 
   // ── Pre-generate all profi frames ──
@@ -322,7 +362,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   /// [_profiFrameCount], damit die Wiedergabe flüssig bleibt.
   int get _profiImageCount {
     final recorded = _matchedSections.fold<int>(
-        0, (sum, section) => sum + _framesOf(section).length);
+      0,
+      (sum, section) => sum + _framesOf(section).length,
+    );
     return recorded.clamp(30, _profiFrameCount);
   }
 
@@ -458,7 +500,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     _playTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
       if (!mounted) return;
       setState(() {
-        _playbackPosition = startPosition + stopwatch.elapsedMilliseconds / totalMs;
+        _playbackPosition =
+            startPosition + stopwatch.elapsedMilliseconds / totalMs;
         // am Ende anhalten statt von vorne zu beginnen
         if (_playbackPosition >= 1.0) {
           _playbackPosition = 1.0;
@@ -516,14 +559,18 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   String _formatPlaybackTime(double position) {
     final totalMs = _totalDuration.inMilliseconds;
-    return _formatDuration(Duration(milliseconds: (position * totalMs).round()));
+    return _formatDuration(
+      Duration(milliseconds: (position * totalMs).round()),
+    );
   }
 
   /// Get the current profi frame image (no async, instant).
   ui.Image? _getCurrentProfiFrame() {
     if (_profiFrames == null || _profiFrames!.isEmpty) return null;
-    final idx =
-        (_playbackPosition * (_profiFrames!.length - 1)).round().clamp(0, _profiFrames!.length - 1);
+    final idx = (_playbackPosition * (_profiFrames!.length - 1)).round().clamp(
+      0,
+      _profiFrames!.length - 1,
+    );
     return _profiFrames![idx];
   }
 
@@ -533,7 +580,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     if (current == null) return '';
     final (section, progress, _) = current;
     final elapsed = Duration(
-        milliseconds: (_durationOf(section).inMilliseconds * progress).round());
+      milliseconds: (_durationOf(section).inMilliseconds * progress).round(),
+    );
     return '${section.gait} ${section.hand} · '
         '${_formatDuration(elapsed)} / ${_formatDuration(_durationOf(section))}';
   }
@@ -565,16 +613,18 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       );
 
       // Capture heatmap as image
-      final RenderRepaintBoundary boundary = _heatmapKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
+      final RenderRepaintBoundary boundary =
+          _heatmapKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-      final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
       // Create PDF
       final pdf = pw.Document();
-      final m = widget.measurement;
+      final m = _measurement;
 
       // Add page
       pdf.addPage(
@@ -609,14 +659,19 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                   ),
                 ),
                 pw.SizedBox(height: 8),
-                _pdfInfoRow('Pferd:', '${m.horseName} | ${m.weight} | ${m.height}'),
+                _pdfInfoRow(
+                  'Pferd:',
+                  '${m.horseName} | ${m.weight} | ${m.height}',
+                ),
                 _pdfInfoRow('Reiter:', m.rider),
                 _pdfInfoRow('Sattel:', m.saddleName),
                 if (m.notes.isNotEmpty) _pdfInfoRow('Notizen:', m.notes),
                 pw.SizedBox(height: 20),
 
                 // Filter Information
-                if (_selectedGait != null || _selectedHand != null || _isMaxMode)
+                if (_selectedGait != null ||
+                    _selectedHand != null ||
+                    _isMaxMode)
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
@@ -632,8 +687,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                         _pdfInfoRow('Gangart:', _selectedGait!),
                       if (_selectedHand != null)
                         _pdfInfoRow('Hand:', _selectedHand!),
-                      if (_isMaxMode)
-                        _pdfInfoRow('Modus:', 'Maximum'),
+                      if (_isMaxMode) _pdfInfoRow('Modus:', 'Maximum'),
                       pw.SizedBox(height: 20),
                     ],
                   ),
@@ -669,10 +723,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                 // Footer
                 pw.Text(
                   'Erstellt am ${_formatDate(DateTime.now())}',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    color: PdfColors.grey,
-                  ),
+                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
                 ),
               ],
             );
@@ -683,7 +734,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       // Save PDF to temporary directory
       final output = await getTemporaryDirectory();
       final file = File(
-          '${output.path}/messung_${m.horseName}_${_formatDate(m.date)}.pdf');
+        '${output.path}/messung_${m.horseName}_${_formatDate(m.date)}.pdf',
+      );
       await file.writeAsBytes(await pdf.save());
 
       // Share the PDF
@@ -730,9 +782,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
           ),
-          pw.Expanded(
-            child: pw.Text(value),
-          ),
+          pw.Expanded(child: pw.Text(value)),
         ],
       ),
     );
@@ -780,7 +830,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           ),
           Expanded(
             child: Text(
-              'Messung vom ${_formatDate(widget.measurement.date)}',
+              'Messung vom ${_formatDate(_measurement.date)}',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -836,9 +886,13 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                     label: 'Gangart',
                     value: _selectedGait,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Alle Gangarten')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Alle Gangarten'),
+                      ),
                       ..._gaitOptions.map(
-                        (gait) => DropdownMenuItem(value: gait, child: Text(gait)),
+                        (gait) =>
+                            DropdownMenuItem(value: gait, child: Text(gait)),
                       ),
                     ],
                     onChanged: _onSelectGait,
@@ -850,9 +904,13 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                     label: 'Hand',
                     value: _selectedHand,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Alle Hände')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Alle Hände'),
+                      ),
                       ..._handOptions.map(
-                        (hand) => DropdownMenuItem(value: hand, child: Text(hand)),
+                        (hand) =>
+                            DropdownMenuItem(value: hand, child: Text(hand)),
                       ),
                     ],
                     onChanged: _onSelectHand,
@@ -937,14 +995,16 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
               items: items,
               // nebeneinander ist wenig Platz: die Auswahl bei Bedarf mit … abkürzen
               selectedItemBuilder: (_) => items
-                  .map((item) => Align(
-                        alignment: Alignment.centerLeft,
-                        child: DefaultTextStyle.merge(
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          child: item.child,
-                        ),
-                      ))
+                  .map(
+                    (item) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: DefaultTextStyle.merge(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        child: item.child,
+                      ),
+                    ),
+                  )
                   .toList(),
               onChanged: onChanged,
             ),
@@ -988,14 +1048,34 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
             borderRadius: BorderRadius.circular(13),
             child: AspectRatio(
               aspectRatio: 1,
-              child: _matchedSections.isEmpty
+              child: _loadingData
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: _accent),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Messdaten werden geladen …',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _matchedSections.isEmpty
                   ? Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
                           'Für diese Filter gibt es keine Teilmessungen.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ),
                     )
@@ -1088,11 +1168,13 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                     activeTrackColor: _accent,
                     inactiveTrackColor: _accentLight.withValues(alpha: 0.5),
                     thumbColor: _accent,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
                     trackHeight: 4,
-                    overlayShape:
-                        const RoundSliderOverlayShape(overlayRadius: 14),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 14,
+                    ),
                   ),
                   child: Slider(
                     value: _playbackPosition,
@@ -1134,8 +1216,8 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
             color: onTap == null
                 ? Colors.grey[300]
                 : primary
-                    ? _accent
-                    : _accentLight.withValues(alpha: 0.5),
+                ? _accent
+                : _accentLight.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(size / 2),
           ),
           child: Icon(
@@ -1149,19 +1231,24 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Widget _buildInfoSection() {
-    final m = widget.measurement;
+    final m = _measurement;
     final infoItems = [
-      _InfoItem(text: '${m.horseName} | ${m.weight} | ${m.height}', svgPath: 'assets/icon/horseIcon.svg'),
+      _InfoItem(
+        text: '${m.horseName} | ${m.weight} | ${m.height}',
+        svgPath: 'assets/icon/horseIcon.svg',
+      ),
       _InfoItem(text: _formatDate(m.date), icon: Icons.calendar_today),
       if (m.sections.any((s) => s.duration != null))
         _InfoItem(
-          text: 'Dauer ${_formatDuration(m.sections.fold(Duration.zero, (sum, s) => sum + (s.duration ?? Duration.zero)))}'
+          text:
+              'Dauer ${_formatDuration(m.sections.fold(Duration.zero, (sum, s) => sum + (s.duration ?? Duration.zero)))}'
               ' · ${m.sections.length} Teilmessung${m.sections.length == 1 ? '' : 'en'}',
           icon: Icons.timer_outlined,
         ),
       _InfoItem(text: m.rider, icon: Icons.person),
       _InfoItem(text: m.saddleName, svgPath: 'assets/icon/saddleIcon.svg'),
-      if (m.notes.isNotEmpty) _InfoItem(text: m.notes, icon: Icons.info_outline),
+      if (m.notes.isNotEmpty)
+        _InfoItem(text: m.notes, icon: Icons.info_outline),
     ];
 
     return Container(
@@ -1174,31 +1261,33 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       ),
       child: Column(
         children: infoItems
-            .map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      item.svgPath != null
-                          ? SvgPicture.asset(
-                              item.svgPath!,
-                              width: 20,
-                              height: 20,
-                              colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
-                            )
-                          : Icon(item.icon, size: 20, color: Colors.grey[600]),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.text,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[800],
-                          ),
-                        ),
+            .map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    item.svgPath != null
+                        ? SvgPicture.asset(
+                            item.svgPath!,
+                            width: 20,
+                            height: 20,
+                            colorFilter: ColorFilter.mode(
+                              Colors.grey[600]!,
+                              BlendMode.srcIn,
+                            ),
+                          )
+                        : Icon(item.icon, size: 20, color: Colors.grey[600]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.text,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[800]),
                       ),
-                    ],
-                  ),
-                ))
+                    ),
+                  ],
+                ),
+              ),
+            )
             .toList(),
       ),
     );

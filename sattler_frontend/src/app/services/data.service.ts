@@ -482,15 +482,30 @@ export class DataService {
    */
   setMeasurementsOf(horseId: string, measurements: Measurement[]): void {
     const recorded = new Map(this._recordedMeasurements().map(measurement => [measurement.id, measurement]));
-    const merged = measurements.map(measurement =>
-      hasNoRecordedData(measurement) && recorded.has(measurement.id)
-        ? { ...recorded.get(measurement.id)!, date: measurement.date, notes: measurement.notes }
-        : measurement,
-    );
+    // die Liste wird ohne Aufnahmen geladen: bereits vollständig geladene Messungen bleiben erhalten
+    const loaded = new Map(this._measurements()
+      .filter(measurement => !hasNoRecordedData(measurement))
+      .map(measurement => [measurement.id, measurement]));
+    const merged = measurements.map(measurement => {
+      if (!hasNoRecordedData(measurement)) return measurement;
+      const known = loaded.get(measurement.id) ?? recorded.get(measurement.id);
+      return known ? { ...known, date: measurement.date, notes: measurement.notes } : measurement;
+    });
     this._measurements.update(list => [
       ...merged,
       ...list.filter(measurement => measurement.horseId !== horseId),
     ]);
+  }
+
+  /** Replaces a single measurement, e.g. after its recorded frames were loaded. */
+  upsertMeasurement(measurement: Measurement): void {
+    const recorded = this._recordedMeasurements().find(item => item.id === measurement.id);
+    const value = hasNoRecordedData(measurement) && recorded
+      ? { ...recorded, date: measurement.date, notes: measurement.notes }
+      : measurement;
+    this._measurements.update(list => list.some(item => item.id === value.id)
+      ? list.map(item => item.id === value.id ? value : item)
+      : [value, ...list]);
   }
 
   getSamplePressureGrid(): number[][] {

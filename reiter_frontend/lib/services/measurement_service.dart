@@ -67,14 +67,19 @@ class MeasurementService {
     return result;
   }
 
-  /// Lädt alle Messungen eines Pferdes inklusive Druckdaten, neueste zuerst.
+  /// Lädt alle Messungen eines Pferdes, neueste zuerst. Die Druckdaten werden dabei
+  /// nicht geladen (die Teilmessungen haben nur Gangart und Hand), das macht
+  /// [getMeasurementById] beim Öffnen einer Messung.
   Future<List<Measurement>> getMeasurementsForHorse(String horseId) async {
     final parsedHorseId = int.tryParse(horseId);
     if (parsedHorseId == null) return [];
 
     final groups = await fetchGroupsOfHorse(parsedHorseId);
     final measurements = await Future.wait(
-      groups.map((group) => _loadMeasurement(group['id'] as int, horseId)),
+      groups.map(
+        (group) =>
+            _loadMeasurement(group['id'] as int, horseId, withData: false),
+      ),
     );
 
     // Gruppen ohne Teilmessungen gelten als gelöscht (siehe deleteMeasurement)
@@ -86,10 +91,14 @@ class MeasurementService {
     return result;
   }
 
-  Future<Measurement?> getMeasurementById(String id) async {
+  /// Lädt eine Messung vollständig, also inklusive aller Aufnahmen.
+  Future<Measurement?> getMeasurementById(
+    String id, {
+    String horseId = '',
+  }) async {
     final groupId = int.tryParse(id);
     if (groupId == null) return null;
-    return _loadMeasurement(groupId, '');
+    return _loadMeasurement(groupId, horseId);
   }
 
   /// Legt eine Messgruppe samt Teilmessungen im Backend an und liefert die
@@ -114,7 +123,8 @@ class MeasurementService {
 
     // Gangart + Hand müssen innerhalb einer Gruppe eindeutig sein, die letzte Teilmessung gewinnt
     final uniqueSections = <String, MeasurementSectionData>{
-      for (final section in measurement.sections) '${section.gait}|${section.hand}': section,
+      for (final section in measurement.sections)
+        '${section.gait}|${section.hand}': section,
     };
     for (final section in uniqueSections.values) {
       final created = await createMeasurement(
@@ -139,7 +149,12 @@ class MeasurementService {
     }
   }
 
-  Future<Measurement?> _loadMeasurement(int groupId, String horseId) async {
+  /// [withData] false lädt nur Gruppe und Teilmessungen, ohne die Aufnahmen.
+  Future<Measurement?> _loadMeasurement(
+    int groupId,
+    String horseId, {
+    bool withData = true,
+  }) async {
     final results = await Future.wait([
       fetchGroup(groupId),
       fetchMeasurementsOfGroup(groupId),
@@ -148,23 +163,36 @@ class MeasurementService {
     if (group == null) return null;
     final measurements = results[1] as List<Map<String, dynamic>>;
 
-    final sections = await Future.wait(measurements.map((m) async {
-      final measurementId = m['id'] as int;
-      final gait = (m['pace'] ?? '').toString();
-      final hand = (m['hand'] ?? '').toString();
-      final loaded = await _loadSectionData(groupId, measurementId, gait, hand);
-      if (loaded.pressureData.isNotEmpty) return loaded;
-      return _recordedSections['$groupId/$measurementId'] ?? loaded;
-    }));
+    final sections = await Future.wait(
+      measurements.map((m) async {
+        final measurementId = m['id'] as int;
+        final gait = (m['pace'] ?? '').toString();
+        final hand = (m['hand'] ?? '').toString();
+        if (!withData) {
+          return _recordedSections['$groupId/$measurementId'] ??
+              MeasurementSectionData(gait: gait, hand: hand);
+        }
+        final loaded = await _loadSectionData(
+          groupId,
+          measurementId,
+          gait,
+          hand,
+        );
+        if (loaded.pressureData.isNotEmpty) return loaded;
+        return _recordedSections['$groupId/$measurementId'] ?? loaded;
+      }),
+    );
 
-    final rider = '${group['riderFirstName'] ?? ''} ${group['riderLastName'] ?? ''}'.trim();
+    final rider =
+        '${group['riderFirstName'] ?? ''} ${group['riderLastName'] ?? ''}'
+            .trim();
     final name = (group['name'] ?? '').toString();
     final groupNotes = (group['notes'] ?? '').toString();
     final notes = groupNotes.isEmpty
         ? name
         : name.isEmpty || groupNotes.startsWith(name)
-            ? groupNotes
-            : '$name - $groupNotes';
+        ? groupNotes
+        : '$name - $groupNotes';
 
     return Measurement(
       id: groupId.toString(),
@@ -203,7 +231,9 @@ class MeasurementService {
       final values = parseDataValues((entry['data'] ?? '').toString());
       if (values.isEmpty) continue;
       entries.add(values);
-      final timestamp = DateTime.tryParse((entry['timestamp'] ?? '').toString());
+      final timestamp = DateTime.tryParse(
+        (entry['timestamp'] ?? '').toString(),
+      );
       if (timestamp != null) timestamps.add(timestamp);
     }
     if (entries.isEmpty) {
@@ -211,8 +241,9 @@ class MeasurementService {
     }
 
     final duration = timestamps.length >= 2
-        ? timestamps.reduce((a, b) => a.isAfter(b) ? a : b)
-            .difference(timestamps.reduce((a, b) => a.isBefore(b) ? a : b))
+        ? timestamps
+              .reduce((a, b) => a.isAfter(b) ? a : b)
+              .difference(timestamps.reduce((a, b) => a.isBefore(b) ? a : b))
         : null;
 
     const cells = heatmapGridSize * heatmapGridSize;
@@ -295,19 +326,19 @@ class MeasurementService {
   }
 
   static Measurement _copyWithId(Measurement m, String id) => Measurement(
-        id: id,
-        horseId: m.horseId,
-        horseName: m.horseName,
-        date: m.date,
-        owner: m.owner,
-        rider: m.rider,
-        weight: m.weight,
-        height: m.height,
-        saddleName: m.saddleName,
-        notes: m.notes,
-        images: m.images,
-        sections: m.sections,
-      );
+    id: id,
+    horseId: m.horseId,
+    horseName: m.horseName,
+    date: m.date,
+    owner: m.owner,
+    rider: m.rider,
+    weight: m.weight,
+    height: m.height,
+    saddleName: m.saddleName,
+    notes: m.notes,
+    images: m.images,
+    sections: m.sections,
+  );
 
   // --- Messgruppen -----------------------------------------------------------
 
@@ -347,7 +378,9 @@ class MeasurementService {
     final body = jsonEncode({
       'name': name.length > 100 ? name.substring(0, 100) : name,
       'date': _formatLocalDate(date),
-      'notes': notes != null && notes.length > 500 ? notes.substring(0, 500) : notes,
+      'notes': notes != null && notes.length > 500
+          ? notes.substring(0, 500)
+          : notes,
       'personId': personId,
       'horseId': horseId,
       'saddleId': saddleId,
@@ -365,7 +398,9 @@ class MeasurementService {
   // --- Messungen einer Gruppe -----------------------------------------------
 
   /// GET /api/measurementgroups/{groupId}/measurements -> { "measurements": [MeasurementDto] }
-  Future<List<Map<String, dynamic>>> fetchMeasurementsOfGroup(int groupId) async {
+  Future<List<Map<String, dynamic>>> fetchMeasurementsOfGroup(
+    int groupId,
+  ) async {
     final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements');
     final response = await http.get(url).timeout(_timeout);
     if (response.statusCode == 404) return [];
@@ -381,8 +416,9 @@ class MeasurementService {
     String? pace,
     String? hand,
   }) async {
-    final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements/filter')
-        .replace(queryParameters: _filterParameters(pace, hand));
+    final url = Uri.parse(
+      '$baseUrl/measurementgroups/$groupId/measurements/filter',
+    ).replace(queryParameters: _filterParameters(pace, hand));
     final response = await http.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
@@ -398,14 +434,20 @@ class MeasurementService {
     String? pace,
     String? hand,
   }) async {
-    final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements/${aggregate.name}')
-        .replace(queryParameters: _filterParameters(pace, hand));
+    final url = Uri.parse(
+      '$baseUrl/measurementgroups/$groupId/measurements/${aggregate.name}',
+    ).replace(queryParameters: _filterParameters(pace, hand));
     return _fetchAggregate(url, 'load ${aggregate.name} of group $groupId');
   }
 
   /// GET /api/measurementgroups/{groupId}/measurements/{measurementId} -> MeasurementDto
-  Future<Map<String, dynamic>?> fetchMeasurement(int groupId, int measurementId) async {
-    final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements/$measurementId');
+  Future<Map<String, dynamic>?> fetchMeasurement(
+    int groupId,
+    int measurementId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/measurementgroups/$groupId/measurements/$measurementId',
+    );
     final response = await http.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
@@ -421,8 +463,12 @@ class MeasurementService {
     MeasurementAggregate aggregate,
   ) async {
     final url = Uri.parse(
-        '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/${aggregate.name}');
-    return _fetchAggregate(url, 'load ${aggregate.name} of measurement $measurementId');
+      '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/${aggregate.name}',
+    );
+    return _fetchAggregate(
+      url,
+      'load ${aggregate.name} of measurement $measurementId',
+    );
   }
 
   /// POST /api/measurementgroups/{groupId}/measurements (AddMeasurementRequest) -> MeasurementDto
@@ -449,7 +495,9 @@ class MeasurementService {
 
   /// DELETE /api/measurementgroups/{groupId}/measurements/{measurementId} -> 204
   Future<void> deleteMeasurementOfGroup(int groupId, int measurementId) async {
-    final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements/$measurementId');
+    final url = Uri.parse(
+      '$baseUrl/measurementgroups/$groupId/measurements/$measurementId',
+    );
     final response = await http.delete(url).timeout(_timeout);
     if (response.statusCode != 204 && response.statusCode != 200) {
       _throwForStatus(response, 'delete measurement $measurementId');
@@ -461,9 +509,13 @@ class MeasurementService {
 
   /// GET /api/measurementgroups/{groupId}/measurements/{measurementId}/measurementData
   /// -> { "data": [MeasurementDataDto] }, nach Zeitstempel sortiert
-  Future<List<Map<String, dynamic>>> fetchMeasurementData(int groupId, int measurementId) async {
+  Future<List<Map<String, dynamic>>> fetchMeasurementData(
+    int groupId,
+    int measurementId,
+  ) async {
     final url = Uri.parse(
-        '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/measurementData');
+      '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/measurementData',
+    );
     final response = await http.get(url).timeout(_timeout);
     if (response.statusCode == 404) return [];
     if (response.statusCode != 200) {
@@ -479,7 +531,8 @@ class MeasurementService {
     int dataId,
   ) async {
     final url = Uri.parse(
-        '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/measurementData/$dataId');
+      '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/measurementData/$dataId',
+    );
     final response = await http.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {

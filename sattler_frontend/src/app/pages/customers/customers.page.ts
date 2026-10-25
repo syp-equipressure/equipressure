@@ -110,8 +110,37 @@ export class CustomersPage {
 
         return matchesSearch && matchesDateRange;
       })
-      .sort((left, right) => fullName(left).localeCompare(fullName(right), 'de', { sensitivity: 'base' }));
+      .sort((left, right) => {
+        if (this.sortBy() === 'lastMeasurement') {
+          // neueste Messung zuerst, Kunden ohne Messung ans Ende
+          const leftLast = this.measurementSummary(left.id).last;
+          const rightLast = this.measurementSummary(right.id).last;
+          if (leftLast !== rightLast) {
+            if (leftLast === null) return 1;
+            if (rightLast === null) return -1;
+            return rightLast - leftLast;
+          }
+        }
+        return fullName(left).localeCompare(fullName(right), 'de', { sensitivity: 'base' });
+      });
   });
+
+  readonly sortBy = signal<'name' | 'lastMeasurement'>('name');
+
+  /** Anzahl der Messungen und Tag der letzten Messung eines Kunden. */
+  measurementSummary(customerId: string): { count: number; last: number | null } {
+    const timestamps = this.measurementTimestamps(customerId);
+    return { count: timestamps.length, last: timestamps.length ? Math.max(...timestamps) : null };
+  }
+
+  /** z.B. "02.09.2026 · 3 Messungen", während des Ladens aus dem Backend "…". */
+  measurementLabel(customerId: string): string {
+    if (this.backendCustomers() && this.measurementDatesLoading()) return '…';
+    const { count, last } = this.measurementSummary(customerId);
+    if (last === null) return 'Noch keine Messung';
+    const date = new Date(last).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `${date} · ${count} ${count === 1 ? 'Messung' : 'Messungen'}`;
+  }
 
   addCustomer(c: Customer): void {
     if (this.backendPersonId()) {

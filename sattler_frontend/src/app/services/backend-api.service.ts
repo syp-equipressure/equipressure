@@ -27,6 +27,15 @@ export const DEVELOPMENT_DEVICE_CATEGORIES = [
   { name: 'Professional', id: 5 },
 ] as const;
 
+export interface MeasurementSummary {
+  id: string;
+  horseId: string;
+  /** yyyy-mm-dd */
+  date: string;
+  riderName: string;
+  saddleName: string;
+}
+
 export interface NewMeasurementGroup {
   name: string;
   date: Date;
@@ -180,6 +189,39 @@ export class BackendApiService {
 
   // ── Measurements ───────────────────────────────────────────────────────────
 
+  /** Loads the measurement groups of a horse as short overview (no measurement data), newest first. */
+  getMeasurementSummariesOfHorse(horseId: string): Observable<MeasurementSummary[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
+      map(response => listFrom(response, 'groups')
+        .filter(isRecord)
+        .map(group => ({
+          id: required(group, 'id'),
+          horseId,
+          date: required(group, 'date'),
+          riderName: [optional(group, 'personFirstName'), optional(group, 'personLastName')].filter(Boolean).join(' '),
+          saddleName: optional(group, 'saddleName') ?? '',
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date))),
+      catchError(toApiError),
+    );
+  }
+
+  /** Name and average pressure (N/cm²) of a measurement group, the backend computes the average. */
+  getMeasurementGroupOverview(groupId: string): Observable<{ name: string; meanNcm2: number | null }> {
+    const groupUrl = `${this.baseUrl}/measurementgroups/${groupId}`;
+    return forkJoin({
+      group: this.http.get<BackendGroupDetail>(groupUrl),
+      // 404 = keine Messdaten vorhanden
+      average: this.http.get<{ value: number }>(`${groupUrl}/measurements/average`).pipe(
+        map(response => response.value / 100),
+        catchError(() => of(null)),
+      ),
+    }).pipe(
+      map(({ group, average }) => ({ name: group.name, meanNcm2: average })),
+      catchError(toApiError),
+    );
+  }
+
   /** Loads only the dates (yyyy-mm-dd) of the measurement groups of a horse, without any measurement data. */
   getMeasurementDatesOfHorse(horseId: string): Observable<string[]> {
     return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
@@ -190,12 +232,15 @@ export class BackendApiService {
     );
   }
 
-  /** Loads all measurement groups of a horse including the recorded frames, newest first. */
-  getMeasurementsOfHorse(horseId: string): Observable<Measurement[]> {
+  /**
+   * Loads all measurement groups of a horse, newest first. Without [withData] the recorded frames are not loaded
+   * (the measurements only have pace and hand), load them later with getMeasurement.
+   */
+  getMeasurementsOfHorse(horseId: string, withData = true): Observable<Measurement[]> {
     return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
       map(response => listFrom(response, 'groups').map(group => isRecord(group) ? required(group, 'id') : '')),
       switchMap(groupIds => groupIds.length
-        ? forkJoin(groupIds.map(groupId => this.getMeasurementGroup(horseId, groupId)))
+        ? forkJoin(groupIds.map(groupId => this.getMeasurementGroup(horseId, groupId, withData)))
         : of([] as Measurement[])),
       // groups without measurements count as deleted (see deleteMeasurementGroup)
       map(measurements => measurements
@@ -205,21 +250,29 @@ export class BackendApiService {
     );
   }
 
-  private getMeasurementGroup(horseId: string, groupId: string): Observable<Measurement> {
+  /** Loads a measurement group including all recorded frames. */
+  getMeasurement(horseId: string, groupId: string): Observable<Measurement> {
+    return this.getMeasurementGroup(horseId, groupId, true).pipe(catchError(toApiError));
+  }
+
+  private getMeasurementGroup(horseId: string, groupId: string, withData: boolean): Observable<Measurement> {
     const groupUrl = `${this.baseUrl}/measurementgroups/${groupId}`;
     return forkJoin({
       group: this.http.get<BackendGroupDetail>(groupUrl),
       measurements: this.http.get<unknown>(`${groupUrl}/measurements`).pipe(
         map(response => listFrom(response, 'measurements') as BackendMeasurement[]),
-        switchMap(measurements => measurements.length
-          ? forkJoin(measurements.map(measurement =>
-              this.http.get<unknown>(`${groupUrl}/measurements/${measurement.id}/measurementData`).pipe(
-                map(response => ({
-                  measurement,
-                  data: listFrom(response, 'data') as BackendMeasurementData[],
-                })),
-              )))
-          : of([])),
+        switchMap(measurements => {
+          if (!withData) return of(measurements.map(measurement => ({ measurement, data: [] })));
+          return measurements.length
+            ? forkJoin(measurements.map(measurement =>
+                this.http.get<unknown>(`${groupUrl}/measurements/${measurement.id}/measurementData`).pipe(
+                  map(response => ({
+                    measurement,
+                    data: listFrom(response, 'data') as BackendMeasurementData[],
+                  })),
+                )))
+            : of([]);
+        }),
       ),
     }).pipe(map(({ group, measurements }) => toMeasurement(horseId, group, measurements)));
   }

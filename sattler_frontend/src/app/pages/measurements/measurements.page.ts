@@ -1,4 +1,5 @@
-import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
+import { EMPTY, Observable, catchError, concat, defer, switchMap, tap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
@@ -12,6 +13,8 @@ import { AddHorse } from '../horses/add-horse/add-horse';
 import { Horse as HorseModel } from '../../models/horse.model';
 import { BackendApiService } from '../../services/backend-api.service';
 import { printMeasurementReport } from '../../services/measurement-report';
+import { hasNoRecordedData } from '../../services/measurement-mapper';
+import { downloadMeasurementCsv } from '../../services/measurement-export';
 import { HeatmapDialogComponent } from '../../shared/heatmap-dialog/heatmap-dialog';
 
 type TabKey = 'profil' | 'messungen' | 'notizen';
@@ -102,11 +105,21 @@ export class MeasurementsPage implements OnDestroy {
         return;
       }
       this.measurementsLoading.set(true);
-      const subscription = this.api.getMeasurementsOfHorse(horseId).subscribe({
-        next: measurements => {
+      // zuerst nur die Liste (ohne Aufnahmen), danach die einzelnen Messungen nacheinander im Hintergrund
+      const subscription = this.api.getMeasurementsOfHorse(horseId, false).pipe(
+        tap(measurements => {
           this.data.setMeasurementsOf(horseId, measurements);
           this.measurementsLoading.set(false);
-        },
+        }),
+        switchMap(measurements => {
+          // die ausgewählte Messung lädt der zweite Effekt sofort, hier nur die übrigen
+          const selectedId = untracked(() => this.selected()?.id);
+          const ids = measurements.map(measurement => measurement.id).filter(id => id !== selectedId);
+          return concat(...ids.map(id => defer(() =>
+            untracked(() => this.isLoaded(id)) ? EMPTY : this.loadMeasurement(horseId, id),
+          )));
+        }),
+      ).subscribe({
         error: error => {
           this.measurementsError.set(
             error instanceof Error ? error.message : 'Messungen konnten nicht geladen werden.',
@@ -116,6 +129,39 @@ export class MeasurementsPage implements OnDestroy {
       });
       onCleanup(() => subscription.unsubscribe());
     });
+
+    // eine ausgewählte, noch nicht geladene Messung wird sofort geladen (vor der Warteschlange)
+    effect(onCleanup => {
+      const horseId = this.params().get('horseId') ?? '';
+      const id = this.selected()?.id;
+      if (!id || !isBackendId(horseId) || untracked(() => this.isLoaded(id))) return;
+      const subscription = this.loadMeasurement(horseId, id).subscribe();
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
+
+  /** IDs der Messungen, deren Aufnahmen schon geladen wurden. */
+  private readonly loadedIds = signal<ReadonlySet<string>>(new Set());
+
+  /** Lokale Messungen und solche mit Aufnahmen sind vollständig, Backend-Messungen erst nach dem Laden. */
+  isLoaded(id: string): boolean {
+    if (!isBackendId(id) || this.loadedIds().has(id)) return true;
+    const measurement = this.data.getMeasurement(id);
+    return !!measurement && !hasNoRecordedData(measurement);
+  }
+
+  private loadMeasurement(horseId: string, id: string): Observable<unknown> {
+    return this.api.getMeasurement(horseId, id).pipe(
+      tap(measurement => {
+        this.data.upsertMeasurement(measurement);
+        this.loadedIds.update(ids => new Set(ids).add(id));
+      }),
+      // eine einzelne Messung, die nicht lädt, soll die übrigen nicht aufhalten
+      catchError(() => {
+        this.loadedIds.update(ids => new Set(ids).add(id));
+        return EMPTY;
+      }),
+    );
   }
 
   readonly sideOptions = computed<Side[]>(() => {
@@ -316,6 +362,11 @@ export class MeasurementsPage implements OnDestroy {
       maxNcm2: this.statisticMaximum(),
       meanNcm2: this.statisticAverage(),
     });
+  }
+
+  /** Lädt alle Aufnahmen der Messung als CSV-Datei herunter (für Excel). */
+  downloadCsv(measurement: Measurement): void {
+    downloadMeasurementCsv(measurement, this.horse()?.name ?? 'Pferd');
   }
 
   /** Teilt einen Link auf die Messung, ohne Web Share API wird der Link kopiert. */

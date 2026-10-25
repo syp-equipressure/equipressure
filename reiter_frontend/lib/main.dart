@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/horses/horses_screen.dart';
 
 void main() {
@@ -12,6 +13,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // deutsche Texte in Material-Widgets, z.B. Monatsnamen und Knöpfe im Datumswähler
+      locale: const Locale('de', 'AT'),
+      supportedLocales: const [Locale('de', 'AT'), Locale('de')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: const HorsesScreen(),
     );
   }

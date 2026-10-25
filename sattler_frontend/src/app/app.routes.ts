@@ -1,31 +1,65 @@
 import { Routes } from '@angular/router';
-import { CustomersPage } from './pages/customers/customers.page';
-import { HorsesPage } from './pages/horses/horses.page';
-import { MeasurementsPage } from './pages/measurements/measurements.page';
-import { ProfilePage } from './pages/profile/profile.page';
-import { MessagesPage } from './pages/messages/messages.page';
-import { MeasurementSessionPage } from './pages/new-measurement/measurement-session/measurement-session.page';
-import { LiveMeasurementPage } from './pages/new-measurement/live-measurement/live-measurement.page';
-import { StubPage } from './pages/stub/stub.page';
 import { StartPage } from './pages/startpage/startpage.page';
-import { CustomerProfilePage } from './pages/customers/customer-profile.page';
-import { SettingsPage } from './pages/settings/settings.page';
-import { DevicesPage } from './pages/devices/devices.page';
 
+// Die Startseite wird sofort gebraucht, alle anderen Seiten werden erst beim ersten Aufruf geladen
+// (kleineres Start-Bundle).
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'startpage' },
   { path: 'startpage', component: StartPage },
-  { path: 'customers', component: CustomersPage },
-  { path: 'customers/:customerId', component: CustomerProfilePage },
-  { path: 'customers/:customerId/horses', component: HorsesPage },
-  { path: 'customers/:customerId/horses/:horseId', component: MeasurementsPage },
-  { path: 'my-horses', component: HorsesPage },
-  { path: 'my-horses/:horseId', component: MeasurementsPage },
-  { path: 'profile', component: ProfilePage },
-  { path: 'devices', component: DevicesPage },
-  { path: 'new-measurement', component: StubPage, data: { title: 'Neue Messung' } },
-  { path: 'new-measurement/session', component: MeasurementSessionPage },
-  { path: 'new-measurement/live', component: LiveMeasurementPage },
-  { path: 'messages', component: MessagesPage },
-  { path: 'settings', component: SettingsPage },
+  {
+    path: 'customers',
+    loadComponent: () => import('./pages/customers/customers.page').then(m => m.CustomersPage),
+  },
+  {
+    path: 'customers/:customerId',
+    loadComponent: () => import('./pages/customers/customer-profile.page').then(m => m.CustomerProfilePage),
+  },
+  {
+    path: 'customers/:customerId/horses',
+    loadComponent: () => import('./pages/horses/horses.page').then(m => m.HorsesPage),
+  },
+  {
+    path: 'customers/:customerId/horses/:horseId',
+    loadComponent: () => import('./pages/measurements/measurements.page').then(m => m.MeasurementsPage),
+  },
+  {
+    path: 'my-horses',
+    loadComponent: () => import('./pages/horses/horses.page').then(m => m.HorsesPage),
+  },
+  {
+    path: 'my-horses/:horseId',
+    loadComponent: () => import('./pages/measurements/measurements.page').then(m => m.MeasurementsPage),
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage),
+  },
+  {
+    path: 'devices',
+    loadComponent: () => import('./pages/devices/devices.page').then(m => m.DevicesPage),
+  },
+  {
+    path: 'new-measurement',
+    loadComponent: () => import('./pages/stub/stub.page').then(m => m.StubPage),
+    data: { title: 'Neue Messung' },
+  },
+  {
+    path: 'new-measurement/session',
+    loadComponent: () =>
+      import('./pages/new-measurement/measurement-session/measurement-session.page')
+        .then(m => m.MeasurementSessionPage),
+  },
+  {
+    path: 'new-measurement/live',
+    loadComponent: () =>
+      import('./pages/new-measurement/live-measurement/live-measurement.page').then(m => m.LiveMeasurementPage),
+  },
+  {
+    path: 'messages',
+    loadComponent: () => import('./pages/messages/messages.page').then(m => m.MessagesPage),
+  },
+  {
+    path: 'settings',
+    loadComponent: () => import('./pages/settings/settings.page').then(m => m.SettingsPage),
+  },
 ];
