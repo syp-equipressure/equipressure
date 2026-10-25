@@ -56,6 +56,8 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
           .toSet()
           .toList();
 
+      // der Screen kann während des Ladens schon verlassen worden sein
+      if (!mounted) return;
       setState(() {
         allMeasurements = horseMeasurements;
         filteredMeasurements = horseMeasurements;
@@ -64,12 +66,11 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Laden: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Laden: $e')),
+      );
     }
   }
 
@@ -113,7 +114,8 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
   Future<void> _deleteMeasurement(Measurement measurement) async {
     try {
       await _measurementService.deleteMeasurement(measurement.id);
-      
+      if (!mounted) return;
+
       // Entferne aus der lokalen Liste
       setState(() {
         allMeasurements.removeWhere((m) => m.id == measurement.id);

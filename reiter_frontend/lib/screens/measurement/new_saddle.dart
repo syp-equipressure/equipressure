@@ -38,6 +38,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
   Future<void> _loadCategories() async {
     try {
       final categories = await SaddleService().getSaddleCategories();
+      if (!mounted) return;
       setState(() {
         _categories = categories;
       });
@@ -49,6 +50,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
   Future<void> _loadHorses() async {
     try {
       final horses = await HorseService().getHorses();
+      if (!mounted) return;
       setState(() {
         _horses = horses;
         

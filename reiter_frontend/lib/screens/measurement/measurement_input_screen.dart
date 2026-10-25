@@ -5,8 +5,7 @@ import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
 import 'package:reiterappfrontend/screens/measurement/live_measurement_screen.dart';
-import 'package:reiterappfrontend/services/device_service.dart';
-import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:intl/intl.dart';
@@ -15,12 +14,15 @@ class MeasurementInputScreen extends StatefulWidget {
   final Person user;
   final Horse horse;
   final Saddle saddle;
+  /// Das verbundene Messgerät, mit dem gemessen wird
+  final Device device;
 
   const MeasurementInputScreen({
     super.key,
     required this.user,
     required this.horse,
     required this.saddle,
+    required this.device,
   });
 
   @override
@@ -534,21 +536,6 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
     }
   }
 
-  /// Messgerät der angemeldeten Person, sonst das des Reiters.
-  Future<String?> _findDeviceId() async {
-    final personIds = <String>{};
-    try {
-      personIds.add((await HorseService().currentPersonId()).toString());
-    } catch (_) {}
-    personIds.add(widget.user.id.toString());
-
-    for (final personId in personIds) {
-      final devices = await DeviceService().getDevices(personId);
-      if (devices.isNotEmpty) return devices.first.id;
-    }
-    return null;
-  }
-
   Future<void> _endMeasurement() async {
     // Check if any sections were completed
     final completedSections =
@@ -603,16 +590,11 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
     );
 
     try {
-      final deviceId = await _findDeviceId();
-      if (deviceId == null) {
-        throw Exception('Kein Messgerät gefunden');
-      }
-
       final savedMeasurement = await _measurementService.addMeasurement(
         newMeasurement,
         personId: widget.user.id,
         saddleId: int.parse(widget.saddle.id),
-        deviceId: deviceId,
+        deviceId: widget.device.id,
       );
 
       if (mounted) {
