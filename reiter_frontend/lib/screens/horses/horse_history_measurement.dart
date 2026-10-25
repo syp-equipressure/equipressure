@@ -449,10 +449,16 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     _playTimer?.cancel();
     if (_playbackPosition >= 1.0) _playbackPosition = 0.0;
     setState(() => _isPlaying = true);
+
+    // in Echtzeit abspielen: die Position ergibt sich aus der verstrichenen Zeit
+    final totalMs = _totalDuration.inMilliseconds;
+    if (totalMs <= 0) return;
+    final startPosition = _playbackPosition;
+    final stopwatch = Stopwatch()..start();
     _playTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
       if (!mounted) return;
       setState(() {
-        _playbackPosition += 1.0 / (_profiFrames?.length ?? _profiFrameCount);
+        _playbackPosition = startPosition + stopwatch.elapsedMilliseconds / totalMs;
         // am Ende anhalten statt von vorne zu beginnen
         if (_playbackPosition >= 1.0) {
           _playbackPosition = 1.0;
@@ -485,10 +491,20 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   void _skipPlayback(int seconds) {
     final totalSeconds = _totalDuration.inMilliseconds / 1000;
     if (totalSeconds <= 0) return;
-    setState(() {
-      _playbackPosition =
-          (_playbackPosition + seconds / totalSeconds).clamp(0.0, 1.0);
-    });
+    _seekPlayback((_playbackPosition + seconds / totalSeconds).clamp(0.0, 1.0));
+  }
+
+  /// Springt an eine Stelle, eine laufende Wiedergabe läuft von dort weiter.
+  void _seekPlayback(double position) {
+    setState(() => _playbackPosition = position);
+    if (_isPlaying) {
+      if (position >= 1.0) {
+        _playTimer?.cancel();
+        setState(() => _isPlaying = false);
+      } else {
+        _startPlayback();
+      }
+    }
   }
 
   String _formatDuration(Duration duration) {
@@ -842,12 +858,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                     onChanged: _onSelectHand,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildSelect<_PressureView>(
                     label: 'Ansicht',
@@ -877,22 +888,16 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
-                TextButton(
-                  onPressed: _onResetFilters,
-                  style: TextButton.styleFrom(foregroundColor: _accent),
-                  child: const Text('Filter zurücksetzen'),
-                ),
               ],
             ),
-            if (!_isProAvailable) ...[
-              const SizedBox(height: 6),
-              Text(
-                'Für den Profimodus bitte Gangart und Hand auswählen.',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _onResetFilters,
+                style: TextButton.styleFrom(foregroundColor: _accent),
+                child: const Text('Filter zurücksetzen'),
               ),
-            ],
-            const SizedBox(height: 8),
+            ),
           ],
         ],
       ),
@@ -918,7 +923,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         ),
         const SizedBox(height: 4),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.only(left: 10, right: 4),
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey[300]!),
             borderRadius: BorderRadius.circular(8),
@@ -927,9 +932,20 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
             child: DropdownButton<T>(
               value: value,
               isExpanded: true,
-              icon: Icon(Icons.expand_more, color: Colors.grey[600]),
-              style: const TextStyle(fontSize: 14, color: Colors.black),
+              icon: Icon(Icons.expand_more, color: Colors.grey[600], size: 20),
+              style: const TextStyle(fontSize: 13, color: Colors.black),
               items: items,
+              // nebeneinander ist wenig Platz: die Auswahl bei Bedarf mit … abkürzen
+              selectedItemBuilder: (_) => items
+                  .map((item) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: DefaultTextStyle.merge(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          child: item.child,
+                        ),
+                      ))
+                  .toList(),
               onChanged: onChanged,
             ),
           ),
@@ -1080,9 +1096,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                   ),
                   child: Slider(
                     value: _playbackPosition,
-                    onChanged: framesReady
-                        ? (v) => setState(() => _playbackPosition = v)
-                        : null,
+                    onChanged: framesReady ? _seekPlayback : null,
                   ),
                 ),
               ),
