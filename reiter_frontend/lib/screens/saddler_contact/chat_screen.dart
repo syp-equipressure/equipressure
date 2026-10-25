@@ -9,9 +9,12 @@ import '../../models/chat.dart';
 import '../../models/horse.dart';
 import '../../models/measurement.dart';
 import '../../models/message.dart';
+import '../../models/saddler.dart';
 import '../../services/chat_service.dart';
 import '../../services/horse_service.dart';
 import '../../services/measurement_service.dart';
+import '../../services/saddler_service.dart';
+import '../find_saddler/saddler_profile_screen.dart';
 import '../horses/horse_history_measurement.dart';
 import '../../widgets/chat_attachment_menu.dart';
 import '../../widgets/horse_selection_dialog.dart';
@@ -406,34 +409,62 @@ class _ChatScreenState extends State<ChatScreen> {
         icon: const Icon(Icons.arrow_back, color: Colors.black),
         onPressed: () => Navigator.pop(context),
       ),
-      title: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: Colors.green[50],
-            child: Text(
-              _getInitials(widget.chat.contactName),
-              style: TextStyle(
-                color: Colors.green[700],
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+      // ein Tipp auf Name oder Bild öffnet das Profil der Sattler*in
+      title: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _openProfile,
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.green[50],
+              child: Text(
+                _getInitials(widget.chat.contactName),
+                style: TextStyle(
+                  color: Colors.green[700],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              widget.chat.contactName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.chat.contactName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openProfile() async {
+    final messenger = ScaffoldMessenger.of(context);
+    Saddler? saddler;
+    try {
+      saddler = await SaddlerService().getSaddlerById(_contactId);
+    } catch (_) {
+      saddler = null;
+    }
+    if (!mounted) return;
+    if (saddler == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Das Profil konnte nicht geladen werden.')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SaddlerProfileScreen(saddler: saddler!, openedFromChat: true),
       ),
     );
   }

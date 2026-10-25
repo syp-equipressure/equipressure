@@ -12,7 +12,14 @@ import '../saddler_contact/chat_screen.dart';
 class SaddlerProfileScreen extends StatefulWidget {
   final Saddler saddler;
 
-  const SaddlerProfileScreen({super.key, required this.saddler});
+  /// Aus dem Chat geöffnet: "Chat" führt dann zurück statt einen zweiten Chat zu öffnen.
+  final bool openedFromChat;
+
+  const SaddlerProfileScreen({
+    super.key,
+    required this.saddler,
+    this.openedFromChat = false,
+  });
 
   @override
   State<SaddlerProfileScreen> createState() => _SaddlerProfileScreenState();
@@ -47,6 +54,10 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
   }
 
   void _startChat() {
+    if (widget.openedFromChat) {
+      Navigator.pop(context);
+      return;
+    }
     // der Chat entsteht im Backend mit der ersten Nachricht
     final chat = _chatService.chatWith(_saddler.id, _saddler.name);
     Navigator.push(

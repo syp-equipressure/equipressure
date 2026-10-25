@@ -57,10 +57,12 @@
     <section class="chat-panel" aria-label="Chatverlauf">
       @if (selectedContact(); as contact) {
         <header class="chat-header">
-          <span class="customer-avatar">{{ initials(contact) }}</span>
-          <div class="chat-contact">
-            <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
-          </div>
+          <a class="chat-contact-link" [routerLink]="['/customers', contact.id]" title="Profil öffnen">
+            <span class="customer-avatar">{{ initials(contact) }}</span>
+            <div class="chat-contact">
+              <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
+            </div>
+          </a>
         </header>
 
         <div class="chat-history" aria-live="polite" #history>
