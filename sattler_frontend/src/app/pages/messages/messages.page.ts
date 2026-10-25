@@ -10,6 +10,15 @@ interface ChatMessage {
   sender: 'customer' | 'sattler';
   message: string;
   timestamp: string;
+  attachment?: ChatAttachment;
+}
+
+interface ChatAttachment {
+  name: string;
+  /** Object URL of the file, valid as long as the page is open (the chat has no backend yet). */
+  url: string;
+  sizeLabel: string;
+  isImage: boolean;
 }
 
 @Component({
@@ -87,6 +96,36 @@ export class MessagesPage {
       .reverse();
   }
 
+  /** Sends the selected files as attachments (together with the current draft, if any). */
+  attachFiles(event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.files?.length) return;
+    const customerId = this.selectedCustomerId();
+    if (!customerId) return;
+
+    const files = [...input.files];
+    const draft = this.draft().trim();
+    this.messages.update(messages => [
+      ...messages,
+      ...files.map((file, index) => ({
+        id: Date.now() + index,
+        customerId,
+        sender: 'sattler' as const,
+        message: index === 0 ? draft : '',
+        timestamp: currentTime(),
+        attachment: {
+          name: file.name,
+          url: URL.createObjectURL(file),
+          sizeLabel: formatFileSize(file.size),
+          isImage: file.type.startsWith('image/'),
+        },
+      })),
+    ]);
+    this.draft.set('');
+    // allow selecting the same file again
+    input.value = '';
+  }
+
   sendMessage(): void {
     const message = this.draft().trim();
     const customerId = this.selectedCustomerId();
@@ -99,11 +138,21 @@ export class MessagesPage {
         customerId,
         sender: 'sattler',
         message,
-        timestamp: `${new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`,
+        timestamp: currentTime(),
       },
     ]);
     this.draft.set('');
   }
 
   readonly fullName = fullName;
+}
+
+function currentTime(): string {
+  return `${new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
 }

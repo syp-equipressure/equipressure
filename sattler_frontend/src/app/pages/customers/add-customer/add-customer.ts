@@ -1,8 +1,9 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {Customer} from '../../../models/customer.model';
 import { BackendApiService } from '../../../services/backend-api.service';
 import { BackendPersonContextService } from '../../../services/backend-person-context.service';
+import { addressError, composeAddress } from '../../../utils/address';
 
 @Component({
   selector: 'app-new-customer-form',
@@ -24,7 +25,11 @@ export class AddCustomer {
   lastName = signal('');
   email = signal('');
   birthDate = signal('');
-  address = signal('');
+  street = signal('');
+  postalCode = signal('');
+  city = signal('');
+  /** Die Adresse in der Form "Straße, PLZ Ort". */
+  readonly address = computed(() => composeAddress(this.street(), this.postalCode(), this.city()));
   heightCm = signal<number | null>(null);
   weightKg = signal<number | null>(null);
 
@@ -40,9 +45,11 @@ export class AddCustomer {
     if (this.backendMode() && this.birthDate() && !isValidPastDate(this.birthDate())) {
       e.birthDate = 'Bitte ein gültiges Geburtsdatum in der Vergangenheit eingeben.';
     }
-    if (this.backendMode() && !parseAddress(this.address())) {
-      e.address = 'Bitte „Straße, PLZ Ort“ angeben.';
-    }
+    const addressProblem = addressError(
+      { street: this.street(), postalCode: this.postalCode(), city: this.city() },
+      this.backendMode(),
+    );
+    if (addressProblem) e.address = addressProblem;
     if (this.email() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email())) {
       e.email = 'Bitte eine gültige E-Mail-Adresse eingeben.';
     }
@@ -91,7 +98,9 @@ export class AddCustomer {
     this.lastName.set('');
     this.email.set('');
     this.birthDate.set('');
-    this.address.set('');
+    this.street.set('');
+    this.postalCode.set('');
+    this.city.set('');
     this.heightCm.set(null);
     this.weightKg.set(null);
     this.errors.set({});
@@ -184,10 +193,11 @@ export class AddCustomer {
   }
 }
 
-function parseAddress(value: string): { addressName: string; plz: string; cityName: string } | null {
+function parseAddress(value: string): { addressName: string | null; plz: string; cityName: string } | null {
   const match = /^(.*?),\s*(\d{4,})\s+(.+)$/.exec(value.trim());
   if (!match) return null;
-  return { addressName: match[1].trim(), plz: match[2], cityName: match[3].trim() };
+  // ohne Straße schickt das Backend-Format null statt eines leeren Textes
+  return { addressName: match[1].trim() || null, plz: match[2], cityName: match[3].trim() };
 }
 
 function todayDate(): string {

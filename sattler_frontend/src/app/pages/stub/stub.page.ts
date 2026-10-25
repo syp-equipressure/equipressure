@@ -1,6 +1,6 @@
 import { Component, Input, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
@@ -12,7 +12,7 @@ import { MeasurementSessionService } from '../../services/measurement-session.se
 import { BackendApiService, SaddleCategory } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { forkJoin, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 const LOCAL_SADDLE_CATEGORIES: SaddleCategory[] = [
   'Dressur', 'Springen', 'Vielseitigkeit', 'Gangpferd', 'Sonstige',
@@ -41,7 +41,7 @@ interface RecentRow {
 @Component({
   selector: 'app-stub-page',
   standalone: true,
-  imports: [PageHeaderComponent, FormsModule],
+  imports: [PageHeaderComponent, FormsModule, RouterLink],
   templateUrl: './stub.page.html',
   styleUrl: './stub.page.scss',
 })
@@ -158,13 +158,33 @@ export class StubPage {
       return;
     }
     this.selectionLoading.set(true);
-    const subscription = this.api.getContacts(personId).pipe(
+    // der Sattler selbst kann auch für seine eigenen Pferde messen, er steht als erste Option in der Liste
+    const self$ = forkJoin({
+      person: this.api.getPerson(personId),
+      horses: this.api.getHorses(personId).pipe(catchError(() => of([] as Horse[]))),
+    }).pipe(map(({ person, horses }): OwnerCard => ({
+      owner: { ...person, isMe: true },
+      horses,
+      backend: true,
+    })));
+    const contacts$ = this.api.getContacts(personId).pipe(
       switchMap(contacts => contacts.length
-        ? forkJoin(contacts.map(owner =>
-            this.api.getHorses(owner.id).pipe(map(horses => ({ owner, horses, backend: true }))),
+        ? forkJoin(contacts.map(contact =>
+            forkJoin({
+              // die Kontaktliste enthält keine Größe und kein Gewicht, die kommen aus den Personendaten
+              person: this.api.getPerson(contact.id).pipe(catchError(() => of(contact))),
+              horses: this.api.getHorses(contact.id),
+            }).pipe(map(({ person, horses }): OwnerCard => ({
+              owner: { ...contact, ...person, horseIds: contact.horseIds },
+              horses,
+              backend: true,
+            }))),
           ))
         : of([] as OwnerCard[]),
       ),
+    );
+    const subscription = forkJoin([self$, contacts$]).pipe(
+      map(([self, contacts]) => [self, ...contacts.filter(card => card.owner.id !== self.owner.id)]),
     ).subscribe({
       next: owners => {
         this.data.upsertCustomers(owners.map(item => item.owner));

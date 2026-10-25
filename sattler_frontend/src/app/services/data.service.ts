@@ -381,8 +381,13 @@ export class DataService {
   }
 
   upsertCustomers(customers: Customer[]): void {
+    // kommt der Sattler selbst aus dem Backend, ist nur noch er "ich" (nicht mehr das lokale Beispielprofil)
+    const hasMe = customers.some(customer => customer.isMe);
     this._customers.update(current => {
-      const byId = new Map(current.map(customer => [customer.id, customer]));
+      const byId = new Map(current.map(customer => [
+        customer.id,
+        hasMe && customer.isMe ? { ...customer, isMe: false } : customer,
+      ]));
       for (const customer of customers) {
         const existing = byId.get(customer.id);
         byId.set(customer.id, {

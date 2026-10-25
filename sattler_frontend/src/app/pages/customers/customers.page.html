@@ -22,14 +22,14 @@
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
-      @if (!backendPersonId()) {
-      <div class="date-filter">
+      <div class="date-filter" title="Zeigt alle Kund*innen, die in diesem Zeitraum eine Messung hatten">
         <label>
           <span>Von</span>
           <input
             type="date"
             aria-label="Messungen ab diesem Datum"
             [value]="measurementDateFrom()"
+            [max]="measurementDateTo() || null"
             (input)="measurementDateFrom.set($any($event.target).value)"
           />
         </label>
@@ -39,15 +39,18 @@
             type="date"
             aria-label="Messungen bis zu diesem Datum"
             [value]="measurementDateTo()"
+            [min]="measurementDateFrom() || null"
             (input)="measurementDateTo.set($any($event.target).value)"
           />
         </label>
       </div>
-      }
-      <span class="result-count">{{ filtered().length }} Ergebnisse</span>
-      @if (backendPersonId()) {
-        <p class="source-notice">Kontakte werden aus dem Backend geladen. Messungsdaten sind dort noch nicht verfügbar.</p>
-      }
+      <span class="result-count">
+        @if (hasDateRange() && measurementDatesLoading()) {
+          Messungen werden geladen …
+        } @else {
+          {{ filtered().length }} Ergebnisse
+        }
+      </span>
 
       @if (showForm()) {
         <app-new-customer-form

@@ -54,7 +54,20 @@
           <div class="date-divider"><span>Heute</span></div>
           @for (message of selectedMessages(); track message.id) {
             <article class="message" [class.outgoing]="message.sender === 'sattler'">
-              <p>{{ message.message }}</p>
+              @if (message.attachment; as file) {
+                <a class="attachment" [href]="file.url" [download]="file.name" [title]="file.name + ' herunterladen'">
+                  @if (file.isImage) {
+                    <img [src]="file.url" [alt]="file.name" />
+                  } @else {
+                    <span class="material-icons" aria-hidden="true">description</span>
+                  }
+                  <span class="attachment-name">{{ file.name }}</span>
+                  <small>{{ file.sizeLabel }}</small>
+                </a>
+              }
+              @if (message.message) {
+                <p>{{ message.message }}</p>
+              }
               <time>{{ message.timestamp }}</time>
             </article>
           } @empty {
@@ -72,7 +85,9 @@
             (ngModelChange)="draft.set($event)"
             name="message"
           />
-          <button type="button" class="attach-button" aria-label="Datei anhängen" title="Datei anhängen">
+          <input #fileInput type="file" multiple hidden (change)="attachFiles($event)" />
+          <button type="button" class="attach-button" aria-label="Datei anhängen" title="Datei anhängen"
+            (click)="fileInput.click()">
             <span class="material-icons">attach_file</span>
           </button>
           <button type="submit" class="send-button" [disabled]="!draft().trim()" aria-label="Nachricht senden">

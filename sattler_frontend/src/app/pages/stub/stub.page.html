@@ -64,6 +64,14 @@
               </select>
               <span class="select-icon material-icons">chevron_right</span>
             </div>
+            @if (selectedOwner() && availableHorses().length === 0) {
+              <small>
+                Keine Pferde vorhanden.
+                @if (selectedOwner()?.owner?.isMe) {
+                  <a routerLink="/my-horses">Unter „Meine Pferde“ ein Pferd anlegen</a>
+                }
+              </small>
+            }
           </label>
 
           <div class="metrics">
@@ -98,12 +106,10 @@
         <article class="card saddle-card">
         <div class="saddle-heading">
           <h3>Sattel</h3>
-          @if (!selectedOwner()?.backend) {
-            <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
-              <span class="material-icons" aria-hidden="true">add</span>
-              Sattel anlegen
-            </button>
-          }
+          <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
+            <span class="material-icons" aria-hidden="true">add</span>
+            Sattel anlegen
+          </button>
         </div>
 
         <div class="saddle-grid">

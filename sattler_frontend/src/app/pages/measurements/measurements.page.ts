@@ -11,6 +11,8 @@ import { formatDuration } from '../../utils/time-format';
 import { AddHorse } from '../horses/add-horse/add-horse';
 import { Horse as HorseModel } from '../../models/horse.model';
 import { BackendApiService } from '../../services/backend-api.service';
+import { printMeasurementReport } from '../../services/measurement-report';
+import { HeatmapDialogComponent } from '../../shared/heatmap-dialog/heatmap-dialog';
 
 type TabKey = 'profil' | 'messungen' | 'notizen';
 type PressureStatistic = 'average' | 'maximum' | 'pro';
@@ -18,9 +20,10 @@ type PressureStatistic = 'average' | 'maximum' | 'pro';
 @Component({
   selector: 'app-measurements-page',
   standalone: true,
-  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent, AddHorse],
+  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent, AddHorse, HeatmapDialogComponent],
   templateUrl: './measurements.page.html',
   styleUrl: './measurements.page.scss',
+  host: { '(document:keydown.escape)': 'closeExpandedHeatmap()' },
 })
 export class MeasurementsPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
@@ -166,6 +169,7 @@ export class MeasurementsPage implements OnDestroy {
 
   ngOnDestroy(): void {
     window.clearInterval(this.animationTimer);
+    window.clearTimeout(this.shareFeedbackTimer);
   }
 
   selectMeasurement(id: string) {
@@ -278,6 +282,82 @@ export class MeasurementsPage implements OnDestroy {
 
   toggleHeatmapMode() {
     this.heatmapMode.update(m => (m === 'heatmap' ? 'grid' : 'heatmap'));
+  }
+
+  // ─── Großansicht, Bericht, Teilen, Bearbeiten ──────────────────────────────
+
+  readonly heatmapExpanded = signal(false);
+  readonly shareFeedback = signal('');
+  private shareFeedbackTimer?: number;
+
+  /** Beschreibt die aktuelle Ansicht, z.B. "Trab · Links · Maximum". */
+  readonly viewLabel = computed(() => [
+    this.activeGait() || 'Alle Gangarten',
+    this.activeSide() || 'Alle Hände',
+    { average: 'Durchschnitt', maximum: 'Maximum', pro: 'Profi' }[this.pressureStatistic()],
+  ].join(' · '));
+
+  expandHeatmap(): void {
+    this.heatmapExpanded.set(true);
+  }
+
+  closeExpandedHeatmap(): void {
+    this.heatmapExpanded.set(false);
+  }
+
+  /** Öffnet den Druckdialog mit einem Bericht der Messung, dort kann er als PDF gespeichert werden. */
+  downloadReport(measurement: Measurement): void {
+    printMeasurementReport({
+      measurement,
+      horseName: this.horse()?.name ?? '',
+      customerName: this.customerName(),
+      grid: this.filteredGrid(),
+      viewLabel: this.viewLabel(),
+      maxNcm2: this.statisticMaximum(),
+      meanNcm2: this.statisticAverage(),
+    });
+  }
+
+  /** Teilt einen Link auf die Messung, ohne Web Share API wird der Link kopiert. */
+  async shareMeasurement(measurement: Measurement): Promise<void> {
+    const url = new URL(window.location.href);
+    url.searchParams.set('measurementId', measurement.id);
+    const title = `Satteldruckmessung ${this.horse()?.name ?? ''} vom ${measurement.date}`.trim();
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: title, url: url.toString() });
+        return;
+      } catch (error) {
+        // abgebrochen: nichts tun, sonst auf Kopieren ausweichen
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      this.showShareFeedback('Link zur Messung wurde kopiert.');
+    } catch {
+      this.showShareFeedback('Der Link konnte nicht kopiert werden.');
+    }
+  }
+
+  private showShareFeedback(message: string): void {
+    this.shareFeedback.set(message);
+    window.clearTimeout(this.shareFeedbackTimer);
+    this.shareFeedbackTimer = window.setTimeout(() => this.shareFeedback.set(''), 3000);
+  }
+
+  /** Bearbeiten heißt Notizen bearbeiten: wechselt in den Notizen-Tab und setzt den Cursor ins Feld. */
+  editMeasurement(measurement: Measurement): void {
+    this.setTab('notizen');
+    window.setTimeout(() => {
+      const field = document.getElementById(`notes-${measurement.id}`);
+      if (field instanceof HTMLTextAreaElement) {
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus();
+      }
+    });
   }
 
   resetView() {

@@ -180,6 +180,16 @@ export class BackendApiService {
 
   // ── Measurements ───────────────────────────────────────────────────────────
 
+  /** Loads only the dates (yyyy-mm-dd) of the measurement groups of a horse, without any measurement data. */
+  getMeasurementDatesOfHorse(horseId: string): Observable<string[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
+      map(response => listFrom(response, 'groups')
+        .map(group => isRecord(group) ? optional(group, 'date') : undefined)
+        .filter((date): date is string => !!date)),
+      catchError(toApiError),
+    );
+  }
+
   /** Loads all measurement groups of a horse including the recorded frames, newest first. */
   getMeasurementsOfHorse(horseId: string): Observable<Measurement[]> {
     return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(

@@ -6,6 +6,7 @@ import { BackendPersonContextService } from '../../services/backend-person-conte
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
 import {AddCustomer} from './add-customer/add-customer';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-customers-page',
@@ -30,8 +31,35 @@ export class CustomersPage {
     () => this.backendCustomers() ?? this.data.getCustomers().filter(customer => !customer.isMe),
   );
   readonly showForm = signal(false);
+  /** Tage aller Messungen je Backend-Kunde, für den Filter "Messungen von/bis". */
+  private readonly backendMeasurementDates = signal<Map<string, number[]>>(new Map());
+  readonly measurementDatesLoading = signal(false);
 
   constructor() {
+    // die Messtage der Pferde jedes Kunden laden (nur die Daten der Messgruppen, keine Aufnahmen)
+    effect(onCleanup => {
+      const customers = this.backendCustomers();
+      if (!customers?.length) {
+        this.backendMeasurementDates.set(new Map());
+        this.measurementDatesLoading.set(false);
+        return;
+      }
+      this.measurementDatesLoading.set(true);
+      const subscription = forkJoin(customers.map(customer =>
+        this.api.getHorses(customer.id).pipe(
+          switchMap(horses => horses.length
+            ? forkJoin(horses.map(horse => this.api.getMeasurementDatesOfHorse(horse.id)))
+            : of([] as string[][])),
+          map(dates => [customer.id, backendDateTimestamps(dates.flat())] as const),
+          catchError(() => of([customer.id, [] as number[]] as const)),
+        ),
+      )).subscribe(entries => {
+        this.backendMeasurementDates.set(new Map(entries));
+        this.measurementDatesLoading.set(false);
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+
     effect(onCleanup => {
       const personId = this.backendPersonId();
       this.backendError.set('');
@@ -58,11 +86,13 @@ export class CustomersPage {
     });
   }
 
+  readonly hasDateRange = computed(() => Boolean(this.measurementDateFrom() || this.measurementDateTo()));
+
   readonly filtered = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('de');
     const dateFrom = dateInputTimestamp(this.measurementDateFrom());
     const dateTo = dateInputTimestamp(this.measurementDateTo());
-    const hasDateRange = Boolean(this.measurementDateFrom() || this.measurementDateTo());
+    const hasDateRange = this.hasDateRange();
 
     return this.customers()
       .filter(customer => {
@@ -71,12 +101,12 @@ export class CustomersPage {
           customer.email ?? '',
         ].join(' ').toLocaleLowerCase('de');
         const matchesSearch = searchText.includes(query);
-        const lastMeasurement = this.lastMeasurementTimestamp(customer.id);
+        // im Zeitraum muss mindestens eine Messung liegen (Von und Bis jeweils inklusive)
         const matchesDateRange =
           !hasDateRange ||
-          (lastMeasurement !== null &&
-            (dateFrom === null || lastMeasurement >= dateFrom) &&
-            (dateTo === null || lastMeasurement <= dateTo));
+          this.measurementTimestamps(customer.id).some(timestamp =>
+            (dateFrom === null || timestamp >= dateFrom) &&
+            (dateTo === null || timestamp <= dateTo));
 
         return matchesSearch && matchesDateRange;
       })
@@ -95,14 +125,22 @@ export class CustomersPage {
 
   fullName = fullName;
 
-  private lastMeasurementTimestamp(customerId: string): number | null {
-    const timestamps = this.data.getHorsesOf(customerId)
+  /** Die Tage aller Messungen eines Kunden (über alle seine Pferde). */
+  private measurementTimestamps(customerId: string): number[] {
+    if (this.backendCustomers()) return this.backendMeasurementDates().get(customerId) ?? [];
+    return this.data.getHorsesOf(customerId)
       .flatMap(horse => this.data.getMeasurementsOf(horse.id))
       .map(measurement => measurementTimestamp(measurement.date))
       .filter((timestamp): timestamp is number => timestamp !== null);
-
-    return timestamps.length > 0 ? Math.max(...timestamps) : null;
   }
+}
+
+/** Backend dates (yyyy-mm-dd) as timestamps at midnight, like the date inputs of the filter. */
+function backendDateTimestamps(dates: string[]): number[] {
+  return dates
+    .map(date => /^(\d{4})-(\d{2})-(\d{2})/.exec(date))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map(([, year, month, day]) => new Date(Number(year), Number(month) - 1, Number(day)).getTime());
 }
 
 function measurementTimestamp(date: string): number | null {
