@@ -28,11 +28,29 @@ public class ChatMessage
     // only for shared measurements
     public int? MeasurementGroupId { get; set; }
     public MeasurementGroup? MeasurementGroup { get; set; }
+
+    // only for files and images, the content is stored separately so that lists of messages stay small
+    public string? FileName { get; set; }
+    public string? FileContentType { get; set; }
+    public long? FileSize { get; set; }
+    public ChatFile? File { get; set; }
+}
+
+/// <summary>
+///     The content of a file sent in a chat message
+/// </summary>
+public class ChatFile
+{
+    public int MessageId { get; set; }
+    public ChatMessage Message { get; set; } = null!;
+
+    public required byte[] Data { get; set; }
 }
 
 public enum ChatMessageType
 {
     Text = 10,
     Horse = 20,
-    Measurement = 30
+    Measurement = 30,
+    File = 40
 }

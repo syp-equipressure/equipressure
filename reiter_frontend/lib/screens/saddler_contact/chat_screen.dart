@@ -1,12 +1,18 @@
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/chat.dart';
 import '../../models/horse.dart';
 import '../../models/measurement.dart';
 import '../../models/message.dart';
 import '../../services/chat_service.dart';
 import '../../services/horse_service.dart';
+import '../../services/measurement_service.dart';
+import '../horses/horse_history_measurement.dart';
 import '../../widgets/chat_attachment_menu.dart';
 import '../../widgets/horse_selection_dialog.dart';
 import '../../widgets/measurement_selection_dialog.dart';
@@ -117,6 +123,14 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => ChatAttachmentMenu(
+        onImagesSelected: () {
+          Navigator.pop(context);
+          _pickImages();
+        },
+        onFilesSelected: () {
+          Navigator.pop(context);
+          _pickFiles();
+        },
         onHorsesSelected: () {
           Navigator.pop(context);
           _showHorseSelectionDialog();
@@ -126,6 +140,126 @@ class _ChatScreenState extends State<ChatScreen> {
           _showMeasurementSelectionDialog();
         },
       ),
+    );
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final images = await ImagePicker().pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+      final files = <({String name, Uint8List bytes})>[];
+      for (final image in images) {
+        files.add((name: image.name, bytes: await image.readAsBytes()));
+      }
+      await _sendFiles(files);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Bilder konnten nicht geladen werden.');
+    }
+  }
+
+  Future<void> _pickFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        withData: true,
+      );
+      if (result == null) return;
+      await _sendFiles([
+        for (final file in result.files)
+          if (file.bytes != null) (name: file.name, bytes: file.bytes!),
+      ]);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Dateien konnten nicht geladen werden.');
+    }
+  }
+
+  /// Schickt die Dateien nacheinander, der eingegebene Text geht mit der ersten mit.
+  Future<void> _sendFiles(List<({String name, Uint8List bytes})> files) async {
+    if (files.isEmpty) return;
+    for (final file in files) {
+      if (file.bytes.length > ChatService.maxFileSize) {
+        setState(() => _error = '${file.name} ist größer als 10 MB.');
+        return;
+      }
+    }
+
+    final text = _messageController.text.trim();
+    await _send(() async {
+      late Message last;
+      for (var i = 0; i < files.length; i++) {
+        last = await _chatService.sendFile(
+          _contactId,
+          bytes: files[i].bytes,
+          fileName: files[i].name,
+          text: i == 0 ? text : null,
+        );
+      }
+      return last;
+    });
+    if (_error == null) _messageController.clear();
+  }
+
+  Future<void> _openFile(Message message) async {
+    final uri = Uri.parse(_chatService.fileUrl(message));
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Die Datei konnte nicht geöffnet werden.')),
+      );
+    }
+  }
+
+  /// Großansicht eines Bildes, zoombar. Lässt es sich nicht laden, kann es
+  /// im Browser bzw. einer anderen App geöffnet werden.
+  void _showImage(Message message) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            title: Text(
+              message.file?.fileName ?? 'Bild',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.open_in_new),
+                tooltip: 'Im Browser öffnen',
+                onPressed: () => _openFile(message),
+              ),
+            ],
+          ),
+          body: InteractiveViewer(
+            maxScale: 5,
+            child: Center(
+              child: Image.network(
+                _chatService.fileUrl(message),
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : const CircularProgressIndicator(color: Colors.white),
+                errorBuilder: (context, error, stackTrace) => _buildImageError(message),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageError(Message message) {
+    return TextButton.icon(
+      onPressed: () => _openFile(message),
+      icon: const Icon(Icons.open_in_new),
+      label: const Text('Bild öffnen'),
     );
   }
 
@@ -155,6 +289,37 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  /// Öffnet eine geteilte Messung, z.B. eine, die die Sattler*in geschickt hat.
+  Future<void> _openMeasurement(SharedMeasurement shared) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final results = await Future.wait([
+        _horseService.getHorseById(shared.horseId),
+        MeasurementService().getMeasurementById(shared.id, horseId: shared.horseId),
+      ]);
+      final horse = results[0] as Horse?;
+      final measurement = results[1] as Measurement?;
+      if (!mounted) return;
+      if (horse == null || measurement == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Die Messung gibt es nicht mehr.')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              MeasurementDetailScreen(measurement: measurement, horse: horse),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Die Messung konnte nicht geladen werden.')),
+      );
+    }
   }
 
   @override
@@ -224,7 +389,7 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.all(32),
         child: Text(
           'Noch keine Nachrichten.\nSchreib ${widget.chat.contactName} oder teile '
-          'ein Pferd bzw. eine Messung über die Büroklammer.',
+          'Bilder, Dateien, Pferde oder Messungen über die Büroklammer.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey[500]),
         ),
@@ -305,7 +470,10 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (message.type != MessageType.text) _buildShareCard(message),
+                if (message.file != null)
+                  _buildFile(message)
+                else if (message.type != MessageType.text)
+                  _buildShareCard(message),
                 if (message.text != null && message.text!.isNotEmpty)
                   Text(
                     message.text!,
@@ -351,12 +519,83 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _buildFile(Message message) {
+    final file = message.file!;
+    if (file.isImage) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: GestureDetector(
+          onTap: () => _showImage(message),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              _chatService.fileUrl(message),
+              height: 200,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : const SizedBox(
+                      height: 200,
+                      width: 200,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+              errorBuilder: (context, error, stackTrace) => SizedBox(
+                height: 80,
+                width: 160,
+                child: Center(child: _buildImageError(message)),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _openFile(message),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.insert_drive_file_outlined, color: Color(0xFF7C4DFF)),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    file.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    file.sizeFormatted,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.download, size: 20, color: Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildShareCard(Message message) {
     final horse = message.horse;
     final measurement = message.measurement;
     final date = measurement?.date;
 
-    return Container(
+    final card = Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -418,8 +657,20 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
           ),
+          if (measurement != null) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, color: Colors.grey[600]),
+          ],
         ],
       ),
+    );
+
+    // eine geteilte Messung lässt sich öffnen, egal wer sie geschickt hat
+    if (measurement == null) return card;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _openMeasurement(measurement),
+      child: card,
     );
   }
 
@@ -470,7 +721,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       color: Colors.grey[600],
                       size: 20,
                     ),
-                    tooltip: 'Pferd oder Messung teilen',
+                    tooltip: 'Anhang senden',
                     onPressed: _isSending ? null : _showAttachmentMenu,
                   ),
                   IconButton(

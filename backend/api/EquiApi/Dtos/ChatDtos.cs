@@ -22,6 +22,14 @@ public sealed record SharedHorseDto(int Id, string Name);
 public sealed record SharedMeasurementDto(int Id, string Name, LocalDate Date, int HorseId, string HorseName);
 
 /// <summary>
+///     A file sent in a chat message, the content is loaded separately
+/// </summary>
+/// <param name="FileName">The original name of the file</param>
+/// <param name="ContentType">The media type of the file, images start with image/</param>
+/// <param name="Size">The size of the file in bytes</param>
+public sealed record ChatFileDto(string FileName, string ContentType, long Size);
+
+/// <summary>
 ///     A chat message
 /// </summary>
 /// <param name="Id">The id of the message</param>
@@ -34,6 +42,7 @@ public sealed record SharedMeasurementDto(int Id, string Name, LocalDate Date, i
 /// <param name="RecipientId">The id of the recipient</param>
 /// <param name="Horse">The shared horse, only for shared horses</param>
 /// <param name="Measurement">The shared measurement group, only for shared measurements</param>
+/// <param name="File">The sent file, only for files and images</param>
 public sealed record ChatMessageDto(
     int Id,
     ChatMessageType Type,
@@ -44,7 +53,8 @@ public sealed record ChatMessageDto(
     int SenderId,
     int RecipientId,
     SharedHorseDto? Horse,
-    SharedMeasurementDto? Measurement)
+    SharedMeasurementDto? Measurement,
+    ChatFileDto? File)
 {
     public static ChatMessageDto FromMessage(ChatMessage message) =>
         new(message.Id,
@@ -60,7 +70,11 @@ public sealed record ChatMessageDto(
                 ? null
                 : new SharedMeasurementDto(message.MeasurementGroup.Id, message.MeasurementGroup.Name,
                                            message.MeasurementGroup.Date, message.MeasurementGroup.HorseId,
-                                           message.MeasurementGroup.Horse.Name));
+                                           message.MeasurementGroup.Horse.Name),
+            message.FileName is null
+                ? null
+                : new ChatFileDto(message.FileName, message.FileContentType ?? "application/octet-stream",
+                                  message.FileSize ?? 0));
 }
 
 /// <summary>
@@ -139,6 +153,8 @@ public sealed record SendChatMessageRequest(
         public Validator()
         {
             RuleFor(x => x.Type).IsInEnum();
+            // files are uploaded with their own endpoint
+            RuleFor(x => x.Type).NotEqual(ChatMessageType.File);
             RuleFor(x => x.Text).MaximumLength(2000).When(x => x.Text is not null);
             RuleFor(x => x.Text).NotEmpty().When(x => x.Type == ChatMessageType.Text);
             RuleFor(x => x.HorseId).NotNull().GreaterThan(0).When(x => x.Type == ChatMessageType.Horse);

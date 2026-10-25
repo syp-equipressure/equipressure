@@ -44,6 +44,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
     // Chat DbSets
     public DbSet<ChatMessage> ChatMessages { get; set; }
+    public DbSet<ChatFile> ChatFiles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -449,5 +450,17 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                .WithMany()
                .HasForeignKey(m => m.MeasurementGroupId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        message.Property(m => m.FileName).HasMaxLength(255);
+        message.Property(m => m.FileContentType).HasMaxLength(255);
+
+        // the content of a file is stored in its own table, so that lists of messages do not load it
+        message.HasOne(m => m.File)
+               .WithOne(f => f.Message)
+               .HasForeignKey<ChatFile>(f => f.MessageId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        var file = mb.Entity<ChatFile>();
+        file.HasKey(f => f.MessageId);
     }
 }

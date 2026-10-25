@@ -101,6 +101,20 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("Breed", "EquiPressure");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatFile", b =>
+                {
+                    b.Property<int>("MessageId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("MessageId");
+
+                    b.ToTable("ChatFile", "EquiPressure");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.ChatMessage", b =>
                 {
                     b.Property<int>("Id")
@@ -111,6 +125,17 @@ namespace EquiApi.Persistence.Migrations
 
                     b.Property<Instant?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileContentType")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
 
                     b.Property<int?>("HorseId")
                         .HasColumnType("integer");
@@ -546,6 +571,17 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("SaddleCategory", "EquiPressure");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatFile", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.ChatMessage", "Message")
+                        .WithOne("File")
+                        .HasForeignKey("EquiApi.Persistence.Model.ChatFile", "MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.ChatMessage", b =>
                 {
                     b.HasOne("EquiApi.Persistence.Model.Horse", "Horse")
@@ -836,6 +872,11 @@ namespace EquiApi.Persistence.Migrations
             modelBuilder.Entity("EquiApi.Persistence.Model.Breed", b =>
                 {
                     b.Navigation("HorseBreeds");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatMessage", b =>
+                {
+                    b.Navigation("File");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>

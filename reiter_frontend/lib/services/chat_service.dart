@@ -133,6 +133,43 @@ class ChatService extends ChangeNotifier {
         'measurementGroupId': int.parse(measurementId),
       });
 
+  /// Höchstgröße einer Datei, mehr nimmt das Backend nicht an
+  static const int maxFileSize = 10 * 1024 * 1024;
+
+  /// Schickt ein Bild oder eine Datei, optional mit Text.
+  Future<Message> sendFile(
+    String contactId, {
+    required Uint8List bytes,
+    required String fileName,
+    String? text,
+  }) async {
+    final personId = _personId ?? await _currentPersonId();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$_baseUrl/persons/$personId/chats/$contactId/files'),
+    )..files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+    if (text != null && text.isNotEmpty) request.fields['text'] = text;
+
+    final response = await http.Response.fromStream(
+      await request.send().timeout(const Duration(seconds: 60)),
+    );
+    if (response.statusCode != 201) {
+      throw Exception(_problemDetail(response) ??
+          'Datei konnte nicht gesendet werden (HTTP ${response.statusCode}).');
+    }
+
+    final message = Message.fromJson(jsonDecode(response.body));
+    _upsert(message);
+    return message;
+  }
+
+  /// Adresse des Inhalts einer gesendeten Datei. Sender*in und Empfänger*in
+  /// dürfen sie abrufen, daher geht notfalls auch die Id aus der Nachricht.
+  String fileUrl(Message message) {
+    final personId = _personId ?? message.recipientId;
+    return '$_baseUrl/persons/$personId/chats/messages/${message.id}/file';
+  }
+
   /// Markiert alle Nachrichten der Sattler*in als gelesen.
   Future<void> markAsRead(String contactId) async {
     final personId = _personId;

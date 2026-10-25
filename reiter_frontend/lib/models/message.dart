@@ -14,6 +14,9 @@ class Message {
   final SharedHorse? horse;
   final SharedMeasurement? measurement;
 
+  /// Bild oder Datei, der Inhalt wird über [ChatService.fileUrl] geladen.
+  final ChatFile? file;
+
   Message({
     required this.id,
     required this.senderId,
@@ -25,11 +28,13 @@ class Message {
     this.acceptedAt,
     this.horse,
     this.measurement,
+    this.file,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
     final horse = json['horse'];
     final measurement = json['measurement'];
+    final file = json['file'];
     return Message(
       id: json['id'].toString(),
       senderId: json['senderId'].toString(),
@@ -43,6 +48,7 @@ class Message {
       measurement: measurement is Map<String, dynamic>
           ? SharedMeasurement.fromJson(measurement)
           : null,
+      file: file is Map<String, dynamic> ? ChatFile.fromJson(file) : null,
     );
   }
 
@@ -58,6 +64,7 @@ class Message {
       acceptedAt: acceptedAt,
       horse: horse,
       measurement: measurement,
+      file: file,
     );
   }
 
@@ -68,6 +75,8 @@ class Message {
         return 'Pferd geteilt: ${horse?.name ?? ''}'.trim();
       case MessageType.measurement:
         return 'Messung geteilt: ${measurement?.horseName ?? ''}'.trim();
+      case MessageType.file:
+        return file?.isImage == true ? 'Bild' : 'Datei: ${file?.fileName ?? ''}';
       case MessageType.text:
         return text ?? '';
     }
@@ -80,7 +89,8 @@ class Message {
 enum MessageType {
   text('Text'),
   horse('Horse'),
-  measurement('Measurement');
+  measurement('Measurement'),
+  file('File');
 
   const MessageType(this.json);
 
@@ -91,6 +101,32 @@ enum MessageType {
         (type) => type.json == value,
         orElse: () => MessageType.text,
       );
+}
+
+class ChatFile {
+  final String fileName;
+  final String contentType;
+  final int size;
+
+  ChatFile({
+    required this.fileName,
+    required this.contentType,
+    required this.size,
+  });
+
+  factory ChatFile.fromJson(Map<String, dynamic> json) => ChatFile(
+        fileName: json['fileName'] ?? 'Datei',
+        contentType: json['contentType'] ?? 'application/octet-stream',
+        size: (json['size'] as num?)?.toInt() ?? 0,
+      );
+
+  bool get isImage => contentType.startsWith('image/');
+
+  String get sizeFormatted {
+    if (size < 1024) return '$size B';
+    if (size < 1024 * 1024) return '${(size / 1024).round()} KB';
+    return '${(size / (1024 * 1024)).toStringAsFixed(1).replaceAll('.', ',')} MB';
+  }
 }
 
 class SharedHorse {

@@ -2,6 +2,7 @@ using EquiApi.Core.Services;
 using EquiApi.Dtos;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace EquiApi.Controllers;
 
@@ -11,6 +12,21 @@ public sealed class ChatController(
     IPersonService personService,
     IChatSocketManager socketManager) : BaseController
 {
+    private const int MaxFileSize = 10 * 1024 * 1024;
+    private const string UnknownContentType = "application/octet-stream";
+    private static readonly FileExtensionContentTypeProvider contentTypes = new();
+
+    // some clients (e.g. the app) do not send a media type, then it is derived from the file extension
+    private static string ContentTypeOf(IFormFile file)
+    {
+        if (!string.IsNullOrWhiteSpace(file.ContentType) && file.ContentType != UnknownContentType)
+        {
+            return file.ContentType;
+        }
+
+        return contentTypes.TryGetContentType(file.FileName, out string? contentType) ? contentType : UnknownContentType;
+    }
+
     /// <summary>
     ///     Gets all conversations of a person, the newest first
     /// </summary>
@@ -74,6 +90,69 @@ public sealed class ChatController(
         return failure.Match<ActionResult<ChatMessageDto>>(
             _ => NotFound(),
             invalid => Problem(statusCode: StatusCodes.Status409Conflict, detail: invalid.Reason));
+    }
+
+    /// <summary>
+    ///     Sends a file (e.g. an image) with an optional text as multipart form data, at most 10 MB.
+    ///     Both persons are notified over the chat websocket.
+    /// </summary>
+    [HttpPost("{contactId:int}/files")]
+    [RequestSizeLimit(MaxFileSize + 64 * 1024)]
+    [ProducesResponseType<ChatMessageDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<ChatMessageDto>> SendFile([FromRoute][ValidId] int personId,
+                                                                  [FromRoute][ValidId] int contactId,
+                                                                  IFormFile file, [FromForm] string? text)
+    {
+        if (file.Length is 0 or > MaxFileSize)
+        {
+            ModelState.AddModelError(nameof(file), "The file has to be between 1 byte and 10 MB");
+
+            return ValidationProblem();
+        }
+
+        if (text is { Length: > 2000 })
+        {
+            ModelState.AddModelError(nameof(text), "The text must not be longer than 2000 characters");
+
+            return ValidationProblem();
+        }
+
+        using var content = new MemoryStream();
+        await file.CopyToAsync(content, HttpContext.RequestAborted);
+        var data = new ChatFileData(file.FileName, ContentTypeOf(file), content.ToArray());
+
+        var result = await chatService.SendFileAsync(personId, contactId, text, data);
+        if (result.TryPickT0(out var success, out var failure))
+        {
+            await socketManager.SendAsync([personId, contactId], ChatEventDto.NewMessage(success.Value));
+
+            return CreatedAtAction(nameof(GetFile), new { personId, messageId = success.Value.Id },
+                                   ChatMessageDto.FromMessage(success.Value));
+        }
+
+        return failure.Match<ActionResult<ChatMessageDto>>(
+            _ => NotFound(),
+            invalid => Problem(statusCode: StatusCodes.Status409Conflict, detail: invalid.Reason));
+    }
+
+    /// <summary>
+    ///     Gets the content of a file sent in a message, only for the sender and the recipient
+    /// </summary>
+    [HttpGet("messages/{messageId:int}/file")]
+    [ProducesResponseType<FileContentResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> GetFile([FromRoute][ValidId] int personId,
+                                                  [FromRoute][ValidId] int messageId)
+    {
+        var result = await chatService.GetFileAsync(personId, messageId);
+
+        return result.Match<IActionResult>(
+            success => File(success.Value.Data, success.Value.ContentType, success.Value.FileName),
+            _ => NotFound());
     }
 
     /// <summary>

@@ -40,7 +40,7 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IChatRepository ChatRepository =>
         field ??= new ChatRepository(context.ChatMessages, context.PersonHorses, context.MeasurementGroups,
-                                     context.Releases);
+                                     context.Releases, context.ChatFiles);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }

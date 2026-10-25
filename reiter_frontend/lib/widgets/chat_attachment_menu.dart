@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Auswahl, was im Chat geteilt wird: ganze Pferde mit allen Messungen oder
-/// eine einzelne Messung.
+/// Auswahl, was im Chat geteilt wird: Bilder, Dateien, ganze Pferde mit allen
+/// Messungen oder eine einzelne Messung.
 class ChatAttachmentMenu extends StatelessWidget {
+  final VoidCallback onImagesSelected;
+  final VoidCallback onFilesSelected;
   final VoidCallback onHorsesSelected;
   final VoidCallback onMeasurementSelected;
 
   const ChatAttachmentMenu({
     super.key,
+    required this.onImagesSelected,
+    required this.onFilesSelected,
     required this.onHorsesSelected,
     required this.onMeasurementSelected,
   });
@@ -31,6 +35,18 @@ class ChatAttachmentMenu extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          _AttachmentMenuItem(
+            icon: Icons.image_outlined,
+            label: 'Bilder',
+            onTap: onImagesSelected,
+          ),
+          Divider(height: 1, color: Colors.grey[200]),
+          _AttachmentMenuItem(
+            icon: Icons.insert_drive_file_outlined,
+            label: 'Dateien',
+            onTap: onFilesSelected,
+          ),
+          Divider(height: 1, color: Colors.grey[200]),
           _AttachmentMenuItem(
             svgPath: 'assets/icon/horseIcon.svg',
             label: 'Pferde mit allen Messungen',

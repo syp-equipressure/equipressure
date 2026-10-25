@@ -104,6 +104,21 @@
                     <small class="share-state">Hinzugefügt</small>
                   }
                 }
+                @if (message.file; as file) {
+                  @if (isImage(message)) {
+                    <a class="attachment" [href]="chat.fileUrl(message)" target="_blank" rel="noopener"
+                      [title]="file.fileName + ' öffnen'">
+                      <img [src]="chat.fileUrl(message)" [alt]="file.fileName" loading="lazy" />
+                    </a>
+                  } @else {
+                    <a class="attachment file" [href]="chat.fileUrl(message)" [download]="file.fileName"
+                      [title]="file.fileName + ' herunterladen'">
+                      <span class="material-icons" aria-hidden="true">description</span>
+                      <span class="attachment-name">{{ file.fileName }}</span>
+                      <small>{{ fileSize(file.size) }}</small>
+                    </a>
+                  }
+                }
                 @if (message.text) {
                   <p>{{ message.text }}</p>
                 }
@@ -126,6 +141,16 @@
           <p class="send-error" role="alert">{{ sendError() }}</p>
         }
 
+        @if (showPicker()) {
+          <app-measurement-picker
+            [contactId]="contact.id"
+            [personId]="personId()"
+            [sending]="sending()"
+            (selected)="sendMeasurement($event)"
+            (cancel)="showPicker.set(false)"
+          ></app-measurement-picker>
+        }
+
         <form class="chat-composer" (ngSubmit)="sendMessage()">
           <label class="visually-hidden" for="message-draft">Nachricht schreiben</label>
           <input
@@ -137,6 +162,15 @@
             (ngModelChange)="draft.set($event)"
             name="message"
           />
+          <input #fileInput type="file" multiple hidden (change)="attachFiles($event)" />
+          <button type="button" class="attach-button" aria-label="Bild oder Datei senden" title="Bild oder Datei senden"
+            [disabled]="sending()" (click)="fileInput.click()">
+            <span class="material-icons">attach_file</span>
+          </button>
+          <button type="button" class="attach-button" aria-label="Messung senden" title="Messung senden"
+            [class.active]="showPicker()" (click)="showPicker.set(!showPicker())">
+            <span class="material-icons">analytics</span>
+          </button>
           <button type="submit" class="send-button" [disabled]="!draft().trim() || sending()" aria-label="Nachricht senden">
             <span class="material-icons">send</span>
           </button>

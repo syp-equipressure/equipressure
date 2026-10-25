@@ -93,6 +93,33 @@ public sealed class ChatServiceTests
     }
 
     [Fact]
+    public async Task SendMessageAsync_MeasurementTheSenderMayShare_AddsMessageWithGroupOnly()
+    {
+        _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns(TestData.CreateMeasurementGroup());
+        _uowMock.ChatRepository.CanShareGroupAsync(SaddlerId, 1).Returns(true);
+
+        var result = await _sut.SendMessageAsync(CreateData(SaddlerId, EquestrianId, ChatMessageType.Measurement,
+                                                            groupId: 1));
+
+        result.Value.Should().BeOfType<Success<ChatMessage>>();
+        _uowMock.ChatRepository.Received(1).AddMessage(Arg.Is<ChatMessage>(m => m.MeasurementGroupId == 1
+                                                                              && m.HorseId == null));
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_MeasurementTheSenderMayNotShare_ReturnsInvalidMessage()
+    {
+        _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns(TestData.CreateMeasurementGroup());
+        _uowMock.ChatRepository.CanShareGroupAsync(SaddlerId, 1).Returns(false);
+
+        var result = await _sut.SendMessageAsync(CreateData(SaddlerId, EquestrianId, ChatMessageType.Measurement,
+                                                            groupId: 1));
+
+        result.Value.Should().BeOfType<IChatService.InvalidMessage>();
+        _uowMock.ChatRepository.DidNotReceive().AddMessage(Arg.Any<ChatMessage>());
+    }
+
+    [Fact]
     public async Task SendMessageAsync_MeasurementNotFound_ReturnsNotFound()
     {
         _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns((MeasurementGroup?) null);

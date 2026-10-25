@@ -129,6 +129,94 @@ public sealed class ChatTests(WebApiTestFixture webApiFixture) : WebApiTestBase(
     }
 
     [Fact]
+    public async ValueTask SendFile_Image_CanBeDownloadedByBothPersonsOnly()
+    {
+        var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
+        var other = TestData.CreatePerson("Max", "Muster");
+        await SeedAsync(other);
+        byte[] image = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
+        using var form = new MultipartFormDataContent();
+        // no media type, it is derived from the file name
+        form.Add(new ByteArrayContent(image), "file", "sattel.png");
+        form.Add(new StringContent("Hier das Foto"), "text");
+
+        var response = await ApiClient.PostAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}/files", form,
+                                                 TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var message = await ReadContentAsync<ChatMessageDto>(response);
+        message.Type.Should().Be(ChatMessageType.File);
+        message.Text.Should().Be("Hier das Foto");
+        message.File.Should().Be(new ChatFileDto("sattel.png", "image/png", image.Length));
+
+        var download = await ApiClient.GetAsync($"api/persons/{saddler.Id}/chats/messages/{message.Id}/file",
+                                                TestCancellationToken);
+        download.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+
+        var foreign = await ApiClient.GetAsync($"api/persons/{other.Id}/chats/messages/{message.Id}/file",
+                                               TestCancellationToken);
+        ShouldBeProblem(foreign, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask SendMessage_FileTypeWithoutUpload_ReturnsBadRequest()
+    {
+        var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
+
+        var response = await ApiClient.PostAsJsonAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}",
+                                                       new SendChatMessageRequest(ChatMessageType.File, "x", null,
+                                                                                  null),
+                                                       JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask SendMessage_MeasurementOfTheSaddlersDevice_ReturnsCreatedMessage()
+    {
+        var equestrian = TestData.CreatePerson("Lena", "Grassauer");
+        var saddler = TestData.CreatePerson("Sophie", "Grüneis", role: RoleName.Saddler);
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        // the saddler measured with her own device, she is no person of the horse
+        var device = TestData.CreateDevice("EP-SADDLER", saddler, TestData.CreateDeviceCategory());
+        var group = TestData.CreateMeasurementGroup(equestrian, horse, saddle, device);
+        await SeedAsync(TestData.CreatePersonHorse(equestrian, horse, isOwner: true), saddle, group);
+
+        var response = await ApiClient.PostAsJsonAsync($"api/persons/{saddler.Id}/chats/{equestrian.Id}",
+                                                       new SendChatMessageRequest(ChatMessageType.Measurement,
+                                                                                  "Deine Messung", null, group.Id),
+                                                       JsonOptions, TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var message = await ReadContentAsync<ChatMessageDto>(response);
+        message.Measurement.Should().NotBeNull();
+        message.Measurement.Id.Should().Be(group.Id);
+        message.Measurement.HorseName.Should().Be(horse.Name);
+    }
+
+    [Fact]
+    public async ValueTask SendMessage_MeasurementOfSomebodyElse_ReturnsConflict()
+    {
+        var equestrian = TestData.CreatePerson("Lena", "Grassauer");
+        var saddler = TestData.CreatePerson("Sophie", "Grüneis", role: RoleName.Saddler);
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        var device = TestData.CreateDevice("EP-OTHER", equestrian, TestData.CreateDeviceCategory());
+        var group = TestData.CreateMeasurementGroup(equestrian, horse, saddle, device);
+        await SeedAsync(saddler, TestData.CreatePersonHorse(equestrian, horse, isOwner: true), saddle, group);
+
+        var response = await ApiClient.PostAsJsonAsync($"api/persons/{saddler.Id}/chats/{equestrian.Id}",
+                                                       new SendChatMessageRequest(ChatMessageType.Measurement, null,
+                                                                                  null, group.Id),
+                                                       JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async ValueTask AcceptShare_MessageOfSomebodyElse_ReturnsNotFound()
     {
         var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();

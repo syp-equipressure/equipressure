@@ -98,6 +98,29 @@ export class ChatService {
     return this.send(contactId, 'Text', { text });
   }
 
+  /** Sends a file or image (at most 10 MB) with an optional text. */
+  sendFile(contactId: string, file: File, text?: string): Observable<ChatMessage> {
+    const personId = this.personContext.personId();
+    const form = new FormData();
+    form.append('file', file, file.name);
+    if (text) form.append('text', text);
+    return this.http.post<unknown>(`${BACKEND_BASE_URL}/persons/${personId}/chats/${contactId}/files`, form).pipe(
+      map(mapMessage),
+      tap(message => this.upsertMessage(message)),
+      catchError(toApiError),
+    );
+  }
+
+  /** Address of the content of a sent file, usable as image source and download link. */
+  fileUrl(message: ChatMessage): string {
+    return `${BACKEND_BASE_URL}/persons/${this.personContext.personId()}/chats/messages/${message.id}/file`;
+  }
+
+  /** Sends a measurement, e.g. one the saddler did for the customer. */
+  sendMeasurement(contactId: string, measurementGroupId: string, text?: string): Observable<ChatMessage> {
+    return this.send(contactId, 'Measurement', { text, measurementGroupId });
+  }
+
   markAsRead(contactId: string): void {
     const personId = this.personContext.personId();
     const conversation = this.conversations().find(item => item.contact.id === contactId);
@@ -138,13 +161,14 @@ export class ChatService {
     void this.router.navigate(['/messages'], { queryParams: { contact: toast.contactId } });
   }
 
-  private send(contactId: string, type: ChatMessageType, body: { text?: string }): Observable<ChatMessage> {
+  private send(contactId: string, type: ChatMessageType,
+               body: { text?: string; measurementGroupId?: string }): Observable<ChatMessage> {
     const personId = this.personContext.personId();
     return this.http.post<unknown>(`${BACKEND_BASE_URL}/persons/${personId}/chats/${contactId}`, {
       type,
-      text: body.text ?? null,
+      text: body.text || null,
       horseId: null,
-      measurementGroupId: null,
+      measurementGroupId: body.measurementGroupId ? Number(body.measurementGroupId) : null,
     }).pipe(
       map(mapMessage),
       // the websocket delivers the message as well, upserting twice is harmless
@@ -326,10 +350,18 @@ function mapMessage(value: unknown): ChatMessage {
   const record = isRecord(value) ? value : {};
   const horse = isRecord(record['horse']) ? record['horse'] : null;
   const measurement = isRecord(record['measurement']) ? record['measurement'] : null;
+  const file = isRecord(record['file']) ? record['file'] : null;
   const type = record['type'];
   return {
     id: String(record['id'] ?? ''),
-    type: type === 'Horse' || type === 'Measurement' ? type : 'Text',
+    type: type === 'Horse' || type === 'Measurement' || type === 'File' ? type : 'Text',
+    file: file
+      ? {
+          fileName: String(file['fileName'] ?? 'Datei'),
+          contentType: String(file['contentType'] ?? 'application/octet-stream'),
+          size: Number(file['size'] ?? 0),
+        }
+      : null,
     text: typeof record['text'] === 'string' ? record['text'] : null,
     sentAt: toDate(record['sentAt']) ?? new Date(),
     readAt: toDate(record['readAt']),

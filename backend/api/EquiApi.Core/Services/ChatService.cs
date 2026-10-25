@@ -17,6 +17,14 @@ public sealed record NewChatMessageData(
     int? MeasurementGroupId);
 
 /// <summary>
+///     A file (e.g. an image) sent in a chat message
+/// </summary>
+/// <param name="FileName">The original name of the file</param>
+/// <param name="ContentType">The media type of the file, e.g. image/png</param>
+/// <param name="Data">The content of the file</param>
+public sealed record ChatFileData(string FileName, string ContentType, byte[] Data);
+
+/// <summary>
 ///     A conversation of a person with another person
 /// </summary>
 /// <param name="Contact">The other person</param>
@@ -44,7 +52,9 @@ public interface IChatService
         int personId, int otherPersonId);
 
     /// <summary>
-    ///     Sends a message. A shared horse or measurement has to belong to a horse of the sender.
+    ///     Sends a message. A shared horse has to be a horse of the sender. A shared measurement can be sent by the
+    ///     persons of the horse, the rider, the owner of the measurement device (e.g. the saddler who measured) and
+    ///     the persons it was released to.
     /// </summary>
     /// <param name="data">The values of the message</param>
     /// <returns>
@@ -52,6 +62,28 @@ public interface IChatService
     ///     exist or <see cref="InvalidMessage" /> if the message cannot be sent
     /// </returns>
     public ValueTask<OneOf<Success<ChatMessage>, NotFound, InvalidMessage>> SendMessageAsync(NewChatMessageData data);
+
+    /// <summary>
+    ///     Sends a file, e.g. an image, with an optional text
+    /// </summary>
+    /// <param name="senderId">The id of the sender</param>
+    /// <param name="recipientId">The id of the recipient</param>
+    /// <param name="text">An optional text</param>
+    /// <param name="file">The file</param>
+    /// <returns>
+    ///     The new message, <see cref="NotFound" /> if one of the persons does not exist
+    ///     or <see cref="InvalidMessage" /> if the message cannot be sent
+    /// </returns>
+    public ValueTask<OneOf<Success<ChatMessage>, NotFound, InvalidMessage>> SendFileAsync(int senderId,
+        int recipientId, string? text, ChatFileData file);
+
+    /// <summary>
+    ///     Gets the file of a message, only the sender and the recipient can get it
+    /// </summary>
+    /// <param name="personId">The id of the sender or the recipient</param>
+    /// <param name="messageId">The id of the message</param>
+    /// <returns>The file or <see cref="NotFound" /> if the person cannot see the message or it has no file</returns>
+    public ValueTask<OneOf<Success<ChatFileData>, NotFound>> GetFileAsync(int personId, int messageId);
 
     /// <summary>
     ///     Marks all messages a person received from another person as read
@@ -130,6 +162,11 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             return new IChatService.InvalidMessage("A message cannot be sent to oneself");
         }
 
+        if (data.Type == ChatMessageType.File)
+        {
+            return new IChatService.InvalidMessage("Files have to be uploaded");
+        }
+
         if (!await BothPersonsExistAsync(data.SenderId, data.RecipientId))
         {
             return new NotFound();
@@ -160,8 +197,16 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
                     return new NotFound();
                 }
 
+                if (!await uow.ChatRepository.CanShareGroupAsync(data.SenderId, group.Id))
+                {
+                    logger.LogWarning("Person {PersonId} cannot share measurement group {GroupId}", data.SenderId,
+                                      group.Id);
+
+                    return new IChatService.InvalidMessage(
+                        "Only persons of the horse, the measuring person or persons it was released to can share a measurement");
+                }
+
                 groupId = group.Id;
-                horseId = group.HorseId;
 
                 break;
         }
@@ -186,15 +231,75 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             MeasurementGroupId = groupId
         };
 
+        return new Success<ChatMessage>(await SaveMessageAsync(message));
+    }
+
+    public async ValueTask<OneOf<Success<ChatMessage>, NotFound, IChatService.InvalidMessage>> SendFileAsync(
+        int senderId, int recipientId, string? text, ChatFileData file)
+    {
+        if (senderId == recipientId)
+        {
+            return new IChatService.InvalidMessage("A message cannot be sent to oneself");
+        }
+
+        if (file.Data.Length == 0)
+        {
+            return new IChatService.InvalidMessage("The file is empty");
+        }
+
+        if (!await BothPersonsExistAsync(senderId, recipientId))
+        {
+            return new NotFound();
+        }
+
+        var message = new ChatMessage
+        {
+            Type = ChatMessageType.File,
+            Text = string.IsNullOrWhiteSpace(text) ? null : text.Trim(),
+            SentAt = clock.GetCurrentInstant(),
+            SenderId = senderId,
+            RecipientId = recipientId,
+            FileName = Path.GetFileName(file.FileName),
+            FileContentType = file.ContentType,
+            FileSize = file.Data.Length,
+            File = new ChatFile { Data = file.Data }
+        };
+
+        return new Success<ChatMessage>(await SaveMessageAsync(message));
+    }
+
+    public async ValueTask<OneOf<Success<ChatFileData>, NotFound>> GetFileAsync(int personId, int messageId)
+    {
+        var message = await uow.ChatRepository.GetMessageByIdAsync(messageId);
+        if (message is null || (message.SenderId != personId && message.RecipientId != personId))
+        {
+            logger.LogInformation("Person {PersonId} cannot see message {MessageId}", personId, messageId);
+
+            return new NotFound();
+        }
+
+        var file = await uow.ChatRepository.GetFileAsync(messageId);
+        if (file is null)
+        {
+            return new NotFound();
+        }
+
+        return new Success<ChatFileData>(new ChatFileData(message.FileName ?? "datei",
+                                                          message.FileContentType ?? "application/octet-stream",
+                                                          file.Data));
+    }
+
+    private async ValueTask<ChatMessage> SaveMessageAsync(ChatMessage message)
+    {
         uow.ChatRepository.AddMessage(message);
         await uow.SaveChangesAsync();
-        logger.LogInformation("Person {SenderId} sent message {MessageId} to person {RecipientId}", data.SenderId,
-                              message.Id, data.RecipientId);
+        logger.LogInformation("Person {SenderId} sent message {MessageId} to person {RecipientId}",
+                              message.SenderId, message.Id, message.RecipientId);
 
         // reload to get the persons and the shared horse or measurement group
         var saved = await uow.ChatRepository.GetMessageByIdAsync(message.Id);
 
-        return new Success<ChatMessage>(saved ?? message);
+        return saved ?? message;
     }
 
     public async ValueTask<OneOf<Success<int>, NotFound>> MarkAsReadAsync(int personId, int otherPersonId)

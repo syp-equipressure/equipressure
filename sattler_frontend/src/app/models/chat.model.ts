@@ -1,4 +1,11 @@
-export type ChatMessageType = 'Text' | 'Horse' | 'Measurement';
+export type ChatMessageType = 'Text' | 'Horse' | 'Measurement' | 'File';
+
+/** A file or image sent in a message, its content is loaded from the backend. */
+export interface ChatFile {
+  fileName: string;
+  contentType: string;
+  size: number;
+}
 
 export interface SharedHorse {
   id: string;
@@ -25,6 +32,7 @@ export interface ChatMessage {
   recipientId: string;
   horse: SharedHorse | null;
   measurement: SharedMeasurement | null;
+  file: ChatFile | null;
 }
 
 export interface ChatContact {
@@ -54,6 +62,8 @@ export function messagePreview(message: ChatMessage): string {
       return `Pferd geteilt: ${message.horse?.name ?? ''}`.trim();
     case 'Measurement':
       return `Messung geteilt: ${message.measurement?.horseName ?? ''}`.trim();
+    case 'File':
+      return message.file?.contentType.startsWith('image/') ? 'Bild' : `Datei: ${message.file?.fileName ?? ''}`;
     default:
       return message.text ?? '';
   }

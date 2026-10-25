@@ -2,11 +2,15 @@ import { Component, ElementRef, OnDestroy, computed, effect, inject, signal, unt
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { concat, map } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ChatService } from '../../services/chat.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { ChatContact, ChatMessage, messagePreview } from '../../models/chat.model';
+import { MeasurementPickerComponent } from './measurement-picker';
+
+/** The backend accepts files up to 10 MB. */
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 interface ContactItem {
   contact: ChatContact;
@@ -23,7 +27,7 @@ interface MessageDay {
 @Component({
   selector: 'app-messages-page',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, RouterLink],
+  imports: [FormsModule, PageHeaderComponent, RouterLink, MeasurementPickerComponent],
   templateUrl: './messages.page.html',
   styleUrl: './messages.page.scss',
 })
@@ -44,6 +48,7 @@ export class MessagesPage implements OnDestroy {
   readonly sendError = signal('');
   readonly messagesLoading = signal(false);
   readonly acceptingId = signal('');
+  readonly showPicker = signal(false);
   readonly notificationPermission = signal(this.chat.notificationPermission());
 
   // only persons with at least one message, the backend returns only those as conversations
@@ -100,6 +105,7 @@ export class MessagesPage implements OnDestroy {
   selectContact(contactId: string): void {
     this.selectedContactId.set(contactId);
     this.chat.activeContactId.set(contactId);
+    this.showPicker.set(false);
     this.sendError.set('');
     if (this.contactFromRoute() && this.contactFromRoute() !== contactId) {
       void this.router.navigate([], { queryParams: { contact: null }, replaceUrl: true });
@@ -128,6 +134,68 @@ export class MessagesPage implements OnDestroy {
     this.chat.sendText(contactId, text).subscribe({
       next: () => {
         this.draft.set('');
+        this.sending.set(false);
+      },
+      error: (error: Error) => {
+        this.sendError.set(error.message);
+        this.sending.set(false);
+      },
+    });
+  }
+
+  /** Sends the selected files one after another, the current draft goes with the first one. */
+  attachFiles(event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.files?.length) return;
+    const contactId = this.selectedContactId();
+    const files = [...input.files];
+    // allow selecting the same file again
+    input.value = '';
+    if (!contactId || this.sending()) return;
+
+    const tooLarge = files.find(file => file.size > MAX_FILE_SIZE);
+    if (tooLarge) {
+      this.sendError.set(`${tooLarge.name} ist größer als 10 MB.`);
+      return;
+    }
+
+    const text = this.draft().trim();
+    this.sending.set(true);
+    this.sendError.set('');
+    concat(...files.map((file, index) => this.chat.sendFile(contactId, file, index === 0 ? text : undefined)))
+      .subscribe({
+        complete: () => {
+          this.draft.set('');
+          this.sending.set(false);
+        },
+        error: (error: Error) => {
+          this.sendError.set(error.message);
+          this.sending.set(false);
+        },
+      });
+  }
+
+  isImage(message: ChatMessage): boolean {
+    return !!message.file?.contentType.startsWith('image/');
+  }
+
+  fileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
+  }
+
+  /** Sends a measurement, together with the current draft as text. */
+  sendMeasurement(measurementGroupId: string): void {
+    const contactId = this.selectedContactId();
+    if (!contactId || this.sending()) return;
+
+    this.sending.set(true);
+    this.sendError.set('');
+    this.chat.sendMeasurement(contactId, measurementGroupId, this.draft().trim()).subscribe({
+      next: () => {
+        this.draft.set('');
+        this.showPicker.set(false);
         this.sending.set(false);
       },
       error: (error: Error) => {
