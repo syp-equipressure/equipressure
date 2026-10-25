@@ -8,6 +8,7 @@ import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
 import { PressureDevice } from '../models/device.model';
 import { formatDuration } from '../utils/time-format';
+import { hasNoRecordedData } from './measurement-mapper';
 
 /** Local demo and measurement-session data; backend-backed entities are cached here for the UI. */
 @Injectable({ providedIn: 'root' })
@@ -470,11 +471,29 @@ export class DataService {
     this._recordedMeasurements.update(list => list.filter(measurement => measurement.id !== id));
   }
 
+  /**
+   * Replaces the measurements of a horse with the ones loaded from the backend. The backend cannot
+   * store recorded data yet, so a measurement recorded in this session keeps its local data.
+   */
+  setMeasurementsOf(horseId: string, measurements: Measurement[]): void {
+    const recorded = new Map(this._recordedMeasurements().map(measurement => [measurement.id, measurement]));
+    const merged = measurements.map(measurement =>
+      hasNoRecordedData(measurement) && recorded.has(measurement.id)
+        ? { ...recorded.get(measurement.id)!, date: measurement.date, notes: measurement.notes }
+        : measurement,
+    );
+    this._measurements.update(list => [
+      ...merged,
+      ...list.filter(measurement => measurement.horseId !== horseId),
+    ]);
+  }
+
   getSamplePressureGrid(): number[][] {
     return buildPetziPressureGrid();
   }
 
-  addSessionMeasurement(session: MeasurementSession): Measurement {
+  /** Adds a recorded measurement, [id] is the id of the measurement group in the backend. */
+  addSessionMeasurement(session: MeasurementSession, id = `m${Date.now()}`): Measurement {
     const owner = this.getCustomer(session.ownerId);
     const saddle = this.getSaddlesOfHorse(session.horseId)
       .find(item => item.id === session.saddleId);
@@ -502,7 +521,7 @@ export class DataService {
     detail.meanNcm2 = gridMean(detail.pressureGrid);
 
     const measurement: Measurement = {
-      id: `m${Date.now()}`,
+      id,
       horseId: session.horseId,
       date: new Date().toLocaleDateString('de-AT'),
       deviceName: saddle?.name ?? detail.saddleName,

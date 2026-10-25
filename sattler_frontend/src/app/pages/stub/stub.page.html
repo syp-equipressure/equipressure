@@ -139,11 +139,7 @@
           </div>
           @if (availableSaddles().length === 0 && selectedHorse()) {
             <p class="saddle-empty">
-              @if (selectedOwner()?.backend) {
-                Für dieses Pferd sind keine Sättel hinterlegt.
-              } @else {
-                Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.
-              }
+              Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.
             </p>
           }
         </article>
@@ -211,11 +207,9 @@
         <span>Kategorie</span>
         <select name="saddleCategory" [ngModel]="saddleCategory()"
           (ngModelChange)="saddleCategory.set($event)">
-          <option value="Dressur">Dressur</option>
-          <option value="Springen">Springen</option>
-          <option value="Vielseitigkeit">Vielseitigkeit</option>
-          <option value="Gangpferd">Gangpferd</option>
-          <option value="Sonstige">Sonstige</option>
+          @for (category of saddleCategories(); track category.id) {
+            <option [value]="category.name">{{ category.name }}</option>
+          }
         </select>
       </label>
       @if (saddleError()) {
@@ -223,7 +217,9 @@
       }
       <footer>
         <button type="button" class="cancel-saddle" (click)="cancelSaddleForm()">Abbrechen</button>
-        <button type="submit" class="save-saddle">Sattel speichern</button>
+        <button type="submit" class="save-saddle" [disabled]="saddleSaving()">
+          {{ saddleSaving() ? 'Wird gespeichert …' : 'Sattel speichern' }}
+        </button>
       </footer>
     </form>
   </section>

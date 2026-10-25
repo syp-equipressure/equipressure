@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -27,6 +27,8 @@ export class MeasurementSessionPage {
   });
 
   readonly session = this.sessionService.session;
+  readonly saving = signal(false);
+  readonly saveError = signal('');
   readonly owner = computed(() => {
     const session = this.session();
     return session ? this.data.getCustomer(session.ownerId) : undefined;
@@ -133,17 +135,25 @@ export class MeasurementSessionPage {
 
   finish(): void {
     const session = this.session();
-    if (!session || this.completedCount() === 0) return;
-    const measurementId = this.sessionService.complete();
-    if (measurementId) {
-      const owner = this.owner();
-      const destination = owner?.isMe
-        ? ['/my-horses', session.horseId]
-        : ['/customers', session.ownerId, 'horses', session.horseId];
-      void this.router.navigate(destination, {
-        queryParams: { measurementId },
-      });
-    }
+    if (!session || this.completedCount() === 0 || this.saving()) return;
+    const owner = this.owner();
+    this.saving.set(true);
+    this.saveError.set('');
+    this.sessionService.complete().subscribe({
+      next: measurementId => {
+        this.saving.set(false);
+        const destination = owner?.isMe
+          ? ['/my-horses', session.horseId]
+          : ['/customers', session.ownerId, 'horses', session.horseId];
+        void this.router.navigate(destination, {
+          queryParams: { measurementId },
+        });
+      },
+      error: error => {
+        this.saving.set(false);
+        this.saveError.set(error instanceof Error ? error.message : 'Die Messung konnte nicht gespeichert werden.');
+      },
+    });
   }
 
   readonly formatDuration = formatDuration;

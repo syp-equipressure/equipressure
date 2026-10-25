@@ -9,10 +9,14 @@ import { Horse } from '../../models/horse.model';
 import { Measurement } from '../../models/measurement.model';
 import { Saddle } from '../../models/saddle.model';
 import { MeasurementSessionService } from '../../services/measurement-session.service';
-import { BackendApiService } from '../../services/backend-api.service';
+import { BackendApiService, SaddleCategory } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { forkJoin, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+
+const LOCAL_SADDLE_CATEGORIES: SaddleCategory[] = [
+  'Dressur', 'Springen', 'Vielseitigkeit', 'Gangpferd', 'Sonstige',
+].map((name, index) => ({ id: index + 1, name }));
 
 interface OwnerCard {
   owner: Customer;
@@ -129,6 +133,14 @@ export class StubPage {
   readonly saddleName = signal('');
   readonly saddleCategory = signal('Dressur');
   readonly saddleError = signal('');
+  readonly saddleSaving = signal(false);
+  private readonly backendSaddleCategories = signal<SaddleCategory[]>([]);
+  /** Kategorien für das Formular: aus dem Backend für Backend-Pferde, sonst die lokalen. */
+  readonly saddleCategories = computed(() =>
+    this.selectedOwner()?.backend && this.backendSaddleCategories().length
+      ? this.backendSaddleCategories()
+      : LOCAL_SADDLE_CATEGORIES,
+  );
   readonly selectedSaddleName = computed(() => this.selectedSaddle()?.name ?? '');
   readonly selectedSaddleCategory = computed(() => this.selectedSaddle()?.category ?? '');
 
@@ -281,14 +293,27 @@ export class StubPage {
   }
 
   openSaddleForm(): void {
-    if (this.selectedOwner()?.backend) {
-      this.saddleError.set('Das Backend bietet derzeit keinen Endpunkt zum Anlegen von Sätteln.');
-      return;
-    }
     this.saddleName.set('');
-    this.saddleCategory.set('Dressur');
+    this.saddleCategory.set(this.saddleCategories()[0]?.name ?? 'Dressur');
     this.saddleError.set('');
     this.saddleFormOpen.set(true);
+    if (this.selectedOwner()?.backend) this.loadSaddleCategories();
+  }
+
+  /** Lädt die Sattelkategorien aus dem Backend, sonst bleiben die lokalen Kategorien. */
+  private loadSaddleCategories(): void {
+    if (this.backendSaddleCategories().length) return;
+    this.api.getSaddleCategories().subscribe({
+      next: categories => {
+        this.backendSaddleCategories.set(categories);
+        if (!categories.some(category => category.name === this.saddleCategory())) {
+          this.saddleCategory.set(categories[0]?.name ?? '');
+        }
+      },
+      error: error => this.saddleError.set(
+        error instanceof Error ? error.message : 'Sattelkategorien konnten nicht geladen werden.',
+      ),
+    });
   }
 
   cancelSaddleForm(): void {
@@ -301,6 +326,28 @@ export class StubPage {
     const name = this.saddleName().trim();
     if (!horse || !name) {
       this.saddleError.set('Bitte einen Sattelnamen eingeben.');
+      return;
+    }
+
+    if (this.selectedOwner()?.backend) {
+      const category = this.backendSaddleCategories().find(item => item.name === this.saddleCategory());
+      if (!category) {
+        this.saddleError.set('Bitte eine Kategorie auswählen.');
+        return;
+      }
+      this.saddleSaving.set(true);
+      this.api.createSaddle(horse.id, name, category.id).subscribe({
+        next: saddle => {
+          this.data.upsertSaddles([saddle]);
+          this.selectedSaddleId.set(saddle.id);
+          this.saddleSaving.set(false);
+          this.saddleFormOpen.set(false);
+        },
+        error: error => {
+          this.saddleSaving.set(false);
+          this.saddleError.set(error instanceof Error ? error.message : 'Der Sattel konnte nicht gespeichert werden.');
+        },
+      });
       return;
     }
 

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
@@ -10,6 +10,7 @@ import { fullName } from '../../models/customer.model';
 import { formatDuration } from '../../utils/time-format';
 import { AddHorse } from '../horses/add-horse/add-horse';
 import { Horse as HorseModel } from '../../models/horse.model';
+import { BackendApiService } from '../../services/backend-api.service';
 
 type TabKey = 'profil' | 'messungen' | 'notizen';
 type PressureStatistic = 'average' | 'maximum' | 'pro';
@@ -25,8 +26,12 @@ export class MeasurementsPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
+  private readonly api = inject(BackendApiService);
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
+
+  readonly measurementsLoading = signal(false);
+  readonly measurementsError = signal('');
 
   readonly horse = computed(() => this.data.getHorse(this.params().get('horseId') ?? ''));
   readonly customer = computed(() => {
@@ -84,6 +89,30 @@ export class MeasurementsPage implements OnDestroy {
       this.tab.set('messungen');
       this.selectedId.set(measurementId);
     }
+
+    // Pferde aus dem Backend haben numerische IDs, ihre Messungen kommen ebenfalls aus dem Backend
+    effect(onCleanup => {
+      const horseId = this.params().get('horseId') ?? '';
+      this.measurementsError.set('');
+      if (!isBackendId(horseId)) {
+        this.measurementsLoading.set(false);
+        return;
+      }
+      this.measurementsLoading.set(true);
+      const subscription = this.api.getMeasurementsOfHorse(horseId).subscribe({
+        next: measurements => {
+          this.data.setMeasurementsOf(horseId, measurements);
+          this.measurementsLoading.set(false);
+        },
+        error: error => {
+          this.measurementsError.set(
+            error instanceof Error ? error.message : 'Messungen konnten nicht geladen werden.',
+          );
+          this.measurementsLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
   }
 
   readonly sideOptions = computed<Side[]>(() => {
@@ -114,7 +143,8 @@ export class MeasurementsPage implements OnDestroy {
 
     const segments = this.matchingSegments();
     if (segments.length) {
-      const grids = segments.map(segment => segment.pressureGrid);
+      // Durchschnitt und Maximum über alle Aufnahmen, sonst über die Teilmessungen
+      const grids = segments.flatMap(segment => segment.frames ?? [segment.pressureGrid]);
       return this.pressureStatistic() === 'maximum' ? maximumGrid(grids) : averageGrids(grids);
     }
 
@@ -125,11 +155,9 @@ export class MeasurementsPage implements OnDestroy {
   });
   readonly pressureGrid = computed(() => {
     const grid = this.filteredGrid();
-    return this.pressureStatistic() === 'pro' &&
-      this.activeGait() &&
-      this.activeSide()
-      ? animatePressureGrid(grid, this.phase())
-      : grid;
+    if (this.pressureStatistic() !== 'pro' || !this.activeGait() || !this.activeSide()) return grid;
+    // mit aufgenommenen Frames die echte Messung abspielen, sonst eine Bewegung andeuten
+    return frameAt(this.matchingSegments(), this.phase()) ?? animatePressureGrid(grid, this.phase());
   });
 
   readonly statisticMaximum = computed(() => Math.max(0, ...this.filteredGrid().flat()));
@@ -191,6 +219,19 @@ export class MeasurementsPage implements OnDestroy {
     const measurement = this.data.getMeasurement(id);
     if (!measurement) return;
     if (!window.confirm(`Möchtest du die Messung vom ${measurement.date} wirklich löschen?`)) return;
+    if (!isBackendId(id)) {
+      this.removeMeasurementLocally(id);
+      return;
+    }
+    this.api.deleteMeasurementGroup(id).subscribe({
+      next: () => this.removeMeasurementLocally(id),
+      error: error => this.measurementsError.set(
+        error instanceof Error ? error.message : 'Die Messung konnte nicht gelöscht werden.',
+      ),
+    });
+  }
+
+  private removeMeasurementLocally(id: string): void {
     this.data.removeMeasurement(id);
     if (this.selectedId() === id) {
       const remaining = this.measurements();
@@ -279,6 +320,31 @@ export class MeasurementsPage implements OnDestroy {
   }
 
   readonly formatDuration = formatDuration;
+}
+
+function isBackendId(id: string): boolean {
+  return /^[1-9]\d*$/.test(id);
+}
+
+/** Pressure grid at [phase] seconds: the segments play one after another, frames are interpolated. */
+function frameAt(segments: MeasurementSegmentResult[], phase: number): number[][] | null {
+  let remaining = phase;
+  for (const [index, segment] of segments.entries()) {
+    const frames = segment.frames;
+    if (!frames?.length) return null;
+    const isLast = index === segments.length - 1;
+    if (remaining > segment.durationSeconds && !isLast) {
+      remaining -= segment.durationSeconds;
+      continue;
+    }
+    if (frames.length === 1 || segment.durationSeconds <= 0) return frames[0];
+    const position = Math.min(1, remaining / segment.durationSeconds) * (frames.length - 1);
+    const lower = Math.floor(position);
+    const upper = Math.min(lower + 1, frames.length - 1);
+    const t = position - lower;
+    return frames[lower].map((row, y) => row.map((value, x) => value * (1 - t) + frames[upper][y][x] * t));
+  }
+  return null;
 }
 
 function isGait(value: string): value is Gait {

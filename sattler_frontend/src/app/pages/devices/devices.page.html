@@ -6,12 +6,10 @@
       <p class="eyebrow">Geräteverwaltung</p>
       <h2>Meine Messgeräte</h2>
     </div>
-    @if (!backendPersonId()) {
     <button type="button" class="primary-button" (click)="openAddForm()">
       <span class="material-icons" aria-hidden="true">add</span>
       Gerät hinzufügen
     </button>
-    }
   </header>
 
   @if (backendLoading()) {
@@ -19,8 +17,6 @@
   }
   @if (backendError()) {
     <p class="feedback error" role="alert">{{ backendError() }}</p>
-  }
-  @if (backendPersonId() && !backendLoading() && !backendError()) {
   }
   @if (saveError()) {
     <p class="feedback error" role="alert">{{ saveError() }}</p>
@@ -53,14 +49,9 @@
   } @else if (!backendLoading() && !backendError()) {
     <section class="empty-state">
       <span class="material-icons" aria-hidden="true">sensors_off</span>
-      @if (backendPersonId()) {
-        <h3>Keine Backend-Messgeräte gefunden</h3>
-        <p>Für diese Personen-ID sind derzeit keine Geräte hinterlegt.</p>
-      } @else {
-        <h3>Noch keine Messgeräte eingetragen</h3>
-        <p>Füge deine Satteldruckmessgeräte hinzu, um sie hier zu verwalten.</p>
-        <button type="button" class="primary-button" (click)="openAddForm()">Erstes Gerät hinzufügen</button>
-      }
+      <h3>Noch keine Messgeräte eingetragen</h3>
+      <p>Füge deine Satteldruckmessgeräte hinzu, um sie hier zu verwalten.</p>
+      <button type="button" class="primary-button" (click)="openAddForm()">Erstes Gerät hinzufügen</button>
     </section>
   }
 </main>
@@ -76,11 +67,23 @@
       </button>
     </header>
     <form (ngSubmit)="saveDevice()">
-      <label>
-        <span>Gerätename</span>
-        <input type="text" name="name" [ngModel]="name()" (ngModelChange)="name.set($event)"
-          placeholder="z. B. Prestige X-D2" required />
-      </label>
+      @if (backendPersonId()) {
+        <!-- im Backend hat ein Gerät keinen Namen, sondern eine Kategorie (bestimmt die Anzahl der Nutzer) -->
+        <label>
+          <span>Kategorie</span>
+          <select name="category" [ngModel]="categoryId()" (ngModelChange)="categoryId.set(+$event)">
+            @for (category of categories; track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+      } @else {
+        <label>
+          <span>Gerätename</span>
+          <input type="text" name="name" [ngModel]="name()" (ngModelChange)="name.set($event)"
+            placeholder="z. B. Prestige X-D2" required />
+        </label>
+      }
       <label>
         <span>Gerätenummer</span>
         <input type="text" name="number" [ngModel]="number()" (ngModelChange)="number.set($event)"
@@ -91,7 +94,9 @@
       }
       <footer>
         <button type="button" class="secondary-button" (click)="cancelForm()">Abbrechen</button>
-        <button type="submit" class="primary-button">Speichern</button>
+        <button type="submit" class="primary-button" [disabled]="saving()">
+          {{ saving() ? 'Wird gespeichert …' : 'Speichern' }}
+        </button>
       </footer>
     </form>
   </section>

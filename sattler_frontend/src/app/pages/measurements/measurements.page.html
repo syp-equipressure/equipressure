@@ -91,6 +91,13 @@
 @if (tab() === 'messungen') {
   <section class="layout">
     <aside class="sidebar">
+      <!-- inline gestylt, weil die SCSS-Datei an der Größengrenze (Budget) ist -->
+      @if (measurementsLoading()) {
+        <p role="status" style="margin: 0; font-size: 13px; color: var(--text-soft)">Messungen werden geladen …</p>
+      }
+      @if (measurementsError()) {
+        <p role="alert" style="margin: 0; font-size: 13px; color: var(--accent-red)">{{ measurementsError() }}</p>
+      }
       @for (m of measurements(); track m.id) {
         <div class="measurement-entry" [class.active]="selected()?.id === m.id">
           <button

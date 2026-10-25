@@ -210,6 +210,13 @@ textarea::placeholder { color: #999; }
 .progress-card li.complete { background: #e4f5e6; }
 .progress-card li.complete .progress-number { background: #50ad68; }
 
+.save-error {
+  margin: 14px auto 0;
+  text-align: center;
+  color: t.$accent-red;
+  font-size: 14px;
+}
+
 .finish-button {
   display: block;
   width: min(450px, 100%);
