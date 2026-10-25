@@ -24,6 +24,8 @@ var app = builder.Build();
 
 app.UseCors(Setup.CorsPolicyName);
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+// chat events are pushed to the clients over websockets, the interval keeps idle connections open behind proxies
+app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 app.MapControllers();
 if (app.Environment.IsDevelopment())
 {

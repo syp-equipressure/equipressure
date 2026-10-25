@@ -10,6 +10,7 @@ public interface IUnitOfWork
     public IHorseRepository HorseRepository { get; }
     public IMeasurementRepository MeasurementRepository { get; }
     public ISaddleRepository SaddleRepository { get; }
+    public IChatRepository ChatRepository { get; }
 
     /// <summary>
     ///     Saves all pending changes in a single database transaction
@@ -36,6 +37,10 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IMeasurementRepository MeasurementRepository =>
         field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates);
+
+    public IChatRepository ChatRepository =>
+        field ??= new ChatRepository(context.ChatMessages, context.PersonHorses, context.MeasurementGroups,
+                                     context.Releases);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }

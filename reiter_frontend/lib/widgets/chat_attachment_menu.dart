@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// Auswahl, was im Chat geteilt wird: ganze Pferde mit allen Messungen oder
+/// eine einzelne Messung.
 class ChatAttachmentMenu extends StatelessWidget {
-  final VoidCallback onFilesSelected;
-  final VoidCallback onImagesSelected;
-  final VoidCallback onProfileSelected;
   final VoidCallback onHorsesSelected;
+  final VoidCallback onMeasurementSelected;
 
   const ChatAttachmentMenu({
     super.key,
-    required this.onFilesSelected,
-    required this.onImagesSelected,
-    required this.onProfileSelected,
     required this.onHorsesSelected,
+    required this.onMeasurementSelected,
   });
 
   @override
@@ -34,37 +32,18 @@ class ChatAttachmentMenu extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _AttachmentMenuItem(
-            icon: Icons.insert_drive_file_outlined,
-            label: 'Dateien',
-            onTap: onFilesSelected,
-          ),
-          _buildDivider(),
-          _AttachmentMenuItem(
-            icon: Icons.image_outlined,
-            label: 'Bilder',
-            onTap: onImagesSelected,
-          ),
-          _buildDivider(),
-          _AttachmentMenuItem(
-            icon: Icons.person_outline,
-            label: 'Mein Profil',
-            onTap: onProfileSelected,
-          ),
-          _buildDivider(),
-          _AttachmentMenuItem(
             svgPath: 'assets/icon/horseIcon.svg',
-            label: 'Pferde',
+            label: 'Pferde mit allen Messungen',
             onTap: onHorsesSelected,
+          ),
+          Divider(height: 1, color: Colors.grey[200]),
+          _AttachmentMenuItem(
+            icon: Icons.analytics_outlined,
+            label: 'Einzelne Messung',
+            onTap: onMeasurementSelected,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      color: Colors.grey[200],
     );
   }
 }

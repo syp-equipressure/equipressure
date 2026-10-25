@@ -1,158 +1,202 @@
-import { computed, Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DataService } from '../../services/data.service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { Customer, fullName } from '../../models/customer.model';
+import { ChatService } from '../../services/chat.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
+import { ChatContact, ChatMessage, messagePreview } from '../../models/chat.model';
 
-interface ChatMessage {
-  id: number;
-  customerId: string;
-  sender: 'customer' | 'sattler';
-  message: string;
-  timestamp: string;
-  attachment?: ChatAttachment;
+interface ContactItem {
+  contact: ChatContact;
+  preview: string;
+  time: string;
+  unread: number;
 }
 
-interface ChatAttachment {
-  name: string;
-  /** Object URL of the file, valid as long as the page is open (the chat has no backend yet). */
-  url: string;
-  sizeLabel: string;
-  isImage: boolean;
+interface MessageDay {
+  label: string;
+  messages: ChatMessage[];
 }
 
 @Component({
   selector: 'app-messages-page',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent],
+  imports: [FormsModule, PageHeaderComponent, RouterLink],
   templateUrl: './messages.page.html',
   styleUrl: './messages.page.scss',
 })
-export class MessagesPage {
-  private readonly data = inject(DataService);
+export class MessagesPage implements OnDestroy {
+  readonly chat = inject(ChatService);
+  private readonly personContext = inject(BackendPersonContextService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
-  readonly messages = signal<ChatMessage[]>([
-    {
-      id: 1,
-      customerId: 'max',
-      sender: 'sattler',
-      message: 'Lorem ipsum dolor sit amet, consectetur sadipscing elitr, sed',
-      timestamp: '12:04 Uhr',
-    },
-    {
-      id: 2,
-      customerId: 'max',
-      sender: 'customer',
-      message: 'Vielen Dank! Lg',
-      timestamp: '12:49 Uhr',
-    },
-    {
-      id: 3,
-      customerId: 'anna',
-      sender: 'customer',
-      message: 'Sonntag, 5 Uhr? Oder passt dir Montag besser?',
-      timestamp: 'vor 3 Minuten',
-    },
-  ]);
+  private readonly history = viewChild<ElementRef<HTMLElement>>('history');
 
-  readonly customers = computed(() => {
-    const conversationIds = new Set(this.messages().map(message => message.customerId));
-    return this.data.getCustomers().filter(customer => conversationIds.has(customer.id) && !customer.isMe);
-  });
-  readonly selectedCustomerId = signal(this.customers()[0]?.id ?? '');
-  readonly selectedCustomer = computed<Customer | undefined>(() =>
-    this.customers().find(customer => customer.id === this.selectedCustomerId()),
-  );
+  readonly personId = this.personContext.personId;
+  private readonly contactFromRoute = toSignal(this.route.queryParamMap.pipe(map(params => params.get('contact'))));
+
+  readonly selectedContactId = signal('');
   readonly draft = signal('');
-  readonly selectedMessages = computed(() =>
-    this.messages().filter(message => message.customerId === this.selectedCustomerId()),
-  );
+  readonly sending = signal(false);
+  readonly sendError = signal('');
+  readonly messagesLoading = signal(false);
+  readonly acceptingId = signal('');
+  readonly notificationPermission = signal(this.chat.notificationPermission());
 
-  selectCustomer(customerId: string): void {
-    this.selectedCustomerId.set(customerId);
+  // only persons with at least one message, the backend returns only those as conversations
+  readonly contactItems = computed<ContactItem[]>(() =>
+    this.chat.conversations().map(conversation => ({
+      contact: conversation.contact,
+      preview: messagePreview(conversation.lastMessage),
+      time: relativeTime(conversation.lastMessage.sentAt),
+      unread: conversation.unreadCount,
+    })));
+
+  readonly selectedContact = computed(() =>
+    this.contactItems().find(item => item.contact.id === this.selectedContactId())?.contact);
+
+  readonly messageDays = computed<MessageDay[]>(() => {
+    const days: MessageDay[] = [];
+    for (const message of this.chat.messagesWith(this.selectedContactId()) ?? []) {
+      const label = dayLabel(message.sentAt);
+      const last = days.at(-1);
+      if (last?.label === label) last.messages.push(message);
+      else days.push({ label, messages: [message] });
+    }
+    return days;
+  });
+
+  constructor() {
+    // the contact from the link of a notification, otherwise the newest conversation
+    effect(() => {
+      const fromRoute = this.contactFromRoute();
+      const items = this.contactItems();
+      untracked(() => {
+        if (fromRoute && fromRoute !== this.selectedContactId()) {
+          this.selectContact(fromRoute);
+        } else if (!this.selectedContactId() && items.length) {
+          this.selectContact(items[0].contact.id);
+        }
+      });
+    });
+
+    // keep the newest message visible
+    effect(() => {
+      this.messageDays();
+      setTimeout(() => {
+        const element = this.history()?.nativeElement;
+        if (element) element.scrollTop = element.scrollHeight;
+      });
+    });
   }
 
-  latestMessage(customerId: string): string {
-    return [...this.messages()].reverse().find(message => message.customerId === customerId)?.message ??
-      'Noch keine Nachrichten';
+  ngOnDestroy(): void {
+    this.chat.activeContactId.set(null);
   }
 
-  latestMessageTime(customerId: string): string {
-    if (customerId === 'max') return 'vor 2 Stunden';
-    return [...this.messages()].reverse().find(message => message.customerId === customerId)?.timestamp ?? '';
-  }
+  selectContact(contactId: string): void {
+    this.selectedContactId.set(contactId);
+    this.chat.activeContactId.set(contactId);
+    this.sendError.set('');
+    if (this.contactFromRoute() && this.contactFromRoute() !== contactId) {
+      void this.router.navigate([], { queryParams: { contact: null }, replaceUrl: true });
+    }
 
-  avatarUrl(customer: Customer): string | undefined {
-    return customer.horseIds
-      .map(horseId => this.data.getHorse(horseId)?.imageUrl)
-      .find((imageUrl): imageUrl is string => !!imageUrl);
-  }
-
-  customerHorseNames(customer: Customer): string[] {
-    return customer.horseIds
-      .map(horseId => this.data.getHorse(horseId)?.name)
-      .filter((name): name is string => !!name)
-      .slice(0, 2)
-      .reverse();
-  }
-
-  /** Sends the selected files as attachments (together with the current draft, if any). */
-  attachFiles(event: Event): void {
-    const input = event.target;
-    if (!(input instanceof HTMLInputElement) || !input.files?.length) return;
-    const customerId = this.selectedCustomerId();
-    if (!customerId) return;
-
-    const files = [...input.files];
-    const draft = this.draft().trim();
-    this.messages.update(messages => [
-      ...messages,
-      ...files.map((file, index) => ({
-        id: Date.now() + index,
-        customerId,
-        sender: 'sattler' as const,
-        message: index === 0 ? draft : '',
-        timestamp: currentTime(),
-        attachment: {
-          name: file.name,
-          url: URL.createObjectURL(file),
-          sizeLabel: formatFileSize(file.size),
-          isImage: file.type.startsWith('image/'),
-        },
-      })),
-    ]);
-    this.draft.set('');
-    // allow selecting the same file again
-    input.value = '';
+    this.messagesLoading.set(!this.chat.messagesWith(contactId));
+    this.chat.loadMessages(contactId).subscribe({
+      next: () => {
+        this.messagesLoading.set(false);
+        this.chat.markAsRead(contactId);
+      },
+      error: (error: Error) => {
+        this.messagesLoading.set(false);
+        this.sendError.set(error.message);
+      },
+    });
   }
 
   sendMessage(): void {
-    const message = this.draft().trim();
-    const customerId = this.selectedCustomerId();
-    if (!message || !customerId) return;
+    const text = this.draft().trim();
+    const contactId = this.selectedContactId();
+    if (!text || !contactId || this.sending()) return;
 
-    this.messages.update(messages => [
-      ...messages,
-      {
-        id: Date.now(),
-        customerId,
-        sender: 'sattler',
-        message,
-        timestamp: currentTime(),
+    this.sending.set(true);
+    this.sendError.set('');
+    this.chat.sendText(contactId, text).subscribe({
+      next: () => {
+        this.draft.set('');
+        this.sending.set(false);
       },
-    ]);
-    this.draft.set('');
+      error: (error: Error) => {
+        this.sendError.set(error.message);
+        this.sending.set(false);
+      },
+    });
   }
 
-  readonly fullName = fullName;
+  accept(message: ChatMessage): void {
+    this.acceptingId.set(message.id);
+    this.sendError.set('');
+    this.chat.accept(message).subscribe({
+      next: () => this.acceptingId.set(''),
+      error: (error: Error) => {
+        this.sendError.set(error.message);
+        this.acceptingId.set('');
+      },
+    });
+  }
+
+  async enableNotifications(): Promise<void> {
+    this.notificationPermission.set(await this.chat.requestNotificationPermission());
+  }
+
+  isOutgoing(message: ChatMessage): boolean {
+    return message.senderId === this.personId();
+  }
+
+  /** The horse page of the customer who shared the horse or measurement. */
+  shareLink(message: ChatMessage): string[] {
+    const horseId = message.horse?.id ?? message.measurement?.horseId ?? '';
+    return ['/customers', message.senderId, 'horses', horseId];
+  }
+
+  shareQueryParams(message: ChatMessage): Record<string, string> | null {
+    return message.measurement ? { measurementId: message.measurement.id } : null;
+  }
+
+  initials(contact: ChatContact): string {
+    return `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`;
+  }
+
+  time(date: Date): string {
+    return `${date.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+  }
+
+  germanDate(value: string): string {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
+  }
 }
 
-function currentTime(): string {
-  return `${new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+function dayLabel(date: Date): string {
+  const today = startOfDay(new Date());
+  const days = Math.round((today - startOfDay(date)) / 86_400_000);
+  if (days === 0) return 'Heute';
+  if (days === 1) return 'Gestern';
+  return date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
+function relativeTime(date: Date): string {
+  const minutes = Math.floor((Date.now() - date.getTime()) / 60_000);
+  if (minutes < 1) return 'gerade eben';
+  if (minutes < 60) return `vor ${minutes} Min.`;
+  if (dayLabel(date) === 'Heute') return date.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+  return dayLabel(date);
+}
+
+function startOfDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }

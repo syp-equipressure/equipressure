@@ -5,7 +5,6 @@ import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_ti
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/saddler.dart';
-import '../../models/chat.dart';
 import '../../services/saddler_service.dart';
 import '../../services/chat_service.dart';
 import '../saddler_contact/chat_screen.dart';
@@ -47,49 +46,15 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
     }
   }
 
-  Future<void> _startChat() async {
-    // Check if a chat with this saddler already exists
-    final chats = await _chatService.getChats();
-    Chat? existingChat;
-
-    for (final chat in chats) {
-      if (chat.saddler.id == _saddler.id) {
-        existingChat = chat;
-        break;
-      }
-    }
-
-    if (existingChat != null) {
-      // Open existing chat
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(chat: existingChat!),
-          ),
-        );
-      }
-    } else {
-      // Create new chat
-      final newChat = Chat(
-        id: 'chat_${DateTime.now().millisecondsSinceEpoch}',
-        saddler: _saddler,
-        messages: [],
-        lastMessageTime: DateTime.now(),
-        lastMessagePreview: 'Neuer Chat',
-      );
-
-      await _chatService.addChat(newChat);
-
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(chat: newChat),
-          ),
-        );
-      }
-    }
+  void _startChat() {
+    // der Chat entsteht im Backend mit der ersten Nachricht
+    final chat = _chatService.chatWith(_saddler.id, _saddler.name);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(chat: chat),
+      ),
+    );
   }
 
   @override

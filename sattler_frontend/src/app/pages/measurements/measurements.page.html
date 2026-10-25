@@ -4,6 +4,10 @@
   [showBack]="true"
 ></app-page-header>
 
+@if (!horse() && horseLoading()) {
+  <p role="status" style="padding: 24px 36px; color: var(--text-muted)">Pferd wird geladen …</p>
+}
+
 @if (horse(); as h) {
   <div class="tab-bar">
     <div class="horse-ribbon">{{ h.name }}</div>

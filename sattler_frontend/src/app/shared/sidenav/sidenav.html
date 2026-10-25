@@ -6,7 +6,7 @@
   </div>
 
   <nav class="nav">
-    @for (item of items; track item.route) {
+    @for (item of items(); track item.route) {
       <a
         [routerLink]="item.route"
         routerLinkActive="active"

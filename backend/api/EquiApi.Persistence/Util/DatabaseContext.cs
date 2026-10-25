@@ -42,6 +42,9 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     // Location DbSets
     public DbSet<Address> Addresses { get; set; }
 
+    // Chat DbSets
+    public DbSet<ChatMessage> ChatMessages { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -56,6 +59,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         ConfigureMeasurement(modelBuilder);
         ConfigureRelease(modelBuilder);
         ConfigureSaddle(modelBuilder);
+        ConfigureChat(modelBuilder);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -408,5 +412,42 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                 .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
+    }
+
+    /// <summary>
+    ///     Configures the chat messages.
+    ///     The type of a message is persisted as a string, messages are removed together with their persons,
+    ///     the shared horse or the shared measurement group.
+    /// </summary>
+    /// <param name="mb">The model builder to use</param>
+    private static void ConfigureChat(ModelBuilder mb)
+    {
+        var message = mb.Entity<ChatMessage>();
+        message.HasKey(m => m.Id);
+        message.Property(m => m.Id).ValueGeneratedOnAdd();
+        message.Property(m => m.Type)
+               .HasConversion(new EnumToStringConverter<ChatMessageType>());
+        message.HasIndex(m => new { m.SenderId, m.RecipientId, m.SentAt });
+        message.HasIndex(m => new { m.RecipientId, m.ReadAt });
+
+        message.HasOne(m => m.Sender)
+               .WithMany()
+               .HasForeignKey(m => m.SenderId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        message.HasOne(m => m.Recipient)
+               .WithMany()
+               .HasForeignKey(m => m.RecipientId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        message.HasOne(m => m.Horse)
+               .WithMany()
+               .HasForeignKey(m => m.HorseId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        message.HasOne(m => m.MeasurementGroup)
+               .WithMany()
+               .HasForeignKey(m => m.MeasurementGroupId)
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }

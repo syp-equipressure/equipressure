@@ -94,6 +94,10 @@ pressure values in mbar, row by row (row 0 is the front of the saddle). The pres
 canter, and every group has its own saddle fit (e.g. group 9: too narrow at the withers, group 3: the saddle bridges).
 5 releases share groups with the saddlers 1–5 (`Release.Person` is the person the measurements are shared with).
 
+6 chat messages: Lena (6) and Sophie (1) talk about the jumping measurement (message 3 shares group 2, Sophie already
+added it, message 4 is unread), Lena shares her horse Apollo with Anna (3, not added yet) and Max (7) asks Sophie for an
+appointment (unread).
+
 ## Example requests
 
 ```http
@@ -107,4 +111,8 @@ GET http://localhost:5200/api/persons/6/devices          # EP0701
 POST http://localhost:5200/api/devices/EP0703/users/7    # 409, the limit of a Basic device is reached
 PUT http://localhost:5200/api/persons/8/favourites/2     # Julia marks Ferdinand as favourite
 PUT http://localhost:5200/api/persons/10/favourites/1    # 409, Eva is a guest
+GET http://localhost:5200/api/persons/6/chats            # conversations with Sophie and Anna
+GET http://localhost:5200/api/persons/6/chats/1          # messages between Lena and Sophie
+PUT http://localhost:5200/api/persons/3/chats/messages/5/accept   # Anna adds Apollo
+ws://localhost:5200/api/persons/6/chats/ws                # live chat events of Lena
 ```

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/horses/horses_screen.dart';
+import 'services/app_navigation.dart';
+import 'widgets/chat_notification_listener.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,10 +15,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: AppNavigation.navigatorKey,
+      scaffoldMessengerKey: AppNavigation.scaffoldMessengerKey,
       // deutsche Texte in Material-Widgets, z.B. Monatsnamen und Knöpfe im Datumswähler
       locale: const Locale('de', 'AT'),
       supportedLocales: const [Locale('de', 'AT'), Locale('de')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      // neue Chat-Nachrichten werden auf jedem Screen benachrichtigt
+      builder: (context, child) =>
+          ChatNotificationListener(child: child ?? const SizedBox.shrink()),
       home: const HorsesScreen(),
     );
   }
