@@ -100,6 +100,18 @@ public interface IMeasurementRepository
     /// </summary>
     /// <param name="measurement">The measurement to remove</param>
     public void RemoveMeasurement(Measurement measurement);
+    
+    /// <summary>
+    /// Gets the latest measurement of a device
+    /// </summary>
+    /// <param name="deviceId"></param>
+    /// <returns></returns>
+    public Task<Measurement?> GetLatestMeasurementOfDeviceAsync(string deviceId);
+    /// <summary>
+    /// Adds measurement data
+    /// </summary>
+    /// <param name="data"></param>
+    public void AddData(MeasurementData data);
 }
 
 internal sealed class MeasurementRepository(
@@ -173,4 +185,12 @@ internal sealed class MeasurementRepository(
     {
         measurementSet.Remove(measurement);
     }
+    
+    public Task<Measurement?> GetLatestMeasurementOfDeviceAsync(string deviceId) =>
+        measurementSet
+               .Where(m => m.Group.DeviceId == deviceId)
+               .OrderByDescending(m => m.Id)
+               .FirstOrDefaultAsync();
+
+    public void AddData(MeasurementData data) => dataSet.Add(data);
 }

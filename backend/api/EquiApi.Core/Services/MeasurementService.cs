@@ -543,6 +543,7 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
 
         return true;
     }
+    
 
     private void LogGroupNotFound(int groupId)
     {
