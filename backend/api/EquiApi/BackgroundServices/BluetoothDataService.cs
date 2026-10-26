@@ -181,8 +181,6 @@ internal sealed class BluetoothConnectionService(
 
         characteristic.CharacteristicValueChanged += OnValueChanged;
         device.GattServerDisconnected += OnDisconnected;
-        try
-        {
             await characteristic.StartNotificationsAsync();
             Logger.LogInformation("Connected to {DeviceName}", deviceName);
 
@@ -194,41 +192,15 @@ internal sealed class BluetoothConnectionService(
 
             await foreach (var data in channel.Reader.ReadAllAsync(stoppingToken))
             {
-                await dataHandler.HandleAsync(data, stoppingToken);
+                try
+                {
+                    await dataHandler.HandleAsync(data, stoppingToken);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Logger.LogError(ex, "Handling data from {DeviceName} failed", deviceName);
+                }
             }
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // shutting down
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Receiving from {DeviceName} failed", deviceName);
-        }
-        finally
-        {
-            characteristic.CharacteristicValueChanged -= OnValueChanged;
-            device.GattServerDisconnected -= OnDisconnected;
-            channel.Writer.TryComplete();
-
-            try
-            {
-                await characteristic.StopNotificationsAsync();
-            }
-            catch
-            {
-                // already disconnected
-            }
-
-            SafeDisconnect(device);
-            Logger.LogWarning("Connection to {DeviceName} closed", deviceName);
-
-            // short pause before the next reconnect attempt (skipped on shutdown)
-            if (!stoppingToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(3), CancellationToken.None);
-            }
-        }
     }
 
     private void DisconnectDevice()
