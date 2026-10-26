@@ -1,4 +1,5 @@
-﻿using EquiApi;
+using EquiApi;
+using EquiApi.BackgroundServices;
 using EquiApi.Shared;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,10 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => { o.ModelBinderProviders.Insert(0, new NodaTimeModelBinderProvider()); })
        .AddJsonOptions(o => ConfigureJsonSerialization(o, isDev));
 builder.Services.ConfigureAdditionalRouteConstraints();
+
+builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
+builder.Services.AddSingleton<IBluetoothDataHandler, LoggingBluetoothDataHandler>();
+builder.Services.AddHostedService<BluetoothConnectionService>();
 
 var app = builder.Build();
 
