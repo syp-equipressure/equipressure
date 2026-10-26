@@ -3,7 +3,7 @@
         <OutputType>exe</OutputType>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\EquiApi.Core\EquiApi.Core.csproj"/>
+        <ProjectReference Include="..\EquiApi\EquiApi.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="10.0.1">

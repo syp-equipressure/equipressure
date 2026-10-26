@@ -1,0 +1,98 @@
+<app-page-header title="Meine Satteldruckmessgeräte" [showBack]="true"></app-page-header>
+
+<main class="devices-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Geräteverwaltung</p>
+      <h2>Meine Messgeräte</h2>
+    </div>
+    @if (!backendPersonId()) {
+    <button type="button" class="primary-button" (click)="openAddForm()">
+      <span class="material-icons" aria-hidden="true">add</span>
+      Gerät hinzufügen
+    </button>
+    }
+  </header>
+
+  @if (backendLoading()) {
+    <p class="feedback" role="status">Messgeräte werden geladen …</p>
+  }
+  @if (backendError()) {
+    <p class="feedback error" role="alert">{{ backendError() }}</p>
+  }
+  @if (backendPersonId() && !backendLoading() && !backendError()) {
+  }
+  @if (saveError()) {
+    <p class="feedback error" role="alert">{{ saveError() }}</p>
+  }
+
+  @if (!backendLoading() && !backendError() && devices().length) {
+    <section class="device-list" aria-label="Meine Satteldruckmessgeräte">
+      @for (device of devices(); track device.id) {
+        <article class="device-card">
+          <span class="device-icon material-icons" aria-hidden="true">sensors</span>
+          <div class="device-details">
+            <h3>{{ device.name }}</h3>
+            <p><span>Gerätenummer</span>{{ device.number }}</p>
+          </div>
+          <div class="device-actions">
+            @if (!backendPersonId()) {
+            <button type="button" class="icon-button" aria-label="Gerät {{ device.name }} bearbeiten"
+              title="Bearbeiten" (click)="editDevice(device)">
+              <span class="material-icons" aria-hidden="true">edit</span>
+            </button>
+              <button type="button" class="icon-button delete" aria-label="Gerät {{ device.name }} löschen"
+                title="Löschen" (click)="deleteDevice(device)">
+                <span class="material-icons" aria-hidden="true">delete_outline</span>
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </section>
+  } @else if (!backendLoading() && !backendError()) {
+    <section class="empty-state">
+      <span class="material-icons" aria-hidden="true">sensors_off</span>
+      @if (backendPersonId()) {
+        <h3>Keine Backend-Messgeräte gefunden</h3>
+        <p>Für diese Personen-ID sind derzeit keine Geräte hinterlegt.</p>
+      } @else {
+        <h3>Noch keine Messgeräte eingetragen</h3>
+        <p>Füge deine Satteldruckmessgeräte hinzu, um sie hier zu verwalten.</p>
+        <button type="button" class="primary-button" (click)="openAddForm()">Erstes Gerät hinzufügen</button>
+      }
+    </section>
+  }
+</main>
+
+@if (formOpen()) {
+  <div class="form-overlay" (click)="cancelForm()"></div>
+  <section class="device-form" role="dialog" aria-modal="true"
+    [attr.aria-label]="editingId() ? 'Messgerät bearbeiten' : 'Messgerät hinzufügen'">
+    <header>
+      <h2>{{ editingId() ? 'Messgerät bearbeiten' : 'Messgerät hinzufügen' }}</h2>
+      <button type="button" class="icon-button" aria-label="Schließen" (click)="cancelForm()">
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <form (ngSubmit)="saveDevice()">
+      <label>
+        <span>Gerätename</span>
+        <input type="text" name="name" [ngModel]="name()" (ngModelChange)="name.set($event)"
+          placeholder="z. B. Prestige X-D2" required />
+      </label>
+      <label>
+        <span>Gerätenummer</span>
+        <input type="text" name="number" [ngModel]="number()" (ngModelChange)="number.set($event)"
+          placeholder="Seriennummer" required />
+      </label>
+      @if (error()) {
+        <p class="feedback error" role="alert">{{ error() }}</p>
+      }
+      <footer>
+        <button type="button" class="secondary-button" (click)="cancelForm()">Abbrechen</button>
+        <button type="submit" class="primary-button">Speichern</button>
+      </footer>
+    </form>
+  </section>
+}

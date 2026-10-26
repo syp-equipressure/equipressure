@@ -67,7 +67,7 @@ class Horse {
         age--;
       }
       
-      return '${age}yo';
+      return '$age J';
     } catch (e) {
       return '';
     }

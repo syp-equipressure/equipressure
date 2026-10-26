@@ -1,5 +1,4 @@
-using EquiApi.Persistence;
-using EquiApi.Persistence.Util;
+﻿using EquiApi.Persistence.Util;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
@@ -8,8 +7,8 @@ namespace EquiApi.TestInt.Util;
 // ReSharper disable once ClassNeverInstantiated.Global - Instantiated by xUnit
 public sealed class WebApiTestFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder("postgres:latest")
-                                                              .WithDatabase("public")
+    private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder("postgres:17")
+                                                              .WithDatabase("equipressure")
                                                               .WithUsername("postgres")
                                                               .WithPassword("postgres")
                                                               .Build();
@@ -36,8 +35,6 @@ public sealed class WebApiTestFixture : IAsyncLifetime
     {
         await _postgresContainer.StartAsync();
 
-        Environment.SetEnvironmentVariable("INT_TESTING", "true");
-
         Factory = new WebAppFactory(_postgresContainer.GetConnectionString());
         Client = Factory.CreateClient();
         Clock = Factory.TestClock;
@@ -46,7 +43,6 @@ public sealed class WebApiTestFixture : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await Factory.DisposeAsync();
-        await _postgresContainer.StopAsync();
         await _postgresContainer.DisposeAsync();
     }
 
@@ -58,7 +54,7 @@ public sealed class WebApiTestFixture : IAsyncLifetime
         await contextScope.Context.Database
                           .ExecuteSqlRawAsync($"DROP SCHEMA IF EXISTS \"{DatabaseContext.SchemaName}\" CASCADE;");
 
-        // Apply migrations and ensure the database is created
+        // Apply migrations (which also seed the account roles) and ensure the database is created
         await contextScope.Context.Database.MigrateAsync();
 
         await seedDataImporter(contextScope.Context);
@@ -71,41 +67,21 @@ public sealed class WebApiTestFixture : IAsyncLifetime
         await modifier(contextScope.Context);
     }
 
-    private ContextScope CreateContextScope()
-    {
-        var serviceProvider = Factory.Services;
-        if (serviceProvider is null)
-        {
-            throw new InvalidOperationException("Service provider not set");
-        }
-
-        return new ContextScope(serviceProvider);
-    }
+    private ContextScope CreateContextScope() => new(Factory.Services);
 
     private sealed class ContextScope : IAsyncDisposable
     {
-        private readonly IServiceScope _scope;
+        private readonly AsyncServiceScope _scope;
 
         public ContextScope(IServiceProvider serviceProvider)
         {
-            _scope = serviceProvider.CreateScope();
+            _scope = serviceProvider.CreateAsyncScope();
             Context = _scope.ServiceProvider.GetRequiredService<DatabaseContext>();
         }
 
         public DatabaseContext Context { get; }
 
-        public async ValueTask DisposeAsync()
-        {
-            if (_scope is IAsyncDisposable scopeAsyncDisposable)
-            {
-                await scopeAsyncDisposable.DisposeAsync();
-            }
-            else
-            {
-                _scope.Dispose();
-            }
-
-            await Context.DisposeAsync();
-        }
+        // the context is owned by the scope and disposed together with it
+        public ValueTask DisposeAsync() => _scope.DisposeAsync();
     }
 }

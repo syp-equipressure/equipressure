@@ -1,83 +1,180 @@
 @BaseUrl = http://localhost:5200/api
 
-### Person Endpoints
-@personId = 1
-@saddlerId = 2
-@equestrianId = 1
+# Die Ids passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank)
+@equestrianId = 7
+@saddlerId = 1
+@otherSaddlerId = 3
+@horseId = 1
+@deviceId = EP0702
+# Person, die von Request 18 gelöscht wird: am besten die Id einer mit Request 15/16 neu angelegten Person
+@deletePersonId = 11
+@userId = 9
+@locationId = 1
+# Messungsgruppe 1 (Luna) mit den Messungen 1-3 (Schritt Links, Schritt Rechts, Trab Links), je ein Messdatum
+@groupHorseId = 3
+@groupId = 3
+@measurementId = 6
+@dataId = 6
+@pace = Schritt
+@hand = Links
+# Messung, die von Request 50 gelöscht wird: die von Request 49 neu angelegte Messung
+@deleteMeasurementId = 11
 
-### 1. Person (Equestrian) abrufen
-GET {{BaseUrl}}/persons/equestrians/{{personId}}
+### ===================== Person Endpoints =====================
 
-### 1.2 Person (Saddler) abrufen
-GET {{BaseUrl}}/persons/saddlers/{{saddlerId}}
+### 1. Person (Reiter) abrufen
+GET {{BaseUrl}}/persons/{{equestrianId}}
 
-### 2. Person abrufen (minimale Daten)
-GET {{BaseUrl}}/persons/{{personId}}/profile-data
+### 2. Person (Sattler) abrufen
+GET {{BaseUrl}}/persons/{{saddlerId}}
 
-### 3. Adresse einer Person abrufen
-GET {{BaseUrl}}/persons/{{personId}}/location
+### 3. Person abrufen (minimale Daten)
+GET {{BaseUrl}}/persons/{{equestrianId}}/profile-data
 
-### 4. Kontakte einer Person abrufen
-GET {{BaseUrl}}/persons/{{personId}}/contacts
+### 4. Adresse einer Person abrufen
+GET {{BaseUrl}}/persons/{{equestrianId}}/location
 
-### 5. Favoriten einer Person abrufen
-GET {{BaseUrl}}/persons/{{personId}}/favourites
+### 5. Adresse einer Person setzen
+PUT {{BaseUrl}}/persons/{{equestrianId}}/location
+Content-Type: application/json
+
+{
+    "addressName": "Pferdehof Grünwald 12",
+    "cityName": "Leonding",
+    "plz": "4060"
+}
 
 ### 6. Alle Sattler mit Adresse
 GET {{BaseUrl}}/persons/saddlers
 
-### 7. Alle Sattler Favoriten mit Adresse
-GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/favourites
+### 7. Kontakte einer Person abrufen (Reiter -> Sattler, Sattler -> Reiter)
+GET {{BaseUrl}}/persons/{{equestrianId}}/contacts
 
-### 8. Alle Sattler Kontakte mit Adresse
-GET {{BaseUrl}}/persons/equestrians/{{equestrianId}}/contacts
+### 8. Kontakt hinzufügen
+PUT {{BaseUrl}}/persons/{{equestrianId}}/contacts/{{otherSaddlerId}}
 
-### 9. Alle Pferde einer Person abrufen
-GET {{BaseUrl}}/persons/{{personId}}/horses
+### 9. Kontakt entfernen
+DELETE {{BaseUrl}}/persons/{{equestrianId}}/contacts/{{otherSaddlerId}}
 
-### 10. Alle Geräte einer Person abrufen (inkl. Owner-Info)
-GET {{BaseUrl}}/persons/{{personId}}/devices
+### 10. Favoriten (Sattler) eines Reiters abrufen
+GET {{BaseUrl}}/persons/{{equestrianId}}/favourites
 
-### 11. Neue Person anlegen
+### 11. Sattler als Favorit markieren
+PUT {{BaseUrl}}/persons/{{equestrianId}}/favourites/{{otherSaddlerId}}
+
+### 12. Sattler als Favorit entfernen
+DELETE {{BaseUrl}}/persons/{{equestrianId}}/favourites/{{otherSaddlerId}}
+
+### 13. Alle Pferde einer Person abrufen
+GET {{BaseUrl}}/persons/{{equestrianId}}/horses
+
+### 14. Alle Geräte einer Person abrufen (inkl. Owner-Info)
+GET {{BaseUrl}}/persons/{{equestrianId}}/devices
+
+### 15. Neue Person (Reiter) anlegen
 POST {{BaseUrl}}/persons
 Content-Type: application/json
 
 {
     "firstName": "Max",
-    "lastName": "Mustermann",
+    "lastName": "Neumann",
+    "height": 180.0,
+    "weight": 75.0,
     "dateOfBirth": "1995-05-20",
     "email": "max@reiter.at",
-    "addressId": 1
+    "address": {
+        "addressName": "Hausstraße 12",
+        "cityName": "Traun",
+        "plz": "4050"
+    },
+    "role": "Equestrian"
 }
 
-### 12. Person aktualisieren
-PATCH {{BaseUrl}}/persons/{{personId}}
+### 16. Neue Person (Sattler) anlegen (Straße ist Pflicht)
+POST {{BaseUrl}}/persons
 Content-Type: application/json
 
 {
-    "firstName": "Max",
+    "firstName": "Sabine",
+    "lastName": "Sattler",
+    "height": 168.0,
+    "weight": 60.0,
+    "dateOfBirth": "1988-03-14",
+    "email": "sabine@sattlerei.at",
+    "websiteLink": "https://sattlerei.at",
+    "description": "Maßsättel für Dressur und Springen",
+    "address": {
+        "addressName": "Werkstattgasse 4",
+        "cityName": "Linz",
+        "plz": "4020"
+    },
+    "role": "Saddler"
+}
+
+### 17. Person aktualisieren (nur gesetzte Felder werden geändert)
+PATCH {{BaseUrl}}/persons/{{equestrianId}}
+Content-Type: application/json
+
+{
     "lastName": "Mustermann-Update",
-    "height": 182.0
+    "height": 172.0
 }
 
-### 13. Person löschen
-DELETE {{BaseUrl}}/persons/{{personId}}
+### 18. Person löschen (Achtung: löscht auch ihre Geräte)
+DELETE {{BaseUrl}}/persons/{{deletePersonId}}
 
-### 14. Alle Pferde einer Person abrufen (mit PferdeId, Location und Profilbild einer Person)
-GET {{BaseUrl}}/persons/{{personId}}/horses/locations
+### ===================== Horse Endpoints =====================
 
-### 15. eine Location hinzufügen
+### 19. Pferd abrufen
+GET {{BaseUrl}}/horses/{{horseId}}
+
+### 20. Sättel eines Pferdes abrufen
+GET {{BaseUrl}}/horses/{{horseId}}/saddles
+
+### 21. Reiter eines Pferdes abrufen
+GET {{BaseUrl}}/horses/{{horseId}}/riders
+
+### 22. Versteckte Reiter eines Pferdes abrufen
+GET {{BaseUrl}}/horses/{{horseId}}/riders/hidden
+
+### 23. Neues Pferd anlegen
+POST {{BaseUrl}}/horses
+Content-Type: application/json
+
+{
+    "name": "Blitz",
+    "dateOfBirth": "2015-04-01",
+    "weight": 550.0,
+    "height": 165.0,
+    "gender": "Male",
+    "address": {
+        "addressName": "Reiterhof Sonnenhügel 5",
+        "cityName": "Traun",
+        "plz": "4050"
+    },
+    "breedIds": [1, 2],
+    "ownerId": {{equestrianId}}
+}
+
+### ===================== Location Endpoints =====================
+
+### 24. Städte abrufen (optional mit Filter und Anzahl)
+GET {{BaseUrl}}/locations?nameFilter=Li&length=5
+
+### 25. Location per Id abrufen
+GET {{BaseUrl}}/locations/{{locationId}}
+
+### 26. Eine Location hinzufügen
 POST {{BaseUrl}}/locations
 Content-Type: application/json
 
 {
-    "street": "Hausstraße",
-    "houseNumber": 12,
+    "addressName": "Hausstraße 13",
     "cityName": "Traun",
     "plz": "4050"
 }
 
-### 16. eine Location hinzufügen (strasse optional)
+### 27. Eine Location hinzufügen (Straße optional)
 POST {{BaseUrl}}/locations
 Content-Type: application/json
 
@@ -86,6 +183,123 @@ Content-Type: application/json
     "plz": "4050"
 }
 
+### ===================== Device Endpoints =====================
 
-### 15. Alle Pferde eines users
-GET {{BaseUrl}}/horses/1
+### 28. Gerät abrufen
+GET {{BaseUrl}}/devices/{{deviceId}}
+
+### 29. Besitzer eines Geräts abrufen
+GET {{BaseUrl}}/devices/{{deviceId}}/owner
+
+### 30. Benutzer eines Geräts abrufen
+GET {{BaseUrl}}/devices/{{deviceId}}/users
+
+### 31. Neues Gerät anlegen
+POST {{BaseUrl}}/devices
+Content-Type: application/json
+
+{
+    "deviceId": "EP0799",
+    "ownerId": {{equestrianId}},
+    "categoryId": 1
+}
+
+### 32. Benutzer zu einem Gerät hinzufügen
+POST {{BaseUrl}}/devices/{{deviceId}}/users/{{userId}}
+
+### 33. Benutzer von einem Gerät entfernen
+DELETE {{BaseUrl}}/devices/{{deviceId}}/users/{{userId}}
+
+### 34. Besitzer eines Geräts ändern
+PATCH {{BaseUrl}}/devices/{{deviceId}}/owner/{{userId}}
+
+
+### ===================== Measurement Endpoints =====================
+
+### 35. Alle Messgruppen eines Pferdes abrufen (minimale Daten: Datum, Person, Sattel)
+GET {{BaseUrl}}/measurementgroups/horse/{{groupHorseId}}
+
+### 36. Detailansicht einer Messgruppe (Pferd, Reiter, Sattel, Datum, Notizen)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}
+
+### 37. Alle Messungen einer Messgruppe abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+
+### 38. Eine Messung abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}
+
+### 39. Eine Messung nach Pace und Hand filtern
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/filter?pace={{pace}}&hand={{hand}}
+
+### 40. Durchschnitt der Messwerte einer Gruppe (optional nach Pace und Hand filtern)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/average?pace={{pace}}
+
+### 41. Minimum der Messwerte einer Gruppe (optional nach Pace und Hand filtern)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/min?hand={{hand}}
+
+### 42. Maximum der Messwerte einer Gruppe (optional nach Pace und Hand filtern)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/max
+
+### 43. Durchschnitt der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/average
+
+### 44. Minimum der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/min
+
+### 45. Maximum der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/max
+
+### 46. Alle Messdaten einer Messung abrufen (sortiert nach Zeitstempel)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/measurementData
+
+### 47. Ein Messdatum abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/measurementData/{{dataId}}
+
+### 48. Messung mit bereits vorhandener Pace und Hand anlegen (409)
+POST {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+Content-Type: application/json
+
+{
+    "pace": "{{pace}}",
+    "hand": "{{hand}}"
+}
+
+### 49. Neue Messung anlegen
+POST {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+Content-Type: application/json
+
+{
+    "pace": "Galopp",
+    "hand": "Links",
+    "description": "Gleichmäßiger Galopp"
+}
+
+### 50. Messung löschen (löscht auch ihre Messdaten)
+DELETE {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{deleteMeasurementId}}
+
+### 51. Neue Messgruppe anlegen (Lena reitet Luna mit Sattel 1 und Gerät EP0701)
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-12",
+    "notes": "Erste Messung mit neuem Pad",
+    "personId": 7,
+    "horseId": 8,
+    "saddleId": 8,
+    "deviceId": "EP0799"
+}
+
+### 52. Messgruppe mit einem Sattel eines anderen Pferdes anlegen (404, Sattel 4 gehört Apollo)
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-12",
+    "personId": 6,
+    "horseId": {{horseId}},
+    "saddleId": 4,
+    "deviceId": "EP0701"
+}

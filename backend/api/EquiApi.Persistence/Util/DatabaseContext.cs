@@ -1,6 +1,5 @@
-using EquiApi.Persistence.Model;
+﻿using EquiApi.Persistence.Model;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -10,14 +9,11 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 {
     public const string SchemaName = "EquiPressure";
 
-    public DbSet<Rocket> Rockets { get; set; }
-
     // Person DbSets
     public DbSet<Person> Persons { get; set; }
     public DbSet<PersonRelationship> PersonRelationships { get; set; }
-    public DbSet<AccountRole> PersonRoles { get; set; }
+    public DbSet<AccountRole> AccountRoles { get; set; }
     public DbSet<PersonRoleAssignment> PersonRoleAssignments { get; set; }
-
     public DbSet<PersonHorse> PersonHorses { get; set; }
 
     // Horse DbSets
@@ -28,23 +24,19 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     // Device DbSets
     public DbSet<MeasurementDevice> Devices { get; set; }
     public DbSet<DeviceCategory> DeviceCategories { get; set; }
-
     public DbSet<DeviceUser> DeviceUsers { get; set; }
 
     // Measurement DbSets
     public DbSet<MeasurementGroup> MeasurementGroups { get; set; }
     public DbSet<Measurement> Measurements { get; set; }
-
     public DbSet<MeasurementData> MeasurementDates { get; set; }
 
     // Release DbSets
     public DbSet<Release> Releases { get; set; }
-
     public DbSet<MeasurementEligibility> MeasurementEligibilities { get; set; }
 
     // Saddle DbSets
     public DbSet<Saddle> Saddles { get; set; }
-
     public DbSet<SaddleCategory> SaddleCategories { get; set; }
 
     // Location DbSets
@@ -56,7 +48,6 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
         modelBuilder.HasDefaultSchema(SchemaName);
 
-        ConfigureRocket(modelBuilder);
         ConfigurePerson(modelBuilder);
         ConfigureHorse(modelBuilder);
         ConfigureAccountRole(modelBuilder);
@@ -74,22 +65,12 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         configurationBuilder.Conventions.Remove<TableNameFromDbSetConvention>();
     }
 
-    private static void ConfigureRocket(ModelBuilder modelBuilder)
-    {
-        EntityTypeBuilder<Rocket> rocket = modelBuilder.Entity<Rocket>();
-        rocket.HasKey(r => r.Id);
-        rocket.Property(r => r.Id).ValueGeneratedOnAdd();
-    }
-
     /// <summary>
-    /// Configure the Person Objects
-    /// An index for the person consisting of the firstname and the lastname exists
-    /// the email of a person has to be unique
-    /// Configures the association for PersonRelationship, PersonRoleAssignment and DeviceUser
+    ///     Configures the person and its associations (PersonRelationship, PersonHorse and DeviceUser).
+    ///     An index for the person consisting of the first name and the last name exists
+    ///     and the email of a person has to be unique.
     /// </summary>
-    /// <param name="mb">
-    /// the modelbuilder to be used
-    /// </param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigurePerson(ModelBuilder mb)
     {
         #region person
@@ -117,20 +98,20 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
               .HasForeignKey(r => r.PersonId)
               .OnDelete(DeleteBehavior.Cascade);
 
-        // A device can always have just one owner
+        // A device always has exactly one owner
         person.HasMany(p => p.OwnerDevices)
               .WithOne(md => md.Owner)
               .HasForeignKey(md => md.OwnerId)
               .OnDelete(DeleteBehavior.Cascade);
 
         person.HasMany(p => p.UserDevices)
-              .WithOne(du => du.User) // du = Assoziationstabelle für Person und Device als User
+              .WithOne(du => du.User)
               .HasForeignKey(du => du.UserId)
               .OnDelete(DeleteBehavior.Cascade);
 
         person.HasMany(p => p.MeasurementGroups)
               .WithOne(mg => mg.Person)
-              .HasForeignKey(mp => mp.PersonId)
+              .HasForeignKey(mg => mg.PersonId)
               .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
@@ -138,18 +119,18 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         #region personRelation
 
         var personRelation = mb.Entity<PersonRelationship>();
-        personRelation.HasKey(p => new { Person1Id = p.EquestrianId, Person2Id = p.SaddlerId });
+        personRelation.HasKey(pr => new { pr.EquestrianId, pr.SaddlerId });
 
-        // Configure the self-referencing relationship properly
+        // Self-referencing relationship: Person.Relationships contains the relationships where the person is the saddler
         personRelation.HasOne(pr => pr.Equestrian)
-                      .WithMany() // Don't use the Relationships navigation here
+                      .WithMany()
                       .HasForeignKey(pr => pr.EquestrianId)
                       .OnDelete(DeleteBehavior.Cascade);
 
         personRelation.HasOne(pr => pr.Saddler)
-                      .WithMany(p => p.Relationships) // Use Relationships only once
+                      .WithMany(p => p.Relationships)
                       .HasForeignKey(pr => pr.SaddlerId)
-                      .OnDelete(DeleteBehavior.Restrict); // Use Restrict to avoid cascade cycles
+                      .OnDelete(DeleteBehavior.Restrict); // Restrict to avoid cascade cycles
 
         #endregion
 
@@ -160,21 +141,19 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
         #endregion
 
-        #region userDevice
+        #region deviceUser
 
-        var userDevice = mb.Entity<DeviceUser>();
-        userDevice.HasKey(du => new { du.DeviceId, du.UserId });
+        var deviceUser = mb.Entity<DeviceUser>();
+        deviceUser.HasKey(du => new { du.DeviceId, du.UserId });
 
         #endregion
     }
 
     /// <summary>
-    /// Configure the Horse Objects
-    /// The Enum of the Horse Gender should be persisted as a string in the database
-    /// Configures the association for the HorseBreed
-    /// Configures the Breed Entities as well
+    ///     Configures the horse, its breeds and the HorseBreed association.
+    ///     The gender of a horse is persisted as a string.
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureHorse(ModelBuilder mb)
     {
         #region horse
@@ -202,38 +181,38 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
              .OnDelete(DeleteBehavior.Cascade);
 
         horse.HasMany(h => h.HorseBreeds)
-             .WithOne(h => h.Horse)
-             .HasForeignKey(h => h.HorseId)
+             .WithOne(hb => hb.Horse)
+             .HasForeignKey(hb => hb.HorseId)
              .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
 
-        #region HorseBreed
+        #region horseBreed
 
         var horseBreed = mb.Entity<HorseBreed>();
         horseBreed.HasKey(hb => new { hb.HorseId, hb.BreedId });
 
         #endregion
 
-        #region Breed
+        #region breed
 
         var breed = mb.Entity<Breed>();
         breed.HasKey(b => b.Id);
         breed.Property(b => b.Id).ValueGeneratedOnAdd();
 
         breed.HasMany(b => b.HorseBreeds)
-             .WithOne(h => h.Breed)
-             .HasForeignKey(h => h.BreedId)
+             .WithOne(hb => hb.Breed)
+             .HasForeignKey(hb => hb.BreedId)
              .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
     }
 
     /// <summary>
-    /// Configure the AccountRole Objects
-    /// Configures the association for the personRoleAssignment
+    ///     Configures the account roles and the PersonRoleAssignment association.
+    ///     The roles are fixed and seeded, the name of a role is persisted as a string and has to be unique.
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureAccountRole(ModelBuilder mb)
     {
         #region accountRole
@@ -241,11 +220,18 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         var accountRole = mb.Entity<AccountRole>();
         accountRole.HasKey(ar => ar.Id);
         accountRole.Property(ar => ar.Id).ValueGeneratedOnAdd();
+        accountRole.Property(ar => ar.Name)
+                   .HasConversion(new EnumToStringConverter<RoleName>());
+        accountRole.HasIndex(ar => ar.Name).IsUnique();
 
         accountRole.HasMany(ar => ar.RoleAssignments)
                    .WithOne(pra => pra.Role)
-                   .HasForeignKey(ra => ra.RoleId)
+                   .HasForeignKey(pra => pra.RoleId)
                    .OnDelete(DeleteBehavior.Cascade);
+        
+        accountRole.HasData(new { Id = 1, Name = RoleName.Equestrian },
+                            new { Id = 2, Name = RoleName.Saddler },
+                            new { Id = 3, Name = RoleName.Guest });
 
         #endregion
 
@@ -258,9 +244,10 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     }
 
     /// <summary>
-    /// Configure the Address and City Objects
+    ///     Configures the addresses.
+    ///     An address cannot be deleted while a person or a horse still uses it.
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureLocation(ModelBuilder mb)
     {
         #region address
@@ -271,30 +258,28 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
         address.HasMany(a => a.Persons)
                .WithOne(p => p.Address)
-               .HasForeignKey(a => a.AddressId)
-               .OnDelete(DeleteBehavior.SetNull);
+               .HasForeignKey(p => p.AddressId)
+               .OnDelete(DeleteBehavior.Restrict);
 
         address.HasMany(a => a.Horses)
                .WithOne(h => h.Address)
                .HasForeignKey(h => h.AddressId)
-               .OnDelete(DeleteBehavior.SetNull);
+               .OnDelete(DeleteBehavior.Restrict);
 
         #endregion
-        
     }
 
     /// <summary>
-    /// Configures the MeasurementDevice Objects
-    /// Configures the DeviceCategory as well
+    ///     Configures the measurement devices and their categories.
+    ///     The id of a device is its serial number, which is provided by the client.
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureDevice(ModelBuilder mb)
     {
         #region device
 
         var device = mb.Entity<MeasurementDevice>();
         device.HasKey(d => d.Id);
-        device.Property(d => d.Id).ValueGeneratedOnAdd();
 
         device.HasMany(d => d.Users)
               .WithOne(du => du.Device)
@@ -323,9 +308,9 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     }
 
     /// <summary>
-    /// Configure the measurement classes: MeasurementGroup, MeasurementEligibility, Measurement, MeasurementData
+    ///     Configures the measurement classes: MeasurementGroup, MeasurementEligibility, Measurement, MeasurementData
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureMeasurement(ModelBuilder mb)
     {
         #region measurementGroup
@@ -340,8 +325,8 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
              .OnDelete(DeleteBehavior.Cascade);
 
         group.HasMany(mg => mg.Measurements)
-             .WithOne(mg => mg.Group)
-             .HasForeignKey(mg => mg.GroupId)
+             .WithOne(m => m.Group)
+             .HasForeignKey(m => m.GroupId)
              .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
@@ -361,8 +346,8 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         measurement.HasIndex(m => new { m.GroupId, m.Pace, m.Hand }).IsUnique();
 
         measurement.HasMany(m => m.MeasurementDates)
-                   .WithOne(m => m.Measurement)
-                   .HasForeignKey(m => m.MeasurementId)
+                   .WithOne(md => md.Measurement)
+                   .HasForeignKey(md => md.MeasurementId)
                    .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
@@ -377,9 +362,9 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     }
 
     /// <summary>
-    /// Configure the realese table
+    ///     Configures the releases
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureRelease(ModelBuilder mb)
     {
         var release = mb.Entity<Release>();
@@ -393,9 +378,9 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     }
 
     /// <summary>
-    /// Configure the context for the saddles and their categories
+    ///     Configures the saddles and their categories
     /// </summary>
-    /// <param name="mb"></param>
+    /// <param name="mb">The model builder to use</param>
     private static void ConfigureSaddle(ModelBuilder mb)
     {
         #region saddle

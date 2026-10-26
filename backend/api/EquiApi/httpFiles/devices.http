@@ -1,19 +1,21 @@
-@BaseUrl = http://localhost:5200/api/devices
+@BaseUrl = http://localhost:5200/api
 
 ### Device Endpoints
-@deviceId = "A1B2C3"
-@userId = 1
+@deviceId = EP0702
+@userId = 7
 
-### Create Device 
-POST {{BaseUrl}}
+### Create Device
+POST {{BaseUrl}}/devices
 Content-Type: application/json
 
 {
     "DeviceId": "A1B2C3",
-    "OwnerId": 1, 
+    "OwnerId": {{userId}},
     "CategoryId": 1
 }
 
-### 1. Get all devices by id
-GET {{BaseUrl}}/persons/equestrians/{{userId}}
+### 1. Get all devices of a person
+GET {{BaseUrl}}/persons/{{userId}}/devices
 
+### 2. Get a device
+GET {{BaseUrl}}/devices/{{deviceId}}

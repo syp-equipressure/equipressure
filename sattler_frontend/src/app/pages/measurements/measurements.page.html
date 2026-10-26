@@ -1,0 +1,335 @@
+<app-page-header
+  [title]="customerName()"
+  [subtitle]="customer()?.email"
+  [showBack]="true"
+></app-page-header>
+
+@if (horse(); as h) {
+  <div class="tab-bar">
+    <div class="horse-ribbon">{{ h.name }}</div>
+    <div class="tabs">
+      <button class="tab" [class.active]="tab() === 'profil'" (click)="setTab('profil')">Pferde-Profil</button>
+      <button class="tab" [class.active]="tab() === 'messungen'" (click)="setTab('messungen')">Messungen</button>
+      <button class="tab" [class.active]="tab() === 'notizen'" (click)="setTab('notizen')">Notizen</button>
+    </div>
+  </div>
+}
+
+@if (horse(); as h) {
+  @if (tab() === 'profil') {
+    <section class="horse-profile">
+      <article class="horse-profile-card">
+        <div class="horse-profile-portrait">
+          <img class="horse-profile-image" [src]="h.imageUrl" [alt]="'Porträt von ' + h.name" />
+        </div>
+        <div class="horse-profile-main">
+          <div class="horse-profile-heading-row">
+            <div class="horse-profile-heading">
+              <span class="horse-profile-eyebrow">PFERDEPROFIL</span>
+              <h1>{{ h.name }}</h1>
+              <div class="horse-profile-tags">
+                <span class="horse-profile-breed">{{ h.breed }}</span>
+                @if (h.sex) {
+                  <span class="horse-profile-sex">{{ h.sex }}</span>
+                }
+              </div>
+            </div>
+            @if (customer()?.isMe) {
+              <div class="horse-profile-manage">
+                <button type="button" aria-label="Pferd bearbeiten" title="Pferd bearbeiten" (click)="editHorse()">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button type="button" aria-label="Pferd löschen" title="Pferd löschen" (click)="deleteHorse()">
+                  <span class="material-icons">delete_outline</span>
+                </button>
+              </div>
+            }
+          </div>
+
+          <section class="horse-profile-stats" aria-label="Pferdedaten">
+            <div class="horse-profile-stat">
+              <span class="horse-profile-stat-label">Geburtsdatum</span>
+              <strong>{{ h.age }} {{ h.age === 1 ? 'Jahr' : 'Jahre' }}{{ h.birthDate ? ' · ' + h.birthDate : '' }}</strong>
+            </div>
+            <div class="horse-profile-stat">
+              <span class="horse-profile-stat-label">Stockmaß</span>
+              <strong>{{ h.heightCm }} <small>cm</small></strong>
+            </div>
+            <div class="horse-profile-stat">
+              <span class="horse-profile-stat-label">Gewicht</span>
+              <strong>{{ h.weightKg }} <small>kg</small></strong>
+            </div>
+          </section>
+
+          <div class="horse-profile-address">
+            <div>
+              <span class="horse-profile-stat-label">Standort</span>
+              <strong>{{ h.address || customer()?.address || 'Keine Adresse hinterlegt' }}</strong>
+            </div>
+          </div>
+
+          <footer class="horse-profile-actions">
+            <button type="button" class="profile-measurement-button" (click)="startMeasurement()">Messung starten</button>
+          </footer>
+        </div>
+      </article>
+    </section>
+  }
+}
+
+@if (showHorseForm()) {
+  @if (horse(); as h) {
+    <add-horse
+      [ownerId]="h.ownerId"
+      [horse]="h"
+      (saved)="saveHorse($event)"
+      (cancelled)="showHorseForm.set(false)"
+    />
+  }
+}
+
+@if (tab() === 'messungen') {
+  <section class="layout">
+    <aside class="sidebar">
+      @for (m of measurements(); track m.id) {
+        <div class="measurement-entry" [class.active]="selected()?.id === m.id">
+          <button
+            type="button"
+            class="measurement-card"
+            [class.active]="selected()?.id === m.id"
+            (click)="selectMeasurement(m.id)"
+          >
+            <div class="date">{{ m.date }}</div>
+            <div class="device">{{ m.deviceName }}</div>
+            <div class="meta">{{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%</div>
+          </button>
+          <button
+            type="button"
+            class="icon-btn ghost delete-measurement"
+            aria-label="Messung vom {{ m.date }} löschen"
+            title="Messung löschen"
+            (click)="deleteMeasurement(m.id, $event)"
+          >
+            <span class="material-icons">delete_outline</span>
+          </button>
+        </div>
+      }
+
+      <button type="button" class="new-measurement" (click)="newMeasurement()">+ Neue Messung</button>
+    </aside>
+
+    <article class="detail">
+      @if (selected(); as m) {
+        <div class="detail-card">
+          <header class="detail-header">
+            <div class="title-line">
+              <h2>Messung vom {{ m.date }}</h2>
+              <button class="icon-btn ghost" aria-label="Bearbeiten">
+                <span class="material-icons">edit</span>
+              </button>
+            </div>
+            <div class="header-actions">
+              <button type="button" class="pill-btn primary">
+                <span class="material-icons">file_download</span>
+                PDF-Bericht
+              </button>
+              <button type="button" class="round-btn" aria-label="Teilen">
+                <span class="material-icons">ios_share</span>
+              </button>
+            </div>
+          </header>
+
+          <div class="controls">
+            <div class="control-group">
+              <span class="control-label">Gangart</span>
+              <div class="select-shell">
+                <select [value]="activeGait()" aria-label="Nach Gangart filtern" (change)="selectGait($any($event.target).value)">
+                  <option value="">Alle Gangarten</option>
+                  @for (gait of gaitOptions(); track gait) {
+                    <option [value]="gait">{{ gait }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Hand</span>
+              <div class="select-shell">
+                <select [value]="activeSide()" aria-label="Nach Hand filtern" (change)="selectSide($any($event.target).value)">
+                  <option value="">Alle Hände</option>
+                  @for (side of sideOptions(); track side) {
+                    <option [value]="side">{{ side }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Ansicht</span>
+              <div class="select-shell">
+                <select [value]="pressureStatistic()" aria-label="Druckstatistik auswählen" (change)="selectPressureStatistic($any($event.target).value)">
+                  <option value="average">Durchschnitt</option>
+                  <option value="maximum">Maximum</option>
+                  <option value="pro" [disabled]="!isProAvailable()">Profi</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" class="reset-link" (click)="resetView()">Filter zurücksetzen</button>
+          </div>
+
+          <div class="visual-row">
+            <div class="heatmap-column">
+              <div class="heatmap-wrap">
+                <div class="filter-chip">
+                  <span class="dot"></span>
+                  {{ activeGait() || 'Alle Gangarten' }} · {{ activeSide() || 'Alle Hände' }}
+                </div>
+                @if (isProSelectionMissing()) {
+                  <div class="heatmap-message">Für den Profimodus bitte Gangart und Hand auswählen.</div>
+                } @else if (pressureGrid().length > 0) {
+                  <app-pressure-heatmap
+                    [grid]="pressureGrid()"
+                    [mode]="heatmapMode()"
+                    [max]="statisticMaximum() || m.detail.maxNcm2"
+                  ></app-pressure-heatmap>
+                } @else {
+                  <div class="heatmap-message">Für diese Filter gibt es keine Teilmessungen.</div>
+                }
+                <div class="heatmap-label">{{ pressureStatistic() === 'pro' ? 'Laufende Druckverteilung' : 'Druckverteilung' }}</div>
+                <button class="heatmap-expand" aria-label="Vergrößern">
+                  <span class="material-icons">open_in_full</span>
+                </button>
+              </div>
+              @if (pressureStatistic() === 'pro' && isProAvailable()) {
+                <div class="playback-controls" aria-label="Profimodus-Steuerung">
+                  <div class="playback-buttons">
+                    <button type="button" class="playback-button" aria-label="5 Sekunden zurück" title="5 Sekunden zurück" (click)="skipPlayback(-5)">|◀</button>
+                    <button
+                      type="button"
+                      class="playback-button primary"
+                      [attr.aria-label]="isPlaying() ? 'Pause' : 'Wiedergabe'"
+                      (click)="togglePlayback()"
+                    >{{ isPlaying() ? 'Ⅱ' : '▶' }}</button>
+                    <button type="button" class="playback-button" aria-label="Stop" title="Stop" (click)="stopPlayback()">■</button>
+                    <button type="button" class="playback-button" aria-label="5 Sekunden vor" title="5 Sekunden vor" (click)="skipPlayback(5)">▶|</button>
+                  </div>
+                  <span class="playback-time">{{ playbackTime() }} / {{ formatDuration(playbackDuration()) }}</span>
+                  <input
+                    class="playback-seek"
+                    type="range"
+                    min="0"
+                    [max]="playbackDuration()"
+                    step="0.25"
+                    [value]="phase()"
+                    aria-label="Messung spulen"
+                    (input)="seekPlayback($event)"
+                  />
+                </div>
+              }
+            </div>
+
+            <div class="scale">
+              <span class="unit">N/cm²</span>
+              <span class="scale-top">10+</span>
+              <div class="scale-gradient">
+                <div class="marker" [style.bottom.%]="(statisticMaximum() / 10) * 100">
+                  <span class="marker-line"></span>
+                  <span class="marker-value">{{ statisticMaximum().toFixed(2).replace('.', ',') }}</span>
+                </div>
+              </div>
+              <span class="scale-bot">0</span>
+              <span class="scale-skala">SKALA</span>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-col">
+                <div class="info-label">REITER*IN</div>
+                <div class="info-value">
+                  {{ m.detail.riderName }} | {{ m.detail.riderHeightM.toString().replace('.', ',') }}m | {{ m.detail.riderWeightKg }}kg
+                </div>
+                <div class="info-label spaced">SATTEL</div>
+                <div class="info-value">{{ m.detail.saddleName }}</div>
+              </div>
+              <div class="info-col">
+                <div class="info-label">DAUER</div>
+                <div class="info-value">{{ m.detail.durationFull }}</div>
+                <div class="info-label spaced">GANG</div>
+                <div class="info-value">{{ m.detail.gaits.join(', ') }}</div>
+              </div>
+            </div>
+
+            <div class="video-grid" style="display: none;">
+              <app-video-tile
+                class="main-vid"
+                [src]="m.detail.videos.main || ''"
+                label="Hauptkamera"
+                [showExpand]="true"
+              ></app-video-tile>
+              <app-video-tile
+                [src]="m.detail.videos.sideRight || ''"
+                label="Seite rechts"
+              ></app-video-tile>
+              <app-video-tile
+                [src]="m.detail.videos.sideLeft || ''"
+                label="Seite links"
+              ></app-video-tile>
+            </div>
+          </div>
+
+          <div class="below">
+            <button type="button" class="pill-btn light" (click)="toggleHeatmapMode()">
+              {{ heatmapMode() === 'heatmap' ? 'N/cm² Ansicht' : 'Heatmap Ansicht' }}
+            </button>
+
+            <div class="stats">
+              <div class="stat">
+                <div class="stat-label">MAX</div>
+                <div class="stat-value red">
+                  {{ statisticMaximum().toFixed(2).replace('.', ',') }}
+                  <span class="stat-unit">N/cm²</span>
+                </div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">&Oslash; MITTEL</div>
+                <div class="stat-value">
+                  {{ statisticAverage().toFixed(2).replace('.', ',') }}
+                  <span class="stat-unit">N/cm²</span>
+                </div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">SYMMETRIE</div>
+                <div class="stat-value orange">
+                  {{ m.symmetryPct }}<span class="stat-unit">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="empty">Noch keine Messungen vorhanden.</div>
+      }
+    </article>
+  </section>
+}
+
+@if (tab() === 'notizen') {
+  <section class="notes-stub">
+    @for (m of measurements(); track m.id) {
+      <article class="note-card">
+        <header class="note-header">
+          <h2>{{ m.date }} · {{ m.deviceName }}</h2>
+          <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toFixed(2).replace('.', ',') }} N/cm²</p>
+        </header>
+        <textarea
+          [value]="m.notes"
+          placeholder="Notizen..."
+          aria-label="Notizen zur Messung vom {{ m.date }}"
+          (input)="updateNotes(m.id, $event)"
+        ></textarea>
+      </article>
+    } @empty {
+      <p class="notes-empty">Keine Notizen vorhanden.</p>
+    }
+  </section>
+}

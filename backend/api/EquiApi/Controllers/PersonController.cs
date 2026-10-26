@@ -1,423 +1,302 @@
 ﻿using EquiApi.Core.Services;
-using EquiApi.Core.Util;
-using EquiApi.Persistence.Model;
-using EquiApi.Persistence.Util;
-using EquiApi.Shared;
+using EquiApi.Dtos;
 using EquiApi.Util;
-using EquiPressure.Core.Service;
 using Microsoft.AspNetCore.Mvc;
-using OneOf;
-using OneOf.Types;
 
 namespace EquiApi.Controllers;
 
-// TODO: xml documentation
 [Route("api/persons")]
 public sealed class PersonController(
-    ITransactionProvider transaction,
     IPersonService personService,
-    ILogger<PersonController> logger) : BaseController
+    IHorseService horseService,
+    IDeviceService deviceService) : BaseController
 {
-    [HttpGet("equestrians/{id:int}")]
-    [ProducesResponseType<Helper.EquestrianBasicDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    /// <summary>
+    ///     Gets all data of a person
+    /// </summary>
+    [HttpGet("{id:int}")]
+    [ProducesResponseType<PersonDetailDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<Helper.EquestrianBasicDto>> GetEquestrianById([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<PersonDetailDto>> GetPersonById([FromRoute][ValidId] int id)
     {
-        // check, ob die id überhaupt sinn macht (muss positiv sein)
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await personService.GetPersonByIdAsync(id);
 
-        // liefert entweder success oder notfound
-        var result = await personService.GetPersonAsEquestrianByIdAsync(id);
-        
-        // benutzen dtos für einheitlichkeit wenn 200 Ok, wenn NotFound 404 nicht
-        return result.Match<ActionResult<Helper.EquestrianBasicDto>>(success =>
-                                                                               Ok(Helper.EquestrianBasicDto
-                                                                                   .FromEquestrianBasicData(success
-                                                                                       .Value, id)),
-                                                                           notFound => NotFound());
+        return result.Match<ActionResult<PersonDetailDto>>(
+            success => Ok(PersonDetailDto.FromPerson(success.Value)),
+            _ => NotFound());
     }
 
-    [HttpGet("saddlers/{saddlerId:int}")]
-    [ProducesResponseType<Helper.SaddlerBasicDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<Helper.SaddlerBasicDto>> GetSaddlerById(
-         [FromRoute] int saddlerId)
-    {
-        if ( saddlerId <= 0)
-        {
-            return BadRequest();
-        }
-
-        var result = await personService.GetPersonAsSaddlerByIdAsync(saddlerId);
-
-        return result.Match<ActionResult<Helper.SaddlerBasicDto>>(success =>
-                                                                            Ok(Helper.SaddlerBasicDto
-                                                                                   .FromSaddlerBasicData(success
-                                                                                       .Value)),
-                                                                        invalidData => BadRequest(),
-                                                                        notFound => NotFound());
-    }
-
+    /// <summary>
+    ///     Gets the name of a person
+    /// </summary>
     [HttpGet("{id:int}/profile-data")]
-    [ProducesResponseType<DataTransfer.NameDataDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<PersonNameDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.NameDataDto>> GetProfileData([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<PersonNameDto>> GetProfileData([FromRoute][ValidId] int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
-
         var result = await personService.GetNameByIdAsync(id);
 
-        return result.Match<ActionResult<DataTransfer.NameDataDto>>(success =>
-                                                                        Ok(DataTransfer.NameDataDto
-                                                                               .FromData(success.Value)),
-                                                                    notFound => NotFound());
+        return result.Match<ActionResult<PersonNameDto>>(
+            success => Ok(PersonNameDto.FromNameData(success.Value)),
+            _ => NotFound());
     }
 
+    /// <summary>
+    ///     Gets the address of a person
+    /// </summary>
     [HttpGet("{id:int}/location")]
-    [ProducesResponseType<DataTransfer.AddressDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<AddressDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.AddressDto>> GetAddress([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<AddressDto>> GetAddress([FromRoute][ValidId] int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await personService.GetPersonAddressAsync(id);
 
-        OneOf<Success<Address>, NotFound> result = await personService.GetPersonAddressAsync(id);
-
-        return result.Match<ActionResult<DataTransfer.AddressDto>>(success =>
-                                                                       Ok(DataTransfer.AddressDto
-                                                                              .FromAddress(success.Value)),
-                                                                   notFound => NotFound());
+        return result.Match<ActionResult<AddressDto>>(
+            success => Ok(AddressDto.FromAddress(success.Value)),
+            _ => NotFound());
     }
 
+    /// <summary>
+    ///     Sets the address of a person, an existing address with the same values is reused
+    /// </summary>
+    [HttpPut("{id:int}/location")]
+    [ProducesResponseType<AddressDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<AddressDto>> UpdateAddress([FromRoute][ValidId] int id,
+                                                                   [FromBody] AddressRequest request)
+    {
+        if (!IsValid<AddressRequest.Validator, AddressRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await personService.UpdatePersonAddressAsync(id, request.ToData());
+
+        return result.Match<ActionResult<AddressDto>>(
+            success => Ok(AddressDto.FromAddress(success.Value)),
+            _ => NotFound(),
+            _ => StreetRequiredForSaddler(nameof(AddressRequest.AddressName)));
+    }
+
+    /// <summary>
+    ///     Gets the contacts of a person: the saddlers of an equestrian or the equestrians of a saddler
+    /// </summary>
     [HttpGet("{id:int}/contacts")]
-    [ProducesResponseType<DataTransfer.PersonListResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ContactListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.PersonListResponse>> GetContacts([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<ContactListResponse>> GetContacts([FromRoute][ValidId] int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await personService.GetContactsAsync(id);
 
-        // hier liefern wir entweder eine liste, none oder notfound
-        OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetContactsAsync(id);
-
-        // bei none einfach eine leere liste zurückgeben
-        return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
-                                                                               Ok(DataTransfer.PersonListResponse
-                                                                                   .FromPersons(success.Value)),
-                                                                           none => Ok(DataTransfer.PersonListResponse
-                                                                               .FromPersons([])),
-                                                                           notFound => NotFound());
+        return result.Match<ActionResult<ContactListResponse>>(
+            success => Ok(ContactListResponse.FromContacts(success.Value)),
+            _ => NotFound());
     }
 
+    /// <summary>
+    ///     Gets the saddlers a person marked as favourite
+    /// </summary>
     [HttpGet("{id:int}/favourites")]
-    [ProducesResponseType<DataTransfer.PersonListResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<SaddlerListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.PersonListResponse>> GetFavourites([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<SaddlerListResponse>> GetFavourites([FromRoute][ValidId] int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await personService.GetFavouriteSaddlersAsync(id);
 
-        OneOf<Success<IReadOnlyCollection<Person>>, None, NotFound> result = await personService.GetFavouritesAsync(id);
-
-        return result.Match<ActionResult<DataTransfer.PersonListResponse>>(success =>
-                                                                               Ok(DataTransfer.PersonListResponse
-                                                                                   .FromPersons(success.Value)),
-                                                                           none => Ok(DataTransfer.PersonListResponse
-                                                                               .FromPersons([])),
-                                                                           notFound => NotFound());
+        return result.Match<ActionResult<SaddlerListResponse>>(
+            success => Ok(SaddlerListResponse.FromSaddlers(success.Value)),
+            _ => NotFound());
     }
 
+    /// <summary>
+    ///     Gets the horses a person owns
+    /// </summary>
     [HttpGet("{id:int}/horses")]
-    [ProducesResponseType<DataTransfer.HorseListResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<HorseListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.HorseListResponse>> GetHorses([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<HorseListResponse>> GetHorses([FromRoute][ValidId] int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await horseService.GetOwnedHorsesOfPersonAsync(id);
 
-        OneOf<Success<IReadOnlyCollection<Horse>>, None, NotFound> result = await personService.GetOwnedHorsesAsync(id);
-
-        return result.Match<ActionResult<DataTransfer.HorseListResponse>>(success =>
-                                                                              Ok(DataTransfer.HorseListResponse
-                                                                                  .FromHorses(success.Value)),
-                                                                          none => Ok(DataTransfer.HorseListResponse
-                                                                              .FromHorses([])),
-                                                                          notFound => NotFound());
+        return result.Match<ActionResult<HorseListResponse>>(
+            success => Ok(HorseListResponse.FromHorses(success.Value)),
+            _ => NotFound());
     }
 
+    /// <summary>
+    ///     Gets the devices a person owns or uses
+    /// </summary>
     [HttpGet("{id:int}/devices")]
-    [ProducesResponseType<DataTransfer.DeviceListResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<ActionResult<DataTransfer.DeviceListResponse>> GetDevices([FromRoute] int id)
-    {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
-
-        OneOf<Success<List<MeasurementDevice>>, None, NotFound> result
-            = await personService.GetAllDevicesByPersonAsync(id);
-
-        return result.Match<ActionResult<DataTransfer.DeviceListResponse>>(success =>
-                                                                               Ok(DataTransfer.DeviceListResponse
-                                                                                   .FromDevices(success.Value)),
-                                                                           none => Ok(DataTransfer.DeviceListResponse
-                                                                               .FromDevices([])),
-                                                                           notFound => NotFound());
-    }
-
-    [HttpGet("persons/saddlers")]
-    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
-    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlersWithAddress()
-    {
-        var result = await personService.GetAllSaddlersAsync();
-
-        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
-                                                                             {
-                                                                                 var dtos = success.Value
-                                                                                     .Select(Helper
-                                                                                         .SaddlerBasicDto
-                                                                                         .FromSaddlerBasicData)
-                                                                                     .ToList();
-
-                                                                                 return Ok(new Helper.
-                                                                                     SaddlersListResponse(dtos));
-                                                                             },
-                                                                             none =>
-                                                                                 Ok(new Helper.
-                                                                                     SaddlersListResponse([])));
-    }
-
-    [HttpGet("persons/equestrians/{equestrianId:int}/favourites")]
-    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<DeviceListResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlerFavouritesWithAddress(
-        [FromRoute] int equestrianId)
+    public async ValueTask<ActionResult<DeviceListResponse>> GetDevices([FromRoute][ValidId] int id)
     {
-        if (equestrianId <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await deviceService.GetDevicesOfPersonAsync(id);
 
-        OneOf<Success<List<Helper.SaddlerBasicData>>, None, NotFound> result
-            = await personService.GetAllSaddlerFavouritesAsync(equestrianId);
-
-        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
-                                                                             {
-                                                                                 var dtos = success.Value
-                                                                                     .Select(Helper
-                                                                                         .SaddlerBasicDto
-                                                                                         .FromSaddlerBasicData)
-                                                                                     .ToList();
-
-                                                                                 return Ok(new Helper.
-                                                                                     SaddlersListResponse(dtos));
-                                                                             },
-                                                                             none =>
-                                                                                 Ok(new Helper.
-                                                                                     SaddlersListResponse([])),
-                                                                             notFound => NotFound());
+        return result.Match<ActionResult<DeviceListResponse>>(
+            success => Ok(DeviceListResponse.FromDevices(success.Value)),
+            _ => NotFound());
     }
 
-    [HttpGet("persons/equestrians/{equestrianId:int}/contacts")]
-    [ProducesResponseType<Helper.SaddlersListResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async ValueTask<ActionResult<Helper.SaddlersListResponse>> GetSaddlerContactsWithAddress(
-        [FromRoute] int equestrianId)
+    /// <summary>
+    ///     Gets all saddlers with their address
+    /// </summary>
+    [HttpGet("saddlers")]
+    [ProducesResponseType<SaddlerListResponse>(StatusCodes.Status200OK)]
+    public async ValueTask<ActionResult<SaddlerListResponse>> GetSaddlers()
     {
-        if (equestrianId <= 0)
-        {
-            return BadRequest();
-        }
+        var saddlers = await personService.GetAllSaddlersAsync();
 
-        OneOf<Success<List<Helper.SaddlerBasicData>>, None, NotFound> result
-            = await personService.GetAllSaddlerContactsAsync(equestrianId);
-
-        return result.Match<ActionResult<Helper.SaddlersListResponse>>(success =>
-                                                                             {
-                                                                                 var dtos = success.Value
-                                                                                     .Select(Helper
-                                                                                         .SaddlerBasicDto
-                                                                                         .FromSaddlerBasicData)
-                                                                                     .ToList();
-
-                                                                                 return Ok(new Helper.
-                                                                                     SaddlersListResponse(dtos));
-                                                                             },
-                                                                             none =>
-                                                                                 Ok(new Helper.
-                                                                                     SaddlersListResponse([])),
-                                                                             notFound => NotFound());
+        return Ok(SaddlerListResponse.FromSaddlers(saddlers));
     }
 
+    /// <summary>
+    ///     Adds a person
+    /// </summary>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<PersonDetailDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<IActionResult> CreatePerson([FromBody] DataTransfer.AddPersonRequest request)
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<PersonDetailDto>> CreatePerson([FromBody] AddPersonRequest request)
     {
-        if (!ValidateRequest<DataTransfer.AddPersonRequest.Validator, DataTransfer.AddPersonRequest>(request))
+        if (!IsValid<AddPersonRequest.Validator, AddPersonRequest>(request))
         {
-            return BadRequest();
+            return ValidationProblem();
         }
 
-        try
-        {
-            await transaction.BeginTransactionAsync();
+        var result = await personService.AddPersonAsync(request.ToData());
 
-            OneOf<Success<Person>, IBaseService.InvalidData, IBaseService.Conflict> result
-                = await personService.AddPersonAsync(request.FirstName, request.LastName, request.Height,
-                                                     request.Weight, request.DateOfBirth, request.Email,
-                                                     request.WebsiteLink, request.Description, request.Address,
-                                                     request.Role);
-
-            return await result.Match<ValueTask<ActionResult>>(async success =>
-                                                               {
-                                                                   await transaction.CommitAsync();
-
-                                                                   return CreatedAtAction(nameof(GetProfileData),
-                                                                    new { id = success.Value.Id }, success.Value);
-                                                               },
-                                                               async invalid =>
-                                                               {
-                                                                   await transaction.RollbackAsync();
-
-                                                                   return BadRequest();
-                                                               },
-                                                               async conflict =>
-                                                               {
-                                                                   await transaction.RollbackAsync();
-
-                                                                   return Conflict();
-                                                               });
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
-            logger.LogError("Error adding Person");
-
-            return Problem();
-        }
+        return result.Match<ActionResult<PersonDetailDto>>(
+            success => CreatedAtAction(nameof(GetPersonById), new { id = success.Value.Id },
+                                       PersonDetailDto.FromPerson(success.Value)),
+            _ => Conflict());
     }
 
+    /// <summary>
+    ///     Updates a person, values that are not set are left unchanged
+    /// </summary>
     [HttpPatch("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<IActionResult> UpdatePerson([FromRoute] int id,
-                                                       [FromBody] DataTransfer.UpdatePersonRequest request)
+    public async ValueTask<IActionResult> UpdatePerson([FromRoute][ValidId] int id,
+                                                       [FromBody] UpdatePersonRequest request)
     {
-        if (id <= 0 ||
-            !ValidateRequest<DataTransfer.UpdatePersonRequest.Validator, DataTransfer.UpdatePersonRequest>(request))
+        if (!IsValid<UpdatePersonRequest.Validator, UpdatePersonRequest>(request))
         {
-            return BadRequest();
+            return ValidationProblem();
         }
 
-        try
-        {
-            await transaction.BeginTransactionAsync();
+        var result = await personService.UpdatePersonAsync(id, request.ToChanges());
 
-            OneOf<Success, NotFound, IBaseService.InvalidData, IBaseService.Conflict> result
-                = await personService.UpdatePersonAsync(id, request.FirstName, request.LastName, request.Height,
-                                                        request.Weight, request.DateOfBirth, request.Email,
-                                                        request.WebsiteLink, request.Description, request.Address,
-                                                        request.RoleAssignments);
-
-            return await result.Match<ValueTask<ActionResult>>(async success =>
-                                                               {
-                                                                   await transaction.CommitAsync();
-
-                                                                   return NoContent();
-                                                               },
-                                                               async notFound =>
-                                                               {
-                                                                   await transaction.RollbackAsync();
-
-                                                                   return NotFound();
-                                                               },
-                                                               async invalid =>
-                                                               {
-                                                                   await transaction.RollbackAsync();
-
-                                                                   return BadRequest();
-                                                               },
-                                                               async conflict =>
-                                                               {
-                                                                   await transaction.RollbackAsync();
-
-                                                                   return Conflict();
-                                                               });
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            logger.LogError(ex, "Error updating person");
-
-            return Problem();
-        }
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            _ => Conflict(),
+            _ => StreetRequiredForSaddler($"{nameof(UpdatePersonRequest.Address)}.{nameof(AddressRequest.AddressName)}"));
     }
 
+    /// <summary>
+    ///     Removes a person
+    /// </summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async ValueTask<IActionResult> DeletePerson([FromRoute] int id)
+    public async ValueTask<IActionResult> DeletePerson([FromRoute][ValidId] int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest();
-        }
+        var result = await personService.DeletePersonAsync(id);
 
-        try
-        {
-            await transaction.BeginTransactionAsync();
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
 
-            OneOf<Success, NotFound> result = await personService.DeletePersonAsync(id);
+    /// <summary>
+    ///     Marks a saddler as favourite of an equestrian
+    /// </summary>
+    [HttpPut("{id:int}/favourites/{saddlerId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> AddFavourite([FromRoute][ValidId] int id,
+                                                       [FromRoute][ValidId] int saddlerId)
+    {
+        var result = await personService.AddFavouriteAsync(id, saddlerId);
 
-            return await result.Match<ValueTask<IActionResult>>(async success =>
-                                                                {
-                                                                    await transaction.CommitAsync();
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            invalid => Problem(statusCode: StatusCodes.Status409Conflict, detail: invalid.Reason));
+    }
 
-                                                                    return NoContent();
-                                                                },
-                                                                async notFound =>
-                                                                {
-                                                                    await transaction.RollbackAsync();
+    /// <summary>
+    ///     Removes a saddler from the favourites of an equestrian
+    /// </summary>
+    [HttpDelete("{id:int}/favourites/{saddlerId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> RemoveFavourite([FromRoute][ValidId] int id,
+                                                          [FromRoute][ValidId] int saddlerId)
+    {
+        var result = await personService.RemoveFavouriteAsync(id, saddlerId);
 
-                                                                    return NotFound();
-                                                                });
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
 
-            logger.LogError("Error removing Person");
+    /// <summary>
+    ///     Adds a contact between an equestrian and a saddler, can be called by both of them
+    /// </summary>
+    [HttpPut("{id:int}/contacts/{contactId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> AddContact([FromRoute][ValidId] int id,
+                                                     [FromRoute][ValidId] int contactId)
+    {
+        var result = await personService.AddContactAsync(id, contactId);
 
-            return Problem();
-        }
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            invalid => Problem(statusCode: StatusCodes.Status409Conflict, detail: invalid.Reason));
+    }
+
+    /// <summary>
+    ///     Removes a contact between an equestrian and a saddler, can be called by both of them
+    /// </summary>
+    [HttpDelete("{id:int}/contacts/{contactId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> RemoveContact([FromRoute][ValidId] int id,
+                                                        [FromRoute][ValidId] int contactId)
+    {
+        var result = await personService.RemoveContactAsync(id, contactId);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    private ActionResult StreetRequiredForSaddler(string propertyName)
+    {
+        ModelState.AddModelError(propertyName, ValidationPatterns.StreetRequiredForSaddlerMessage);
+
+        return ValidationProblem();
     }
 }

@@ -31,7 +31,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
 
   Future<void> _loadHorses() async {
     setState(() => isLoading = true);
-    
+
     try {
       final loadedHorses = await _horseService.getHorses();
       setState(() {
@@ -49,7 +49,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   // ✅ AKTUALISIERT: Jetzt mit 12 Parametern (inkl. Stalladresse)
-  void _addHorse(
+  Future<void> _addHorse(
     String name,
     File? image,
     String age,
@@ -58,34 +58,42 @@ class _HorsesScreenState extends State<HorsesScreen> {
     String weight,
     String height,
     String sex,
-    String stableCity,       // ← NEU
-    String stablePostalCode, // ← NEU
-    String stableStreet,     // ← NEU
-    String stableHouseNumber,// ← NEU
+    String stableCity,
+    String stablePostalCode,
+    String stableStreet,
+    String stableHouseNumber,
   ) async {
     final newHorse = Horse(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
+      id: '',
+      name: name.trim(),
       image: image,
-      breed: breed,
+      breed: breed.trim(),
       birthDate: birthDate,
       weight: weight,
       height: height,
       sex: sex,
-      stableCity: stableCity.isEmpty ? null : stableCity,
-      stablePostalCode: stablePostalCode.isEmpty ? null : stablePostalCode,
-      stableStreet: stableStreet.isEmpty ? null : stableStreet,
-      stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber,
+      stableCity: stableCity.trim(),
+      stablePostalCode: stablePostalCode.trim(),
+      stableStreet: stableStreet.trim().isEmpty ? null : stableStreet.trim(),
+      stableHouseNumber: stableHouseNumber.trim().isEmpty
+          ? null
+          : stableHouseNumber.trim(),
     );
 
-    await _horseService.addHorse(newHorse);
-    
-    setState(() {
-      view = HorsesView.list;
-    });
-    
-    // Lade die Pferde neu, um die Liste zu aktualisieren
-    await _loadHorses();
+    try {
+      final savedHorse = await _horseService.addHorse(newHorse);
+      if (!mounted) return;
+      setState(() {
+        horses = [...horses, savedHorse];
+        view = HorsesView.list;
+        isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pferd konnte nicht gespeichert werden: $error')),
+      );
+    }
   }
 
   @override
@@ -98,9 +106,9 @@ class _HorsesScreenState extends State<HorsesScreen> {
           : const CustomAppBar(
               title: 'EquiPressure',
             ),
-      body: view == HorsesView.add 
-          ? _addView() 
-          : isLoading 
+      body: view == HorsesView.add
+          ? _addView()
+          : isLoading
               ? const Center(child: CircularProgressIndicator())
               : _listView(),
       floatingActionButton: horses.isNotEmpty && view == HorsesView.list
@@ -207,8 +215,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
               ),
             );
           }
-        }
-        else if (result != null && result is Horse) {
+        } else if (result != null && result is Horse) {
           await _loadHorses();
         }
       },
@@ -244,16 +251,24 @@ class _HorsesScreenState extends State<HorsesScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            // ✅ Name wird bei Überlänge mit ... abgekürzt
             Text(
               horse.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
             ),
             const SizedBox(height: 4),
+            // ✅ Alter | Rasse wird bei Überlänge mit ... abgekürzt
             Text(
               '${_calculateAge(horse.birthDate)} | ${horse.breed}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -266,26 +281,26 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   String _calculateAge(String birthDate) {
-    if (birthDate.isEmpty) return '?yo';
-    
+    if (birthDate.isEmpty) return '?J';
+
     try {
       final parts = birthDate.split('.');
       if (parts.length == 3) {
         final day = int.parse(parts[0]);
         final month = int.parse(parts[1]);
         final year = int.parse(parts[2]);
-        
+
         final birth = DateTime(year, month, day);
         final now = DateTime.now();
         final age = now.year - birth.year;
-        
-        return '${age}yo';
+
+        return '$age J';
       }
     } catch (e) {
-      return '?yo';
+      return '? J';
     }
-    
-    return '?yo';
+
+    return '? J';
   }
 
   Widget _addView() {
