@@ -233,7 +233,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                    .WithOne(pra => pra.Role)
                    .HasForeignKey(pra => pra.RoleId)
                    .OnDelete(DeleteBehavior.Cascade);
-        
+
         accountRole.HasData(new { Id = 1, Name = RoleName.Equestrian },
                             new { Id = 2, Name = RoleName.Saddler },
                             new { Id = 3, Name = RoleName.Guest });

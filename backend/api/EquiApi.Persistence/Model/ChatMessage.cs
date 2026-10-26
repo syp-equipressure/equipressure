@@ -1,4 +1,4 @@
-namespace EquiApi.Persistence.Model;
+﻿namespace EquiApi.Persistence.Model;
 
 public class ChatMessage
 {

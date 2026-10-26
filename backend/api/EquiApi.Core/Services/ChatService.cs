@@ -1,4 +1,4 @@
-using EquiApi.Persistence.Model;
+﻿using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using OneOf;
 using OneOf.Types;

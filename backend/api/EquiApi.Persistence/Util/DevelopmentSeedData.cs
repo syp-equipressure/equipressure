@@ -337,12 +337,12 @@ public static class DevelopmentSeedData
         SeedMeasurement Create(int group, string pace, string hand, int durationSeconds,
                                string? description = null) =>
             new(new Measurement
-                {
-                    Group = groups[group - 1],
-                    Pace = pace,
-                    Hand = hand,
-                    Description = description
-                },
+            {
+                Group = groups[group - 1],
+                Pace = pace,
+                Hand = hand,
+                Description = description
+            },
                 durationSeconds);
 
         return
@@ -388,7 +388,7 @@ public static class DevelopmentSeedData
 
     // how the saddle of a measurement group fits: pressure factors for the front, middle and back of the saddle and
     // the balance between the panels (positive = more pressure on the left panel)
-    private static readonly (double Front, double Middle, double Back, double Balance)[] GroupFits =
+    private static readonly (double Front, double Middle, double Back, double Balance)[] groupFits =
     [
         /* 1 */ (1.0, 1.0, 1.0, 0.0),
         /* 2 */ (1.0, 1.0, 1.25, 0.12), // slight pressure at the back left
@@ -417,7 +417,7 @@ public static class DevelopmentSeedData
                 group, group.Date.AtStartOfDayInZone(DateTimeZone.Utc).PlusHours(14).ToInstant());
             nextStartOfGroup[group] = start.Plus(Duration.FromSeconds(durationSeconds + 60));
 
-            var fit = GroupFits[Array.IndexOf(groups, group)];
+            var fit = groupFits[Array.IndexOf(groups, group)];
             var frameCount = durationSeconds / SecondsBetweenFrames + 1;
             for (var frame = 0; frame < frameCount; frame++)
             {
@@ -425,7 +425,7 @@ public static class DevelopmentSeedData
                 {
                     Measurement = measurement,
                     Timestamp = start.Plus(Duration.FromSeconds(frame * SecondsBetweenFrames)),
-                    Data = CreatePressureFrame(measurement, fit, index, frame, (double)frame / (frameCount - 1))
+                    Data = CreatePressureFrame(measurement, fit, index, frame, (double) frame / (frameCount - 1))
                 });
             }
         }
@@ -494,7 +494,7 @@ public static class DevelopmentSeedData
                 }
 
                 values[row * PressureGridSize + col] =
-                    (int)Math.Round(peak * (left * leftFactor + right * rightFactor));
+                    (int) Math.Round(peak * (left * leftFactor + right * rightFactor));
             }
         }
 
@@ -529,19 +529,19 @@ public static class DevelopmentSeedData
     {
         ChatMessage Create(int sender, int recipient, Instant sentAt, string? text, bool read,
                            int? horse = null, int? group = null, Instant? acceptedAt = null) => new()
-        {
-            Type = horse is not null ? ChatMessageType.Horse
+                           {
+                               Type = horse is not null ? ChatMessageType.Horse
                 : group is not null ? ChatMessageType.Measurement
                 : ChatMessageType.Text,
-            Text = text,
-            SentAt = sentAt,
-            ReadAt = read ? sentAt.Plus(Duration.FromMinutes(5)) : null,
-            AcceptedAt = acceptedAt,
-            Sender = persons[sender - 1],
-            Recipient = persons[recipient - 1],
-            Horse = horse is null ? null : horses[horse.Value - 1],
-            MeasurementGroup = group is null ? null : groups[group.Value - 1]
-        };
+                               Text = text,
+                               SentAt = sentAt,
+                               ReadAt = read ? sentAt.Plus(Duration.FromMinutes(5)) : null,
+                               AcceptedAt = acceptedAt,
+                               Sender = persons[sender - 1],
+                               Recipient = persons[recipient - 1],
+                               Horse = horse is null ? null : horses[horse.Value - 1],
+                               MeasurementGroup = group is null ? null : groups[group.Value - 1]
+                           };
 
         return
         [

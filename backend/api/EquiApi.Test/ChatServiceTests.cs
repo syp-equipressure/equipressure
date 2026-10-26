@@ -1,4 +1,4 @@
-using EquiApi.Core.Services;
+﻿using EquiApi.Core.Services;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
 using EquiApi.Test.Util;
@@ -199,14 +199,14 @@ public sealed class ChatServiceTests
 
     private static ChatMessage CreateMessage(int id, Person sender, Person recipient,
                                              ChatMessageType type = ChatMessageType.Text) => new()
-    {
-        Id = id,
-        Type = type,
-        Text = "Hallo",
-        SentAt = Instant.FromUtc(2026, 10, 20, 8, id),
-        Sender = sender,
-        SenderId = sender.Id,
-        Recipient = recipient,
-        RecipientId = recipient.Id
-    };
+                                             {
+                                                 Id = id,
+                                                 Type = type,
+                                                 Text = "Hallo",
+                                                 SentAt = Instant.FromUtc(2026, 10, 20, 8, id),
+                                                 Sender = sender,
+                                                 SenderId = sender.Id,
+                                                 Recipient = recipient,
+                                                 RecipientId = recipient.Id
+                                             };
 }

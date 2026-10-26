@@ -93,7 +93,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             success => Ok(PersonListResponse.FromPersons(success.Value)),
             _ => NotFound());
     }
-    
+
     /// <summary>
     ///     Adds a saddle to a horse
     /// </summary>

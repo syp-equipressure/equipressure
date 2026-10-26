@@ -31,7 +31,7 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IHorseRepository HorseRepository =>
         field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds);
-    
+
     public ISaddleRepository SaddleRepository =>
         field ??= new SaddleRepository(context.SaddleCategories);
 

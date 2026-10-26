@@ -203,7 +203,7 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
     {
         logger.LogInformation("Horse {HorseId} not found", horseId);
     }
-    
+
     public async ValueTask<OneOf<Success<Saddle>, NotFound>> AddSaddleToHorse(string name, int horseId, int categoryId)
     {
         var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);
