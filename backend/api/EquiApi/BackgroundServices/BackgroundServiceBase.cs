@@ -44,7 +44,6 @@ internal abstract class BackgroundServiceBase<T>(
                 Logger.LogError(ex, "Failed to execute background task");
             }
 
-            // if execution took longer than the interval we would get an issue - ignored for simplicity for now
             // mitigation would be to pass the runtime and possibly skip the next run, log errors,...
             // timestamp with planned value to avoid drift
             var nextTimeToRun = GetNextTimeToRun(lastRunTime);
