@@ -181,6 +181,8 @@ internal sealed class BluetoothConnectionService(
 
         characteristic.CharacteristicValueChanged += OnValueChanged;
         device.GattServerDisconnected += OnDisconnected;
+        try
+        {
             await characteristic.StartNotificationsAsync();
             Logger.LogInformation("Connected to {DeviceName}", deviceName);
 
@@ -201,6 +203,33 @@ internal sealed class BluetoothConnectionService(
                     Logger.LogError(ex, "Handling data from {DeviceName} failed", deviceName);
                 }
             }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // shutting down
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Receiving from {DeviceName} failed", deviceName);
+        }
+        finally
+        {
+            characteristic.CharacteristicValueChanged -= OnValueChanged;
+            device.GattServerDisconnected -= OnDisconnected;
+            channel.Writer.TryComplete();
+
+            try
+            {
+                await characteristic.StopNotificationsAsync();
+            }
+            catch
+            {
+                // already disconnected
+            }
+
+            SafeDisconnect(device);
+            Logger.LogWarning("Connection to {DeviceName} closed", deviceName);
+        }
     }
 
     private void DisconnectDevice()
