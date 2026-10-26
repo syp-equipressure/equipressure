@@ -214,16 +214,18 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
             return new NotFound();
         }
 
-        var saddleExists = await uow.SaddleRepository.DoesSaddleCategoryExist(categoryId);
-        if (!saddleExists)
+        var category = await uow.SaddleRepository.GetSaddleCategoryByIdAsync(categoryId);
+        if (category is null)
         {
             logger.LogWarning("Saddle category with id {id} could not be found", categoryId);
             return new NotFound();
         }
 
+        // the category is set as well, because the response contains its name
         var saddle = new Saddle
         {
             CategoryId = categoryId,
+            Category = category,
             HorseId = horseId,
             Name = name
         };
