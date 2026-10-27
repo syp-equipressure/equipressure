@@ -48,6 +48,16 @@ public interface IDeviceRepository
     public ValueTask<DeviceCategory?> GetCategoryByIdAsync(int categoryId);
 
     /// <summary>
+    ///     Checks if a horse can be measured with a device: the device belongs to the owner of the horse (as owner or
+    ///     user of the device), so that riders of the horse can measure with it, or it belongs to a saddler, who
+    ///     measures the horses of their customers
+    /// </summary>
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>True if the device can be used for the horse, false otherwise</returns>
+    public ValueTask<bool> CanMeasureHorseAsync(string deviceId, int horseId);
+
+    /// <summary>
     ///     Adds a new device
     /// </summary>
     /// <param name="device">The device to add</param>
@@ -91,6 +101,13 @@ internal sealed class DeviceRepository(DbSet<MeasurementDevice> deviceSet, DbSet
 
     public async ValueTask<DeviceCategory?> GetCategoryByIdAsync(int categoryId) =>
         await categorySet.FirstOrDefaultAsync(c => c.Id == categoryId);
+
+    public async ValueTask<bool> CanMeasureHorseAsync(string deviceId, int horseId) =>
+        await deviceSet.AnyAsync(d => d.Id == deviceId
+                                      && (d.Owner.Roles.Any(pra => pra.Role.Name == RoleName.Saddler)
+                                          || d.Owner.Horses.Any(ph => ph.HorseId == horseId && ph.IsOwner)
+                                          || d.Users.Any(du => du.User.Horses.Any(ph => ph.HorseId == horseId
+                                                                                       && ph.IsOwner))));
 
     public void AddDevice(MeasurementDevice device)
     {

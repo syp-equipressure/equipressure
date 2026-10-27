@@ -1,1 +1,16 @@
 @BaseUrl = http://localhost:5200/api/horses
+
+### Owner and visible riders of a horse, the owner is always the first entry
+GET {{BaseUrl}}/1/riders
+
+### Hidden riders of a horse
+GET {{BaseUrl}}/1/riders/hidden
+
+### Add a person as rider (Reitbeteiligung), 409 if they already belong to the horse
+POST {{BaseUrl}}/1/riders/10
+
+### Hide a rider, 409 for the owner
+PUT {{BaseUrl}}/1/riders/10/hidden
+
+### Show a hidden rider again
+DELETE {{BaseUrl}}/1/riders/10/hidden

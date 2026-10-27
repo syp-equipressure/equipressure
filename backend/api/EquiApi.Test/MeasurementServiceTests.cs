@@ -128,6 +128,39 @@ public sealed class MeasurementServiceTests
     }
 
     [Fact]
+    public async Task AddGroupAsync_PersonIsNoVisibleRiderOfHorse_ReturnsInvalidMeasurementGroup()
+    {
+        var data = TestData.CreateNewMeasurementGroupData();
+        _uowMock.PersonRepository.PersonExistsAsync(data.PersonId).Returns(true);
+        _uowMock.HorseRepository.SaddleOfHorseExistsAsync(data.HorseId, data.SaddleId).Returns(true);
+        _uowMock.DeviceRepository.DeviceExistsAsync(data.DeviceId).Returns(true);
+        _uowMock.HorseRepository.IsVisibleRiderOfHorseAsync(data.HorseId, data.PersonId).Returns(false);
+
+        var result = await _sut.AddGroupAsync(data);
+
+        result.Value.Should().BeOfType<IMeasurementService.InvalidMeasurementGroup>();
+        _uowMock.MeasurementRepository.DidNotReceive().AddGroup(Arg.Any<MeasurementGroup>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddGroupAsync_DeviceCannotMeasureHorse_ReturnsInvalidMeasurementGroup()
+    {
+        var data = TestData.CreateNewMeasurementGroupData();
+        _uowMock.PersonRepository.PersonExistsAsync(data.PersonId).Returns(true);
+        _uowMock.HorseRepository.SaddleOfHorseExistsAsync(data.HorseId, data.SaddleId).Returns(true);
+        _uowMock.DeviceRepository.DeviceExistsAsync(data.DeviceId).Returns(true);
+        _uowMock.HorseRepository.IsVisibleRiderOfHorseAsync(data.HorseId, data.PersonId).Returns(true);
+        _uowMock.DeviceRepository.CanMeasureHorseAsync(data.DeviceId, data.HorseId).Returns(false);
+
+        var result = await _sut.AddGroupAsync(data);
+
+        result.Value.Should().BeOfType<IMeasurementService.InvalidMeasurementGroup>();
+        _uowMock.MeasurementRepository.DidNotReceive().AddGroup(Arg.Any<MeasurementGroup>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
     public async Task AddGroupAsync_ValidData_AddsGroupAndReturnsItWithDetails()
     {
         var data = TestData.CreateNewMeasurementGroupData(2, 3, 4, "EP0001");
@@ -135,6 +168,8 @@ public sealed class MeasurementServiceTests
         _uowMock.PersonRepository.PersonExistsAsync(data.PersonId).Returns(true);
         _uowMock.HorseRepository.SaddleOfHorseExistsAsync(data.HorseId, data.SaddleId).Returns(true);
         _uowMock.DeviceRepository.DeviceExistsAsync(data.DeviceId).Returns(true);
+        _uowMock.HorseRepository.IsVisibleRiderOfHorseAsync(data.HorseId, data.PersonId).Returns(true);
+        _uowMock.DeviceRepository.CanMeasureHorseAsync(data.DeviceId, data.HorseId).Returns(true);
         _uowMock.MeasurementRepository.GetGroupByIdAsync(Arg.Any<int>()).Returns(loadedGroup);
 
         var result = await _sut.AddGroupAsync(data);

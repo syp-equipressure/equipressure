@@ -37,15 +37,17 @@ public interface IMeasurementService
     public ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> GetGroupByIdAsync(int groupId);
 
     /// <summary>
-    ///     Adds a new measurement group
+    ///     Adds a new measurement group. The rider has to be the owner or a rider of the horse that is not hidden and
+    ///     the device has to belong to the owner of the horse (riders measure with it) or to a saddler.
     /// </summary>
     /// <param name="data">The values of the new measurement group</param>
     /// <returns>
-    ///     The new measurement group including the person, the horse with its breeds and the saddle
-    ///     or <see cref="NotFound" /> if the person, the horse or the device does not exist or the saddle does not
-    ///     belong to the horse
+    ///     The new measurement group including the person, the horse with its breeds and the saddle,
+    ///     <see cref="NotFound" /> if the person, the horse or the device does not exist or the saddle does not
+    ///     belong to the horse or <see cref="InvalidMeasurementGroup" /> if the rider or the device is not allowed
     /// </returns>
-    public ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> AddGroupAsync(NewMeasurementGroupData data);
+    public ValueTask<OneOf<Success<MeasurementGroup>, NotFound, InvalidMeasurementGroup>> AddGroupAsync(
+        NewMeasurementGroupData data);
 
     /// <summary>
     ///     Gets all measurements of a measurement group
@@ -207,6 +209,12 @@ public interface IMeasurementService
     ///     Returned if a measurement with the same pace and hand already exists in the group
     /// </summary>
     public readonly record struct MeasurementAlreadyExists;
+
+    /// <summary>
+    ///     Returned if the rider or the device of a new measurement group is not allowed for the horse
+    /// </summary>
+    /// <param name="Reason">Why the measurement group is not allowed</param>
+    public readonly record struct InvalidMeasurementGroup(string Reason);
 }
 
 internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
@@ -239,7 +247,8 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
         return new Success<MeasurementGroup>(group);
     }
 
-    public async ValueTask<OneOf<Success<MeasurementGroup>, NotFound>> AddGroupAsync(NewMeasurementGroupData data)
+    public async ValueTask<OneOf<Success<MeasurementGroup>, NotFound, IMeasurementService.InvalidMeasurementGroup>>
+        AddGroupAsync(NewMeasurementGroupData data)
     {
         if (!await uow.PersonRepository.PersonExistsAsync(data.PersonId))
         {
@@ -261,6 +270,24 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
             logger.LogInformation("Cannot add measurement group, device {DeviceId} not found", data.DeviceId);
 
             return new NotFound();
+        }
+
+        if (!await uow.HorseRepository.IsVisibleRiderOfHorseAsync(data.HorseId, data.PersonId))
+        {
+            logger.LogWarning("Cannot add measurement group, person {PersonId} is no visible rider of horse {HorseId}",
+                              data.PersonId, data.HorseId);
+
+            return new IMeasurementService.InvalidMeasurementGroup(
+                "The rider has to be the owner or a rider of the horse that is not hidden");
+        }
+
+        if (!await uow.DeviceRepository.CanMeasureHorseAsync(data.DeviceId, data.HorseId))
+        {
+            logger.LogWarning("Cannot add measurement group, device {DeviceId} cannot be used for horse {HorseId}",
+                              data.DeviceId, data.HorseId);
+
+            return new IMeasurementService.InvalidMeasurementGroup(
+                "The device has to belong to the owner of the horse or to a saddler");
         }
 
         var group = new MeasurementGroup

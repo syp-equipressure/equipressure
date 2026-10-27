@@ -93,7 +93,61 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             success => Ok(PersonListResponse.FromPersons(success.Value)),
             _ => NotFound());
     }
-    
+
+    /// <summary>
+    ///     Adds a person as rider (Reitbeteiligung) of a horse, the rider measures with the device of the owner
+    /// </summary>
+    [HttpPost("{id:int}/riders/{personId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> AddRider([FromRoute][ValidId] int id, [FromRoute][ValidId] int personId)
+    {
+        var result = await horseService.AddRiderToHorseAsync(id, personId);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            _ => Conflict());
+    }
+
+    /// <summary>
+    ///     Hides a rider of a horse, hidden riders cannot be selected for new measurements; the owner cannot be hidden
+    /// </summary>
+    [HttpPut("{id:int}/riders/{personId:int}/hidden")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> HideRider([FromRoute][ValidId] int id, [FromRoute][ValidId] int personId)
+    {
+        var result = await horseService.SetRiderHiddenAsync(id, personId, true);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            _ => Conflict());
+    }
+
+    /// <summary>
+    ///     Shows a hidden rider of a horse again
+    /// </summary>
+    [HttpDelete("{id:int}/riders/{personId:int}/hidden")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> ShowRider([FromRoute][ValidId] int id, [FromRoute][ValidId] int personId)
+    {
+        var result = await horseService.SetRiderHiddenAsync(id, personId, false);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            _ => Conflict());
+    }
+
     /// <summary>
     ///     Adds a saddle to a horse
     /// </summary>

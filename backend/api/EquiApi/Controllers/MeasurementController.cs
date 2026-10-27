@@ -44,12 +44,14 @@ public sealed class MeasurementController(IMeasurementService measurementService
     }
 
     /// <summary>
-    ///     Adds a measurement group, the saddle has to belong to the horse
+    ///     Adds a measurement group, the saddle has to belong to the horse. The rider has to be the owner or a visible
+    ///     rider of the horse, the device has to belong to the owner of the horse or to a saddler.
     /// </summary>
     [HttpPost]
     [ProducesResponseType<MeasurementGroupDetailDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<ActionResult<MeasurementGroupDetailDto>> CreateGroup(
         [FromBody] AddMeasurementGroupRequest request)
     {
@@ -63,7 +65,8 @@ public sealed class MeasurementController(IMeasurementService measurementService
         return result.Match<ActionResult<MeasurementGroupDetailDto>>(
             success => CreatedAtAction(nameof(GetGroupById), new { groupId = success.Value.Id },
                                        MeasurementGroupDetailDto.FromGroup(success.Value)),
-            _ => NotFound());
+            _ => NotFound(),
+            invalid => Problem(statusCode: StatusCodes.Status409Conflict, detail: invalid.Reason));
     }
 
     /// <summary>
