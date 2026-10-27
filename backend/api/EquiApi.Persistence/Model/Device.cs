@@ -31,6 +31,11 @@ public class DeviceCategory
     // TODO: enum for name?
     public required string Name { get; set; }
 
+    /// <summary>
+    ///     Role the owner gets when claiming a device of this category (saddler or equestrian version)
+    /// </summary>
+    public RoleName Role { get; set; } = RoleName.Equestrian;
+
     public List<MeasurementDevice> Devices { get; set; } = [];
 }
 

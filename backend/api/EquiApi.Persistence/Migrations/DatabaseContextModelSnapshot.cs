@@ -116,6 +116,12 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("NumOfAllowedPeople")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Equestrian");
+
                     b.HasKey("Id");
 
                     b.ToTable("DeviceCategory", "EquiPressure");
