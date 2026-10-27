@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
 import 'package:reiterappfrontend/services/backend_person_context_service.dart';
@@ -31,8 +32,9 @@ class DeviceQrCode {
     final parts = raw.trim().split(';');
     final serialNumber = parts.first.trim();
     if (serialNumber.isEmpty) return null;
-    final categoryId =
-        parts.length > 1 ? int.tryParse(parts[1].trim()) : defaultCategoryId;
+    final categoryId = parts.length > 1
+        ? int.tryParse(parts[1].trim())
+        : defaultCategoryId;
     if (categoryId == null || categoryId <= 0) return null;
     return DeviceQrCode(serialNumber, categoryId);
   }
@@ -58,9 +60,7 @@ class AccountService {
 
   /// Lädt die Person des eingeloggten Users und sagt, ob das Onboarding abgeschlossen ist
   static Future<AccountState> loadState() async {
-    final response = await http
-        .get(_url('/account/me'), headers: await _headers())
-        .timeout(_timeout);
+    final response = await apiHttp.get(_url('/account/me')).timeout(_timeout);
 
     if (response.statusCode == 404) return AccountState.noProfile;
     final me = _decode(response, 'load account') as Map<String, dynamic>;
@@ -70,11 +70,10 @@ class AccountService {
   }
 
   static Future<AccountIdentity> loadIdentity() async {
-    final response = await http
-        .get(_url('/account/identity'), headers: await _headers())
+    final response = await apiHttp
+        .get(_url('/account/identity'))
         .timeout(_timeout);
-    final identity =
-        _decode(response, 'load identity') as Map<String, dynamic>;
+    final identity = _decode(response, 'load identity') as Map<String, dynamic>;
     return AccountIdentity(
       identity['firstName'] as String? ?? '',
       identity['lastName'] as String? ?? '',
@@ -100,8 +99,8 @@ class AccountService {
       'weight': weight,
       'address': {'addressName': street, 'cityName': city, 'plz': plz},
     });
-    final response = await http
-        .post(_url('/account'), headers: await _headers(json: true), body: body)
+    final response = await apiHttp
+        .post(_url('/account'), headers: _jsonHeaders, body: body)
         .timeout(_timeout);
     await _setPerson(
       _decode(response, 'create account') as Map<String, dynamic>,
@@ -111,10 +110,10 @@ class AccountService {
   /// Claimt das Gerät: man wird Besitzer:in und bekommt die Rolle der Gerätekategorie
   static Future<void> claimDevice(DeviceQrCode code) async {
     final serialNumber = Uri.encodeComponent(code.serialNumber);
-    final response = await http
+    final response = await apiHttp
         .post(
           _url('/devices/$serialNumber/claim'),
-          headers: await _headers(json: true),
+          headers: _jsonHeaders,
           body: jsonEncode({'categoryId': code.categoryId}),
         )
         .timeout(_timeout);
@@ -123,9 +122,8 @@ class AccountService {
 
   static Uri _url(String path) => Uri.parse('${ApiConfig.baseUrl}$path');
 
-  static Future<Map<String, String>> _headers({bool json = false}) async => {
-    ...await AuthService().freshAuthHeaders(),
-    if (json) 'Content-Type': 'application/json',
+  static const Map<String, String> _jsonHeaders = {
+    'Content-Type': 'application/json',
   };
 
   static Object? _decode(http.Response response, String action) {

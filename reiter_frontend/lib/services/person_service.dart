@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
 import 'package:reiterappfrontend/models/person.dart';
@@ -101,7 +102,7 @@ class PersonService {
     String personId,
   ) async {
     final url = Uri.parse('$baseUrl/persons/$personId/profile-data');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -116,7 +117,7 @@ class PersonService {
     String personId,
   ) async {
     final url = Uri.parse('$baseUrl/persons/$personId/location');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -131,7 +132,7 @@ class PersonService {
     required String plz,
   }) async {
     final url = Uri.parse('$baseUrl/persons/$personId/location');
-    final response = await http
+    final response = await apiHttp
         .put(
           url,
           headers: _jsonHeaders,
@@ -155,7 +156,7 @@ class PersonService {
     String personId,
   ) async {
     final url = Uri.parse('$baseUrl/persons/$personId/contacts');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return _extractList(jsonDecode(response.body));
@@ -170,7 +171,7 @@ class PersonService {
     String personId,
   ) async {
     final url = Uri.parse('$baseUrl/persons/$personId/favourites');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return _extractList(jsonDecode(response.body));
@@ -185,7 +186,7 @@ class PersonService {
     String personId,
   ) async {
     final url = Uri.parse('$baseUrl/persons/$personId/horses');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return _extractList(jsonDecode(response.body));
@@ -200,7 +201,7 @@ class PersonService {
     String personId,
   ) async {
     final url = Uri.parse('$baseUrl/persons/$personId/devices');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return _extractList(jsonDecode(response.body));
@@ -222,7 +223,7 @@ class PersonService {
   // ---------------------------------------------------------------------------
   static Future<Person> addPersonData(Map<String, dynamic> personData) async {
     final url = Uri.parse('$baseUrl/persons');
-    final response = await http
+    final response = await apiHttp
         .post(url, headers: _jsonHeaders, body: jsonEncode(personData))
         .timeout(_timeout);
 
@@ -249,7 +250,7 @@ class PersonService {
     final body = Map<String, dynamic>.from(personData);
     body['id'] = int.tryParse(personId) ?? personId;
 
-    final response = await http
+    final response = await apiHttp
         .patch(url, headers: _jsonHeaders, body: jsonEncode(body))
         .timeout(_timeout);
 
@@ -265,7 +266,7 @@ class PersonService {
   // ---------------------------------------------------------------------------
   static Future<void> deletePerson(String personId) async {
     final url = Uri.parse('$baseUrl/persons/$personId');
-    final response = await http.delete(url).timeout(_timeout);
+    final response = await apiHttp.delete(url).timeout(_timeout);
 
     if (response.statusCode == 204) {
       return;
@@ -275,7 +276,7 @@ class PersonService {
 
   static Future<void> addContact(String personId, String contactId) async {
     final url = Uri.parse('$baseUrl/persons/$personId/contacts/$contactId');
-    final response = await http.put(url).timeout(_timeout);
+    final response = await apiHttp.put(url).timeout(_timeout);
     if (response.statusCode == 204) {
       PersonService().clearCache();
       return;
@@ -285,7 +286,7 @@ class PersonService {
 
   static Future<void> removeContact(String personId, String contactId) async {
     final url = Uri.parse('$baseUrl/persons/$personId/contacts/$contactId');
-    final response = await http.delete(url).timeout(_timeout);
+    final response = await apiHttp.delete(url).timeout(_timeout);
     if (response.statusCode == 204) {
       PersonService().clearCache();
       return;
@@ -304,8 +305,8 @@ class PersonService {
     final usersUrl = Uri.parse('$baseUrl/devices/$deviceId/users');
     final ownerUrl = Uri.parse('$baseUrl/devices/$deviceId/owner');
     final responses = await Future.wait([
-      http.get(usersUrl).timeout(_timeout),
-      http.get(ownerUrl).timeout(_timeout),
+      apiHttp.get(usersUrl).timeout(_timeout),
+      apiHttp.get(ownerUrl).timeout(_timeout),
     ]);
     final usersResponse = responses[0];
     final ownerResponse = responses[1];
@@ -364,7 +365,7 @@ class PersonService {
 
   static Future<void> addDeviceUser(String deviceId, String userId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
-    final response = await http.post(url).timeout(_timeout);
+    final response = await apiHttp.post(url).timeout(_timeout);
     if (response.statusCode != 201 && response.statusCode != 200 && response.statusCode != 204) {
       _throwForStatus(response, 'add device user');
     }
@@ -372,7 +373,7 @@ class PersonService {
 
   static Future<void> removeDeviceUser(String deviceId, String userId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
-    final response = await http.delete(url).timeout(_timeout);
+    final response = await apiHttp.delete(url).timeout(_timeout);
     if (response.statusCode != 200 && response.statusCode != 204) {
       _throwForStatus(response, 'remove device user');
     }
@@ -380,7 +381,7 @@ class PersonService {
 
   static Future<void> changeDeviceOwner(String deviceId, String userId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/owner/$userId');
-    final response = await http.patch(url).timeout(_timeout);
+    final response = await apiHttp.patch(url).timeout(_timeout);
     if (response.statusCode != 200) {
       _throwForStatus(response, 'change device owner');
     }
@@ -388,11 +389,11 @@ class PersonService {
 
   static Future<UserData> loadUserData(String personId) async {
     final responses = await Future.wait([
-      http.get(Uri.parse('$baseUrl/persons/$personId')).timeout(_timeout),
-      http
+      apiHttp.get(Uri.parse('$baseUrl/persons/$personId')).timeout(_timeout),
+      apiHttp
           .get(Uri.parse('$baseUrl/persons/$personId/profile-data'))
           .timeout(_timeout),
-      http
+      apiHttp
           .get(Uri.parse('$baseUrl/persons/$personId/location'))
           .timeout(_timeout),
     ]);
@@ -497,7 +498,7 @@ class PersonService {
 
   static Future<Map<String, dynamic>> _fetchPersonDetails(String personId) async {
     final url = Uri.parse('$baseUrl/persons/$personId');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }

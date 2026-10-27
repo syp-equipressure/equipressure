@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
@@ -33,7 +33,7 @@ class SaddleService {
 
   Future<List<Saddle>> _fetchSaddlesForHorse(String horseId) async {
     final url = Uri.parse('$baseUrl/horses/$horseId/saddles');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return const [];
     if (response.statusCode != 200) {
       throw Exception('Failed to load saddles of horse $horseId: HTTP ${response.statusCode}');

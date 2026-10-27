@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/group_member.dart';
 
@@ -49,7 +50,7 @@ class DeviceService {
 
     try {
       final url = Uri.parse('$baseUrl/persons/$userId/devices');
-      final response = await http.get(url).timeout(_timeout);
+      final response = await apiHttp.get(url).timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = _extractList(jsonDecode(response.body));
@@ -69,7 +70,7 @@ class DeviceService {
   /// Lädt ein einzelnes Gerät mit Details
   static Future<Map<String, dynamic>> getDeviceDetails(String deviceId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -80,7 +81,7 @@ class DeviceService {
   /// Lädt den Eigentümer eines Geräts (`GET /api/devices/{deviceId}/owner`)
   static Future<Map<String, dynamic>?> getDeviceOwner(String deviceId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/owner');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -94,7 +95,7 @@ class DeviceService {
   /// Lädt die Benutzer eines Geräts (`GET /api/devices/{deviceId}/users`)
   static Future<List<Map<String, dynamic>>> getDeviceUsers(String deviceId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/users');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return _extractList(jsonDecode(response.body));
@@ -148,7 +149,7 @@ class DeviceService {
     required int categoryId,
   }) async {
     final url = Uri.parse('$baseUrl/devices');
-    final response = await http
+    final response = await apiHttp
         .post(
           url,
           headers: {'Content-Type': 'application/json'},
@@ -170,7 +171,7 @@ class DeviceService {
   /// Fügt einen Nutzer zu einem Gerät hinzu (`POST /api/devices/{deviceId}/users/{userId}`)
   static Future<void> addUserToDevice(String deviceId, int userId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
-    final response = await http.post(url).timeout(_timeout);
+    final response = await apiHttp.post(url).timeout(_timeout);
 
     if (response.statusCode == 201 || response.statusCode == 200 || response.statusCode == 204) {
       return;
@@ -181,7 +182,7 @@ class DeviceService {
   /// Entfernt einen Nutzer von einem Gerät (`DELETE /api/devices/{deviceId}/users/{userId}`)
   static Future<void> removeUserFromDevice(String deviceId, int userId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/users/$userId');
-    final response = await http.delete(url).timeout(_timeout);
+    final response = await apiHttp.delete(url).timeout(_timeout);
 
     if (response.statusCode == 200 || response.statusCode == 204) {
       return;
@@ -192,7 +193,7 @@ class DeviceService {
   /// Ändert den Eigentümer eines Geräts (`PATCH /api/devices/{deviceId}/owner/{userId}`)
   static Future<void> changeDeviceOwner(String deviceId, int userId) async {
     final url = Uri.parse('$baseUrl/devices/$deviceId/owner/$userId');
-    final response = await http.patch(url).timeout(_timeout);
+    final response = await apiHttp.patch(url).timeout(_timeout);
 
     if (response.statusCode == 200 || response.statusCode == 204) {
       return;
