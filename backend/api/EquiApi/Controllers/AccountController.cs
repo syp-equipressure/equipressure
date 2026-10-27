@@ -1,3 +1,4 @@
+using EquiApi.Core.Services;
 using EquiApi.Dtos;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ namespace EquiApi.Controllers;
 
 [Route("api/account")]
 [Authorize]
-public sealed class AccountController : BaseController
+public sealed class AccountController(IPersonService personService) : BaseController
 {
     /// <summary>
     ///     Gets the identity of the logged-in user from the access token, e.g. to prefill the profile setup
@@ -16,4 +17,46 @@ public sealed class AccountController : BaseController
     [ProducesResponseType<IdentityDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<IdentityDto> GetIdentity() => Ok(IdentityDto.FromClaims(User));
+
+    /// <summary>
+    ///     Gets the person of the logged-in user, 404 means that the profile has not been set up yet
+    /// </summary>
+    [HttpGet("me")]
+    [ProducesResponseType<PersonDetailDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<PersonDetailDto>> GetMe()
+    {
+        var result = await personService.GetPersonByExternalIdAsync(User.ExternalId);
+
+        return result.Match<ActionResult<PersonDetailDto>>(
+            success => Ok(PersonDetailDto.FromPerson(success.Value)),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Sets up the profile of the logged-in user after the first login
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType<PersonDetailDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<PersonDetailDto>> CreateAccount([FromBody] CreateAccountRequest request)
+    {
+        var personRequest = request.ToAddPersonRequest(User.Email);
+        if (!IsValid<AddPersonRequest.Validator, AddPersonRequest>(personRequest))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await personService.AddAccountAsync(User.ExternalId, personRequest.ToData());
+
+        return result.Match<ActionResult<PersonDetailDto>>(
+            success => CreatedAtAction(nameof(GetMe), PersonDetailDto.FromPerson(success.Value)),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         title: "The profile of this account has already been set up"),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         title: "The email is already used by another person"));
+    }
 }

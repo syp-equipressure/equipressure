@@ -17,3 +17,26 @@ Authorization: Bearer {{login.response.body.access_token}}
 
 ### 2. Ohne Token -> 401
 GET {{BaseUrl}}/account/identity
+
+### 3. Eigene Person (404 = Profil noch nicht angelegt)
+GET {{BaseUrl}}/account/me
+Authorization: Bearer {{login.response.body.access_token}}
+
+### 4. Profil nach dem ersten Login anlegen (E-Mail kommt aus dem Token)
+POST {{BaseUrl}}/account
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+    "FirstName": "Reiter",
+    "LastName": "Dev",
+    "Height": 175,
+    "Weight": 70,
+    "DateOfBirth": "2000-01-01",
+    "Address": {
+        "AddressName": "Hauptstraße 1",
+        "CityName": "Steyr",
+        "Plz": "4400"
+    },
+    "Role": "Equestrian"
+}
