@@ -1,7 +1,6 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Dtos;
 using EquiApi.Util;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
@@ -83,7 +82,6 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     ///     device category. 404 means that the profile has not been set up yet or the category does not exist.
     /// </summary>
     [HttpPost("{deviceId}/claim")]
-    [Authorize]
     [ProducesResponseType<DeviceDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

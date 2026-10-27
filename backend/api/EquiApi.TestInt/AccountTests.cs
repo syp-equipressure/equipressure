@@ -25,7 +25,7 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
     [InlineData("api/account/me")]
     public async ValueTask Get_NotLoggedIn_ReturnsUnauthorized(string url)
     {
-        var response = await ApiClient.GetAsync(url, TestCancellationToken);
+        var response = await AnonymousClient.GetAsync(url, TestCancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -109,8 +109,8 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
     [Fact]
     public async ValueTask CreateAccount_NotLoggedIn_ReturnsUnauthorized()
     {
-        var response = await ApiClient.PostAsJsonAsync("api/account", TestData.CreateAccountRequest(), JsonOptions,
-                                                       TestCancellationToken);
+        var response = await AnonymousClient.PostAsJsonAsync("api/account", TestData.CreateAccountRequest(),
+                                                             JsonOptions, TestCancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

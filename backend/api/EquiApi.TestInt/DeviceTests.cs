@@ -421,8 +421,9 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
     [Fact]
     public async ValueTask ClaimDevice_NotLoggedIn_ReturnsUnauthorized()
     {
-        var response = await ApiClient.PostAsJsonAsync($"api/devices/{DeviceId}/claim", new ClaimDeviceRequest(1),
-                                                       JsonOptions, TestCancellationToken);
+        var response = await AnonymousClient.PostAsJsonAsync($"api/devices/{DeviceId}/claim",
+                                                             new ClaimDeviceRequest(1), JsonOptions,
+                                                             TestCancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

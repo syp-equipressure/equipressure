@@ -20,6 +20,7 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
     protected static JsonSerializerOptions JsonOptions => jsonOptions.Value;
 
     protected HttpClient ApiClient => webApiFixture.Client;
+    protected HttpClient AnonymousClient => webApiFixture.AnonymousClient;
     protected IClock TestClock => webApiFixture.Clock;
     protected CancellationToken TestCancellationToken => TestContext.Current.CancellationToken;
 
@@ -77,7 +78,7 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
             request.Content = JsonContent.Create(body, options: JsonOptions);
         }
 
-        return await ApiClient.SendAsync(request, TestCancellationToken);
+        return await AnonymousClient.SendAsync(request, TestCancellationToken);
     }
 
     protected async ValueTask<T> ReadContentAsync<T>(HttpResponseMessage response)

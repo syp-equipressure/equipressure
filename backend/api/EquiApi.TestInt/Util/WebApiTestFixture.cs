@@ -13,7 +13,21 @@ public sealed class WebApiTestFixture : IAsyncLifetime
                                                               .WithPassword("postgres")
                                                               .Build();
 
+    public const string DefaultTestUser = "test-user";
+
+    /// <summary>
+    ///     Client logged in as <see cref="DefaultTestUser" />, all endpoints except the account ones require a login
+    /// </summary>
     public HttpClient Client
+    {
+        get => field ?? throw new InvalidOperationException("Client not created");
+        private set;
+    }
+
+    /// <summary>
+    ///     Client without a logged-in user
+    /// </summary>
+    public HttpClient AnonymousClient
     {
         get => field ?? throw new InvalidOperationException("Client not created");
         private set;
@@ -37,6 +51,8 @@ public sealed class WebApiTestFixture : IAsyncLifetime
 
         Factory = new WebAppFactory(_postgresContainer.GetConnectionString());
         Client = Factory.CreateClient();
+        Client.DefaultRequestHeaders.Add(TestAuthHandler.UserHeader, DefaultTestUser);
+        AnonymousClient = Factory.CreateClient();
         Clock = Factory.TestClock;
     }
 

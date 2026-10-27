@@ -1,12 +1,15 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Util;
 
 /// <summary>
-///     Base controller class that provides common functionality (e.g. validation) for API controllers
+///     Base controller class that provides common functionality (e.g. validation) for API controllers,
+///     all endpoints require a user logged in over Keycloak
 /// </summary>
 [ApiController]
+[Authorize]
 public abstract class BaseController : ControllerBase
 {
     /// <summary>

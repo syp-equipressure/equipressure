@@ -1,13 +1,11 @@
 using EquiApi.Core.Services;
 using EquiApi.Dtos;
 using EquiApi.Util;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
 
 [Route("api/account")]
-[Authorize]
 public sealed class AccountController(IPersonService personService) : BaseController
 {
     /// <summary>
