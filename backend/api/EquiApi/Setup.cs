@@ -1,6 +1,7 @@
 ﻿using EquiApi.Core.Util;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -66,6 +67,29 @@ public static class Setup
             }));
 
             Log.Logger.Debug("Added CORS policy with client origin {ClientOrigin}", settings.ClientOrigin);
+        }
+
+        /// <summary>
+        ///     Validates the access tokens (JWT) issued by Keycloak, the backend itself never handles logins
+        /// </summary>
+        public void AddKeycloakAuthentication(IConfigurationManager configurationManager)
+        {
+            var keycloakSettings = configurationManager.GetSection(KeycloakSettings.SectionKey)
+                                                       .Get<KeycloakSettings>()
+                                   ?? throw new InvalidOperationException("Keycloak has to be configured");
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
+                    {
+                        options.Authority = keycloakSettings.Authority;
+                        options.Audience = keycloakSettings.Audience;
+                        options.RequireHttpsMetadata = keycloakSettings.RequireHttpsMetadata;
+                        // keep the original claim names (sub, email, ...) instead of the long Microsoft URIs
+                        options.MapInboundClaims = false;
+                    });
+            services.AddAuthorization();
+
+            Log.Logger.Debug("Added Keycloak authentication with authority {Authority}", keycloakSettings.Authority);
         }
 
         public void ConfigureAdditionalRouteConstraints()
