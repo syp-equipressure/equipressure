@@ -69,6 +69,7 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
         content.FirstName.Should().Be(request.FirstName);
         content.Email.Should().Be(Email);
         content.Roles.Should().BeEmpty("the role is assigned when claiming a device");
+        content.CreatedAt.Should().NotBe(default, "the database sets the member since date");
 
         var meResponse = await SendAsUserAsync(HttpMethod.Get, "api/account/me");
         var me = await ReadContentAsync<PersonDetailDto>(meResponse);

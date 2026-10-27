@@ -341,6 +341,11 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("AddressId")
                         .HasColumnType("integer");
 
+                    b.Property<Instant>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
                     b.Property<LocalDate>("DateOfBirth")
                         .HasColumnType("date");
 

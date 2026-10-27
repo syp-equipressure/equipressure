@@ -19,6 +19,11 @@ public class Person
     public string? WebsiteLink { get; set; }
     public string? Description { get; set; }
 
+    /// <summary>
+    ///     When the person was added, set by the database ("member since" in the apps)
+    /// </summary>
+    public Instant CreatedAt { get; set; }
+
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
 
