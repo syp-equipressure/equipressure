@@ -74,6 +74,7 @@ export class ProfilePage {
             description: customer.description,
             phoneNumber: undefined,
             companyName: undefined,
+            memberSince: formatMemberSince(customer.createdAt),
           });
           this.backendProfileLoading.set(false);
         },
@@ -241,4 +242,11 @@ function isValidWebsite(website: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** "2026-10-27T18:22:49Z" → "10/2026" */
+function formatMemberSince(createdAt: string | undefined): string {
+  const date = createdAt ? new Date(createdAt) : null;
+  if (!date || Number.isNaN(date.getTime())) return '';
+  return `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
 }

@@ -139,6 +139,7 @@ function mapPerson(value: unknown): Customer {
     websiteLink: optional(value, 'websiteLink', 'website_link'),
     description: optional(value, 'description'),
     birthDate: optional(value, 'dateOfBirth', 'date_of_birth'),
+    createdAt: optional(value, 'createdAt', 'created_at'),
     address: addressText,
     heightCm: numeric(value, 'height', 'heightCm'),
     weightKg: numeric(value, 'weight', 'weightKg'),
