@@ -35,7 +35,7 @@ public sealed class AccountController(IPersonService personService) : BaseContro
     }
 
     /// <summary>
-    ///     Sets up the profile of the logged-in user after the first login
+    ///     Sets up the profile of the logged-in user after the first login, the role is assigned when claiming a device
     /// </summary>
     [HttpPost]
     [ProducesResponseType<PersonDetailDto>(StatusCodes.Status201Created)]
@@ -44,13 +44,12 @@ public sealed class AccountController(IPersonService personService) : BaseContro
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<ActionResult<PersonDetailDto>> CreateAccount([FromBody] CreateAccountRequest request)
     {
-        var personRequest = request.ToAddPersonRequest(User.Email);
-        if (!IsValid<AddPersonRequest.Validator, AddPersonRequest>(personRequest))
+        if (!IsValid<CreateAccountRequest.Validator, CreateAccountRequest>(request))
         {
             return ValidationProblem();
         }
 
-        var result = await personService.AddAccountAsync(User.ExternalId, personRequest.ToData());
+        var result = await personService.AddAccountAsync(User.ExternalId, request.ToData(User.Email));
 
         return result.Match<ActionResult<PersonDetailDto>>(
             success => CreatedAtAction(nameof(GetMe), PersonDetailDto.FromPerson(success.Value)),

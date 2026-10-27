@@ -1,6 +1,8 @@
 using System.Security.Claims;
-using EquiApi.Persistence.Model;
+using EquiApi.Core.Services;
+using EquiApi.Shared;
 using EquiApi.Util;
+using FluentValidation;
 
 namespace EquiApi.Dtos;
 
@@ -19,31 +21,35 @@ public sealed record IdentityDto(string Subject, string? Email, string? FirstNam
 
 /// <summary>
 ///     Request to set up the profile of the logged-in user after the first login.
-///     The email is taken from the access token.
+///     The email is taken from the access token, the role is assigned when claiming a device.
 /// </summary>
 /// <param name="FirstName">The first name of the person</param>
 /// <param name="LastName">The last name of the person</param>
 /// <param name="Height">The height of the person in cm</param>
 /// <param name="Weight">The weight of the person in kg</param>
 /// <param name="DateOfBirth">The birthdate of the person</param>
-/// <param name="WebsiteLink">The optional website link, only for saddlers</param>
-/// <param name="Description">The optional description, only for saddlers</param>
 /// <param name="Address">The address, an existing address with the same values is reused</param>
-/// <param name="Role">The role of the person</param>
 public sealed record CreateAccountRequest(
     string FirstName,
     string LastName,
     decimal Height,
     decimal Weight,
     LocalDate DateOfBirth,
-    string? WebsiteLink,
-    string? Description,
-    AddressRequest Address,
-    RoleName Role)
+    AddressRequest Address)
 {
-    /// <summary>
-    ///     Converts the request to a regular person request, so that the same validation rules apply
-    /// </summary>
-    public AddPersonRequest ToAddPersonRequest(string? email) =>
-        new(FirstName, LastName, Height, Weight, DateOfBirth, email, WebsiteLink, Description, Address, Role);
+    public NewAccountData ToData(string? email) =>
+        new(FirstName, LastName, Height, Weight, DateOfBirth, email, Address.ToData());
+
+    public sealed class Validator : AbstractValidator<CreateAccountRequest>
+    {
+        public Validator(IClock clock)
+        {
+            RuleFor(x => x.FirstName).NotEmpty();
+            RuleFor(x => x.LastName).NotEmpty();
+            RuleFor(x => x.Height).GreaterThan(0);
+            RuleFor(x => x.Weight).GreaterThan(0);
+            RuleFor(x => x.DateOfBirth).LessThan(clock.LocalDate);
+            RuleFor(x => x.Address).NotNull().SetValidator(new AddressRequest.Validator());
+        }
+    }
 }

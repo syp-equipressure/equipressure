@@ -21,6 +21,18 @@ public sealed record NewPersonData(
     RoleName Role);
 
 /// <summary>
+///     The values of the person of a new account. The account has no role until it claims a device.
+/// </summary>
+public sealed record NewAccountData(
+    string FirstName,
+    string LastName,
+    decimal Height,
+    decimal Weight,
+    LocalDate DateOfBirth,
+    string? Email,
+    AddressData Address);
+
+/// <summary>
 ///     The values of a person that should be changed, null values are left unchanged
 /// </summary>
 public sealed record PersonChanges(
@@ -107,6 +119,7 @@ public interface IPersonService
 
     /// <summary>
     ///     Adds the person of a Keycloak account (profile setup after the first login).
+    ///     The person gets no role, the role is assigned when claiming a device.
     ///     An existing address with the same values is reused.
     /// </summary>
     /// <param name="externalId">The id of the user in Keycloak (sub claim of the access token)</param>
@@ -116,7 +129,7 @@ public interface IPersonService
     ///     or <see cref="EmailAlreadyTaken" /> if another person already uses the email
     /// </returns>
     public ValueTask<OneOf<Success<Person>, AccountAlreadyExists, EmailAlreadyTaken>> AddAccountAsync(
-        string externalId, NewPersonData data);
+        string externalId, NewAccountData data);
 
     /// <summary>
     ///     Updates the values of a person. An existing address with the same values is reused.
@@ -313,11 +326,25 @@ internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logg
     }
 
     public async ValueTask<OneOf<Success<Person>, IPersonService.EmailAlreadyTaken>> AddPersonAsync(
-        NewPersonData data) =>
-        await AddPersonAsync(data, null);
+        NewPersonData data)
+    {
+        var person = new Person
+        {
+            FirstName = data.FirstName,
+            LastName = data.LastName,
+            Height = data.Height,
+            Weight = data.Weight,
+            DateOfBirth = data.DateOfBirth,
+            Email = data.Email,
+            WebsiteLink = data.WebsiteLink,
+            Description = data.Description
+        };
+
+        return await AddPersonAsync(person, data.Address, [data.Role]);
+    }
 
     public async ValueTask<OneOf<Success<Person>, IPersonService.AccountAlreadyExists,
-        IPersonService.EmailAlreadyTaken>> AddAccountAsync(string externalId, NewPersonData data)
+        IPersonService.EmailAlreadyTaken>> AddAccountAsync(string externalId, NewAccountData data)
     {
         if (await uow.PersonRepository.GetPersonByExternalIdAsync(externalId) is not null)
         {
@@ -325,25 +352,6 @@ internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logg
 
             return new IPersonService.AccountAlreadyExists();
         }
-
-        var result = await AddPersonAsync(data, externalId);
-
-        return result.Match<OneOf<Success<Person>, IPersonService.AccountAlreadyExists,
-            IPersonService.EmailAlreadyTaken>>(success => success, emailTaken => emailTaken);
-    }
-
-    private async ValueTask<OneOf<Success<Person>, IPersonService.EmailAlreadyTaken>> AddPersonAsync(
-        NewPersonData data, string? externalId)
-    {
-        if (data.Email is not null && await uow.PersonRepository.IsEmailTakenAsync(data.Email))
-        {
-            logger.LogWarning("Cannot add person, the email is already taken");
-
-            return new IPersonService.EmailAlreadyTaken();
-        }
-
-        var roles = await GetRolesAsync([data.Role]);
-        var address = await uow.LocationRepository.FindOrAddAddressAsync(data.Address);
 
         var person = new Person
         {
@@ -353,16 +361,34 @@ internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logg
             Height = data.Height,
             Weight = data.Weight,
             DateOfBirth = data.DateOfBirth,
-            Email = data.Email,
-            WebsiteLink = data.WebsiteLink,
-            Description = data.Description,
-            Address = address,
-            Roles = roles.Select(role => new PersonRoleAssignment { Role = role }).ToList()
+            Email = data.Email
         };
+        var result = await AddPersonAsync(person, data.Address, []);
+
+        return result.Match<OneOf<Success<Person>, IPersonService.AccountAlreadyExists,
+            IPersonService.EmailAlreadyTaken>>(success => success, emailTaken => emailTaken);
+    }
+
+    /// <summary>
+    ///     Adds a new person with the given address and roles, if the email of the person is not taken yet
+    /// </summary>
+    private async ValueTask<OneOf<Success<Person>, IPersonService.EmailAlreadyTaken>> AddPersonAsync(
+        Person person, AddressData address, IReadOnlyCollection<RoleName> roleNames)
+    {
+        if (person.Email is not null && await uow.PersonRepository.IsEmailTakenAsync(person.Email))
+        {
+            logger.LogWarning("Cannot add person, the email is already taken");
+
+            return new IPersonService.EmailAlreadyTaken();
+        }
+
+        var roles = roleNames.Count > 0 ? await GetRolesAsync(roleNames) : [];
+        person.Address = await uow.LocationRepository.FindOrAddAddressAsync(address);
+        person.Roles = roles.Select(role => new PersonRoleAssignment { Role = role }).ToList();
 
         uow.PersonRepository.AddPerson(person);
         await uow.SaveChangesAsync();
-        logger.LogInformation("Person {PersonId} added with role {Role}", person.Id, data.Role);
+        logger.LogInformation("Person {PersonId} added with roles {Roles}", person.Id, roleNames);
 
         return new Success<Person>(person);
     }
