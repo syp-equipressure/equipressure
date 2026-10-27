@@ -149,6 +149,11 @@ internal static class TestData
         new(firstName, "Reiterin", 170M, 60M, new LocalDate(1998, 3, 15), email, websiteLink, null,
             address ?? CreateAddressRequest(role == RoleName.Saddler ? "Werkstattgasse 1" : null), role);
 
+    public static CreateAccountRequest CreateAccountRequest(string firstName = "Anna",
+                                                            RoleName role = RoleName.Equestrian) =>
+        new(firstName, "Reiterin", 170M, 60M, new LocalDate(1998, 3, 15), null, null,
+            CreateAddressRequest(role == RoleName.Saddler ? "Werkstattgasse 1" : null), role);
+
     public static AddHorseRequest CreateAddHorseRequest(int ownerId, IReadOnlyList<int> breedIds,
                                                         string name = "Neuer", decimal height = 168M,
                                                         LocalDate? dateOfBirth = null) =>
