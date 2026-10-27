@@ -20,6 +20,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<PersonDetailDto>> GetPersonById([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewPersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.GetPersonByIdAsync(id);
 
         return result.Match<ActionResult<PersonDetailDto>>(
@@ -36,6 +41,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<PersonNameDto>> GetProfileData([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewPersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.GetNameByIdAsync(id);
 
         return result.Match<ActionResult<PersonNameDto>>(
@@ -52,6 +62,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AddressDto>> GetAddress([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewPersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.GetPersonAddressAsync(id);
 
         return result.Match<ActionResult<AddressDto>>(
@@ -74,6 +89,11 @@ public sealed class PersonController(
             return ValidationProblem();
         }
 
+        if (!await HasAccessAsync((access, me) => access.CanManagePersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.UpdatePersonAddressAsync(id, request.ToData());
 
         return result.Match<ActionResult<AddressDto>>(
@@ -91,6 +111,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<ContactListResponse>> GetContacts([FromRoute][ValidId] int id)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.GetContactsAsync(id);
 
         return result.Match<ActionResult<ContactListResponse>>(
@@ -107,6 +132,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<SaddlerListResponse>> GetFavourites([FromRoute][ValidId] int id)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.GetFavouriteSaddlersAsync(id);
 
         return result.Match<ActionResult<SaddlerListResponse>>(
@@ -123,6 +153,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<HorseListResponse>> GetHorses([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageHorsesOfPersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.GetOwnedHorsesOfPersonAsync(id);
 
         return result.Match<ActionResult<HorseListResponse>>(
@@ -139,6 +174,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<DeviceListResponse>> GetDevices([FromRoute][ValidId] int id)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.GetDevicesOfPersonAsync(id);
 
         return result.Match<ActionResult<DeviceListResponse>>(
@@ -172,6 +212,11 @@ public sealed class PersonController(
             return ValidationProblem();
         }
 
+        if (!await HasAccessAsync((access, _) => ValueTask.FromResult(access.CanAddPerson(request.Role))))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.AddPersonAsync(request.ToData());
 
         return result.Match<ActionResult<PersonDetailDto>>(
@@ -196,6 +241,14 @@ public sealed class PersonController(
             return ValidationProblem();
         }
 
+        // roles come from the claimed devices, only admins may change them directly
+        if (!await HasAccessAsync((access, me) => request.Roles is null
+                                                      ? access.CanManagePersonAsync(me, id)
+                                                      : ValueTask.FromResult(false)))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.UpdatePersonAsync(id, request.ToChanges());
 
         return result.Match<IActionResult>(
@@ -214,6 +267,11 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<IActionResult> DeletePerson([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManagePersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.DeletePersonAsync(id);
 
         return result.Match<IActionResult>(
@@ -232,6 +290,11 @@ public sealed class PersonController(
     public async ValueTask<IActionResult> AddFavourite([FromRoute][ValidId] int id,
                                                        [FromRoute][ValidId] int saddlerId)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.AddFavouriteAsync(id, saddlerId);
 
         return result.Match<IActionResult>(
@@ -250,6 +313,11 @@ public sealed class PersonController(
     public async ValueTask<IActionResult> RemoveFavourite([FromRoute][ValidId] int id,
                                                           [FromRoute][ValidId] int saddlerId)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.RemoveFavouriteAsync(id, saddlerId);
 
         return result.Match<IActionResult>(
@@ -268,6 +336,11 @@ public sealed class PersonController(
     public async ValueTask<IActionResult> AddContact([FromRoute][ValidId] int id,
                                                      [FromRoute][ValidId] int contactId)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.AddContactAsync(id, contactId);
 
         return result.Match<IActionResult>(
@@ -286,6 +359,11 @@ public sealed class PersonController(
     public async ValueTask<IActionResult> RemoveContact([FromRoute][ValidId] int id,
                                                         [FromRoute][ValidId] int contactId)
     {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
         var result = await personService.RemoveContactAsync(id, contactId);
 
         return result.Match<IActionResult>(
