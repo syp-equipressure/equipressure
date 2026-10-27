@@ -1,0 +1,9 @@
+/* Benutzername/Passwort-Formular ausblenden, es gibt keine eigenen Logins */
+#kc-form {
+    display: none;
+}
+
+/* "Oder anmelden mit" Überschrift über den Buttons ausblenden */
+.pf-v5-c-login__main-footer-band:has(+ #kc-social-providers) {
+    display: none;
+}

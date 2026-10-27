@@ -2,6 +2,7 @@
   "realm": "equipressure",
   "displayName": "EquiPressure",
   "enabled": true,
+  "loginTheme": "${KC_LOGIN_THEME}",
   "sslRequired": "external",
   "registrationAllowed": false,
   "resetPasswordAllowed": false,
