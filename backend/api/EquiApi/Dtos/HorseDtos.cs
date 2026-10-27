@@ -143,3 +143,70 @@ public sealed record SaddleCategoryListResponse(IReadOnlyList<SaddleCategoryDto>
     public static SaddleCategoryListResponse FromCategories(IEnumerable<SaddleCategory> categories) =>
         new(categories.Select(SaddleCategoryDto.FromCategory).ToList());
 }
+
+
+/// <summary>
+///     Request to change a horse, properties that are null stay unchanged
+/// </summary>
+/// <param name="Name">The new name</param>
+/// <param name="DateOfBirth">The new date of birth</param>
+/// <param name="Weight">The new weight</param>
+/// <param name="Height">The new height</param>
+/// <param name="Gender">The new gender</param>
+/// <param name="Address">The new address</param>
+/// <param name="BreedIds">The new breeds, replaces all existing breeds if set</param>
+public sealed record PatchHorseRequest(
+    string? Name,
+    LocalDate? DateOfBirth,
+    decimal? Weight,
+    decimal? Height,
+    HorseGender? Gender,
+    AddressRequest? Address, // denselben Typ verwenden wie in AddHorseRequest
+    List<int>? BreedIds)
+{
+    /// <summary>
+    ///     Converts the request to the data used by the service
+    /// </summary>
+    public PatchHorseData ToData() => new(
+        Name,
+        DateOfBirth,
+        Weight,
+        Height,
+        Gender,
+        Address?.ToData(),
+        BreedIds);
+
+    /// <summary>
+    ///     Validator for <see cref="PatchHorseRequest" />
+    /// </summary>
+    public sealed class Validator : AbstractValidator<PatchHorseRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Name)
+                .NotEmpty()
+                .MaximumLength(100)
+                .When(x => x.Name is not null);
+
+            RuleFor(x => x.Weight)
+                .GreaterThan(0)
+                .When(x => x.Weight is not null);
+
+            RuleFor(x => x.Height)
+                .GreaterThan(0)
+                .When(x => x.Height is not null);
+
+            RuleFor(x => x.Gender)
+                .IsInEnum()
+                .When(x => x.Gender is not null);
+
+            RuleFor(x => x.BreedIds)
+                .NotEmpty()
+                .When(x => x.BreedIds is not null);
+
+            RuleForEach(x => x.BreedIds)
+                .GreaterThan(0)
+                .When(x => x.BreedIds is not null);
+        }
+    }
+}

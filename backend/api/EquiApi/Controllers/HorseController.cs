@@ -45,6 +45,22 @@ public sealed class HorseController(IHorseService horseService) : BaseController
                                        HorseDto.FromHorse(success.Value)),
             _ => NotFound());
     }
+    
+    /// <summary>
+    ///     Removes a horse
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult> RemoveHorse([FromRoute][ValidId] int id)
+    {
+        var result = await horseService.RemoveHorseAsync(id);
+
+        return result.Match<ActionResult>(
+                                          _ => NoContent(),
+                                          _ => NotFound());
+    }
 
     /// <summary>
     ///     Gets the saddles of a horse
@@ -181,5 +197,27 @@ public sealed class HorseController(IHorseService horseService) : BaseController
         var categories = await horseService.GetAllSaddleCategories();
 
         return Ok(SaddleCategoryListResponse.FromCategories(categories));
+    }
+    
+    /// <summary>
+    ///     Changes the given values of a horse
+    /// </summary>
+    [HttpPatch("{id:int}")]
+    [ProducesResponseType<HorseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<HorseDto>> PatchHorse([FromRoute][ValidId] int id,
+                                                              [FromBody] PatchHorseRequest request)
+    {
+        if (!IsValid<PatchHorseRequest.Validator, PatchHorseRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await horseService.PatchHorseAsync(id, request.ToData());
+
+        return result.Match<ActionResult<HorseDto>>(
+                                                    success => Ok(HorseDto.FromHorse(success.Value)),
+                                                    _ => NotFound());
     }
 }

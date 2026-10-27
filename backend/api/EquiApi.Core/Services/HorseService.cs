@@ -18,6 +18,18 @@ public sealed record NewHorseData(
     IReadOnlyCollection<int> BreedIds,
     int OwnerId);
 
+/// <summary>
+///     The values of a horse that should be changed, properties that are null stay unchanged
+/// </summary>
+public sealed record PatchHorseData(
+    string? Name,
+    LocalDate? DateOfBirth,
+    decimal? Weight,
+    decimal? Height,
+    HorseGender? Gender,
+    AddressData? Address,
+    IReadOnlyCollection<int>? BreedIds);
+
 public interface IHorseService
 {
     /// <summary>
@@ -41,6 +53,13 @@ public interface IHorseService
     /// <returns>The new horse or <see cref="NotFound" /> if the owner or one of the breeds does not exist</returns>
     public ValueTask<OneOf<Success<Horse>, NotFound>> AddHorseAsync(NewHorseData data);
 
+    /// <summary>
+    ///     Deletes a horse
+    /// </summary>
+    /// <param name="horseId">the id of the horse that should be deleted</param>
+    /// <returns>success if it works, not found if it does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> RemoveHorseAsync(int horseId);
+    
     /// <summary>
     ///     Gets all saddles of a horse
     /// </summary>
@@ -102,6 +121,14 @@ public interface IHorseService
     /// </summary>
     /// <returns>a list of the saddle categories</returns>
     public ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories();
+
+    /// <summary>
+    ///     Changes the given values of a horse, values that are null stay unchanged
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="data">The values to change</param>
+    /// <returns>The updated horse or <see cref="NotFound" /> if the horse or one of the breeds does not exist</returns>
+    public ValueTask<OneOf<Success<Horse>, NotFound>> PatchHorseAsync(int horseId, PatchHorseData data);
 
     /// <summary>
     ///     Returned if a person already is the owner or a (hidden) rider of a horse
@@ -190,6 +217,22 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
         logger.LogInformation("Horse {HorseId} added for owner {PersonId}", horse.Id, owner.Id);
 
         return new Success<Horse>(horse);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RemoveHorseAsync(int horseId)
+    {
+        var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);
+        if (horse == null)
+        {
+            logger.LogWarning("Horse with id {horseId} was not found", horseId);
+            return new NotFound();
+        }
+
+        uow.HorseRepository.DeleteHorse(horse);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Horse with id {id} was deleted successfully", horseId);
+
+        return new Success();
     }
 
     public async ValueTask<OneOf<Success<IReadOnlyCollection<Saddle>>, NotFound>> GetSaddlesOfHorseAsync(int horseId)
@@ -338,4 +381,77 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
 
     public async ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories()
         => await uow.SaddleRepository.GetAllSaddleCategories();
+    
+    public async ValueTask<OneOf<Success<Horse>, NotFound>> PatchHorseAsync(int horseId, PatchHorseData data)
+    {
+        var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);
+        if (horse is null)
+        {
+            LogHorseNotFound(horseId);
+
+            return new NotFound();
+        }
+
+        IReadOnlyCollection<Breed>? breeds = null;
+        int[]? breedIds = null;
+        if (data.BreedIds is not null)
+        {
+            breedIds = data.BreedIds.Distinct().ToArray();
+            breeds = await uow.HorseRepository.GetBreedsByIdAsync(breedIds);
+            if (breeds.Count != breedIds.Length)
+            {
+                logger.LogInformation("Cannot patch horse {HorseId}, at least one of the breeds {BreedIds} not found",
+                                      horseId, breedIds);
+
+                return new NotFound();
+            }
+        }
+
+        if (data.Name is not null)
+        {
+            horse.Name = data.Name;
+        }
+
+        if (data.DateOfBirth is not null)
+        {
+            horse.DateOfBirth = data.DateOfBirth.Value;
+        }
+
+        if (data.Weight is not null)
+        {
+            horse.Weight = data.Weight.Value;
+        }
+
+        if (data.Height is not null)
+        {
+            horse.Height = data.Height.Value;
+        }
+
+        if (data.Gender is not null)
+        {
+            horse.Gender = data.Gender.Value;
+        }
+
+        if (data.Address is not null)
+        {
+            horse.Address = await uow.LocationRepository.FindOrAddAddressAsync(data.Address);
+        }
+
+        if (breeds is not null && breedIds is not null)
+        {
+            // only remove / add the difference instead of replacing the whole list
+            horse.HorseBreeds.RemoveAll(hb => !breedIds.Contains(hb.BreedId));
+
+            var existingBreedIds = horse.HorseBreeds.Select(hb => hb.BreedId).ToHashSet();
+            foreach (var breed in breeds.Where(b => !existingBreedIds.Contains(b.Id)))
+            {
+                horse.HorseBreeds.Add(new HorseBreed { Breed = breed });
+            }
+        }
+
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Horse {HorseId} was patched", horseId);
+
+        return new Success<Horse>(horse);
+    }
 }
