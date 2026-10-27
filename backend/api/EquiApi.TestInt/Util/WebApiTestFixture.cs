@@ -1,4 +1,5 @@
 ﻿using EquiApi.Persistence.Util;
+using EquiApi.Util;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
@@ -16,7 +17,8 @@ public sealed class WebApiTestFixture : IAsyncLifetime
     public const string DefaultTestUser = "test-user";
 
     /// <summary>
-    ///     Client logged in as <see cref="DefaultTestUser" />, all endpoints except the account ones require a login
+    ///     Client logged in as <see cref="DefaultTestUser" /> with the admin role, so it may access all data.
+    ///     The access rules are tested with <see cref="WebApiTestBase.SendAsUserAsync" /> and real persons
     /// </summary>
     public HttpClient Client
     {
@@ -52,6 +54,7 @@ public sealed class WebApiTestFixture : IAsyncLifetime
         Factory = new WebAppFactory(_postgresContainer.GetConnectionString());
         Client = Factory.CreateClient();
         Client.DefaultRequestHeaders.Add(TestAuthHandler.UserHeader, DefaultTestUser);
+        Client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, ClaimsPrincipalExtensions.AdminRole);
         AnonymousClient = Factory.CreateClient();
         Clock = Factory.TestClock;
     }

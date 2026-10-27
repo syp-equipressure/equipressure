@@ -7,6 +7,16 @@ namespace EquiApi.Util;
 /// </summary>
 public static class ClaimsPrincipalExtensions
 {
+    /// <summary>
+    ///     Claim with the realm roles of the user, added to the token by a mapper in the Keycloak realm
+    /// </summary>
+    public const string RoleClaimType = "roles";
+
+    /// <summary>
+    ///     Keycloak realm role for support and development, may access all data
+    /// </summary>
+    public const string AdminRole = "admin";
+
     extension(ClaimsPrincipal user)
     {
         /// <summary>
@@ -29,5 +39,10 @@ public static class ClaimsPrincipalExtensions
         ///     The last name of the user, if provided by the identity provider
         /// </summary>
         public string? LastName => user.FindFirstValue("family_name");
+
+        /// <summary>
+        ///     True if the user has the <see cref="AdminRole" /> in Keycloak
+        /// </summary>
+        public bool IsAdmin => user.IsInRole(AdminRole);
     }
 }

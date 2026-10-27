@@ -86,6 +86,7 @@ public static class Setup
                         options.RequireHttpsMetadata = keycloakSettings.RequireHttpsMetadata;
                         // keep the original claim names (sub, email, ...) instead of the long Microsoft URIs
                         options.MapInboundClaims = false;
+                        options.TokenValidationParameters.RoleClaimType = ClaimsPrincipalExtensions.RoleClaimType;
                     });
             services.AddAuthorization();
 
