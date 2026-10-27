@@ -25,6 +25,8 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
+        // Rücksprung vom Keycloak-Login in die App (siehe Client "reiter-app" in backend/keycloak)
+        manifestPlaceholders["appAuthRedirectScheme"] = "at.equipressure.reiter"
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
