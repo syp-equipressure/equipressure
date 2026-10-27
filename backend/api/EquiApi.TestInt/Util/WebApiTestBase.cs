@@ -59,6 +59,27 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
         });
     }
 
+    /// <summary>
+    ///     Sends a request as a logged-in user, see <see cref="TestAuthHandler" />
+    /// </summary>
+    protected async ValueTask<HttpResponseMessage> SendAsUserAsync(HttpMethod method, string url, string externalId,
+                                                                   string? email = null, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, url);
+        request.Headers.Add(TestAuthHandler.UserHeader, externalId);
+        if (email is not null)
+        {
+            request.Headers.Add(TestAuthHandler.EmailHeader, email);
+        }
+
+        if (body is not null)
+        {
+            request.Content = JsonContent.Create(body, options: JsonOptions);
+        }
+
+        return await ApiClient.SendAsync(request, TestCancellationToken);
+    }
+
     protected async ValueTask<T> ReadContentAsync<T>(HttpResponseMessage response)
     {
         var content = await response.Content.ReadFromJsonAsync<T>(JsonOptions, TestCancellationToken);

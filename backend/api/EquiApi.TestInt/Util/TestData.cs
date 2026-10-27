@@ -81,10 +81,12 @@ internal static class TestData
                                                             IsFavourite = isFavourite
                                                         };
 
-    public static DeviceCategory CreateDeviceCategory(int numOfAllowedPeople = 5) => new()
+    public static DeviceCategory CreateDeviceCategory(int numOfAllowedPeople = 5,
+                                                      RoleName role = RoleName.Equestrian) => new()
     {
-        Name = "Standard",
-        NumOfAllowedPeople = numOfAllowedPeople
+        Name = role == RoleName.Saddler ? "Professional" : "Standard",
+        NumOfAllowedPeople = numOfAllowedPeople,
+        Role = role
     };
 
     public static MeasurementDevice CreateDevice(string id, Person owner, DeviceCategory category,
@@ -149,10 +151,8 @@ internal static class TestData
         new(firstName, "Reiterin", 170M, 60M, new LocalDate(1998, 3, 15), email, websiteLink, null,
             address ?? CreateAddressRequest(role == RoleName.Saddler ? "Werkstattgasse 1" : null), role);
 
-    public static CreateAccountRequest CreateAccountRequest(string firstName = "Anna",
-                                                            RoleName role = RoleName.Equestrian) =>
-        new(firstName, "Reiterin", 170M, 60M, new LocalDate(1998, 3, 15), null, null,
-            CreateAddressRequest(role == RoleName.Saddler ? "Werkstattgasse 1" : null), role);
+    public static CreateAccountRequest CreateAccountRequest(string firstName = "Anna") =>
+        new(firstName, "Reiterin", 170M, 60M, new LocalDate(1998, 3, 15), CreateAddressRequest());
 
     public static AddHorseRequest CreateAddHorseRequest(int ownerId, IReadOnlyList<int> breedIds,
                                                         string name = "Neuer", decimal height = 168M,

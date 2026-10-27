@@ -280,7 +280,7 @@ public sealed class PersonServiceTests
     {
         _uowMock.PersonRepository.GetPersonByExternalIdAsync(ExternalId).Returns(TestData.CreatePerson(PersonId));
 
-        var result = await _sut.AddAccountAsync(ExternalId, TestData.CreateNewPersonData());
+        var result = await _sut.AddAccountAsync(ExternalId, TestData.CreateNewAccountData());
 
         result.Value.Should().BeOfType<IPersonService.AccountAlreadyExists>();
         _uowMock.PersonRepository.DidNotReceive().AddPerson(Arg.Any<Person>());
@@ -294,21 +294,22 @@ public sealed class PersonServiceTests
         _uowMock.PersonRepository.GetPersonByExternalIdAsync(ExternalId).Returns((Person?) null);
         _uowMock.PersonRepository.IsEmailTakenAsync(Email).Returns(true);
 
-        var result = await _sut.AddAccountAsync(ExternalId, TestData.CreateNewPersonData(Email));
+        var result = await _sut.AddAccountAsync(ExternalId, TestData.CreateNewAccountData(Email));
 
         result.Value.Should().BeOfType<IPersonService.EmailAlreadyTaken>();
         _uowMock.PersonRepository.DidNotReceive().AddPerson(Arg.Any<Person>());
     }
 
     [Fact]
-    public async Task AddAccountAsync_ValidData_AddsPersonLinkedToAccount()
+    public async Task AddAccountAsync_ValidData_AddsPersonLinkedToAccountWithoutRole()
     {
         _uowMock.PersonRepository.GetPersonByExternalIdAsync(ExternalId).Returns((Person?) null);
 
-        var result = await _sut.AddAccountAsync(ExternalId, TestData.CreateNewPersonData());
+        var result = await _sut.AddAccountAsync(ExternalId, TestData.CreateNewAccountData());
 
         var person = result.Value.Should().BeOfType<Success<Person>>().Which.Value;
         person.ExternalId.Should().Be(ExternalId);
+        person.Roles.Should().BeEmpty();
         _uowMock.PersonRepository.Received(1).AddPerson(person);
         await _uowMock.Received(1).SaveChangesAsync();
     }

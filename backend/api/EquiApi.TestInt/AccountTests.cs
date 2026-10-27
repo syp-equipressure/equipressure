@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using EquiApi.Dtos;
 using EquiApi.Persistence.Model;
 using EquiApi.TestInt.Util;
@@ -68,7 +68,7 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
         var content = await ReadContentAsync<PersonDetailDto>(response);
         content.FirstName.Should().Be(request.FirstName);
         content.Email.Should().Be(Email);
-        content.Roles.Should().Equal(RoleName.Equestrian);
+        content.Roles.Should().BeEmpty("the role is assigned when claiming a device");
 
         var meResponse = await SendAsUserAsync(HttpMethod.Get, "api/account/me");
         var me = await ReadContentAsync<PersonDetailDto>(meResponse);
@@ -116,16 +116,6 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
     }
 
     private async ValueTask<HttpResponseMessage> SendAsUserAsync(HttpMethod method, string url,
-                                                                 object? body = null)
-    {
-        using var request = new HttpRequestMessage(method, url);
-        request.Headers.Add(TestAuthHandler.UserHeader, ExternalId);
-        request.Headers.Add(TestAuthHandler.EmailHeader, Email);
-        if (body is not null)
-        {
-            request.Content = JsonContent.Create(body, options: JsonOptions);
-        }
-
-        return await ApiClient.SendAsync(request, TestCancellationToken);
-    }
+                                                                 object? body = null) =>
+        await SendAsUserAsync(method, url, ExternalId, Email, body);
 }
