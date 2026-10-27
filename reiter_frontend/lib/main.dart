@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/horses/horses_screen.dart';
+import 'screens/onboarding/auth_gate.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HorsesScreen(),
+      home: const AuthGate(),
     );
   }
 }
