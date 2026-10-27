@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using EquiApi.Dtos;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;
@@ -31,13 +32,14 @@ public sealed class DevelopmentSeedDataTests(WebApiTestFixture webApiFixture) : 
             (await context.HorseBreeds.CountAsync(TestCancellationToken)).Should().Be(9);
             (await context.PersonHorses.CountAsync(TestCancellationToken)).Should().Be(11);
             (await context.SaddleCategories.CountAsync(TestCancellationToken)).Should().Be(5);
-            (await context.Saddles.CountAsync(TestCancellationToken)).Should().Be(8);
+            (await context.Saddles.CountAsync(TestCancellationToken)).Should().Be(11);
             (await context.DeviceCategories.CountAsync(TestCancellationToken)).Should().Be(5);
             (await context.Devices.CountAsync(TestCancellationToken)).Should().Be(6);
             (await context.DeviceUsers.CountAsync(TestCancellationToken)).Should().Be(6);
-            (await context.MeasurementGroups.CountAsync(TestCancellationToken)).Should().Be(6);
-            (await context.Measurements.CountAsync(TestCancellationToken)).Should().Be(10);
-            (await context.MeasurementDates.CountAsync(TestCancellationToken)).Should().Be(10);
+            (await context.MeasurementGroups.CountAsync(TestCancellationToken)).Should().Be(12);
+            (await context.Measurements.CountAsync(TestCancellationToken)).Should().Be(32);
+            // a recording every 3 seconds: 3579 seconds in total, plus the first recording of each measurement
+            (await context.MeasurementDates.CountAsync(TestCancellationToken)).Should().Be(1225);
             (await context.Releases.CountAsync(TestCancellationToken)).Should().Be(5);
             (await context.MeasurementEligibilities.CountAsync(TestCancellationToken)).Should().Be(7);
         });
@@ -77,5 +79,25 @@ public sealed class DevelopmentSeedDataTests(WebApiTestFixture webApiFixture) : 
 
         var device = await ApiClient.GetAsync("api/devices/EP0701", TestCancellationToken);
         device.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var sternchensGroup = await ReadContentAsync<MeasurementGroupDetailDto>(
+            await ApiClient.GetAsync("api/measurementgroups/9", TestCancellationToken));
+        sternchensGroup.HorseName.Should().Be("Sternchen");
+        sternchensGroup.Name.Should().Be("Ausritt Sternchen");
+    }
+
+    [Fact]
+    public async ValueTask SeedAsync_EmptyDatabase_RecordingsAreFullSensorFrames()
+    {
+        await ModifyDatabaseContentAsync(async context => await DevelopmentSeedData.SeedAsync(context));
+
+        // measurement 1 of group 1: Schritt Links, 2 minutes
+        var data = await ReadContentAsync<MeasurementDataListResponse>(
+            await ApiClient.GetAsync("api/measurementgroups/1/measurements/1/measurementData",
+                                     TestCancellationToken));
+        data.Data.Should().HaveCount(41);
+        (data.Data[^1].Timestamp - data.Data[0].Timestamp).Should().Be(Duration.FromMinutes(2));
+        data.Data.Should().AllSatisfy(entry =>
+            JsonSerializer.Deserialize<int[]>(entry.Data).Should().HaveCount(400));
     }
 }

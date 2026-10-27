@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/services/device_service.dart';
+import 'package:reiterappfrontend/widgets/device_connection_button.dart';
 import 'device_group_screen.dart';
 
 class DevicesScreen extends StatefulWidget {
@@ -200,6 +201,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
               children: [
                 // Gerätenummer
                 _buildInfoRow('Gerätenummer:', device.number),
+                const SizedBox(height: 16),
+
+                // Verbindung zum Gerät
+                DeviceConnectionButton(device: device),
                 const SizedBox(height: 16),
 
                 // Gerätegruppe

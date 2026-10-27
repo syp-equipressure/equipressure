@@ -72,23 +72,50 @@
         }
       </div>
 
-      <div class="form-field" [class.has-error]="errors()['address']">
-        <label class="form-label" for="address">Adresse{{ backendMode() ? ' *' : '' }}</label>
+      <div class="form-field">
+        <label class="form-label" for="street">Straße und Hausnummer</label>
         <input
-          id="address"
+          id="street"
           class="form-input"
           type="text"
-          placeholder="Straße, PLZ und Ort"
-          [ngModel]="address()"
-          (ngModelChange)="address.set($event)"
+          placeholder="z. B. Hauptstraße 42"
+          autocomplete="address-line1"
+          [ngModel]="street()"
+          (ngModelChange)="street.set($event)"
         />
-        @if (errors()['address']) {
-          <span class="form-error">{{ errors()['address'] }}</span>
-        }
       </div>
     </div>
-    @if (backendMode()) {
-      <p class="form-hint">Adresse bitte als „Straße, PLZ Ort“ eingeben.</p>
+
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['address']">
+        <label class="form-label" for="postalCode">PLZ{{ backendMode() ? ' *' : '' }}</label>
+        <input
+          id="postalCode"
+          class="form-input"
+          type="text"
+          inputmode="numeric"
+          placeholder="z. B. 4020"
+          autocomplete="postal-code"
+          [ngModel]="postalCode()"
+          (ngModelChange)="postalCode.set($event)"
+        />
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['address']">
+        <label class="form-label" for="city">Ort{{ backendMode() ? ' *' : '' }}</label>
+        <input
+          id="city"
+          class="form-input"
+          type="text"
+          placeholder="z. B. Linz"
+          autocomplete="address-level2"
+          [ngModel]="city()"
+          (ngModelChange)="city.set($event)"
+        />
+      </div>
+    </div>
+    @if (errors()['address']) {
+      <span class="form-error">{{ errors()['address'] }}</span>
     }
 
     <div class="form-row">

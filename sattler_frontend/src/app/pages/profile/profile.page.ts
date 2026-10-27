@@ -6,6 +6,7 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Sattler, sattlerFullName } from '../../models/sattler.model';
 import { BackendApiService } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
+import { addressError, composeAddress, splitAddress } from '../../utils/address';
 
 type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website' | 'address';
 
@@ -45,7 +46,11 @@ export class ProfilePage {
   readonly email = signal('');
   readonly phoneNumber = signal('');
   readonly companyName = signal('');
-  readonly address = signal('');
+  readonly street = signal('');
+  readonly postalCode = signal('');
+  readonly city = signal('');
+  /** Die Adresse in der Form "Straße, PLZ Ort". */
+  readonly address = computed(() => composeAddress(this.street(), this.postalCode(), this.city()));
   readonly website = signal('');
   readonly description = signal('');
 
@@ -95,7 +100,10 @@ export class ProfilePage {
     this.email.set(s.email);
     this.phoneNumber.set(s.phoneNumber ?? '');
     this.companyName.set(s.companyName ?? '');
-    this.address.set(s.address ?? '');
+    const address = splitAddress(s.address);
+    this.street.set(address.street);
+    this.postalCode.set(address.postalCode);
+    this.city.set(address.city);
     this.website.set(s.website ?? '');
     this.description.set(s.description ?? '');
     this.errors.set({});
@@ -137,11 +145,17 @@ export class ProfilePage {
     };
     const addressChanged = patch.address !== this.sattler().address;
     if (addressChanged) {
+      // ein Sattler braucht im Backend eine Adresse mit Straße
+      const addressProblem = addressError(
+        { street: this.street(), postalCode: this.postalCode(), city: this.city() },
+        true,
+        true,
+      );
       const address = parseAddress(patch.address ?? '');
-      if (!address) {
+      if (addressProblem || !address) {
         this.errors.update(errors => ({
           ...errors,
-          address: 'Bitte Adresse als „Straße, PLZ Ort“ eingeben.',
+          address: addressProblem ?? 'Bitte Straße, PLZ und Ort angeben.',
         }));
         return;
       }
@@ -190,6 +204,11 @@ export class ProfilePage {
     if (website && !isValidWebsite(website)) {
       e.website = 'Bitte eine gültige Website eingeben.';
     }
+    const addressProblem = addressError(
+      { street: this.street(), postalCode: this.postalCode(), city: this.city() },
+      false,
+    );
+    if (addressProblem) e.address = addressProblem;
     this.errors.set(e);
     return Object.keys(e).length === 0;
   }

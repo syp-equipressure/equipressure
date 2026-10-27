@@ -86,7 +86,8 @@
 }
 
 .search-input,
-.date-filter input {
+.date-filter input,
+.sort-select select {
   box-sizing: border-box;
   height: 44px;
   border: 1px solid t.$border;
@@ -135,9 +136,24 @@
   }
 }
 
+.sort-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  span { color: t.$text-soft; font-size: 12px; }
+  select { padding: 0 10px; }
+}
+
 .result-count {
   color: t.$text-muted;
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.customer-measurements {
+  color: t.$text-soft;
+  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -152,7 +168,7 @@
 .list-header,
 .customer-row {
   display: grid;
-  grid-template-columns: minmax(190px, 1.1fr) minmax(180px, 1fr) minmax(180px, auto);
+  grid-template-columns: minmax(190px, 1.1fr) minmax(160px, 1fr) minmax(150px, auto) minmax(180px, auto);
   align-items: center;
   gap: 18px;
 }
@@ -344,6 +360,10 @@
 
   .customer-contact {
     display: none;
+  }
+
+  .customer-measurements {
+    font-size: 12px;
   }
 
   .row-actions {

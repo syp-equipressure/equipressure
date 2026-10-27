@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { PressureDevice } from '../../models/device.model';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { BackendApiService } from '../../services/backend-api.service';
+import { BackendApiService, DEVELOPMENT_DEVICE_CATEGORIES } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 
 @Component({
@@ -29,6 +29,9 @@ export class DevicesPage {
   readonly number = signal('');
   readonly error = signal('');
   readonly saveError = signal('');
+  readonly saving = signal(false);
+  readonly categories = DEVELOPMENT_DEVICE_CATEGORIES;
+  readonly categoryId = signal<number>(DEVELOPMENT_DEVICE_CATEGORIES[0].id);
 
   constructor() {
     effect(onCleanup => {
@@ -59,6 +62,7 @@ export class DevicesPage {
     this.editingId.set(null);
     this.name.set('');
     this.number.set('');
+    this.categoryId.set(DEVELOPMENT_DEVICE_CATEGORIES[0].id);
     this.error.set('');
     this.saveError.set('');
     this.formOpen.set(true);
@@ -79,8 +83,9 @@ export class DevicesPage {
   }
 
   saveDevice(): void {
-    if (this.backendPersonId()) {
-      this.saveError.set('Das Backend unterstützt derzeit nur das Abrufen der Geräte, nicht deren Bearbeitung.');
+    const personId = this.backendPersonId();
+    if (personId) {
+      this.saveBackendDevice(personId);
       return;
     }
     const name = this.name().trim();
@@ -115,6 +120,32 @@ export class DevicesPage {
     } catch {
       this.saveError.set('Das Gerät konnte nicht gespeichert werden. Bitte prüfe den verfügbaren Speicherplatz.');
     }
+  }
+
+  /** Das Backend kann Geräte nur anlegen (Seriennummer + Kategorie), nicht bearbeiten oder löschen. */
+  private saveBackendDevice(personId: string): void {
+    const number = this.number().trim();
+    if (!number) {
+      this.error.set('Bitte die Gerätenummer eingeben.');
+      return;
+    }
+    if (this.devices().some(device => device.number.toLocaleLowerCase('de') === number.toLocaleLowerCase('de'))) {
+      this.error.set('Diese Gerätenummer ist bereits eingetragen.');
+      return;
+    }
+
+    this.saving.set(true);
+    this.api.createDevice(number, personId, this.categoryId()).subscribe({
+      next: device => {
+        this.backendDevices.update(devices => [...(devices ?? []), device]);
+        this.saving.set(false);
+        this.formOpen.set(false);
+      },
+      error: error => {
+        this.saving.set(false);
+        this.error.set(error instanceof Error ? error.message : 'Das Gerät konnte nicht gespeichert werden.');
+      },
+    });
   }
 
   deleteDevice(device: PressureDevice): void {

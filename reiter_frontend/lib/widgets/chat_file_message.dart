@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart';
 
 class ChatFileMessage extends StatelessWidget {
@@ -101,7 +102,7 @@ class _FileAttachmentCard extends StatelessWidget {
             icon: const Icon(Icons.download_rounded),
             color: Colors.grey[600],
             iconSize: 20,
-            onPressed: () => _downloadFile(),
+            onPressed: () => _downloadFile(context),
           ),
         ],
       ),
@@ -135,7 +136,24 @@ class _FileAttachmentCard extends StatelessWidget {
     return Colors.grey;
   }
 
-  void _downloadFile() {
-    // TODO: Implement file download/open
+  /// Öffnet die Datei (lokal oder per URL) mit der passenden App des Systems.
+  Future<void> _downloadFile(BuildContext context) async {
+    final path = attachment.filePath;
+    final uri = path.startsWith('http') ? Uri.tryParse(path) : Uri.file(path);
+    final messenger = ScaffoldMessenger.of(context);
+
+    var opened = false;
+    if (uri != null) {
+      try {
+        opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        opened = false;
+      }
+    }
+    if (!opened) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('${attachment.fileName} konnte nicht geöffnet werden')),
+      );
+    }
   }
 }

@@ -8,6 +8,7 @@ import { MeasurementSession } from '../models/measurement-session.model';
 import { Saddle } from '../models/saddle.model';
 import { PressureDevice } from '../models/device.model';
 import { formatDuration } from '../utils/time-format';
+import { hasNoRecordedData } from './measurement-mapper';
 
 /** Local demo and measurement-session data; backend-backed entities are cached here for the UI. */
 @Injectable({ providedIn: 'root' })
@@ -380,8 +381,13 @@ export class DataService {
   }
 
   upsertCustomers(customers: Customer[]): void {
+    // kommt der Sattler selbst aus dem Backend, ist nur noch er "ich" (nicht mehr das lokale Beispielprofil)
+    const hasMe = customers.some(customer => customer.isMe);
     this._customers.update(current => {
-      const byId = new Map(current.map(customer => [customer.id, customer]));
+      const byId = new Map(current.map(customer => [
+        customer.id,
+        hasMe && customer.isMe ? { ...customer, isMe: false } : customer,
+      ]));
       for (const customer of customers) {
         const existing = byId.get(customer.id);
         byId.set(customer.id, {
@@ -470,11 +476,44 @@ export class DataService {
     this._recordedMeasurements.update(list => list.filter(measurement => measurement.id !== id));
   }
 
+  /**
+   * Replaces the measurements of a horse with the ones loaded from the backend. The backend cannot
+   * store recorded data yet, so a measurement recorded in this session keeps its local data.
+   */
+  setMeasurementsOf(horseId: string, measurements: Measurement[]): void {
+    const recorded = new Map(this._recordedMeasurements().map(measurement => [measurement.id, measurement]));
+    // die Liste wird ohne Aufnahmen geladen: bereits vollständig geladene Messungen bleiben erhalten
+    const loaded = new Map(this._measurements()
+      .filter(measurement => !hasNoRecordedData(measurement))
+      .map(measurement => [measurement.id, measurement]));
+    const merged = measurements.map(measurement => {
+      if (!hasNoRecordedData(measurement)) return measurement;
+      const known = loaded.get(measurement.id) ?? recorded.get(measurement.id);
+      return known ? { ...known, date: measurement.date, notes: measurement.notes } : measurement;
+    });
+    this._measurements.update(list => [
+      ...merged,
+      ...list.filter(measurement => measurement.horseId !== horseId),
+    ]);
+  }
+
+  /** Replaces a single measurement, e.g. after its recorded frames were loaded. */
+  upsertMeasurement(measurement: Measurement): void {
+    const recorded = this._recordedMeasurements().find(item => item.id === measurement.id);
+    const value = hasNoRecordedData(measurement) && recorded
+      ? { ...recorded, date: measurement.date, notes: measurement.notes }
+      : measurement;
+    this._measurements.update(list => list.some(item => item.id === value.id)
+      ? list.map(item => item.id === value.id ? value : item)
+      : [value, ...list]);
+  }
+
   getSamplePressureGrid(): number[][] {
     return buildPetziPressureGrid();
   }
 
-  addSessionMeasurement(session: MeasurementSession): Measurement {
+  /** Adds a recorded measurement, [id] is the id of the measurement group in the backend. */
+  addSessionMeasurement(session: MeasurementSession, id = `m${Date.now()}`): Measurement {
     const owner = this.getCustomer(session.ownerId);
     const saddle = this.getSaddlesOfHorse(session.horseId)
       .find(item => item.id === session.saddleId);
@@ -502,7 +541,7 @@ export class DataService {
     detail.meanNcm2 = gridMean(detail.pressureGrid);
 
     const measurement: Measurement = {
-      id: `m${Date.now()}`,
+      id,
       horseId: session.horseId,
       date: new Date().toLocaleDateString('de-AT'),
       deviceName: saddle?.name ?? detail.saddleName,

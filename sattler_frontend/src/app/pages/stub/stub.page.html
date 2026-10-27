@@ -64,6 +64,14 @@
               </select>
               <span class="select-icon material-icons">chevron_right</span>
             </div>
+            @if (selectedOwner() && availableHorses().length === 0) {
+              <small>
+                Keine Pferde vorhanden.
+                @if (selectedOwner()?.owner?.isMe) {
+                  <a routerLink="/my-horses">Unter „Meine Pferde“ ein Pferd anlegen</a>
+                }
+              </small>
+            }
           </label>
 
           <div class="metrics">
@@ -98,12 +106,10 @@
         <article class="card saddle-card">
         <div class="saddle-heading">
           <h3>Sattel</h3>
-          @if (!selectedOwner()?.backend) {
-            <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
-              <span class="material-icons" aria-hidden="true">add</span>
-              Sattel anlegen
-            </button>
-          }
+          <button type="button" class="add-saddle-button" [disabled]="!selectedHorse()" (click)="openSaddleForm()">
+            <span class="material-icons" aria-hidden="true">add</span>
+            Sattel anlegen
+          </button>
         </div>
 
         <div class="saddle-grid">
@@ -139,11 +145,7 @@
           </div>
           @if (availableSaddles().length === 0 && selectedHorse()) {
             <p class="saddle-empty">
-              @if (selectedOwner()?.backend) {
-                Für dieses Pferd sind keine Sättel hinterlegt.
-              } @else {
-                Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.
-              }
+              Für dieses Pferd gibt es noch keine Sättel. Lege hier den ersten an.
             </p>
           }
         </article>
@@ -156,13 +158,13 @@
           <div class="recent-list">
             @for (item of recentMeasurements(); track item.id) {
               <div class="recent-row">
-                <span class="dot" [class.green]="item.tone === 'green'" [class.red]="item.tone === 'red'"></span>
+                <span class="dot"></span>
                 <div class="recent-meta">
                   <div class="recent-label">{{ item.label }}</div>
                   <div class="recent-date">{{ item.date }}</div>
                 </div>
-                <div class="recent-score" [class.green]="item.tone === 'green'" [class.red]="item.tone === 'red'">
-                  {{ item.score }}
+                <div class="recent-score" title="Ø Druck in N/cm²">
+                  {{ item.score }} <small>N/cm²</small>
                 </div>
               </div>
             } @empty {
@@ -211,11 +213,9 @@
         <span>Kategorie</span>
         <select name="saddleCategory" [ngModel]="saddleCategory()"
           (ngModelChange)="saddleCategory.set($event)">
-          <option value="Dressur">Dressur</option>
-          <option value="Springen">Springen</option>
-          <option value="Vielseitigkeit">Vielseitigkeit</option>
-          <option value="Gangpferd">Gangpferd</option>
-          <option value="Sonstige">Sonstige</option>
+          @for (category of saddleCategories(); track category.id) {
+            <option [value]="category.name">{{ category.name }}</option>
+          }
         </select>
       </label>
       @if (saddleError()) {
@@ -223,7 +223,9 @@
       }
       <footer>
         <button type="button" class="cancel-saddle" (click)="cancelSaddleForm()">Abbrechen</button>
-        <button type="submit" class="save-saddle">Sattel speichern</button>
+        <button type="submit" class="save-saddle" [disabled]="saddleSaving()">
+          {{ saddleSaving() ? 'Wird gespeichert …' : 'Sattel speichern' }}
+        </button>
       </footer>
     </form>
   </section>

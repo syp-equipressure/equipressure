@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # deutsche Datumswähler und Material-Texte
+  flutter_localizations:
+    sdk: flutter
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -38,7 +41,8 @@ dependencies:
   font_awesome_flutter: ^10.12.0
   flutter_svg: ^2.0.7
   image_picker: ^1.1.1
-  intl: ^0.18.0
+  # von flutter_localizations fest vorgegeben
+  intl: ^0.20.2
   web_socket_channel: ^3.0.1
   shared_preferences: ^2.3.4
   path_provider: ^2.1.5
@@ -78,7 +82,6 @@ flutter:
     - assets/data/chat.json
     - assets/icon/horseIcon.svg
     - assets/icon/saddleIcon.svg
-    - assets/data/measurement.json
     - assets/horseImg/
 
   # To add assets to your application, add an assets section, like this:

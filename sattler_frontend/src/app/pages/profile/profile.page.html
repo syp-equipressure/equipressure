@@ -89,9 +89,22 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Adresse</span>
-            <input class="field-input" type="text" [ngModel]="address()"
-              (ngModelChange)="address.set($event)" name="address" />
+            <span class="field-label">Straße und Hausnummer</span>
+            <input class="field-input" type="text" [ngModel]="street()" autocomplete="address-line1"
+              (ngModelChange)="street.set($event)" name="street" />
+            @if (errors().address) { <span class="field-error">{{ errors().address }}</span> }
+          </label>
+
+          <label class="field">
+            <span class="field-label">PLZ</span>
+            <input class="field-input" type="text" inputmode="numeric" [ngModel]="postalCode()"
+              autocomplete="postal-code" (ngModelChange)="postalCode.set($event)" name="postalCode" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Ort</span>
+            <input class="field-input" type="text" [ngModel]="city()" autocomplete="address-level2"
+              (ngModelChange)="city.set($event)" name="city" />
           </label>
 
           <label class="field">

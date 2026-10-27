@@ -36,5 +36,8 @@ export interface MeasurementSegmentResult {
   gait: Gait;
   side: Side;
   durationSeconds: number;
+  /** Average of all frames of the segment. */
   pressureGrid: number[][];
+  /** The recorded frames of the sensor mat in chronological order (from the backend). */
+  frames?: number[][][];
 }

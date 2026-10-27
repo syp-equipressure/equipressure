@@ -91,6 +91,13 @@
 @if (tab() === 'messungen') {
   <section class="layout">
     <aside class="sidebar">
+      <!-- inline gestylt, weil die SCSS-Datei an der Größengrenze (Budget) ist -->
+      @if (measurementsLoading()) {
+        <p role="status" style="margin: 0; font-size: 13px; color: var(--text-soft)">Messungen werden geladen …</p>
+      }
+      @if (measurementsError()) {
+        <p role="alert" style="margin: 0; font-size: 13px; color: var(--accent-red)">{{ measurementsError() }}</p>
+      }
       @for (m of measurements(); track m.id) {
         <div class="measurement-entry" [class.active]="selected()?.id === m.id">
           <button
@@ -100,8 +107,14 @@
             (click)="selectMeasurement(m.id)"
           >
             <div class="date">{{ m.date }}</div>
-            <div class="device">{{ m.deviceName }}</div>
-            <div class="meta">{{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%</div>
+            <div class="device">{{ m.detail.riderName }}</div>
+            <div class="meta">
+              @if (isLoaded(m.id)) {
+                {{ m.durationLabel }} · Sym. {{ m.symmetryPct }}%
+              } @else {
+                Wird geladen …
+              }
+            </div>
           </button>
           <button
             type="button"
@@ -124,16 +137,26 @@
           <header class="detail-header">
             <div class="title-line">
               <h2>Messung vom {{ m.date }}</h2>
-              <button class="icon-btn ghost" aria-label="Bearbeiten">
+              <button type="button" class="icon-btn ghost" aria-label="Notizen bearbeiten" title="Notizen bearbeiten"
+                (click)="editMeasurement(m)">
                 <span class="material-icons">edit</span>
               </button>
             </div>
             <div class="header-actions">
-              <button type="button" class="pill-btn primary">
+              @if (shareFeedback()) {
+                <span role="status" style="font-size: 13px; color: var(--text-soft)">{{ shareFeedback() }}</span>
+              }
+              <button type="button" class="pill-btn primary" title="Bericht drucken oder als PDF speichern"
+                (click)="downloadReport(m)">
                 <span class="material-icons">file_download</span>
                 PDF-Bericht
               </button>
-              <button type="button" class="round-btn" aria-label="Teilen">
+              <button type="button" class="pill-btn light" title="Alle Messdaten als CSV für Excel herunterladen"
+                [disabled]="!isLoaded(m.id)" (click)="downloadCsv(m)">
+                <span class="material-icons">table_view</span>
+                CSV
+              </button>
+              <button type="button" class="round-btn" aria-label="Teilen" title="Teilen" (click)="shareMeasurement(m)">
                 <span class="material-icons">ios_share</span>
               </button>
             </div>
@@ -185,7 +208,9 @@
                   <span class="dot"></span>
                   {{ activeGait() || 'Alle Gangarten' }} · {{ activeSide() || 'Alle Hände' }}
                 </div>
-                @if (isProSelectionMissing()) {
+                @if (!isLoaded(m.id)) {
+                  <div class="heatmap-message">Messdaten werden geladen …</div>
+                } @else if (isProSelectionMissing()) {
                   <div class="heatmap-message">Für den Profimodus bitte Gangart und Hand auswählen.</div>
                 } @else if (pressureGrid().length > 0) {
                   <app-pressure-heatmap
@@ -197,7 +222,8 @@
                   <div class="heatmap-message">Für diese Filter gibt es keine Teilmessungen.</div>
                 }
                 <div class="heatmap-label">{{ pressureStatistic() === 'pro' ? 'Laufende Druckverteilung' : 'Druckverteilung' }}</div>
-                <button class="heatmap-expand" aria-label="Vergrößern">
+                <button type="button" class="heatmap-expand" aria-label="Vergrößern" title="Vergrößern"
+                  (click)="expandHeatmap()">
                   <span class="material-icons">open_in_full</span>
                 </button>
               </div>
@@ -311,6 +337,32 @@
       }
     </article>
   </section>
+
+  @if (heatmapExpanded() && selected(); as m) {
+    <app-heatmap-dialog
+      [grid]="isProSelectionMissing() ? [] : pressureGrid()"
+      [mode]="heatmapMode()"
+      [max]="statisticMaximum() || m.detail.maxNcm2"
+      [title]="'Messung vom ' + m.date"
+      [subtitle]="viewLabel()"
+      (closed)="closeExpandedHeatmap()"
+    >
+      @if (pressureStatistic() === 'pro' && isProAvailable()) {
+        <div class="playback-controls" aria-label="Profimodus-Steuerung">
+          <div class="playback-buttons">
+            <button type="button" class="playback-button" aria-label="5 Sekunden zurück" (click)="skipPlayback(-5)">|◀</button>
+            <button type="button" class="playback-button primary" [attr.aria-label]="isPlaying() ? 'Pause' : 'Wiedergabe'"
+              (click)="togglePlayback()">{{ isPlaying() ? 'Ⅱ' : '▶' }}</button>
+            <button type="button" class="playback-button" aria-label="Stop" (click)="stopPlayback()">■</button>
+            <button type="button" class="playback-button" aria-label="5 Sekunden vor" (click)="skipPlayback(5)">▶|</button>
+          </div>
+          <span class="playback-time">{{ playbackTime() }} / {{ formatDuration(playbackDuration()) }}</span>
+          <input class="playback-seek" type="range" min="0" [max]="playbackDuration()" step="0.25"
+            [value]="phase()" aria-label="Messung spulen" (input)="seekPlayback($event)" />
+        </div>
+      }
+    </app-heatmap-dialog>
+  }
 }
 
 @if (tab() === 'notizen') {
@@ -318,10 +370,11 @@
     @for (m of measurements(); track m.id) {
       <article class="note-card">
         <header class="note-header">
-          <h2>{{ m.date }} · {{ m.deviceName }}</h2>
+          <h2>Messung vom {{ m.date }}</h2>
           <p>Symmetrie {{ m.symmetryPct }}% · Max. Druck {{ m.detail.maxNcm2.toFixed(2).replace('.', ',') }} N/cm²</p>
         </header>
         <textarea
+          [id]="'notes-' + m.id"
           [value]="m.notes"
           placeholder="Notizen..."
           aria-label="Notizen zur Messung vom {{ m.date }}"

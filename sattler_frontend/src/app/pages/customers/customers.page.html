@@ -22,14 +22,14 @@
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
-      @if (!backendPersonId()) {
-      <div class="date-filter">
+      <div class="date-filter" title="Zeigt alle Kund*innen, die in diesem Zeitraum eine Messung hatten">
         <label>
           <span>Von</span>
           <input
             type="date"
             aria-label="Messungen ab diesem Datum"
             [value]="measurementDateFrom()"
+            [max]="measurementDateTo() || null"
             (input)="measurementDateFrom.set($any($event.target).value)"
           />
         </label>
@@ -39,15 +39,25 @@
             type="date"
             aria-label="Messungen bis zu diesem Datum"
             [value]="measurementDateTo()"
+            [min]="measurementDateFrom() || null"
             (input)="measurementDateTo.set($any($event.target).value)"
           />
         </label>
       </div>
-      }
-      <span class="result-count">{{ filtered().length }} Ergebnisse</span>
-      @if (backendPersonId()) {
-        <p class="source-notice">Kontakte werden aus dem Backend geladen. Messungsdaten sind dort noch nicht verfügbar.</p>
-      }
+      <label class="sort-select">
+        <span>Sortieren</span>
+        <select [value]="sortBy()" (change)="sortBy.set($any($event.target).value)" aria-label="Kundschaft sortieren">
+          <option value="name">Name</option>
+          <option value="lastMeasurement">Letzte Messung</option>
+        </select>
+      </label>
+      <span class="result-count">
+        @if (hasDateRange() && measurementDatesLoading()) {
+          Messungen werden geladen …
+        } @else {
+          {{ filtered().length }} Ergebnisse
+        }
+      </span>
 
       @if (showForm()) {
         <app-new-customer-form
@@ -67,6 +77,7 @@
       <div class="list-header" aria-hidden="true">
         <span>Name</span>
         <span>Kontakt</span>
+        <span>Letzte Messung</span>
         <span>Aktionen</span>
       </div>
       @for (c of filtered(); track c.id) {
@@ -76,6 +87,7 @@
             <strong class="customer-name">{{ fullName(c) }}</strong>
           </span>
           <span class="customer-contact">{{ c.email || c.phoneNumber || 'Keine Kontaktdaten' }}</span>
+          <span class="customer-measurements">{{ measurementLabel(c.id) }}</span>
           <span class="row-actions">
             <a class="row-action" [routerLink]="['/customers', c.id]">
               <span class="material-icons">person_outline</span>

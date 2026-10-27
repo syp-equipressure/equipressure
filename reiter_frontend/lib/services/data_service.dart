@@ -26,7 +26,7 @@ class DataService {
   }
 
   static Future<List<GroupMember>> loadGroupMembers(String deviceId) async {
-    return PersonService.loadGroupMembers(deviceId);
+    return DeviceService.getGroupMembers(deviceId);
   }
 
   /// Fetch person profile data

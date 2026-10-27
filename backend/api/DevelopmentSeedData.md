@@ -44,9 +44,9 @@ the database has no persons yet. Existing data is never changed. The data is def
 | 2 | Apollo | Holsteiner | 6 Lena | | 3, 4 |
 | 3 | Bella | Westfale, Hannoveraner | 7 Max | 6 Lena | 5, 6 |
 | 4 | Thunder | Trakehner | 8 Julia | | 7 |
-| 5 | Sternchen | Haflinger | 9 Tobias | | |
-| 6 | Nora | Noriker | 8 Julia | | |
-| 7 | Amadeus | Lipizzaner | 5 Lisa | | |
+| 5 | Sternchen | Haflinger | 9 Tobias | | 9 |
+| 6 | Nora | Noriker | 8 Julia | | 10 |
+| 7 | Amadeus | Lipizzaner | 5 Lisa | | 11 |
 | 8 | Cash | Quarter Horse | 7 Max | | 8 |
 
 Breed ids 1–8: Hannoveraner, Holsteiner, Westfale, Trakehner, Haflinger, Noriker, Lipizzaner, Quarter Horse.
@@ -68,9 +68,31 @@ Family (5), Stable (10), Professional (20).
 
 ## Measurements
 
-6 measurement groups (Luna ×2, Bella, Thunder, Apollo, Cash) with 10 measurements (gait `Schritt`/`Trab`/`Galopp`,
-hand `Links`/`Rechts`), each with one recording of pressure values. 5 releases share groups with the saddlers
-1–5 (`Release.Person` is the person the measurements are shared with).
+Every horse has 1–2 measurement groups, 32 measurements in total (gait `Schritt`/`Trab`/`Galopp`, hand
+`Links`/`Rechts`) that last between 45 seconds and 4 minutes.
+
+| Group | Horse | Rider | Saddle | Measurements (gait, hand, duration) |
+|---|---|---|---|---|
+| 1 Dressurtraining | 1 Luna | 6 Lena | 1 | Schritt L 2:00, Schritt R 1:30, Trab L 3:00, Trab R 2:45 |
+| 2 Springtraining | 1 Luna | 6 Lena | 2 | Galopp L 1:00, Galopp R 1:15, Trab L 1:30 |
+| 3 Erste Messung Bella | 3 Bella | 7 Max | 5 | Schritt L 2:30, Trab L 1:45, Trab R 1:36 |
+| 4 Kontrolle nach Anpassung | 4 Thunder | 8 Julia | 7 | Trab R 2:00, Schritt L 1:21, Galopp R 0:54 |
+| 5 Dressur Apollo | 2 Apollo | 6 Lena | 4 | Schritt R 1:45, Trab R 2:21, Galopp L 1:09 |
+| 6 Westernreiten Cash | 8 Cash | 7 Max | 8 | Schritt L 4:00, Trab L 2:30 |
+| 7 Springgymnastik Apollo | 2 Apollo | 6 Lena | 3 | Trab L 1:51, Galopp L 0:51, Galopp R 0:45 |
+| 8 Trainingskontrolle Thunder | 4 Thunder | 8 Julia | 7 | Schritt R 2:09, Trab R 2:42 |
+| 9 Ausritt Sternchen | 5 Sternchen | 9 Tobias | 9 | Schritt L 3:30, Trab L 2:00 |
+| 10 Erste Messung Nora | 6 Nora | 8 Julia | 10 | Schritt L 1:30, Schritt R 1:27 |
+| 11 Dressur Amadeus | 7 Amadeus | 5 Lisa | 11 | Schritt R 1:42, Trab L 2:18, Galopp R 1:03 |
+| 12 Versammlung Amadeus | 7 Amadeus | 5 Lisa | 11 | Trab R 2:00, Galopp L 1:00 |
+
+Measurement ids 1–10 are the first measurement(s) of the groups 1–6, the others follow in the order of the table
+(see `DevelopmentSeedData.cs`). A measurement has a recording every 3 seconds, so its duration is the time between
+the first and the last recording. Every recording is a full frame of the 20×20 sensor mat: a JSON array with 400
+pressure values in mbar, row by row (row 0 is the front of the saddle). The pressure is higher in `Trab` and
+`Galopp`, the side of the hand carries a bit more weight, the weight sways left/right in trot and rocks front/back in
+canter, and every group has its own saddle fit (e.g. group 9: too narrow at the withers, group 3: the saddle bridges).
+5 releases share groups with the saddlers 1–5 (`Release.Person` is the person the measurements are shared with).
 
 ## Example requests
 

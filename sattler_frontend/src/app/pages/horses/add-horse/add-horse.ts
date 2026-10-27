@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { Horse } from '../../../models/horse.model';
 import { BackendApiService, DEVELOPMENT_HORSE_BREEDS } from '../../../services/backend-api.service';
+import { addressError, composeAddress, splitAddress } from '../../../utils/address';
 
 @Component({
   selector: 'add-horse',
@@ -27,7 +28,11 @@ export class AddHorse {
   readonly today = formatDateInput(new Date());
   readonly supportedBreeds = DEVELOPMENT_HORSE_BREEDS.map(breed => breed.name);
   readonly calculatedAge = computed(() => calculateAge(this.birthDate()));
-  address = signal('');
+  street = signal('');
+  postalCode = signal('');
+  city = signal('');
+  /** Die Adresse in der Form "Straße, PLZ Ort", wie sie das Pferd speichert und das Backend erwartet. */
+  readonly address = computed(() => composeAddress(this.street(), this.postalCode(), this.city()));
   readonly saving = signal(false);
   readonly saveError = signal('');
   private readonly api = inject(BackendApiService);
@@ -48,7 +53,10 @@ export class AddHorse {
       this.weightKg.set(horse.weightKg);
       this.sex.set(normalizeSex(horse.sex));
       this.birthDate.set(toDateInputValue(horse.birthDate));
-      this.address.set(horse.address ?? '');
+      const address = splitAddress(horse.address);
+      this.street.set(address.street);
+      this.postalCode.set(address.postalCode);
+      this.city.set(address.city);
     });
   }
 
@@ -64,9 +72,11 @@ export class AddHorse {
     if (this.backendMode() && !isSupportedBreedList(this.breed())) {
       e.breed = `Bitte nur unterstützte Rassen verwenden: ${this.supportedBreeds.join(', ')}.`;
     }
-    if (this.backendMode() && !parseHorseAddress(this.address())) {
-      e.address = 'Bitte den Standort als „Straße, PLZ Ort“ angeben.';
-    }
+    const addressProblem = addressError(
+      { street: this.street(), postalCode: this.postalCode(), city: this.city() },
+      this.backendMode(),
+    );
+    if (addressProblem) e.address = addressProblem;
     if (this.heightCm() === null || this.heightCm()! <= 0) e.heightCm = 'Stockmaß ist erforderlich.';
     if (this.weightKg() === null || this.weightKg()! <= 0) e.weightKg = 'Gewicht ist erforderlich.';
     this.errors.set(e);
@@ -94,7 +104,7 @@ export class AddHorse {
       imageUrl: existing?.imageUrl ?? '',
       sex: this.sex(),
       birthDate: toGermanDate(this.birthDate()),
-      ...(this.address().trim() ? { address: this.address().trim() } : {}),
+      ...(this.address() ? { address: this.address() } : {}),
     };
 
     if (this.backendMode()) {
@@ -131,7 +141,9 @@ export class AddHorse {
     this.weightKg.set(null);
     this.sex.set('Weiblich');
     this.birthDate.set('');
-    this.address.set('');
+    this.street.set('');
+    this.postalCode.set('');
+    this.city.set('');
     this.errors.set({});
     this.saveError.set('');
   }
@@ -194,6 +206,3 @@ function isSupportedBreedList(value: string): boolean {
   );
 }
 
-function parseHorseAddress(value: string): boolean {
-  return /^(.*?),\s*(\d{4,10})\s+(.+)$/.test(value.trim());
-}

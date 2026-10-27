@@ -15,6 +15,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/measurement_service.dart';
 
 class MeasurementDetailScreen extends StatefulWidget {
   final Measurement measurement;
@@ -38,26 +39,28 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   // Light theme colors
   static const Color _accent = Color(0xFF6B4C9A);
   static const Color _accentLight = Color(0xFFD4B5F5);
-  static const Color _chipActive = Color(0xFF6B4C9A);
   static const Color _textSecondary = Color(0xFF888888);
 
   bool showFilters = true;
 
-  // Filter state
+  // Filter state (wie im Sattler-Frontend: Gangart, Hand und Ansicht)
   String? _selectedGait;
   String? _selectedHand;
-  bool _isMaxMode = false;
-  bool _isProfiMode = false;
+  _PressureView _view = _PressureView.average;
+
+  bool get _isMaxMode => _view == _PressureView.maximum;
+  bool get _isProfiMode => _view == _PressureView.pro;
 
   // Profi playbar
   bool _isPlaying = false;
+  bool _autoPlayWhenReady = false;
   double _playbackPosition = 0.0;
   Timer? _playTimer;
 
   // Pre-generated profi frames (no flicker)
-  static const int _profiFrameCount = 60;
+  static const int _profiFrameCount = 90;
   List<ui.Image>? _profiFrames;
-  bool _profiFramesLoading = false;
+  int _profiGeneration = 0;
 
   // Cached heatmap for non-profi mode
   ui.Image? _cachedHeatmapImage;
@@ -66,16 +69,61 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   // GlobalKey for capturing heatmap
   final GlobalKey _heatmapKey = GlobalKey();
 
-  late final List<String> _availableGaits;
-  late final List<String> _availableHands;
+  /// Die Liste liefert Messungen ohne Aufnahmen, die werden hier nachgeladen.
+  late Measurement _measurement = widget.measurement;
+  bool _loadingData = false;
 
   @override
   void initState() {
     super.initState();
-    final sections = widget.measurement.sections;
-    _availableGaits = sections.map((s) => s.gait).toSet().toList();
-    _availableHands = sections.map((s) => s.hand).toSet().toList();
+    _loadFullMeasurement();
   }
+
+  Future<void> _loadFullMeasurement() async {
+    // eine gerade aufgenommene Messung hat ihre Daten schon
+    if (_measurement.sections.any((s) => s.pressureData.isNotEmpty)) return;
+    setState(() => _loadingData = true);
+    try {
+      final full = await MeasurementService().getMeasurementById(
+        _measurement.id,
+        horseId: _measurement.horseId,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (full != null) _measurement = full;
+        _loadingData = false;
+        _invalidateCache();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingData = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Messdaten konnten nicht geladen werden: $e')),
+      );
+    }
+  }
+
+  /// Teilmessungen mit Heatmap-Daten, nur deren Gangarten und Hände stehen zur Auswahl.
+  List<MeasurementSectionData> get _recordedSections => _measurement.sections
+      .where((s) => s.pressureData.length >= gridSize * gridSize)
+      .toList();
+
+  /// Nur Gangarten, die gemessen wurden.
+  List<String> get _gaitOptions =>
+      _recordedSections.map((s) => s.gait).toSet().toList();
+
+  /// Nur Hände, die (für die gewählte Gangart) gemessen wurden.
+  List<String> get _handOptions => _recordedSections
+      .where((s) => _selectedGait == null || s.gait == _selectedGait)
+      .map((s) => s.hand)
+      .toSet()
+      .toList();
+
+  /// Profi geht nur mit gewählter Gangart und Hand, für die es eine Teilmessung gibt.
+  bool get _isProAvailable =>
+      _selectedGait != null &&
+      _selectedHand != null &&
+      _matchedSections.isNotEmpty;
 
   @override
   void dispose() {
@@ -162,8 +210,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Color _getHeatmapColor(double value, double minVal, double maxVal) {
-    final double normalized =
-        (maxVal == minVal) ? (value > 0 ? 0.5 : 0.0) : (value - minVal) / (maxVal - minVal);
+    final double normalized = (maxVal == minVal)
+        ? (value > 0 ? 0.5 : 0.0)
+        : (value - minVal) / (maxVal - minVal);
     int r, g, b;
 
     if (normalized < 0.2) {
@@ -198,101 +247,161 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   // ── Data retrieval ──
 
-  List<double> _getFilteredPressureData() {
-    final sections = widget.measurement.sections;
-    if (sections.isEmpty) return List.filled(gridSize * gridSize, 0);
-
-    var matched = sections
+  /// Teilmessungen mit Heatmap-Daten, die zu den gewählten Filtern passen.
+  List<MeasurementSectionData> get _matchedSections {
+    return _measurement.sections
         .where((s) => s.pressureData.length >= gridSize * gridSize)
+        .where((s) => _selectedGait == null || s.gait == _selectedGait)
+        .where((s) => _selectedHand == null || s.hand == _selectedHand)
         .toList();
+  }
 
-    if (_selectedGait != null) {
-      matched = matched.where((s) => s.gait == _selectedGait).toList();
-    }
-    if (_selectedHand != null) {
-      matched = matched.where((s) => s.hand == _selectedHand).toList();
-    }
+  /// Die einzelnen Aufnahmen einer Teilmessung, ohne Aufnahmen nur der Durchschnitt.
+  List<List<double>> _framesOf(MeasurementSectionData section) {
+    final frames = section.frames
+        .where((f) => f.length >= gridSize * gridSize)
+        .toList();
+    return frames.isNotEmpty ? frames : [section.pressureData];
+  }
 
-    if (matched.isEmpty) return List.filled(gridSize * gridSize, 0);
+  /// Ohne bekannte Dauer zählt eine Teilmessung als 30 Sekunden.
+  Duration _durationOf(MeasurementSectionData section) {
+    final duration = section.duration;
+    return duration == null || duration.inSeconds <= 0
+        ? const Duration(seconds: 30)
+        : duration;
+  }
 
+  Duration get _totalDuration => _matchedSections.fold(
+    Duration.zero,
+    (sum, section) => sum + _durationOf(section),
+  );
+
+  List<double> _getFilteredPressureData() {
+    final frames = _matchedSections.expand(_framesOf).toList();
+    if (frames.isEmpty) return List.filled(gridSize * gridSize, 0);
+
+    // Max: höchster Wert jedes Sensors über alle Aufnahmen
     if (_isMaxMode) {
       final result = List<double>.filled(gridSize * gridSize, 0);
-      for (final section in matched) {
+      for (final frame in frames) {
         for (int i = 0; i < gridSize * gridSize; i++) {
-          result[i] = max(result[i], section.pressureData[i]);
+          result[i] = max(result[i], frame[i]);
         }
       }
       return result;
     }
 
-    final count = matched.length;
+    // Durchschnitt über alle Aufnahmen
     final averaged = List<double>.filled(gridSize * gridSize, 0);
-    for (final section in matched) {
+    for (final frame in frames) {
       for (int i = 0; i < gridSize * gridSize; i++) {
-        averaged[i] += section.pressureData[i];
+        averaged[i] += frame[i];
       }
     }
     for (int i = 0; i < averaged.length; i++) {
-      averaged[i] /= count;
+      averaged[i] /= frames.length;
     }
     return averaged;
   }
 
-  /// Interpolate pressure data at a given position (0.0–1.0) across sections.
-  List<double> _interpolateProfiData(double position) {
-    final sections = widget.measurement.sections
-        .where((s) => s.pressureData.length >= gridSize * gridSize)
-        .toList();
-    if (sections.isEmpty) return List.filled(gridSize * gridSize, 0);
+  /// Welche Teilmessung an einer Stelle (0.0–1.0) der Zeitachse läuft und wie weit
+  /// sie dort fortgeschritten ist (0.0–1.0). Die Teilmessungen laufen nacheinander ab.
+  (MeasurementSectionData, double, Duration)? _sectionAt(double position) {
+    final sections = _matchedSections;
+    if (sections.isEmpty) return null;
 
-    if (sections.length == 1) {
-      // Single section: simulate subtle variation over time
-      final base = sections.first.pressureData;
-      final wave = sin(position * 2 * pi);
+    final totalSeconds = _totalDuration.inMilliseconds / 1000;
+    var remaining = position.clamp(0.0, 1.0) * totalSeconds;
+    for (final section in sections) {
+      final seconds = _durationOf(section).inMilliseconds / 1000;
+      if (remaining <= seconds || section == sections.last) {
+        final progress = (remaining / seconds).clamp(0.0, 1.0);
+        return (
+          section,
+          progress,
+          Duration(milliseconds: (remaining * 1000).round()),
+        );
+      }
+      remaining -= seconds;
+    }
+    return null;
+  }
+
+  /// Druckbild an einer Stelle (0.0–1.0) der Zeitachse, zwischen zwei Aufnahmen
+  /// wird interpoliert.
+  List<double> _interpolateProfiData(double position) {
+    final current = _sectionAt(position);
+    if (current == null) return List.filled(gridSize * gridSize, 0);
+    final (section, progress, _) = current;
+    final frames = _framesOf(section);
+
+    if (frames.length == 1) {
+      // Nur ein Druckbild vorhanden: leichte Bewegung über die Zeit andeuten
+      final base = frames.first;
+      final wave = sin(progress * 2 * pi);
       return List.generate(gridSize * gridSize, (i) {
-        final variation = base[i] * 0.08 * wave *
-            sin((i % gridSize) * 0.5 + position * pi);
+        final variation =
+            base[i] * 0.08 * wave * sin((i % gridSize) * 0.5 + progress * pi);
         return (base[i] + variation).clamp(0.0, double.infinity);
       });
     }
 
-    final pos = position.clamp(0.0, 1.0) * (sections.length - 1);
-    final idx = pos.floor().clamp(0, sections.length - 2);
+    final pos = progress * (frames.length - 1);
+    final idx = pos.floor().clamp(0, frames.length - 2);
     final t = pos - idx;
 
-    final a = sections[idx].pressureData;
-    final b = sections[idx + 1].pressureData;
-    return List.generate(
-        gridSize * gridSize, (i) => a[i] * (1 - t) + b[i] * t);
+    final a = frames[idx];
+    final b = frames[idx + 1];
+    return List.generate(gridSize * gridSize, (i) => a[i] * (1 - t) + b[i] * t);
   }
 
   // ── Pre-generate all profi frames ──
 
+  /// So viele Bilder wie Aufnahmen vorhanden sind, mindestens 30 und höchstens
+  /// [_profiFrameCount], damit die Wiedergabe flüssig bleibt.
+  int get _profiImageCount {
+    final recorded = _matchedSections.fold<int>(
+      0,
+      (sum, section) => sum + _framesOf(section).length,
+    );
+    return recorded.clamp(30, _profiFrameCount);
+  }
+
   Future<void> _generateProfiFrames() async {
-    if (_profiFramesLoading) return;
-    _profiFramesLoading = true;
+    // eine neuere Generierung (z.B. nach Filterwechsel) verwirft die laufende
+    final generation = ++_profiGeneration;
 
     _disposeProfiFrames();
     final frames = <ui.Image>[];
+    final imageCount = _profiImageCount;
 
-    for (int f = 0; f < _profiFrameCount; f++) {
-      final position = f / (_profiFrameCount - 1);
+    for (int f = 0; f < imageCount; f++) {
+      final position = f / (imageCount - 1);
       final data = _interpolateProfiData(position);
       final pixels = _renderPixels(data);
       final image = await _pixelsToImage(pixels);
       frames.add(image);
+      if (generation != _profiGeneration) {
+        for (final img in frames) {
+          img.dispose();
+        }
+        return;
+      }
     }
 
-    if (mounted) {
+    if (mounted && _isProfiMode) {
       setState(() {
         _profiFrames = frames;
-        _profiFramesLoading = false;
       });
+      if (_autoPlayWhenReady) {
+        _autoPlayWhenReady = false;
+        _startPlayback();
+      }
     } else {
       for (final img in frames) {
         img.dispose();
       }
-      _profiFramesLoading = false;
     }
   }
 
@@ -304,61 +413,102 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   // ── Filter actions ──
 
-  void _onClearFilters() {
-    _playTimer?.cancel();
+  void _onResetFilters() {
+    _resetPlayback();
     setState(() {
       _selectedGait = null;
       _selectedHand = null;
-      _isMaxMode = false;
-      _isProfiMode = false;
-      _isPlaying = false;
-      _playbackPosition = 0.0;
+      _view = _PressureView.average;
       _invalidateCache();
       _disposeProfiFrames();
     });
   }
 
-  void _onToggleMax() {
-    _playTimer?.cancel();
+  void _onSelectGait(String? gait) {
     setState(() {
-      _isMaxMode = !_isMaxMode;
-      if (_isMaxMode) {
-        _isProfiMode = false;
-        _disposeProfiFrames();
+      _selectedGait = gait;
+      // die Hand bleibt nur, wenn sie für die neue Gangart gemessen wurde
+      if (_selectedHand != null && !_handOptions.contains(_selectedHand)) {
+        _selectedHand = null;
       }
+      _invalidateCache();
+    });
+    _onFilterChanged();
+  }
+
+  void _onSelectHand(String? hand) {
+    setState(() {
+      _selectedHand = hand;
+      _invalidateCache();
+    });
+    _onFilterChanged();
+  }
+
+  /// Nach einem Filterwechsel: Profi ohne vollständige Auswahl fällt auf Durchschnitt
+  /// zurück, sonst wird die Wiedergabe mit der neuen Teilmessung neu aufgebaut.
+  void _onFilterChanged() {
+    _resetPlayback();
+    if (!_isProfiMode) return;
+    if (!_isProAvailable) {
+      setState(() {
+        _view = _PressureView.average;
+        _disposeProfiFrames();
+        _invalidateCache();
+      });
+      return;
+    }
+    _autoPlayWhenReady = true;
+    _generateProfiFrames();
+  }
+
+  void _onSelectView(_PressureView view) {
+    if (view == _PressureView.pro && !_isProAvailable) return;
+    _resetPlayback();
+    setState(() {
+      _view = view;
+      _invalidateCache();
+      _disposeProfiFrames();
+    });
+    if (view == _PressureView.pro) {
+      // wie im Sattler-Frontend startet der Profimodus direkt mit der Wiedergabe
+      _autoPlayWhenReady = true;
+      _generateProfiFrames();
+    }
+  }
+
+  void _resetPlayback() {
+    _playTimer?.cancel();
+    _autoPlayWhenReady = false;
+    if (!mounted) return;
+    setState(() {
       _isPlaying = false;
-      _invalidateCache();
+      _playbackPosition = 0.0;
     });
   }
 
-  void _onToggleProfi() {
+  void _startPlayback() {
+    if (_profiFrames == null) return;
     _playTimer?.cancel();
-    setState(() {
-      _isProfiMode = !_isProfiMode;
-      if (_isProfiMode) {
-        _isMaxMode = false;
-        _invalidateCache();
-        _generateProfiFrames();
-      } else {
-        _isPlaying = false;
-        _playbackPosition = 0.0;
-        _disposeProfiFrames();
-        _invalidateCache();
-      }
-    });
-  }
+    if (_playbackPosition >= 1.0) _playbackPosition = 0.0;
+    setState(() => _isPlaying = true);
 
-  void _onSelectGait(String gait) {
-    setState(() {
-      _selectedGait = _selectedGait == gait ? null : gait;
-      _invalidateCache();
-    });
-  }
-
-  void _onSelectHand(String hand) {
-    setState(() {
-      _selectedHand = _selectedHand == hand ? null : hand;
-      _invalidateCache();
+    // in Echtzeit abspielen: die Position ergibt sich aus der verstrichenen Zeit
+    final totalMs = _totalDuration.inMilliseconds;
+    if (totalMs <= 0) return;
+    final startPosition = _playbackPosition;
+    final stopwatch = Stopwatch()..start();
+    _playTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      if (!mounted) return;
+      setState(() {
+        _playbackPosition =
+            startPosition + stopwatch.elapsedMilliseconds / totalMs;
+        // am Ende anhalten statt von vorne zu beginnen
+        if (_playbackPosition >= 1.0) {
+          _playbackPosition = 1.0;
+          _isPlaying = false;
+          _playTimer?.cancel();
+        }
+      });
     });
   }
 
@@ -368,42 +518,72 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       _playTimer?.cancel();
       setState(() => _isPlaying = false);
     } else {
-      setState(() => _isPlaying = true);
-      _playTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
-        setState(() {
-          _playbackPosition += 1.0 / _profiFrameCount;
-          if (_playbackPosition >= 1.0) _playbackPosition = 0.0;
-        });
-      });
+      _startPlayback();
     }
   }
 
-  String _formatPlaybackTime(double position) {
-    const totalSeconds = 60;
-    final current = (position * totalSeconds).round();
-    final m = current ~/ 60;
-    final s = current % 60;
+  void _stopPlayback() {
+    _playTimer?.cancel();
+    setState(() {
+      _isPlaying = false;
+      _playbackPosition = 0.0;
+    });
+  }
+
+  /// Spult um [seconds] Sekunden vor oder zurück.
+  void _skipPlayback(int seconds) {
+    final totalSeconds = _totalDuration.inMilliseconds / 1000;
+    if (totalSeconds <= 0) return;
+    _seekPlayback((_playbackPosition + seconds / totalSeconds).clamp(0.0, 1.0));
+  }
+
+  /// Springt an eine Stelle, eine laufende Wiedergabe läuft von dort weiter.
+  void _seekPlayback(double position) {
+    setState(() => _playbackPosition = position);
+    if (_isPlaying) {
+      if (position >= 1.0) {
+        _playTimer?.cancel();
+        setState(() => _isPlaying = false);
+      } else {
+        _startPlayback();
+      }
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    final totalSeconds = duration.inSeconds;
+    final m = totalSeconds ~/ 60;
+    final s = totalSeconds % 60;
     return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  String _formatPlaybackTime(double position) {
+    final totalMs = _totalDuration.inMilliseconds;
+    return _formatDuration(
+      Duration(milliseconds: (position * totalMs).round()),
+    );
   }
 
   /// Get the current profi frame image (no async, instant).
   ui.Image? _getCurrentProfiFrame() {
     if (_profiFrames == null || _profiFrames!.isEmpty) return null;
-    final idx =
-        (_playbackPosition * (_profiFrames!.length - 1)).round().clamp(0, _profiFrames!.length - 1);
+    final idx = (_playbackPosition * (_profiFrames!.length - 1)).round().clamp(
+      0,
+      _profiFrames!.length - 1,
+    );
     return _profiFrames![idx];
   }
 
   /// Get current section label for profi playbar.
   String _getCurrentProfiLabel() {
-    final sections = widget.measurement.sections
-        .where((s) => s.pressureData.length >= gridSize * gridSize)
-        .toList();
-    if (sections.isEmpty) return '';
-    final idx = (_playbackPosition * (sections.length - 1))
-        .round()
-        .clamp(0, sections.length - 1);
-    return '${sections[idx].gait} ${sections[idx].hand}';
+    final current = _sectionAt(_playbackPosition);
+    if (current == null) return '';
+    final (section, progress, _) = current;
+    final elapsed = Duration(
+      milliseconds: (_durationOf(section).inMilliseconds * progress).round(),
+    );
+    return '${section.gait} ${section.hand} · '
+        '${_formatDuration(elapsed)} / ${_formatDuration(_durationOf(section))}';
   }
 
   // ── PDF Generation ──
@@ -433,16 +613,18 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       );
 
       // Capture heatmap as image
-      final RenderRepaintBoundary boundary = _heatmapKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
+      final RenderRepaintBoundary boundary =
+          _heatmapKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-      final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
       // Create PDF
       final pdf = pw.Document();
-      final m = widget.measurement;
+      final m = _measurement;
 
       // Add page
       pdf.addPage(
@@ -477,14 +659,19 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                   ),
                 ),
                 pw.SizedBox(height: 8),
-                _pdfInfoRow('Pferd:', '${m.horseName} | ${m.weight} | ${m.height}'),
+                _pdfInfoRow(
+                  'Pferd:',
+                  '${m.horseName} | ${m.weight} | ${m.height}',
+                ),
                 _pdfInfoRow('Reiter:', m.rider),
                 _pdfInfoRow('Sattel:', m.saddleName),
                 if (m.notes.isNotEmpty) _pdfInfoRow('Notizen:', m.notes),
                 pw.SizedBox(height: 20),
 
                 // Filter Information
-                if (_selectedGait != null || _selectedHand != null || _isMaxMode)
+                if (_selectedGait != null ||
+                    _selectedHand != null ||
+                    _isMaxMode)
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
@@ -500,8 +687,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                         _pdfInfoRow('Gangart:', _selectedGait!),
                       if (_selectedHand != null)
                         _pdfInfoRow('Hand:', _selectedHand!),
-                      if (_isMaxMode)
-                        _pdfInfoRow('Modus:', 'Maximum'),
+                      if (_isMaxMode) _pdfInfoRow('Modus:', 'Maximum'),
                       pw.SizedBox(height: 20),
                     ],
                   ),
@@ -537,10 +723,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                 // Footer
                 pw.Text(
                   'Erstellt am ${_formatDate(DateTime.now())}',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    color: PdfColors.grey,
-                  ),
+                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
                 ),
               ],
             );
@@ -551,17 +734,21 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       // Save PDF to temporary directory
       final output = await getTemporaryDirectory();
       final file = File(
-          '${output.path}/messung_${m.horseName}_${_formatDate(m.date)}.pdf');
+        '${output.path}/messung_${m.horseName}_${_formatDate(m.date)}.pdf',
+      );
       await file.writeAsBytes(await pdf.save());
 
       // Share the PDF
       if (mounted) {
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          subject: 'Satteldruckmessung ${m.horseName}',
+        final messenger = ScaffoldMessenger.of(context);
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path)],
+            subject: 'Satteldruckmessung ${m.horseName}',
+          ),
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('PDF erfolgreich erstellt'),
             backgroundColor: Colors.green,
@@ -595,9 +782,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
           ),
-          pw.Expanded(
-            child: pw.Text(value),
-          ),
+          pw.Expanded(child: pw.Text(value)),
         ],
       ),
     );
@@ -645,7 +830,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           ),
           Expanded(
             child: Text(
-              'Messung vom ${_formatDate(widget.measurement.date)}',
+              'Messung vom ${_formatDate(_measurement.date)}',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -663,14 +848,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Widget _buildFilterSection() {
-    final sections = widget.measurement.sections;
-    if (sections.isEmpty) return const SizedBox.shrink();
-
-    final bool noFilterActive =
-        _selectedGait == null &&
-        _selectedHand == null &&
-        !_isMaxMode &&
-        !_isProfiMode;
+    if (_recordedSections.isEmpty) return const SizedBox.shrink();
 
     return Container(
       color: Colors.white,
@@ -701,75 +879,138 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           ),
           if (showFilters) ...[
             const SizedBox(height: 10),
-            // Row 1: ⊘ Durchschnitt, Max, Profi
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
               children: [
-                _buildChip(
-                  '⊘  Durchschnitt',
-                  noFilterActive,
-                  onTap: _onClearFilters,
+                Expanded(
+                  child: _buildSelect<String?>(
+                    label: 'Gangart',
+                    value: _selectedGait,
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Alle Gangarten'),
+                      ),
+                      ..._gaitOptions.map(
+                        (gait) =>
+                            DropdownMenuItem(value: gait, child: Text(gait)),
+                      ),
+                    ],
+                    onChanged: _onSelectGait,
+                  ),
                 ),
-                _buildChip('Max', _isMaxMode, onTap: _onToggleMax),
-                _buildChip('Profi', _isProfiMode, onTap: _onToggleProfi),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSelect<String?>(
+                    label: 'Hand',
+                    value: _selectedHand,
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Alle Hände'),
+                      ),
+                      ..._handOptions.map(
+                        (hand) =>
+                            DropdownMenuItem(value: hand, child: Text(hand)),
+                      ),
+                    ],
+                    onChanged: _onSelectHand,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSelect<_PressureView>(
+                    label: 'Ansicht',
+                    value: _view,
+                    items: [
+                      const DropdownMenuItem(
+                        value: _PressureView.average,
+                        child: Text('Durchschnitt'),
+                      ),
+                      const DropdownMenuItem(
+                        value: _PressureView.maximum,
+                        child: Text('Maximum'),
+                      ),
+                      DropdownMenuItem(
+                        value: _PressureView.pro,
+                        enabled: _isProAvailable,
+                        child: Text(
+                          'Profi',
+                          style: TextStyle(
+                            color: _isProAvailable ? null : Colors.grey[400],
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (view) {
+                      if (view != null) _onSelectView(view);
+                    },
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            // Row 2: Gangarten
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _availableGaits
-                  .map((g) => _buildChip(
-                        g,
-                        _selectedGait == g,
-                        onTap: () => _onSelectGait(g),
-                      ))
-                  .toList(),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _onResetFilters,
+                style: TextButton.styleFrom(foregroundColor: _accent),
+                child: const Text('Filter zurücksetzen'),
+              ),
             ),
-            const SizedBox(height: 8),
-            // Row 3: Hände
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _availableHands
-                  .map((h) => _buildChip(
-                        h,
-                        _selectedHand == h,
-                        onTap: () => _onSelectHand(h),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 8),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildChip(String label, bool isActive, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isActive ? _chipActive : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive ? _chipActive : Colors.grey[300]!,
-            width: 1.5,
+  Widget _buildSelect<T>({
+    required String label,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: _textSecondary,
           ),
         ),
-        child: Text(
-          isActive ? '✓ $label' : label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isActive ? Colors.white : Colors.grey[700],
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.only(left: 10, right: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: value,
+              isExpanded: true,
+              icon: Icon(Icons.expand_more, color: Colors.grey[600], size: 20),
+              style: const TextStyle(fontSize: 13, color: Colors.black),
+              items: items,
+              // nebeneinander ist wenig Platz: die Auswahl bei Bedarf mit … abkürzen
+              selectedItemBuilder: (_) => items
+                  .map(
+                    (item) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: DefaultTextStyle.merge(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        child: item.child,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: onChanged,
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -807,7 +1048,38 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
             borderRadius: BorderRadius.circular(13),
             child: AspectRatio(
               aspectRatio: 1,
-              child: displayImage != null
+              child: _loadingData
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: _accent),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Messdaten werden geladen …',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _matchedSections.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Für diese Filter gibt es keine Teilmessungen.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    )
+                  : displayImage != null
                   ? CustomPaint(painter: CachedHeatmapPainter(displayImage))
                   : Center(
                       child: Column(
@@ -835,10 +1107,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   }
 
   Widget _buildPlaybar() {
-    final sections = widget.measurement.sections
-        .where((s) => s.pressureData.length >= gridSize * gridSize)
-        .toList();
-    if (sections.isEmpty) return const SizedBox.shrink();
+    if (_matchedSections.isEmpty) return const SizedBox.shrink();
 
     final framesReady = _profiFrames != null;
 
@@ -862,47 +1131,60 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           ),
           const SizedBox(height: 8),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GestureDetector(
-                onTap: framesReady ? _togglePlayback : null,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: framesReady ? _accent : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
+              _buildPlaybackButton(
+                icon: Icons.replay_5,
+                tooltip: '5 Sekunden zurück',
+                onTap: framesReady ? () => _skipPlayback(-5) : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              _buildPlaybackButton(
+                icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+                tooltip: _isPlaying ? 'Pause' : 'Wiedergabe',
+                onTap: framesReady ? _togglePlayback : null,
+                primary: true,
+              ),
+              const SizedBox(width: 8),
+              _buildPlaybackButton(
+                icon: Icons.stop,
+                tooltip: 'Stop',
+                onTap: framesReady ? _stopPlayback : null,
+              ),
+              const SizedBox(width: 8),
+              _buildPlaybackButton(
+                icon: Icons.forward_5,
+                tooltip: '5 Sekunden vor',
+                onTap: framesReady ? () => _skipPlayback(5) : null,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
               Expanded(
                 child: SliderTheme(
                   data: SliderThemeData(
                     activeTrackColor: _accent,
                     inactiveTrackColor: _accentLight.withValues(alpha: 0.5),
                     thumbColor: _accent,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
                     trackHeight: 4,
-                    overlayShape:
-                        const RoundSliderOverlayShape(overlayRadius: 14),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 14,
+                    ),
                   ),
                   child: Slider(
                     value: _playbackPosition,
-                    onChanged: framesReady
-                        ? (v) => setState(() => _playbackPosition = v)
-                        : null,
+                    onChanged: framesReady ? _seekPlayback : null,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
-                '${_formatPlaybackTime(_playbackPosition)} | 1:00',
+                '${_formatPlaybackTime(_playbackPosition)} | ${_formatDuration(_totalDuration)}',
                 style: const TextStyle(
                   fontSize: 12,
                   color: _textSecondary,
@@ -916,14 +1198,57 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     );
   }
 
+  Widget _buildPlaybackButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onTap,
+    bool primary = false,
+  }) {
+    final size = primary ? 40.0 : 34.0;
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: onTap == null
+                ? Colors.grey[300]
+                : primary
+                ? _accent
+                : _accentLight.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(size / 2),
+          ),
+          child: Icon(
+            icon,
+            color: primary || onTap == null ? Colors.white : _accent,
+            size: primary ? 22 : 18,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoSection() {
-    final m = widget.measurement;
+    final m = _measurement;
     final infoItems = [
-      _InfoItem(text: '${m.horseName} | ${m.weight} | ${m.height}', svgPath: 'assets/icon/horseIcon.svg'),
+      _InfoItem(
+        text: '${m.horseName} | ${m.weight} | ${m.height}',
+        svgPath: 'assets/icon/horseIcon.svg',
+      ),
       _InfoItem(text: _formatDate(m.date), icon: Icons.calendar_today),
+      if (m.sections.any((s) => s.duration != null))
+        _InfoItem(
+          text:
+              'Dauer ${_formatDuration(m.sections.fold(Duration.zero, (sum, s) => sum + (s.duration ?? Duration.zero)))}'
+              ' · ${m.sections.length} Teilmessung${m.sections.length == 1 ? '' : 'en'}',
+          icon: Icons.timer_outlined,
+        ),
       _InfoItem(text: m.rider, icon: Icons.person),
       _InfoItem(text: m.saddleName, svgPath: 'assets/icon/saddleIcon.svg'),
-      if (m.notes.isNotEmpty) _InfoItem(text: m.notes, icon: Icons.info_outline),
+      if (m.notes.isNotEmpty)
+        _InfoItem(text: m.notes, icon: Icons.info_outline),
     ];
 
     return Container(
@@ -936,36 +1261,41 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       ),
       child: Column(
         children: infoItems
-            .map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      item.svgPath != null
-                          ? SvgPicture.asset(
-                              item.svgPath!,
-                              width: 20,
-                              height: 20,
-                              colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
-                            )
-                          : Icon(item.icon, size: 20, color: Colors.grey[600]),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.text,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[800],
-                          ),
-                        ),
+            .map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    item.svgPath != null
+                        ? SvgPicture.asset(
+                            item.svgPath!,
+                            width: 20,
+                            height: 20,
+                            colorFilter: ColorFilter.mode(
+                              Colors.grey[600]!,
+                              BlendMode.srcIn,
+                            ),
+                          )
+                        : Icon(item.icon, size: 20, color: Colors.grey[600]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.text,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[800]),
                       ),
-                    ],
-                  ),
-                ))
+                    ),
+                  ],
+                ),
+              ),
+            )
             .toList(),
       ),
     );
   }
 }
+
+/// Welche Druckstatistik die Heatmap zeigt.
+enum _PressureView { average, maximum, pro }
 
 class _InfoItem {
   final IconData? icon;

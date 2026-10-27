@@ -43,6 +43,8 @@ class _HorseChatCardState extends State<HorseChatCard> {
                       children: [
                         Text(
                           widget.horse.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
