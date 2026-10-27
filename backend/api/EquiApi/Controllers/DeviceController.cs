@@ -1,6 +1,7 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Dtos;
 using EquiApi.Util;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
@@ -75,6 +76,37 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
                                        DeviceDto.FromDevice(success.Value)),
             _ => NotFound(),
             _ => Conflict());
+    }
+
+    /// <summary>
+    ///     Claims a device for the logged-in user (QR code scan): the user becomes the owner and gets the role of the
+    ///     device category. 404 means that the profile has not been set up yet or the category does not exist.
+    /// </summary>
+    [HttpPost("{deviceId}/claim")]
+    [Authorize]
+    [ProducesResponseType<DeviceDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<DeviceDto>> ClaimDevice([FromRoute] string deviceId,
+                                                                [FromBody] ClaimDeviceRequest request)
+    {
+        if (!IsValid<ClaimDeviceRequest.Validator, ClaimDeviceRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await deviceService.ClaimDeviceAsync(deviceId, User.ExternalId, request.CategoryId);
+
+        return result.Match<ActionResult<DeviceDto>>(
+            success => CreatedAtAction(nameof(GetDeviceById), new { deviceId = success.Value.Id },
+                                       DeviceDto.FromDevice(success.Value)),
+            _ => NotFound(),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         title: "The device has already been claimed"),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         title: "A saddler needs an address with street"));
     }
 
     /// <summary>

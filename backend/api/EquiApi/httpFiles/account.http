@@ -22,7 +22,7 @@ GET {{BaseUrl}}/account/identity
 GET {{BaseUrl}}/account/me
 Authorization: Bearer {{login.response.body.access_token}}
 
-### 4. Profil nach dem ersten Login anlegen (E-Mail kommt aus dem Token)
+### 4. Profil nach dem ersten Login anlegen (E-Mail kommt aus dem Token, Rolle erst beim Gerät)
 POST {{BaseUrl}}/account
 Authorization: Bearer {{login.response.body.access_token}}
 Content-Type: application/json
@@ -37,6 +37,15 @@ Content-Type: application/json
         "AddressName": "Hauptstraße 1",
         "CityName": "Steyr",
         "Plz": "4400"
-    },
-    "Role": "Equestrian"
+    }
+}
+
+### 5. Gerät per QR-Code claimen: man wird Besitzer:in und bekommt die Rolle der Kategorie
+# Kategorie 5 (Professional) = Sattler, alle anderen = Reiter (siehe DevelopmentSeedData.md)
+POST {{BaseUrl}}/devices/EP0999/claim
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+    "CategoryId": 1
 }

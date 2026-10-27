@@ -87,6 +87,22 @@ public interface IDeviceService
                                                                                     int newOwnerId);
 
     /// <summary>
+    ///     Claims a new device for the person of a Keycloak account (QR code scan): the device is added with the
+    ///     person as owner and the person gets the role of the device category (saddler or equestrian)
+    /// </summary>
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <param name="externalId">The id of the user in Keycloak (sub claim of the access token)</param>
+    /// <param name="categoryId">The id of the device category</param>
+    /// <returns>
+    ///     The new device, <see cref="NotFound" /> if no person is linked to the account or the category does not exist,
+    ///     <see cref="DeviceAlreadyExists" /> if the device has already been claimed
+    ///     or <see cref="IPersonService.StreetRequiredForSaddler" /> if a saddler device is claimed by a person
+    ///     whose address has no street
+    /// </returns>
+    public ValueTask<OneOf<Success<MeasurementDevice>, NotFound, DeviceAlreadyExists,
+        IPersonService.StreetRequiredForSaddler>> ClaimDeviceAsync(string deviceId, string externalId, int categoryId);
+
+    /// <summary>
     ///     Returned if a device with the same serial number already exists
     /// </summary>
     public readonly record struct DeviceAlreadyExists;
@@ -203,6 +219,62 @@ internal sealed class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logg
         uow.DeviceRepository.AddDevice(device);
         await uow.SaveChangesAsync();
         logger.LogInformation("Device {DeviceId} added for owner {PersonId}", deviceId, ownerId);
+
+        return new Success<MeasurementDevice>(device);
+    }
+
+    public async ValueTask<OneOf<Success<MeasurementDevice>, NotFound, IDeviceService.DeviceAlreadyExists,
+        IPersonService.StreetRequiredForSaddler>> ClaimDeviceAsync(string deviceId, string externalId, int categoryId)
+    {
+        if (await uow.DeviceRepository.DeviceExistsAsync(deviceId))
+        {
+            logger.LogWarning("Cannot claim device {DeviceId}, it has already been claimed", deviceId);
+
+            return new IDeviceService.DeviceAlreadyExists();
+        }
+
+        var owner = await uow.PersonRepository.GetPersonByExternalIdAsync(externalId);
+        if (owner is null)
+        {
+            logger.LogInformation("Cannot claim device {DeviceId}, no person is linked to the account", deviceId);
+
+            return new NotFound();
+        }
+
+        var category = await uow.DeviceRepository.GetCategoryByIdAsync(categoryId);
+        if (category is null)
+        {
+            logger.LogInformation("Cannot claim device {DeviceId}, category {CategoryId} not found", deviceId,
+                                  categoryId);
+
+            return new NotFound();
+        }
+
+        if (category.Role == RoleName.Saddler && string.IsNullOrWhiteSpace(owner.Address.AddressName))
+        {
+            logger.LogWarning("Cannot claim saddler device {DeviceId}, person {PersonId} has no street", deviceId,
+                              owner.Id);
+
+            return new IPersonService.StreetRequiredForSaddler();
+        }
+
+        if (owner.Roles.All(pra => pra.Role.Name != category.Role))
+        {
+            var role = (await uow.PersonRepository.GetRolesByNameAsync([category.Role])).Single();
+            owner.Roles.Add(new PersonRoleAssignment { Role = role });
+        }
+
+        var device = new MeasurementDevice
+        {
+            Id = deviceId,
+            Owner = owner,
+            Category = category
+        };
+
+        uow.DeviceRepository.AddDevice(device);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Device {DeviceId} claimed by person {PersonId} as {Role}", deviceId, owner.Id,
+                              category.Role);
 
         return new Success<MeasurementDevice>(device);
     }
