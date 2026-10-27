@@ -3,10 +3,13 @@
 # Admin-Konsole: http://localhost:8180/admin  (admin / admin)
 #
 # Der Realm "equipressure" wird beim ersten Start aus realm-equipressure.json importiert.
-# Keycloak läuft im Dev-Modus mit eingebauter H2-Datenbank, d.h. Änderungen in der Admin-Konsole
-# gehen beim Löschen des Containers verloren -> dauerhafte Änderungen immer in die JSON-Datei übernehmen.
-# Nach Änderungen an der JSON-Datei: docker compose down && docker compose up -d
-# (ein bestehender Realm wird beim Import nicht überschrieben)
+# Die Keycloak-Daten (User, Sessions) liegen im Volume keycloak-data und bleiben bei Neustarts erhalten,
+# damit die User-Ids (ExternalId der Personen im Backend) gleich bleiben.
+# Dauerhafte Konfigurationsänderungen immer in die JSON-Datei übernehmen, nicht nur in der Admin-Konsole.
+#
+# Nach Änderungen an der JSON-Datei oder an der .env: docker compose down -v && docker compose up -d
+# (ein bestehender Realm wird beim Import nicht überschrieben; -v löscht auch alle Keycloak-User,
+#  deren Personen im Backend sind danach nicht mehr verknüpft)
 
 services:
   keycloak:
@@ -30,3 +33,7 @@ services:
     volumes:
       - ./realm-equipressure.json:/opt/keycloak/data/import/realm-equipressure.json:ro
       - ./themes/equipressure:/opt/keycloak/themes/equipressure:ro
+      - keycloak-data:/opt/keycloak/data
+
+volumes:
+  keycloak-data:
