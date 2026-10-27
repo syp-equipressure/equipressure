@@ -14,6 +14,13 @@ public interface IPersonRepository
     public ValueTask<Person?> GetPersonByIdAsync(int personId);
 
     /// <summary>
+    ///     Gets the person linked to a Keycloak account, including their address and roles
+    /// </summary>
+    /// <param name="externalId">The id of the user in Keycloak</param>
+    /// <returns>The tracked person or null if no person is linked to the account</returns>
+    public ValueTask<Person?> GetPersonByExternalIdAsync(string externalId);
+
+    /// <summary>
     ///     Gets the address of a person
     /// </summary>
     /// <param name="personId">The id of the person</param>
@@ -120,6 +127,12 @@ internal sealed class PersonRepository(
                        .Include(p => p.Roles)
                        .ThenInclude(pra => pra.Role)
                        .FirstOrDefaultAsync(p => p.Id == personId);
+
+    public async ValueTask<Person?> GetPersonByExternalIdAsync(string externalId) =>
+        await personSet.Include(p => p.Address)
+                       .Include(p => p.Roles)
+                       .ThenInclude(pra => pra.Role)
+                       .FirstOrDefaultAsync(p => p.ExternalId == externalId);
 
     public async ValueTask<Address?> GetPersonAddressAsync(int personId) =>
         await personSet.AsNoTracking()

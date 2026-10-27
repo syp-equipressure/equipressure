@@ -3,6 +3,13 @@
 public class Person
 {
     public int Id { get; set; }
+
+    /// <summary>
+    ///     Id of the user in Keycloak (sub claim of the access token), null for persons without an account
+    ///     (e.g. customers created by a saddler)
+    /// </summary>
+    public string? ExternalId { get; set; }
+
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
     public decimal Height { get; set; } // in cm

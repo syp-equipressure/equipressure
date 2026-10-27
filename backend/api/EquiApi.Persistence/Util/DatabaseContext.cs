@@ -81,6 +81,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         person.Property(p => p.Id).ValueGeneratedOnAdd();
         person.HasIndex(p => new { p.FirstName, p.LastName });
         person.HasIndex(p => p.Email).IsUnique();
+        person.HasIndex(p => p.ExternalId).IsUnique();
         person.HasIndex(p => p.DateOfBirth);
 
         person.HasMany(p => p.Roles)
