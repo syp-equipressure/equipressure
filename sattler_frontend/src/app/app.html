@@ -1,18 +1,22 @@
-<div class="app-shell" [class.sidebar-collapsed]="!sidenav.open()">
-  @if (sidenav.open()) {
-    <button
-      class="backdrop"
-      type="button"
-      aria-label="Menü schließen"
-      (click)="sidenav.hide()"
-    ></button>
-  }
+@if (isOnboarding()) {
+  <router-outlet></router-outlet>
+} @else {
+  <div class="app-shell" [class.sidebar-collapsed]="!sidenav.open()">
+    @if (sidenav.open()) {
+      <button
+        class="backdrop"
+        type="button"
+        aria-label="Menü schließen"
+        (click)="sidenav.hide()"
+      ></button>
+    }
 
-  <aside class="drawer" [class.drawer-open]="sidenav.open()">
-    <app-sidenav (close)="sidenav.hide()"></app-sidenav>
-  </aside>
+    <aside class="drawer" [class.drawer-open]="sidenav.open()">
+      <app-sidenav (close)="sidenav.hide()"></app-sidenav>
+    </aside>
 
-  <main class="workspace">
-    <router-outlet></router-outlet>
-  </main>
-</div>
+    <main class="workspace">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+}

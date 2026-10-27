@@ -11,21 +11,30 @@ import { StartPage } from './pages/startpage/startpage.page';
 import { CustomerProfilePage } from './pages/customers/customer-profile.page';
 import { SettingsPage } from './pages/settings/settings.page';
 import { DevicesPage } from './pages/devices/devices.page';
+import { OnboardingPage } from './pages/onboarding/onboarding.page';
+import { accountGuard, onboardingGuard } from './auth/auth.guards';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'startpage' },
-  { path: 'startpage', component: StartPage },
-  { path: 'customers', component: CustomersPage },
-  { path: 'customers/:customerId', component: CustomerProfilePage },
-  { path: 'customers/:customerId/horses', component: HorsesPage },
-  { path: 'customers/:customerId/horses/:horseId', component: MeasurementsPage },
-  { path: 'my-horses', component: HorsesPage },
-  { path: 'my-horses/:horseId', component: MeasurementsPage },
-  { path: 'profile', component: ProfilePage },
-  { path: 'devices', component: DevicesPage },
-  { path: 'new-measurement', component: StubPage, data: { title: 'Neue Messung' } },
-  { path: 'new-measurement/session', component: MeasurementSessionPage },
-  { path: 'new-measurement/live', component: LiveMeasurementPage },
-  { path: 'messages', component: MessagesPage },
-  { path: 'settings', component: SettingsPage },
+  { path: 'onboarding', component: OnboardingPage, canActivate: [onboardingGuard] },
+  {
+    path: '',
+    canActivate: [accountGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'startpage' },
+      { path: 'startpage', component: StartPage },
+      { path: 'customers', component: CustomersPage },
+      { path: 'customers/:customerId', component: CustomerProfilePage },
+      { path: 'customers/:customerId/horses', component: HorsesPage },
+      { path: 'customers/:customerId/horses/:horseId', component: MeasurementsPage },
+      { path: 'my-horses', component: HorsesPage },
+      { path: 'my-horses/:horseId', component: MeasurementsPage },
+      { path: 'profile', component: ProfilePage },
+      { path: 'devices', component: DevicesPage },
+      { path: 'new-measurement', component: StubPage, data: { title: 'Neue Messung' } },
+      { path: 'new-measurement/session', component: MeasurementSessionPage },
+      { path: 'new-measurement/live', component: LiveMeasurementPage },
+      { path: 'messages', component: MessagesPage },
+      { path: 'settings', component: SettingsPage },
+    ],
+  },
 ];

@@ -1,0 +1,87 @@
+<main class="onboarding">
+  <section class="onboarding-card">
+    <header class="card-header">
+      <div>
+        <p class="eyebrow">Schritt {{ step() === 'profile' ? 1 : 2 }} von 2</p>
+        @if (step() === 'profile') {
+          <h1>Dein Profil konfigurieren</h1>
+          <p>Willkommen bei EquiPressure! Ein paar Angaben brauchen wir noch, bevor es losgeht.</p>
+        } @else {
+          <h1>Satteldruckmessgerät verbinden</h1>
+          <p>Gib die Seriennummer ein, die auf deinem EquiPressure Satteldruckmessgerät steht.</p>
+        }
+      </div>
+      <span class="material-icons card-icon" aria-hidden="true">{{ step() === 'profile' ? 'person' : 'sensors' }}</span>
+    </header>
+
+    @if (email) {
+      <p class="account-hint">
+        <span class="material-icons" aria-hidden="true">verified_user</span>
+        Angemeldet als <strong>{{ email }}</strong>
+      </p>
+    }
+
+    @if (step() === 'profile') {
+      <form class="field-grid" (ngSubmit)="saveProfile()">
+        <label class="field">
+          <span class="field-label">Vorname</span>
+          <input class="field-input" name="firstName" [(ngModel)]="profile.firstName" autocomplete="given-name" />
+        </label>
+        <label class="field">
+          <span class="field-label">Nachname</span>
+          <input class="field-input" name="lastName" [(ngModel)]="profile.lastName" autocomplete="family-name" />
+        </label>
+        <label class="field">
+          <span class="field-label">Geburtsdatum</span>
+          <input class="field-input" type="date" name="dateOfBirth" [(ngModel)]="profile.dateOfBirth" />
+        </label>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Größe (cm)</span>
+            <input class="field-input" type="number" min="1" name="height" [(ngModel)]="profile.height" />
+          </label>
+          <label class="field">
+            <span class="field-label">Gewicht (kg)</span>
+            <input class="field-input" type="number" min="1" name="weight" [(ngModel)]="profile.weight" />
+          </label>
+        </div>
+        <label class="field full">
+          <span class="field-label">Straße und Hausnummer deiner Werkstatt</span>
+          <input class="field-input" name="street" [(ngModel)]="profile.street" autocomplete="street-address" />
+        </label>
+        <label class="field">
+          <span class="field-label">PLZ</span>
+          <input class="field-input" name="plz" [(ngModel)]="profile.plz" autocomplete="postal-code" />
+        </label>
+        <label class="field">
+          <span class="field-label">Ort</span>
+          <input class="field-input" name="city" [(ngModel)]="profile.city" autocomplete="address-level2" />
+        </label>
+        <p class="field-help full">Größe und Gewicht brauchen wir, um die Messergebnisse richtig auszuwerten.</p>
+
+        @if (error()) {
+          <p class="feedback error full" role="alert">{{ error() }}</p>
+        }
+        <div class="actions full">
+          <button class="btn-secondary" type="button" (click)="logout()">Abmelden</button>
+          <button class="btn-primary" type="submit" [disabled]="saving()">Weiter</button>
+        </div>
+      </form>
+    } @else {
+      <form class="field-grid" (ngSubmit)="claimDevice()">
+        <label class="field full">
+          <span class="field-label">Seriennummer</span>
+          <input class="field-input" name="serialNumber" [(ngModel)]="serialNumber" placeholder="z.B. EP0707" />
+        </label>
+
+        @if (error()) {
+          <p class="feedback error full" role="alert">{{ error() }}</p>
+        }
+        <div class="actions full">
+          <button class="btn-secondary" type="button" (click)="logout()">Abmelden</button>
+          <button class="btn-primary" type="submit" [disabled]="saving()">Gerät verbinden</button>
+        </div>
+      </form>
+    }
+  </section>
+</main>
