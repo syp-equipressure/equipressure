@@ -1,0 +1,81 @@
+# Tests für den LocationController (api/locations)
+#
+# Die Ids und erwarteten Werte passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank).
+# Adressen können über die API nicht gelöscht werden: jeder Lauf legt deshalb eine neue Adresse mit eindeutigem
+# Straßennamen an, die Städteliste der Testdaten ändert sich dadurch nicht (Traun gibt es schon).
+
+@BaseUrl = http://localhost:5200/api
+
+### Städte nach Namen filtern (Linz wird am meisten verwendet und kommt vor Linz-Urfahr)
+GET {{BaseUrl}}/locations?nameFilter=lin&length=5
+
+> {%
+    client.test("Linz und Linz-Urfahr", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var names = response.body.map(function (c) { return c.cityName; });
+        client.assert(JSON.stringify(names) === '["Linz","Linz-Urfahr"]', "Städte: " + JSON.stringify(names));
+    });
+%}
+
+### Alle Städte abrufen (ohne Filter)
+GET {{BaseUrl}}/locations
+
+> {%
+    client.test("Alle 6 Städte der Testdaten", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.length === 6, "Anzahl: " + response.body.length);
+    });
+%}
+
+### Ungültige Anzahl (400, length muss mindestens 1 sein)
+GET {{BaseUrl}}/locations?length=0
+
+> {%
+    client.test("length=0 wird abgelehnt", function () {
+        client.assert(response.status === 400, "Erwartet 400, war " + response.status);
+    });
+%}
+
+### Adresse per Id abrufen (Adresse 1 ist die Werkstatt von Sophie)
+GET {{BaseUrl}}/locations/1
+
+> {%
+    client.test("Adresse 1 ist Lenaustraße 18 in Traun", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.addressName === "Lenaustraße 18", "Adresse: " + response.body.addressName);
+        client.assert(response.body.cityName === "Traun", "Stadt: " + response.body.cityName);
+    });
+%}
+
+### Neue Adresse anlegen (der Straßenname ist durch den Zeitstempel bei jedem Lauf eindeutig)
+POST {{BaseUrl}}/locations
+Content-Type: application/json
+
+{
+    "addressName": "Teststraße {{$timestamp}}",
+    "cityName": "Traun",
+    "plz": "4050"
+}
+
+> {%
+    client.test("Adresse angelegt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(response.body.cityName === "Traun", "Stadt: " + response.body.cityName);
+    });
+%}
+
+### Bestehende Adresse noch einmal anlegen (409, Groß-/Kleinschreibung zählt nicht)
+POST {{BaseUrl}}/locations
+Content-Type: application/json
+
+{
+    "addressName": "lenaustraße 18",
+    "cityName": "TRAUN",
+    "plz": "4050"
+}
+
+> {%
+    client.test("Doppelte Adresse wird abgelehnt", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
