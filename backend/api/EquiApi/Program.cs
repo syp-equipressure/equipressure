@@ -21,6 +21,7 @@ builder.Services.ConfigureAdditionalRouteConstraints();
 
 builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
 builder.Services.AddSingleton<IBluetoothDataHandler, LoggingBluetoothDataHandler>();
+builder.Services.AddSingleton<IBluetoothDataHandler, MeasurementDataBluetoothHandler>();
 builder.Services.AddHostedService<BluetoothConnectionService>();
 
 var app = builder.Build();

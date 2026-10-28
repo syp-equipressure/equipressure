@@ -14,6 +14,12 @@ internal sealed class BluetoothOptions
     ///     Gets or sets the (advertised) name of the device to connect to (case-insensitive)
     /// </summary>
     public string DeviceName { get; set; } = "EquiPressure_Dummy";
+    
+    /// <summary>
+    ///     Gets or sets the id of the measurement device in the database.
+    ///     Falls back to <see cref="DeviceName" /> if not set.
+    /// </summary>
+    public string? MeasurementDeviceId { get; set; }
 
     /// <summary>
     ///     Gets or sets the interval in which the connection is checked and re-established if necessary
