@@ -40,6 +40,14 @@ internal sealed class BluetoothConnectionService(
             return;
         }
 
+        // without it the received data cannot be assigned to a measurement
+        if (string.IsNullOrWhiteSpace(_options.MeasurementDeviceId))
+        {
+            Logger.LogError("{Section}:{Property} is not configured", BluetoothOptions.SectionName,
+                nameof(BluetoothOptions.MeasurementDeviceId));
+            return;
+        }
+
         // still connected and receiving
         if (_sessionTask is { IsCompleted: false })
         {
@@ -178,6 +186,9 @@ internal sealed class BluetoothConnectionService(
         }
 
         void OnDisconnected(object? sender, EventArgs e) => channel.Writer.TryComplete();
+
+        // the previous session has completed, so the handler is not called concurrently
+        dataHandler.Reset();
 
         characteristic.CharacteristicValueChanged += OnValueChanged;
         device.GattServerDisconnected += OnDisconnected;

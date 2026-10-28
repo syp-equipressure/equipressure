@@ -16,6 +16,12 @@ internal sealed class BluetoothOptions
     public string DeviceName { get; set; } = "EquiPressure_Dummy";
 
     /// <summary>
+    ///     Gets or sets the id (serial number) of the measurement device in the database the received data is
+    ///     stored for. This is not the advertised <see cref="DeviceName" />.
+    /// </summary>
+    public string MeasurementDeviceId { get; set; } = string.Empty;
+
+    /// <summary>
     ///     Gets or sets the interval in which the connection is checked and re-established if necessary
     /// </summary>
     public TimeSpan CheckInterval { get; set; } = TimeSpan.FromSeconds(15);
@@ -46,6 +52,12 @@ internal interface IBluetoothDataHandler
     /// <param name="data">Received bytes</param>
     /// <param name="cancellationToken">Cancellation token</param>
     ValueTask HandleAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken);
+
+    /// <summary>
+    ///     Called when a new connection is established, before any data of that connection is handled.
+    ///     Discards state of the previous connection, e.g. a partially received message.
+    /// </summary>
+    void Reset();
 }
 
 /// <summary>
@@ -65,5 +77,11 @@ internal sealed class LoggingBluetoothDataHandler(ILogger<LoggingBluetoothDataHa
                               System.Text.Encoding.ASCII.GetString(data.Span));
         Console.WriteLine("Received {0} bytes", data.Length);
         return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public void Reset()
+    {
+        // stateless
     }
 }

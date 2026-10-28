@@ -13,6 +13,9 @@ public sealed class MeasurementServiceTests
 {
     private const int GroupId = 1;
     private const int MeasurementId = 1;
+    private const string DeviceId = "EP0701";
+
+    private static readonly Instant timestamp = TestData.CreateClock().GetCurrentInstant();
 
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
     private readonly MeasurementService _sut;
@@ -520,6 +523,51 @@ public sealed class MeasurementServiceTests
 
         result.Value.Should().BeOfType<Success>();
         _uowMock.MeasurementRepository.Received(1).RemoveMeasurement(measurement);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("[1.5, abc]")]
+    [InlineData("12,5")]
+    public async Task AddDataToLatestMeasurementOfDeviceAsync_InvalidData_ReturnsInvalidMeasurementData(string data)
+    {
+        var result = await _sut.AddDataToLatestMeasurementOfDeviceAsync(DeviceId, data, timestamp);
+
+        result.Value.Should().BeOfType<IMeasurementService.InvalidMeasurementData>();
+        await _uowMock.MeasurementRepository.DidNotReceive().GetLatestMeasurementOfDeviceAsync(Arg.Any<string>());
+        _uowMock.MeasurementRepository.DidNotReceive().AddData(Arg.Any<MeasurementData>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddDataToLatestMeasurementOfDeviceAsync_DeviceHasNoMeasurement_ReturnsNotFound()
+    {
+        _uowMock.MeasurementRepository.GetLatestMeasurementOfDeviceAsync(DeviceId).Returns((Measurement?) null);
+
+        var result = await _sut.AddDataToLatestMeasurementOfDeviceAsync(DeviceId, "12.5", timestamp);
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.MeasurementRepository.DidNotReceive().AddData(Arg.Any<MeasurementData>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData("12.5", "12.5")]
+    [InlineData(" [1.5, 2.5] ", "[1.5, 2.5]")]
+    public async Task AddDataToLatestMeasurementOfDeviceAsync_ValidData_AddsTrimmedData(string data,
+        string expectedData)
+    {
+        _uowMock.MeasurementRepository.GetLatestMeasurementOfDeviceAsync(DeviceId)
+                .Returns(TestData.CreateMeasurement(MeasurementId, GroupId));
+
+        var result = await _sut.AddDataToLatestMeasurementOfDeviceAsync(DeviceId, data, timestamp);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.MeasurementRepository.Received(1).AddData(Arg.Is<MeasurementData>(entry =>
+            entry.Data == expectedData
+            && entry.Timestamp == timestamp
+            && entry.MeasurementId == MeasurementId));
         await _uowMock.Received(1).SaveChangesAsync();
     }
 
