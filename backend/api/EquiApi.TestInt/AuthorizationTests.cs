@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using EquiApi.Dtos;
 using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Util;

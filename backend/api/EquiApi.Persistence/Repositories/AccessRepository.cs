@@ -1,4 +1,4 @@
-using EquiApi.Persistence.Model;
+﻿using EquiApi.Persistence.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace EquiApi.Persistence.Repositories;
@@ -77,12 +77,12 @@ internal sealed class AccessRepository(
 {
     public async ValueTask<int?> GetPersonIdByExternalIdAsync(string externalId) =>
         await personSet.Where(p => p.ExternalId == externalId)
-                       .Select(p => (int?)p.Id)
+                       .Select(p => (int?) p.Id)
                        .FirstOrDefaultAsync();
 
     public async ValueTask<bool?> CanViewPersonAsync(int personId, int otherPersonId) =>
         await personSet.Where(p => p.Id == otherPersonId)
-                       .Select(p => (bool?)(p.Id == personId
+                       .Select(p => (bool?) (p.Id == personId
                                             || p.Roles.Any(r => r.Role.Name == RoleName.Saddler)
                                             || relationshipSet.Any(r =>
                                                 (r.SaddlerId == personId && r.EquestrianId == p.Id)
@@ -94,7 +94,7 @@ internal sealed class AccessRepository(
 
     public async ValueTask<bool?> CanManagePersonAsync(int personId, int otherPersonId) =>
         await personSet.Where(p => p.Id == otherPersonId)
-                       .Select(p => (bool?)(p.Id == personId
+                       .Select(p => (bool?) (p.Id == personId
                                             || (p.ExternalId == null
                                                 && relationshipSet.Any(r => r.SaddlerId == personId
                                                                             && r.EquestrianId == p.Id
@@ -103,7 +103,7 @@ internal sealed class AccessRepository(
 
     public async ValueTask<bool?> CanManageHorsesOfPersonAsync(int personId, int otherPersonId) =>
         await personSet.Where(p => p.Id == otherPersonId)
-                       .Select(p => (bool?)(p.Id == personId
+                       .Select(p => (bool?) (p.Id == personId
                                             || relationshipSet.Any(r => r.SaddlerId == personId
                                                                         && r.EquestrianId == p.Id
                                                                         && r.IsContact)))
@@ -111,7 +111,7 @@ internal sealed class AccessRepository(
 
     public async ValueTask<bool?> CanViewHorseAsync(int personId, int horseId) =>
         await horseSet.Where(h => h.Id == horseId)
-                      .Select(h => (bool?)(h.Persons.Any(ph => ph.PersonId == personId)
+                      .Select(h => (bool?) (h.Persons.Any(ph => ph.PersonId == personId)
                                            || h.Persons.Any(ph => ph.IsOwner
                                                                   && relationshipSet.Any(r =>
                                                                       r.SaddlerId == personId
@@ -121,7 +121,7 @@ internal sealed class AccessRepository(
 
     public async ValueTask<bool?> CanManageHorseAsync(int personId, int horseId) =>
         await horseSet.Where(h => h.Id == horseId)
-                      .Select(h => (bool?)h.Persons.Any(ph => ph.IsOwner
+                      .Select(h => (bool?) h.Persons.Any(ph => ph.IsOwner
                                                               && (ph.PersonId == personId
                                                                   || relationshipSet.Any(r =>
                                                                       r.SaddlerId == personId
@@ -131,22 +131,22 @@ internal sealed class AccessRepository(
 
     public async ValueTask<bool?> IsHorseOwnerAsync(int personId, int horseId) =>
         await horseSet.Where(h => h.Id == horseId)
-                      .Select(h => (bool?)h.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId))
+                      .Select(h => (bool?) h.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId))
                       .FirstOrDefaultAsync();
 
     public async ValueTask<bool?> CanUseDeviceAsync(int personId, string deviceId) =>
         await deviceSet.Where(d => d.Id == deviceId)
-                       .Select(d => (bool?)(d.OwnerId == personId || d.Users.Any(u => u.UserId == personId)))
+                       .Select(d => (bool?) (d.OwnerId == personId || d.Users.Any(u => u.UserId == personId)))
                        .FirstOrDefaultAsync();
 
     public async ValueTask<bool?> IsDeviceOwnerAsync(int personId, string deviceId) =>
         await deviceSet.Where(d => d.Id == deviceId)
-                       .Select(d => (bool?)(d.OwnerId == personId))
+                       .Select(d => (bool?) (d.OwnerId == personId))
                        .FirstOrDefaultAsync();
 
     public async ValueTask<bool?> CanViewMeasurementGroupAsync(int personId, int groupId) =>
         await groupSet.Where(g => g.Id == groupId)
-                      .Select(g => (bool?)(g.PersonId == personId
+                      .Select(g => (bool?) (g.PersonId == personId
                                            || g.Horse.Persons.Any(ph => ph.PersonId == personId)
                                            || g.Horse.Persons.Any(ph => ph.IsOwner
                                                                         && relationshipSet.Any(r =>
@@ -157,7 +157,7 @@ internal sealed class AccessRepository(
 
     public async ValueTask<bool?> CanManageMeasurementGroupAsync(int personId, int groupId) =>
         await groupSet.Where(g => g.Id == groupId)
-                      .Select(g => (bool?)(g.PersonId == personId
+                      .Select(g => (bool?) (g.PersonId == personId
                                            || g.Horse.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId)))
                       .FirstOrDefaultAsync();
 }

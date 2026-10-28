@@ -254,7 +254,7 @@ internal sealed class BluetoothConnectionService(
             // best effort
         }
     }
-    
+
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         // cancels the stoppingToken and waits for the run loop to finish

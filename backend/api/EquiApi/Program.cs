@@ -1,4 +1,4 @@
-using EquiApi;
+﻿using EquiApi;
 using EquiApi.BackgroundServices;
 using EquiApi.Shared;
 using EquiApi.Util;

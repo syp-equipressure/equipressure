@@ -83,11 +83,11 @@ internal static class TestData
 
     public static DeviceCategory CreateDeviceCategory(int numOfAllowedPeople = 5,
                                                       RoleName role = RoleName.Equestrian) => new()
-    {
-        Name = role == RoleName.Saddler ? "Professional" : "Standard",
-        NumOfAllowedPeople = numOfAllowedPeople,
-        Role = role
-    };
+                                                      {
+                                                          Name = role == RoleName.Saddler ? "Professional" : "Standard",
+                                                          NumOfAllowedPeople = numOfAllowedPeople,
+                                                          Role = role
+                                                      };
 
     public static MeasurementDevice CreateDevice(string id, Person owner, DeviceCategory category,
                                                  params Person[] users) => new()

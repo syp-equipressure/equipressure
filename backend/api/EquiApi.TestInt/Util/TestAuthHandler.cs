@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Encodings.Web;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Authentication;

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using EquiApi.Core.Services;
 using EquiApi.Shared;
 using EquiApi.Util;

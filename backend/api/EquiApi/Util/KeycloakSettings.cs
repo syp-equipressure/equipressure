@@ -1,4 +1,4 @@
-namespace EquiApi.Util;
+﻿namespace EquiApi.Util;
 
 public sealed class KeycloakSettings
 {

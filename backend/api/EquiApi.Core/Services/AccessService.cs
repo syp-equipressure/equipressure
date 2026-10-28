@@ -1,4 +1,4 @@
-using EquiApi.Persistence.Model;
+﻿using EquiApi.Persistence.Model;
 using EquiApi.Persistence.Repositories;
 using EquiApi.Persistence.Util;
 

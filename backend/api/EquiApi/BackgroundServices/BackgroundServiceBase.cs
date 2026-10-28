@@ -95,5 +95,5 @@ internal abstract class BackgroundServiceBase<T>(
         Logger.LogDebug("Scheduled next run of {ServiceName} at {@TimeToRun}", ServiceName, timeToRun);
         await Task.Delay(waitTime.ToTimeSpan(), stoppingToken);
     }
-    
+
 }
