@@ -9,9 +9,6 @@
   } @else {
   <div class="messages-layout">
     <aside class="customer-panel" aria-label="Kundenliste">
-      <div class="panel-title">
-        <h2>Nachrichten</h2>
-      </div>
       @if (notificationPermission() === 'default') {
         <button type="button" class="notify-button" (click)="enableNotifications()">
           <span class="material-icons" aria-hidden="true">notifications_active</span>
@@ -151,7 +148,6 @@
         @if (showPicker()) {
           <app-measurement-picker
             [contactId]="contact.id"
-            [personId]="personId()"
             [sending]="sending()"
             (selected)="sendMeasurement($event)"
             (cancel)="showPicker.set(false)"

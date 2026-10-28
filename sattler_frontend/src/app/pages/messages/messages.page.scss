@@ -25,34 +25,6 @@
   background: t.$bg-card;
 }
 
-.panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 64px;
-  padding: 0 18px;
-  border-bottom: 1px solid t.$border-soft;
-
-  h2 {
-    margin: 0;
-    color: t.$text-strong;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-  }
-
-  span {
-    min-width: 24px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: t.$purple-50;
-    color: t.$purple-600;
-    font-size: 11px;
-    font-weight: 700;
-    text-align: center;
-  }
-}
-
 .customer-list {
   display: flex;
   flex-direction: column;
@@ -203,18 +175,18 @@
 .chat-header {
   flex-shrink: 0;
   display: flex;
-  min-height: 72px;
+  min-height: 52px;
   align-items: center;
-  gap: 14px;
-  padding: 8px 18px;
+  gap: 12px;
+  padding: 6px 18px;
   border-bottom: 1px solid t.$border;
   background: t.$bg-card;
 
   .customer-avatar {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
-    font-size: 14px;
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    font-size: 13px;
   }
 
   h2 {

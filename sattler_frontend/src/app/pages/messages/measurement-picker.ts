@@ -1,14 +1,11 @@
 import { Component, effect, inject, input, output, signal } from '@angular/core';
-import { catchError, forkJoin, of } from 'rxjs';
 import { Horse } from '../../models/horse.model';
 import { BackendApiService, MeasurementSummary } from '../../services/backend-api.service';
 
-interface HorseOption {
-  horse: Horse;
-  label: string;
-}
-
-/** Selects a measurement of the customer's horses (or the saddler's own horses) to send in the chat. */
+/**
+ * Selects a measurement to send in the chat. Only the horses of the customer of the chat are offered,
+ * the backend does not allow sending measurements of other customers either.
+ */
 @Component({
   selector: 'app-measurement-picker',
   standalone: true,
@@ -24,14 +21,14 @@ interface HorseOption {
       @if (horsesLoading()) {
         <p class="hint" role="status">Pferde werden geladen …</p>
       } @else if (!horses().length) {
-        <p class="hint">Es gibt keine Pferde mit Messungen.</p>
+        <p class="hint">Diese Kundin bzw. dieser Kunde hat noch keine Pferde.</p>
       } @else {
         <label>
           <span>Pferd</span>
           <select [value]="horseId()" (change)="selectHorse($any($event.target).value)">
             <option value="" disabled>Pferd auswählen</option>
-            @for (option of horses(); track option.horse.id) {
-              <option [value]="option.horse.id">{{ option.label }}</option>
+            @for (horse of horses(); track horse.id) {
+              <option [value]="horse.id">{{ horse.name }}</option>
             }
           </select>
         </label>
@@ -169,12 +166,11 @@ export class MeasurementPickerComponent {
   private readonly api = inject(BackendApiService);
 
   readonly contactId = input.required<string>();
-  readonly personId = input.required<string>();
   readonly sending = input(false);
   readonly selected = output<string>();
   readonly cancel = output<void>();
 
-  readonly horses = signal<HorseOption[]>([]);
+  readonly horses = signal<Horse[]>([]);
   readonly horsesLoading = signal(false);
   readonly horseId = signal('');
   readonly measurements = signal<MeasurementSummary[]>([]);
@@ -182,23 +178,23 @@ export class MeasurementPickerComponent {
   readonly error = signal('');
 
   constructor() {
-    // the horses of the customer first, then the saddler's own horses
+    // only the horses of the customer of the chat
     effect(onCleanup => {
       const contactId = this.contactId();
-      const personId = this.personId();
       this.horsesLoading.set(true);
       this.horseId.set('');
-      const subscription = forkJoin({
-        customer: this.api.getHorses(contactId).pipe(catchError(() => of([] as Horse[]))),
-        own: this.api.getHorses(personId).pipe(catchError(() => of([] as Horse[]))),
-      }).subscribe(({ customer, own }) => {
-        const options = [
-          ...customer.map(horse => ({ horse, label: horse.name })),
-          ...own.map(horse => ({ horse, label: `${horse.name} (eigenes Pferd)` })),
-        ];
-        this.horses.set(options);
-        this.horsesLoading.set(false);
-        if (options.length === 1) this.selectHorse(options[0].horse.id);
+      this.error.set('');
+      const subscription = this.api.getHorses(contactId).subscribe({
+        next: horses => {
+          this.horses.set(horses);
+          this.horsesLoading.set(false);
+          if (horses.length === 1) this.selectHorse(horses[0].id);
+        },
+        error: (error: Error) => {
+          this.horses.set([]);
+          this.error.set(error.message);
+          this.horsesLoading.set(false);
+        },
       });
       onCleanup(() => subscription.unsubscribe());
     });

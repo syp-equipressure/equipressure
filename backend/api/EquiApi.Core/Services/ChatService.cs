@@ -54,7 +54,8 @@ public interface IChatService
     /// <summary>
     ///     Sends a message. A shared horse has to be a horse of the sender. A shared measurement can be sent by the
     ///     persons of the horse, the rider, the owner of the measurement device (e.g. the saddler who measured) and
-    ///     the persons it was released to.
+    ///     the persons it was released to - but only if the measured horse belongs to the sender or the recipient,
+    ///     so a saddler cannot send the measurements of one customer to another one.
     /// </summary>
     /// <param name="data">The values of the message</param>
     /// <returns>
@@ -204,6 +205,18 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
 
                     return new IChatService.InvalidMessage(
                         "Only persons of the horse, the measuring person or persons it was released to can share a measurement");
+                }
+
+                // a saddler may only send the measurements of the customer they are writing to,
+                // an equestrian shares the measurements of their own horses
+                if (!await uow.HorseRepository.IsPersonOfHorseAsync(data.RecipientId, group.HorseId)
+                    && !await uow.HorseRepository.IsPersonOfHorseAsync(data.SenderId, group.HorseId))
+                {
+                    logger.LogWarning("Person {PersonId} cannot send measurement group {GroupId} to person {RecipientId}",
+                                      data.SenderId, group.Id, data.RecipientId);
+
+                    return new IChatService.InvalidMessage(
+                        "A measurement can only be sent to the owner or a rider of the measured horse");
                 }
 
                 groupId = group.Id;

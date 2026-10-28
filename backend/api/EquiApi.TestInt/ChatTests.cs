@@ -217,6 +217,27 @@ public sealed class ChatTests(WebApiTestFixture webApiFixture) : WebApiTestBase(
     }
 
     [Fact]
+    public async ValueTask SendMessage_SaddlerSendsMeasurementOfAnotherCustomer_ReturnsConflict()
+    {
+        var customer = TestData.CreatePerson("Lena", "Grassauer");
+        var otherCustomer = TestData.CreatePerson("Max", "Muster");
+        var saddler = TestData.CreatePerson("Sophie", "Grüneis", role: RoleName.Saddler);
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        // the saddler measured Lena's horse with her own device
+        var device = TestData.CreateDevice("EP-SADDLER", saddler, TestData.CreateDeviceCategory());
+        var group = TestData.CreateMeasurementGroup(customer, horse, saddle, device);
+        await SeedAsync(otherCustomer, TestData.CreatePersonHorse(customer, horse, isOwner: true), saddle, group);
+
+        var response = await ApiClient.PostAsJsonAsync($"api/persons/{saddler.Id}/chats/{otherCustomer.Id}",
+                                                       new SendChatMessageRequest(ChatMessageType.Measurement, null,
+                                                                                  null, group.Id),
+                                                       JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async ValueTask AcceptShare_MessageOfSomebodyElse_ReturnsNotFound()
     {
         var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();

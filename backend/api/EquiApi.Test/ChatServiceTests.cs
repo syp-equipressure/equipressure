@@ -97,6 +97,8 @@ public sealed class ChatServiceTests
     {
         _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns(TestData.CreateMeasurementGroup());
         _uowMock.MeasurementRepository.CanShareGroupAsync(SaddlerId, 1).Returns(true);
+        // the recipient owns the measured horse
+        _uowMock.HorseRepository.IsPersonOfHorseAsync(EquestrianId, 1).Returns(true);
 
         var result = await _sut.SendMessageAsync(CreateData(SaddlerId, EquestrianId, ChatMessageType.Measurement,
                                                             groupId: 1));
@@ -104,6 +106,21 @@ public sealed class ChatServiceTests
         result.Value.Should().BeOfType<Success<ChatMessage>>();
         _uowMock.ChatRepository.Received(1).AddMessage(Arg.Is<ChatMessage>(m => m.MeasurementGroupId == 1
                                                                               && m.HorseId == null));
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_MeasurementOfAnotherCustomer_ReturnsInvalidMessage()
+    {
+        // the saddler measured the horse, but it belongs neither to the saddler nor to the recipient
+        _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns(TestData.CreateMeasurementGroup());
+        _uowMock.MeasurementRepository.CanShareGroupAsync(SaddlerId, 1).Returns(true);
+        _uowMock.HorseRepository.IsPersonOfHorseAsync(Arg.Any<int>(), 1).Returns(false);
+
+        var result = await _sut.SendMessageAsync(CreateData(SaddlerId, EquestrianId, ChatMessageType.Measurement,
+                                                            groupId: 1));
+
+        result.Value.Should().BeOfType<IChatService.InvalidMessage>();
+        _uowMock.ChatRepository.DidNotReceive().AddMessage(Arg.Any<ChatMessage>());
     }
 
     [Fact]
