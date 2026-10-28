@@ -1,16 +1,263 @@
-@BaseUrl = http://localhost:5200/api/horses
+# Tests für den HorseController (api/horses)
+#
+# Die Ids und erwarteten Werte passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank).
+# Schreibende Tests arbeiten mit einem selbst angelegten Pferd, das am Ende wieder gelöscht wird. Die Datei kann
+# daher in Rider mit "Run all requests in file" beliebig oft von oben nach unten ausgeführt werden.
 
-### Owner and visible riders of a horse, the owner is always the first entry
-GET {{BaseUrl}}/1/riders
+@BaseUrl = http://localhost:5200/api
 
-### Hidden riders of a horse
-GET {{BaseUrl}}/1/riders/hidden
+# Luna (Pferd 1) gehört Lena (6), Max (7) reitet sie, Tobias (9) ist versteckt; Sättel 1 und 2
+# Das angelegte Pferd gehört Max (7), Tobias (9) wird seine Reitbeteiligung
+@horseId = 1
+@saddleId = 1
+@lunaOwnerId = 6
+@ownerId = 7
+@riderId = 9
 
-### Add a person as rider (Reitbeteiligung), 409 if they already belong to the horse
-POST {{BaseUrl}}/1/riders/10
+### Pferd abrufen (Luna mit Rasse und Adresse)
+GET {{BaseUrl}}/horses/{{horseId}}
 
-### Hide a rider, 409 for the owner
-PUT {{BaseUrl}}/1/riders/10/hidden
+> {%
+    client.test("Luna mit Rasse und Adresse", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.name === "Luna", "Name: " + response.body.name);
+        client.assert(JSON.stringify(response.body.breedNames) === '["Hannoveraner"]',
+            "Rassen: " + JSON.stringify(response.body.breedNames));
+        client.assert(response.body.address.addressName === "Reiterhof Sonnenhügel 5",
+            "Adresse: " + response.body.address.addressName);
+    });
+%}
 
-### Show a hidden rider again
-DELETE {{BaseUrl}}/1/riders/10/hidden
+### Nicht existierendes Pferd abrufen (404)
+GET {{BaseUrl}}/horses/999999
+
+> {%
+    client.test("Unbekanntes Pferd liefert 404", function () {
+        client.assert(response.status === 404, "Erwartet 404, war " + response.status);
+    });
+%}
+
+### Sättel eines Pferdes abrufen (Luna: 2 Sättel, nach Namen sortiert)
+GET {{BaseUrl}}/horses/{{horseId}}/saddles
+
+> {%
+    client.test("Luna hat 2 Sättel", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var names = response.body.saddles.map(function (s) { return s.name; });
+        client.assert(JSON.stringify(names) === '["Dressursattel Classic","Springsattel Pro"]',
+            "Sättel: " + JSON.stringify(names));
+    });
+%}
+
+### Reiter eines Pferdes abrufen (Besitzerin Lena zuerst, dann Max - Tobias ist versteckt)
+GET {{BaseUrl}}/horses/{{horseId}}/riders
+
+> {%
+    client.test("Reiter von Luna sind Lena und Max", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.persons.map(function (p) { return p.id; });
+        client.assert(JSON.stringify(ids) === "[6,7]", "Reiter: " + JSON.stringify(ids));
+    });
+%}
+
+### Versteckte Reiter eines Pferdes abrufen (Tobias)
+GET {{BaseUrl}}/horses/{{horseId}}/riders/hidden
+
+> {%
+    client.test("Tobias ist versteckt", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.persons.map(function (p) { return p.id; });
+        client.assert(JSON.stringify(ids) === "[9]", "Versteckte Reiter: " + JSON.stringify(ids));
+    });
+%}
+
+### Alle Sattelkategorien abrufen (Dressur, Springen, Vielseitigkeit, Freizeit, Western)
+GET {{BaseUrl}}/horses/saddles/categories
+
+> {%
+    client.test("5 Sattelkategorien", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.categories.length === 5, "Anzahl: " + response.body.categories.length);
+    });
+%}
+
+### Sattel löschen, mit dem schon gemessen wurde (409, Messgruppe 1 von Luna verwendet Sattel 1)
+DELETE {{BaseUrl}}/horses/{{horseId}}/saddles/{{saddleId}}
+
+> {%
+    client.test("Verwendeter Sattel wird nicht gelöscht", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Reitbeteiligung hinzufügen, die schon zum Pferd gehört (409, Max reitet Luna schon)
+POST {{BaseUrl}}/horses/{{horseId}}/riders/{{ownerId}}
+
+> {%
+    client.test("Vorhandener Reiter wird nicht noch einmal hinzugefügt", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Besitzerin verstecken (409, Lena ist die Besitzerin von Luna)
+PUT {{BaseUrl}}/horses/{{horseId}}/riders/{{lunaOwnerId}}/hidden
+
+> {%
+    client.test("Besitzerin kann nicht versteckt werden", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Person einblenden, die nicht zum Pferd gehört (404, Eva ist keine Reiterin von Luna)
+DELETE {{BaseUrl}}/horses/{{horseId}}/riders/10/hidden
+
+> {%
+    client.test("Unbekannter Reiter liefert 404", function () {
+        client.assert(response.status === 404, "Erwartet 404, war " + response.status);
+    });
+%}
+
+### Neues Pferd anlegen (Max wird Besitzer, Rassen Haflinger und Noriker)
+POST {{BaseUrl}}/horses
+Content-Type: application/json
+
+{
+    "name": "Blitz",
+    "dateOfBirth": "2015-04-01",
+    "weight": 550.0,
+    "height": 165.0,
+    "gender": "Male",
+    "address": {
+        "addressName": "Pferdehof Grünwald 12",
+        "cityName": "Leonding",
+        "plz": "4060"
+    },
+    "breedIds": [5, 6],
+    "ownerId": {{ownerId}}
+}
+
+> {%
+    client.test("Pferd angelegt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(JSON.stringify(response.body.breedNames.sort()) === '["Haflinger","Noriker"]',
+            "Rassen: " + JSON.stringify(response.body.breedNames));
+    });
+    client.global.set("createdHorseId", response.body.id);
+%}
+
+### Angelegtes Pferd ändern (nur gesetzte Felder werden geändert)
+PATCH {{BaseUrl}}/horses/{{createdHorseId}}
+Content-Type: application/json
+
+{
+    "name": "Blitz der Zweite",
+    "weight": 560.0
+}
+
+> {%
+    client.test("Pferd geändert", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.name === "Blitz der Zweite", "Name: " + response.body.name);
+        client.assert(response.body.height === 165, "Höhe sollte gleich bleiben: " + response.body.height);
+    });
+%}
+
+### Reitbeteiligung zum angelegten Pferd hinzufügen (Tobias reitet das Pferd von Max)
+POST {{BaseUrl}}/horses/{{createdHorseId}}/riders/{{riderId}}
+
+> {%
+    client.test("Reitbeteiligung hinzugefügt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Reitbeteiligung des angelegten Pferdes verstecken (kann dann nicht mehr für neue Messungen gewählt werden)
+PUT {{BaseUrl}}/horses/{{createdHorseId}}/riders/{{riderId}}/hidden
+
+> {%
+    client.test("Reitbeteiligung versteckt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Versteckte Reiter des angelegten Pferdes abrufen (Tobias)
+GET {{BaseUrl}}/horses/{{createdHorseId}}/riders/hidden
+
+> {%
+    client.test("Tobias ist versteckt", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.persons.map(function (p) { return p.id; });
+        client.assert(JSON.stringify(ids) === "[9]", "Versteckte Reiter: " + JSON.stringify(ids));
+    });
+%}
+
+### Reitbeteiligung des angelegten Pferdes wieder einblenden
+DELETE {{BaseUrl}}/horses/{{createdHorseId}}/riders/{{riderId}}/hidden
+
+> {%
+    client.test("Reitbeteiligung wieder sichtbar", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Reiter des angelegten Pferdes abrufen (Besitzer Max zuerst, dann Tobias)
+GET {{BaseUrl}}/horses/{{createdHorseId}}/riders
+
+> {%
+    client.test("Reiter sind Max und Tobias", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.persons.map(function (p) { return p.id; });
+        client.assert(JSON.stringify(ids) === "[7,9]", "Reiter: " + JSON.stringify(ids));
+    });
+%}
+
+### Sattel zum angelegten Pferd hinzufügen (Kategorie 4 = Freizeit)
+POST {{BaseUrl}}/horses/{{createdHorseId}}/saddles
+Content-Type: application/json
+
+{
+    "name": "Freizeitsattel Test",
+    "categoryId": 4
+}
+
+> {%
+    client.test("Sattel hinzugefügt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(response.body.categoryName === "Freizeit", "Kategorie: " + response.body.categoryName);
+    });
+    client.global.set("createdSaddleId", response.body.id);
+%}
+
+### Sattel des angelegten Pferdes ändern (neue Kategorie 5 = Western, der Name bleibt)
+PATCH {{BaseUrl}}/horses/{{createdHorseId}}/saddles/{{createdSaddleId}}
+Content-Type: application/json
+
+{
+    "categoryId": 5
+}
+
+> {%
+    client.test("Sattel geändert", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.name === "Freizeitsattel Test", "Name: " + response.body.name);
+        client.assert(response.body.categoryName === "Western", "Kategorie: " + response.body.categoryName);
+    });
+%}
+
+### Sattel des angelegten Pferdes löschen
+DELETE {{BaseUrl}}/horses/{{createdHorseId}}/saddles/{{createdSaddleId}}
+
+> {%
+    client.test("Sattel gelöscht", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Angelegtes Pferd löschen
+DELETE {{BaseUrl}}/horses/{{createdHorseId}}
+
+> {%
+    client.test("Pferd gelöscht", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}

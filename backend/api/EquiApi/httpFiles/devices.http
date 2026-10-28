@@ -1,21 +1,144 @@
+# Tests für den DeviceController (api/devices)
+#
+# Die Ids und erwarteten Werte passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank).
+# Schreibende Tests verändern die Testdaten nicht dauerhaft: sie fügen einen Benutzer hinzu und entfernen ihn gleich
+# wieder oder arbeiten mit einem selbst angelegten Gerät, das am Ende wieder gelöscht wird. Die Datei kann daher in
+# Rider mit "Run all requests in file" beliebig oft von oben nach unten ausgeführt werden.
+
 @BaseUrl = http://localhost:5200/api
 
-### Device Endpoints
-@deviceId = EP0702
-@userId = 7
+# EP0701 gehört Lena (6), Benutzer sind Max (7) und Tobias (9), es wurde schon damit gemessen
+# EP0702 gehört Max (Basic, 1 Benutzer erlaubt, noch keiner), EP0703 gehört Julia (Basic, Limit mit Tobias erreicht)
+@deviceId = EP0701
+@freeDeviceId = EP0702
+@fullDeviceId = EP0703
+@ownerId = 7
+@userId = 9
 
-### Create Device
+### Alle Gerätekategorien abrufen (nach erlaubten Benutzern sortiert)
+GET {{BaseUrl}}/devices/categories
+
+> {%
+    client.test("5 Kategorien, Basic zuerst", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.categories.length === 5, "Anzahl: " + response.body.categories.length);
+        client.assert(response.body.categories[0].name === "Basic", "Erste: " + response.body.categories[0].name);
+        client.assert(response.body.categories[0].numOfAllowedPeople === 1,
+            "Erlaubte Benutzer: " + response.body.categories[0].numOfAllowedPeople);
+    });
+%}
+
+### Gerät abrufen (EP0701 mit Besitzerin, Kategorie und Benutzern)
+GET {{BaseUrl}}/devices/{{deviceId}}
+
+> {%
+    client.test("EP0701 gehört Lena und hat 2 Benutzer", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.owner.id === 6, "Besitzer: " + response.body.owner.id);
+        client.assert(response.body.categoryName === "Standard", "Kategorie: " + response.body.categoryName);
+        client.assert(response.body.users.length === 2, "Benutzer: " + response.body.users.length);
+    });
+%}
+
+### Nicht existierendes Gerät abrufen (404)
+GET {{BaseUrl}}/devices/EP9999
+
+> {%
+    client.test("Unbekanntes Gerät liefert 404", function () {
+        client.assert(response.status === 404, "Erwartet 404, war " + response.status);
+    });
+%}
+
+### Besitzer eines Geräts abrufen (Lena)
+GET {{BaseUrl}}/devices/{{deviceId}}/owner
+
+> {%
+    client.test("Besitzerin von EP0701 ist Lena", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.id === 6 && response.body.firstName === "Lena",
+            "Besitzer: " + response.body.id + " " + response.body.firstName);
+    });
+%}
+
+### Benutzer eines Geräts abrufen (Tobias und Max, nach Nachnamen sortiert, ohne Besitzerin)
+GET {{BaseUrl}}/devices/{{deviceId}}/users
+
+> {%
+    client.test("Benutzer von EP0701 sind Tobias und Max", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.persons.map(function (p) { return p.id; });
+        client.assert(JSON.stringify(ids) === "[9,7]", "Benutzer: " + JSON.stringify(ids));
+    });
+%}
+
+### Benutzer zu einem Gerät hinzufügen (Tobias zu EP0702 von Max)
+POST {{BaseUrl}}/devices/{{freeDeviceId}}/users/{{userId}}
+
+> {%
+    client.test("Benutzer hinzugefügt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Benutzer von einem Gerät entfernen (stellt die Testdaten wieder her)
+DELETE {{BaseUrl}}/devices/{{freeDeviceId}}/users/{{userId}}
+
+> {%
+    client.test("Benutzer entfernt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Benutzer zu einem vollen Gerät hinzufügen (409, EP0703 erlaubt nur einen Benutzer)
+POST {{BaseUrl}}/devices/{{fullDeviceId}}/users/{{ownerId}}
+
+> {%
+    client.test("Volles Gerät nimmt keinen Benutzer mehr auf", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Gerät löschen, mit dem schon gemessen wurde (409)
+DELETE {{BaseUrl}}/devices/{{deviceId}}
+
+> {%
+    client.test("Verwendetes Gerät wird nicht gelöscht", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Neues Gerät anlegen (Max wird Besitzer, Kategorie 2 = Standard), die Seriennummer ist bei jedem Lauf eindeutig
 POST {{BaseUrl}}/devices
 Content-Type: application/json
 
 {
-    "DeviceId": "A1B2C3",
-    "OwnerId": {{userId}},
-    "CategoryId": 1
+    "deviceId": "EP-TEST-{{$timestamp}}",
+    "ownerId": {{ownerId}},
+    "categoryId": 2
 }
 
-### 1. Get all devices of a person
-GET {{BaseUrl}}/persons/{{userId}}/devices
+> {%
+    client.test("Gerät angelegt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(response.body.owner.id === 7, "Besitzer: " + response.body.owner.id);
+    });
+    client.global.set("createdDeviceId", response.body.id);
+%}
 
-### 2. Get a device
-GET {{BaseUrl}}/devices/{{deviceId}}
+### Besitzer des angelegten Geräts ändern (Tobias wird Besitzer, Max wird Benutzer)
+PATCH {{BaseUrl}}/devices/{{createdDeviceId}}/owner/{{userId}}
+
+> {%
+    client.test("Besitzer geändert", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Angelegtes Gerät löschen (wurde noch nicht für Messungen verwendet)
+DELETE {{BaseUrl}}/devices/{{createdDeviceId}}
+
+> {%
+    client.test("Gerät gelöscht", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}

@@ -656,6 +656,118 @@ public sealed class MeasurementTests(WebApiTestFixture webApiFixture) : WebApiTe
         ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async ValueTask CreateMeasurement_WithRecordings_StoresRecordingsAsDataEntries()
+    {
+        var group = CreateGroup();
+        await SeedAsync(group);
+        var start = Instant.FromUtc(2026, 10, 1, 14, 0, 0);
+        var request = TestData.CreateAddMeasurementRequest() with
+        {
+            Recordings =
+            [
+                new RecordingRequest(start.Plus(Duration.FromSeconds(3)), [20, 40, 60]),
+                new RecordingRequest(start, [10, 20.5, 30])
+            ]
+        };
+
+        var response = await ApiClient.PostAsJsonAsync($"api/measurementgroups/{group.Id}/measurements", request,
+                                                       JsonOptions, TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var measurement = await ReadContentAsync<MeasurementDto>(response);
+        var measurementUrl = $"api/measurementgroups/{group.Id}/measurements/{measurement.Id}";
+
+        var data = await ReadContentAsync<MeasurementDataListResponse>(
+            await ApiClient.GetAsync($"{measurementUrl}/measurementData", TestCancellationToken));
+        data.Data.Select(d => d.Timestamp).Should().Equal(start, start.Plus(Duration.FromSeconds(3)));
+        data.Data.Select(d => d.Data).Should().Equal("[10,20.5,30]", "[20,40,60]");
+
+        // the stored recordings can be used by the aggregates: (10 + 20.5 + 30 + 20 + 40 + 60) / 6 = 30.083...
+        var average = await ReadContentAsync<AggregateResponse>(
+            await ApiClient.GetAsync($"{measurementUrl}/average", TestCancellationToken));
+        average.Value.Should().BeApproximately(180.5 / 6, 0.0001);
+    }
+
+    [Fact]
+    public async ValueTask CreateMeasurement_RecordingWithNegativeValue_ReturnsBadRequest()
+    {
+        var group = CreateGroup();
+        await SeedAsync(group);
+        var request = TestData.CreateAddMeasurementRequest() with
+        {
+            Recordings = [new RecordingRequest(Instant.FromUtc(2026, 10, 1, 14, 0, 0), [10, -5])]
+        };
+
+        var response = await ApiClient.PostAsJsonAsync($"api/measurementgroups/{group.Id}/measurements", request,
+                                                       JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask DeleteGroup_ExistingGroup_RemovesGroupMeasurementsDataAndReleaseEntries()
+    {
+        var group = CreateGroup();
+        var measurement = TestData.CreateMeasurement(group, "Schritt", "Links", "[1,2,3]", "[4,5,6]");
+        var release = new Release
+        {
+            Person = TestData.CreatePerson("Sabine", "Sattler", role: RoleName.Saddler),
+            ReleaseTimestamp = Instant.FromUtc(2026, 10, 2, 9, 0, 0),
+            MeasurementEligibilities = [new MeasurementEligibility { MeasurementGroup = group }]
+        };
+        await SeedAsync(measurement, release);
+
+        var response = await ApiClient.DeleteAsync($"api/measurementgroups/{group.Id}", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var getResponse = await ApiClient.GetAsync($"api/measurementgroups/{group.Id}", TestCancellationToken);
+        ShouldBeProblem(getResponse, HttpStatusCode.NotFound);
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            (await context.Measurements.CountAsync(m => m.GroupId == group.Id, TestCancellationToken))
+                .Should().Be(0);
+            (await context.MeasurementDates.CountAsync(d => d.MeasurementId == measurement.Id, TestCancellationToken))
+                .Should().Be(0);
+            (await context.MeasurementEligibilities.CountAsync(TestCancellationToken)).Should().Be(0);
+            // the release itself stays, only the group is removed from it
+            (await context.Releases.CountAsync(TestCancellationToken)).Should().Be(1);
+        });
+    }
+
+    [Fact]
+    public async ValueTask DeleteGroup_OtherGroupsOfHorse_AreKept()
+    {
+        var horse = TestData.CreateHorse();
+        var deletedGroup = CreateGroup(horse, "EP0001", "Erste Messung");
+        var keptGroup = CreateGroup(horse, "EP0002", "Zweite Messung");
+        await SeedAsync(deletedGroup, keptGroup);
+
+        var response = await ApiClient.DeleteAsync($"api/measurementgroups/{deletedGroup.Id}", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var groups = await ReadContentAsync<MeasurementGroupListResponse>(
+            await ApiClient.GetAsync($"api/measurementgroups/horse/{horse.Id}", TestCancellationToken));
+        groups.Groups.Should().ContainSingle().Which.Id.Should().Be(keptGroup.Id);
+    }
+
+    [Fact]
+    public async ValueTask DeleteGroup_NonExistingGroup_ReturnsNotFound()
+    {
+        var response = await ApiClient.DeleteAsync($"api/measurementgroups/{TestData.NonExistingId}",
+                                                   TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask DeleteGroup_InvalidId_ReturnsBadRequest()
+    {
+        var response = await ApiClient.DeleteAsync("api/measurementgroups/0", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
     /// <summary>
     ///     Seeds everything a new measurement group needs: the owner, who rides, the horse Luna (Haflinger) with a
     ///     saddle and the device of the owner

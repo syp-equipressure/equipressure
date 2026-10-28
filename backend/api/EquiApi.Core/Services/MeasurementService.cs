@@ -19,6 +19,13 @@ public sealed record NewMeasurementGroupData(
     int SaddleId,
     string DeviceId);
 
+/// <summary>
+///     A recording of the sensor mat at one point in time
+/// </summary>
+/// <param name="Timestamp">When the values were recorded</param>
+/// <param name="Values">The pressure values of all sensors (in mbar), row by row</param>
+public sealed record NewRecordingData(Instant Timestamp, IReadOnlyList<double> Values);
+
 public interface IMeasurementService
 {
     /// <summary>
@@ -178,18 +185,28 @@ public interface IMeasurementService
         int groupId, int measurementId, int dataId);
 
     /// <summary>
-    ///     Adds a new measurement to a measurement group
+    ///     Adds a new measurement to a measurement group, optionally including its recordings
     /// </summary>
     /// <param name="groupId">The id of the measurement group</param>
     /// <param name="pace">The pace (Gangart) of the measurement</param>
     /// <param name="hand">The hand (Seite) of the measurement</param>
     /// <param name="description">An optional description of the measurement</param>
+    /// <param name="recordings">The recordings of the measurement, each one is stored as a data entry</param>
     /// <returns>
     ///     The new measurement, <see cref="NotFound" /> if the group does not exist
     ///     or <see cref="MeasurementAlreadyExists" /> if a measurement with the same pace and hand already exists
     /// </returns>
     public ValueTask<OneOf<Success<Measurement>, NotFound, MeasurementAlreadyExists>> AddMeasurementAsync(
-        int groupId, string pace, string hand, string? description);
+        int groupId, string pace, string hand, string? description,
+        IReadOnlyCollection<NewRecordingData>? recordings = null);
+
+    /// <summary>
+    ///     Deletes a measurement group including its measurements and their data entries, the group is also removed
+    ///     from all releases
+    /// </summary>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the group does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> DeleteGroupAsync(int groupId);
 
     /// <summary>
     ///     Deletes a measurement including its data entries
@@ -198,6 +215,20 @@ public interface IMeasurementService
     /// <param name="measurementId">The id of the measurement</param>
     /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the measurement does not exist in the group</returns>
     public ValueTask<OneOf<Success, NotFound>> DeleteMeasurementAsync(int groupId, int measurementId);
+
+    /// <summary>
+    ///     Adds a data entry to the measurement that is currently recorded by a device, which is the most recently
+    ///     added measurement of the device's measurement groups
+    /// </summary>
+    /// <param name="deviceId">The id of the measurement device</param>
+    /// <param name="data">The data entry, a single number or a JSON array of numbers</param>
+    /// <param name="timestamp">The time the data was received</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the device has no measurement
+    ///     or <see cref="InvalidMeasurementData" /> if the data cannot be parsed as numbers
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, InvalidMeasurementData>> AddDataToLatestMeasurementOfDeviceAsync(
+        string deviceId, string data, Instant timestamp);
 
     /// <summary>
     ///     Returned if a data entry cannot be parsed as numbers, a data entry is either a single number or a JSON
@@ -424,7 +455,8 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
     }
 
     public async ValueTask<OneOf<Success<Measurement>, NotFound, IMeasurementService.MeasurementAlreadyExists>>
-        AddMeasurementAsync(int groupId, string pace, string hand, string? description)
+        AddMeasurementAsync(int groupId, string pace, string hand, string? description,
+                            IReadOnlyCollection<NewRecordingData>? recordings = null)
     {
         if (!await uow.MeasurementRepository.GroupExistsAsync(groupId))
         {
@@ -447,14 +479,42 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
             GroupId = groupId,
             Pace = pace,
             Hand = hand,
-            Description = description
+            Description = description,
+            // stored in the same format the aggregates (average, min, max) read: a JSON array of numbers
+            MeasurementDates = (recordings ?? [])
+                               .OrderBy(recording => recording.Timestamp)
+                               .Select(recording => new MeasurementData
+                               {
+                                   Timestamp = recording.Timestamp,
+                                   Data = JsonSerializer.Serialize(recording.Values)
+                               })
+                               .ToList()
         };
 
         uow.MeasurementRepository.AddMeasurement(measurement);
         await uow.SaveChangesAsync();
-        logger.LogInformation("Measurement {MeasurementId} added to group {GroupId}", measurement.Id, groupId);
+        logger.LogInformation("Measurement {MeasurementId} with {RecordingCount} recordings added to group {GroupId}",
+                              measurement.Id, measurement.MeasurementDates.Count, groupId);
 
         return new Success<Measurement>(measurement);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> DeleteGroupAsync(int groupId)
+    {
+        var group = await uow.MeasurementRepository.GetGroupByIdAsync(groupId);
+        if (group is null)
+        {
+            LogGroupNotFound(groupId);
+
+            return new NotFound();
+        }
+
+        // the measurements, their data entries and the release entries of the group are removed by the database (cascade)
+        uow.MeasurementRepository.RemoveGroup(group);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Measurement group {GroupId} deleted", groupId);
+
+        return new Success();
     }
 
     public async ValueTask<OneOf<Success, NotFound>> DeleteMeasurementAsync(int groupId, int measurementId)
@@ -470,6 +530,37 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
         uow.MeasurementRepository.RemoveMeasurement(measurement);
         await uow.SaveChangesAsync();
         logger.LogInformation("Measurement {MeasurementId} deleted from group {GroupId}", measurementId, groupId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IMeasurementService.InvalidMeasurementData>>
+        AddDataToLatestMeasurementOfDeviceAsync(string deviceId, string data, Instant timestamp)
+    {
+        var trimmedData = data.Trim();
+        if (!TryParseValues(trimmedData, []))
+        {
+            logger.LogWarning("Data from device {DeviceId} cannot be parsed as numbers: {Data}", deviceId, trimmedData);
+
+            return new IMeasurementService.InvalidMeasurementData();
+        }
+
+        var measurement = await uow.MeasurementRepository.GetLatestMeasurementOfDeviceAsync(deviceId);
+        if (measurement is null)
+        {
+            logger.LogWarning("Dropping data, device {DeviceId} has no measurement to record into", deviceId);
+
+            return new NotFound();
+        }
+
+        uow.MeasurementRepository.AddData(new MeasurementData
+        {
+            Data = trimmedData,
+            Timestamp = timestamp,
+            MeasurementId = measurement.Id
+        });
+        await uow.SaveChangesAsync();
+        logger.LogDebug("Data stored in measurement {MeasurementId}", measurement.Id);
 
         return new Success();
     }

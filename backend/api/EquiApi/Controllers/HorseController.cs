@@ -188,6 +188,49 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     }
 
     /// <summary>
+    ///     Changes the name and/or the category of a saddle, values that are not set stay unchanged
+    /// </summary>
+    [HttpPatch("{id:int}/saddles/{saddleId:int}")]
+    [ProducesResponseType<SaddleDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<SaddleDto>> UpdateSaddle([FromRoute][ValidId] int id,
+                                                                 [FromRoute][ValidId] int saddleId,
+                                                                 [FromBody] PatchSaddleRequest request)
+    {
+        if (!IsValid<PatchSaddleRequest.Validator, PatchSaddleRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await horseService.UpdateSaddleAsync(id, saddleId, request.Name, request.CategoryId);
+
+        return result.Match<ActionResult<SaddleDto>>(
+            success => Ok(SaddleDto.FromSaddle(success.Value)),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Removes a saddle of a horse, a saddle that was used for measurements cannot be removed
+    /// </summary>
+    [HttpDelete("{id:int}/saddles/{saddleId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> RemoveSaddle([FromRoute][ValidId] int id,
+                                                       [FromRoute][ValidId] int saddleId)
+    {
+        var result = await horseService.RemoveSaddleAsync(id, saddleId);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         detail: "The saddle was used for measurements, delete its measurement groups first"));
+    }
+
+    /// <summary>
     ///     Gets all saddle categories
     /// </summary>
     [HttpGet("saddles/categories")]

@@ -454,4 +454,155 @@ public sealed class HorseTests(WebApiTestFixture webApiFixture) : WebApiTestBase
             new SaddleCategoryDto(jumping.Id, "Jumping")
         ]);
     }
+
+    [Fact]
+    public async ValueTask GetBreeds_BreedsExist_ReturnsAllBreedsOrderedByName()
+    {
+        var noriker = TestData.CreateBreed("Noriker");
+        var haflinger = TestData.CreateBreed("Haflinger");
+        await SeedAsync(noriker, haflinger);
+
+        var response = await ApiClient.GetAsync("api/breeds", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<BreedListResponse>(response);
+        content.Breeds.Should().Equal(new BreedDto(haflinger.Id, "Haflinger"), new BreedDto(noriker.Id, "Noriker"));
+    }
+
+    [Fact]
+    public async ValueTask GetBreeds_NoBreeds_ReturnsEmptyList()
+    {
+        var response = await ApiClient.GetAsync("api/breeds", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<BreedListResponse>(response);
+        content.Breeds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async ValueTask UpdateSaddle_NewName_ChangesNameAndKeepsCategory()
+    {
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse, "Dressursattel", "Dressage");
+        await SeedAsync(saddle);
+
+        var response = await ApiClient.PatchAsJsonAsync($"api/horses/{horse.Id}/saddles/{saddle.Id}",
+                                                        new PatchSaddleRequest("Dressursattel Premium", null),
+                                                        JsonOptions, TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<SaddleDto>(response);
+        content.Should().Be(new SaddleDto(saddle.Id, "Dressursattel Premium", horse.Id, saddle.CategoryId,
+                                          "Dressage"));
+        var saddles = await ReadContentAsync<SaddleListResponse>(
+            await ApiClient.GetAsync($"api/horses/{horse.Id}/saddles", TestCancellationToken));
+        saddles.Saddles.Should().ContainSingle().Which.Should().Be(content);
+    }
+
+    [Fact]
+    public async ValueTask UpdateSaddle_NewCategory_ChangesCategory()
+    {
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse, "Vielseitigkeitssattel", "Dressage");
+        var jumping = TestData.CreateSaddleCategory("Jumping");
+        await SeedAsync(saddle, jumping);
+
+        var response = await ApiClient.PatchAsJsonAsync($"api/horses/{horse.Id}/saddles/{saddle.Id}",
+                                                        new PatchSaddleRequest(null, jumping.Id), JsonOptions,
+                                                        TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<SaddleDto>(response);
+        content.Should().Be(new SaddleDto(saddle.Id, "Vielseitigkeitssattel", horse.Id, jumping.Id, "Jumping"));
+    }
+
+    [Fact]
+    public async ValueTask UpdateSaddle_NonExistingCategory_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        await SeedAsync(saddle);
+
+        var response = await ApiClient.PatchAsJsonAsync($"api/horses/{horse.Id}/saddles/{saddle.Id}",
+                                                        new PatchSaddleRequest(null, TestData.NonExistingId),
+                                                        JsonOptions, TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask UpdateSaddle_SaddleOfOtherHorse_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse("Luna");
+        var otherHorse = TestData.CreateHorse("Apollo");
+        var saddleOfOtherHorse = TestData.CreateSaddle(otherHorse);
+        await SeedAsync(horse, saddleOfOtherHorse);
+
+        var response = await ApiClient.PatchAsJsonAsync($"api/horses/{horse.Id}/saddles/{saddleOfOtherHorse.Id}",
+                                                        new PatchSaddleRequest("Neuer Name", null), JsonOptions,
+                                                        TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask UpdateSaddle_EmptyName_ReturnsBadRequest()
+    {
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        await SeedAsync(saddle);
+
+        var response = await ApiClient.PatchAsJsonAsync($"api/horses/{horse.Id}/saddles/{saddle.Id}",
+                                                        new PatchSaddleRequest("", null), JsonOptions,
+                                                        TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask RemoveSaddle_UnusedSaddle_RemovesSaddle()
+    {
+        var horse = TestData.CreateHorse();
+        var removedSaddle = TestData.CreateSaddle(horse, "Alter Sattel");
+        var keptSaddle = TestData.CreateSaddle(horse, "Neuer Sattel");
+        await SeedAsync(removedSaddle, keptSaddle);
+
+        var response = await ApiClient.DeleteAsync($"api/horses/{horse.Id}/saddles/{removedSaddle.Id}",
+                                                   TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var saddles = await ReadContentAsync<SaddleListResponse>(
+            await ApiClient.GetAsync($"api/horses/{horse.Id}/saddles", TestCancellationToken));
+        saddles.Saddles.Should().ContainSingle().Which.Id.Should().Be(keptSaddle.Id);
+    }
+
+    [Fact]
+    public async ValueTask RemoveSaddle_SaddleUsedForMeasurements_ReturnsConflictAndKeepsSaddle()
+    {
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        var rider = TestData.CreatePerson();
+        var device = TestData.CreateDevice("EP0001", rider, TestData.CreateDeviceCategory());
+        await SeedAsync(TestData.CreateMeasurementGroup(rider, horse, saddle, device));
+
+        var response = await ApiClient.DeleteAsync($"api/horses/{horse.Id}/saddles/{saddle.Id}",
+                                                   TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+        var saddles = await ReadContentAsync<SaddleListResponse>(
+            await ApiClient.GetAsync($"api/horses/{horse.Id}/saddles", TestCancellationToken));
+        saddles.Saddles.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async ValueTask RemoveSaddle_NonExistingSaddle_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse();
+        await SeedAsync(horse);
+
+        var response = await ApiClient.DeleteAsync($"api/horses/{horse.Id}/saddles/{TestData.NonExistingId}",
+                                                   TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
 }

@@ -27,13 +27,13 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
         field ??= new LocationRepository(context.Addresses);
 
     public IDeviceRepository DeviceRepository =>
-        field ??= new DeviceRepository(context.Devices, context.DeviceCategories);
+        field ??= new DeviceRepository(context.Devices, context.DeviceCategories, context.MeasurementGroups);
 
     public IHorseRepository HorseRepository =>
         field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds);
 
     public ISaddleRepository SaddleRepository =>
-        field ??= new SaddleRepository(context.SaddleCategories);
+        field ??= new SaddleRepository(context.Saddles, context.SaddleCategories, context.MeasurementGroups);
 
     public IMeasurementRepository MeasurementRepository =>
         field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates,

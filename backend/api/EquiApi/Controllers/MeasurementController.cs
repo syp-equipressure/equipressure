@@ -237,7 +237,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
         }
 
         var result = await measurementService.AddMeasurementAsync(groupId, request.Pace, request.Hand,
-                                                                  request.Description);
+                                                                  request.Description, request.ToRecordingData());
 
         return result.Match<ActionResult<MeasurementDto>>(
             success => CreatedAtAction(nameof(GetMeasurementById),
@@ -258,6 +258,23 @@ public sealed class MeasurementController(IMeasurementService measurementService
                                                             [FromRoute][ValidId] int measurementId)
     {
         var result = await measurementService.DeleteMeasurementAsync(groupId, measurementId);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Removes a measurement group including its measurements and their data entries, the group is also removed
+    ///     from all releases
+    /// </summary>
+    [HttpDelete("{groupId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> DeleteGroup([FromRoute][ValidId] int groupId)
+    {
+        var result = await measurementService.DeleteGroupAsync(groupId);
 
         return result.Match<IActionResult>(
             _ => NoContent(),

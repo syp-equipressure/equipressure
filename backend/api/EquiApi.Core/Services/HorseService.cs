@@ -139,6 +139,43 @@ public interface IHorseService
     ///     Returned if the owner of a horse should be hidden
     /// </summary>
     public readonly record struct OwnerCannotBeHidden;
+
+    /// <summary>
+    ///     Gets all breeds
+    /// </summary>
+    /// <returns>All breeds ordered by name, which may be empty</returns>
+    public ValueTask<IReadOnlyCollection<Breed>> GetAllBreedsAsync();
+
+    /// <summary>
+    ///     Changes the name and/or the category of a saddle, values that are null stay unchanged
+    /// </summary>
+    /// <param name="horseId">The id of the horse the saddle belongs to</param>
+    /// <param name="saddleId">The id of the saddle</param>
+    /// <param name="name">The new name of the saddle</param>
+    /// <param name="categoryId">The id of the new saddle category</param>
+    /// <returns>
+    ///     The updated saddle including its category or <see cref="NotFound" /> if the horse has no saddle with this
+    ///     id or the category does not exist
+    /// </returns>
+    public ValueTask<OneOf<Success<Saddle>, NotFound>> UpdateSaddleAsync(int horseId, int saddleId, string? name,
+                                                                         int? categoryId);
+
+    /// <summary>
+    ///     Removes a saddle of a horse. A saddle that was used for measurements cannot be removed, because its
+    ///     measurement groups would be deleted as well.
+    /// </summary>
+    /// <param name="horseId">The id of the horse the saddle belongs to</param>
+    /// <param name="saddleId">The id of the saddle</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the horse has no saddle with this id
+    ///     or <see cref="SaddleInUse" /> if measurement groups were recorded with the saddle
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, SaddleInUse>> RemoveSaddleAsync(int horseId, int saddleId);
+
+    /// <summary>
+    ///     Returned if a saddle cannot be removed because measurement groups were recorded with it
+    /// </summary>
+    public readonly record struct SaddleInUse;
 }
 
 internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
@@ -383,6 +420,72 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
 
     public async ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories()
         => await uow.SaddleRepository.GetAllSaddleCategories();
+
+    public async ValueTask<IReadOnlyCollection<Breed>> GetAllBreedsAsync() =>
+        await uow.HorseRepository.GetAllBreedsAsync();
+
+    public async ValueTask<OneOf<Success<Saddle>, NotFound>> UpdateSaddleAsync(int horseId, int saddleId,
+                                                                               string? name, int? categoryId)
+    {
+        var saddle = await uow.SaddleRepository.GetSaddleOfHorseAsync(horseId, saddleId);
+        if (saddle is null)
+        {
+            LogSaddleNotFound(horseId, saddleId);
+
+            return new NotFound();
+        }
+
+        if (categoryId is not null)
+        {
+            var category = await uow.SaddleRepository.GetSaddleCategoryByIdAsync(categoryId.Value);
+            if (category is null)
+            {
+                logger.LogInformation("Cannot update saddle {SaddleId}, saddle category {CategoryId} not found",
+                                      saddleId, categoryId);
+
+                return new NotFound();
+            }
+
+            saddle.Category = category;
+        }
+
+        saddle.Name = name ?? saddle.Name;
+
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Saddle {SaddleId} of horse {HorseId} updated", saddleId, horseId);
+
+        return new Success<Saddle>(saddle);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IHorseService.SaddleInUse>> RemoveSaddleAsync(int horseId,
+                                                                                                int saddleId)
+    {
+        var saddle = await uow.SaddleRepository.GetSaddleOfHorseAsync(horseId, saddleId);
+        if (saddle is null)
+        {
+            LogSaddleNotFound(horseId, saddleId);
+
+            return new NotFound();
+        }
+
+        if (await uow.SaddleRepository.HasMeasurementGroupsAsync(saddleId))
+        {
+            logger.LogWarning("Cannot remove saddle {SaddleId}, measurement groups were recorded with it", saddleId);
+
+            return new IHorseService.SaddleInUse();
+        }
+
+        uow.SaddleRepository.RemoveSaddle(saddle);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Saddle {SaddleId} of horse {HorseId} removed", saddleId, horseId);
+
+        return new Success();
+    }
+
+    private void LogSaddleNotFound(int horseId, int saddleId)
+    {
+        logger.LogInformation("Saddle {SaddleId} of horse {HorseId} not found", saddleId, horseId);
+    }
 
     public async ValueTask<OneOf<Success<Horse>, NotFound>> PatchHorseAsync(int horseId, PatchHorseData data)
     {

@@ -144,6 +144,43 @@ public sealed record SaddleCategoryListResponse(IReadOnlyList<SaddleCategoryDto>
         new(categories.Select(SaddleCategoryDto.FromCategory).ToList());
 }
 
+/// <summary>
+///     Request to change a saddle, properties that are null stay unchanged
+/// </summary>
+/// <param name="Name">The new name of the saddle</param>
+/// <param name="CategoryId">The id of the new saddle category</param>
+public sealed record PatchSaddleRequest(string? Name, int? CategoryId)
+{
+    public sealed class Validator : AbstractValidator<PatchSaddleRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Name).NotEmpty().MaximumLength(100).When(x => x.Name is not null);
+            RuleFor(x => x.CategoryId).GreaterThan(0).When(x => x.CategoryId is not null);
+        }
+    }
+}
+
+/// <summary>
+///     A breed of horses
+/// </summary>
+/// <param name="Id">The id of the breed</param>
+/// <param name="Name">The name of the breed</param>
+public sealed record BreedDto(int Id, string Name)
+{
+    public static BreedDto FromBreed(Breed breed) => new(breed.Id, breed.Name);
+}
+
+/// <summary>
+///     A list of breeds
+/// </summary>
+/// <param name="Breeds">The breeds</param>
+public sealed record BreedListResponse(IReadOnlyList<BreedDto> Breeds)
+{
+    public static BreedListResponse FromBreeds(IEnumerable<Breed> breeds) =>
+        new(breeds.Select(BreedDto.FromBreed).ToList());
+}
+
 
 /// <summary>
 ///     Request to change a horse, properties that are null stay unchanged
