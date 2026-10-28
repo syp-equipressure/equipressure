@@ -15,8 +15,8 @@ class SaddlerContact extends StatefulWidget {
 
 class _SaddlerContactState extends State<SaddlerContact> {
   final ChatService _chatService = ChatService();
-  List<Chat> _chats = [];
-  bool _isLoading = true;
+
+  List<Chat> get _chats => _chatService.chats;
 
   @override
   void initState() {
@@ -24,13 +24,8 @@ class _SaddlerContactState extends State<SaddlerContact> {
     _loadChats();
   }
 
-  Future<void> _loadChats() async {
-    final chats = await _chatService.getChats();
-    setState(() {
-      _chats = chats;
-      _isLoading = false;
-    });
-  }
+  // start() lädt neu und verbindet erneut, falls die Backend-Person gewechselt hat
+  Future<void> _loadChats() => _chatService.start();
 
   void _navigateToSaddlerMap() {
     Navigator.push(
@@ -43,22 +38,25 @@ class _SaddlerContactState extends State<SaddlerContact> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      drawer: const SideNav(),
-      appBar: const CustomAppBar(
-        title: 'EquiPressure',
+    return ListenableBuilder(
+      listenable: _chatService,
+      builder: (context, _) => Scaffold(
+        backgroundColor: Colors.white,
+        drawer: const SideNav(),
+        appBar: const CustomAppBar(
+          title: 'EquiPressure',
+        ),
+        body: _chatService.isLoading && _chats.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _buildBody(),
+        floatingActionButton: _chats.isNotEmpty
+            ? FloatingActionButton(
+                backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+                onPressed: _navigateToSaddlerMap,
+                child: const Icon(Icons.add, color: Color.fromARGB(255, 83, 83, 83)),
+              )
+            : null,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildBody(),
-      floatingActionButton: _chats.isNotEmpty
-          ? FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 178, 149, 230),
-              onPressed: _navigateToSaddlerMap,
-              child: const Icon(Icons.add, color: Color.fromARGB(255, 83, 83, 83)),
-            )
-          : null,
     );
   }
 
@@ -77,14 +75,37 @@ class _SaddlerContactState extends State<SaddlerContact> {
             ),
           ),
         ), ),
+        if (_chatService.error != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: Text(
+              _chatService.error!,
+              style: TextStyle(color: Colors.red[700], fontSize: 13),
+            ),
+          ),
         Expanded(
-          child: _chats.isEmpty ? _buildEmptyState() : _buildChatList(),
+          child: RefreshIndicator(
+            onRefresh: _chatService.refreshChats,
+            child: _chats.isEmpty ? _buildEmptyState() : _buildChatList(),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildEmptyState() {
+    // scrollbar, damit Ziehen zum Aktualisieren auch ohne Chats geht
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 40),
+          child: Center(child: _buildEmptyPrompt()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyPrompt() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -178,7 +199,9 @@ class _ChatListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    chat.saddler.name,
+                    chat.contactName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -188,7 +211,8 @@ class _ChatListItem extends StatelessWidget {
                   Text(
                     chat.lastMessagePreview,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                      fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                       fontSize: 14,
                     ),
                     maxLines: 1,
@@ -197,12 +221,35 @@ class _ChatListItem extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              chat.formattedLastMessageTime,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 12,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  chat.formattedLastMessageTime,
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 12,
+                  ),
+                ),
+                if (chat.unreadCount > 0) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6955AE),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${chat.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -211,18 +258,11 @@ class _ChatListItem extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    if (chat.saddler.imagePath != null) {
-      return CircleAvatar(
-        radius: 28,
-        backgroundImage: AssetImage(chat.saddler.imagePath!),
-      );
-    }
-
     return CircleAvatar(
       radius: 28,
       backgroundColor: Colors.green[50],
       child: Text(
-        _getInitials(chat.saddler.name),
+        _getInitials(chat.contactName),
         style: TextStyle(
           color: Colors.green[700],
           fontWeight: FontWeight.bold,
@@ -233,11 +273,11 @@ class _ChatListItem extends StatelessWidget {
   }
 
   String _getInitials(String name) {
-    final parts = name.split(' ');
+    final parts = name.split(' ').where((part) => part.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return parts.isNotEmpty ? parts[0][0].toUpperCase() : '?';
   }
 }
 

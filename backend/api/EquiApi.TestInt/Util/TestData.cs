@@ -52,7 +52,7 @@ internal static class TestData
     };
 
     public static Breed CreateBreed(string name = "Haflinger") => new() { Name = name };
-    
+
     public static SaddleCategory CreateSaddleCategory(string name = "Dressage") => new() { Name = name };
 
     public static Saddle CreateSaddle(Horse horse, string name = "Dressage Saddle",

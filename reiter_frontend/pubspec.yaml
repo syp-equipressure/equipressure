@@ -79,7 +79,6 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/data/chat.json
     - assets/icon/horseIcon.svg
     - assets/icon/saddleIcon.svg
     - assets/horseImg/

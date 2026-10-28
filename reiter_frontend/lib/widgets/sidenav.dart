@@ -4,6 +4,7 @@ import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/screens/saddler_contact/saddler_contact.dart';
+import 'package:reiterappfrontend/services/chat_service.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -45,14 +46,19 @@ class SideNav extends StatelessWidget {
                 );
               },
             ),
-            _DrawerItem(
-              icon: Icons.chat_bubble_outline,
-              text: 'Sattler*innen',
-              onTap: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SaddlerContact())
-                );
-              },
+            // zeigt die Anzahl der ungelesenen Chat-Nachrichten
+            ListenableBuilder(
+              listenable: ChatService(),
+              builder: (context, _) => _DrawerItem(
+                icon: Icons.chat_bubble_outline,
+                text: 'Sattler*innen',
+                badge: ChatService().unreadTotal,
+                onTap: () {
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => SaddlerContact())
+                  );
+                },
+              ),
             ),
             _DrawerItem(
               icon: Icons.location_on_outlined,
@@ -84,12 +90,14 @@ class _DrawerItem extends StatelessWidget {
 
   final String text;
   final VoidCallback onTap;
+  final int badge;
 
   const _DrawerItem({
     this.icon,
     this.svgPath,
     required this.text,
     required this.onTap,
+    this.badge = 0,
   }) : assert(icon != null || svgPath != null);
 
   @override
@@ -100,6 +108,23 @@ class _DrawerItem extends StatelessWidget {
         text,
         style: const TextStyle(fontSize: 15),
       ),
+      trailing: badge > 0
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6955AE),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '$badge',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
       onTap: onTap,
     );
   }

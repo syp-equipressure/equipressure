@@ -42,6 +42,7 @@ public sealed class DevelopmentSeedDataTests(WebApiTestFixture webApiFixture) : 
             (await context.MeasurementDates.CountAsync(TestCancellationToken)).Should().Be(1225);
             (await context.Releases.CountAsync(TestCancellationToken)).Should().Be(5);
             (await context.MeasurementEligibilities.CountAsync(TestCancellationToken)).Should().Be(7);
+            (await context.ChatMessages.CountAsync(TestCancellationToken)).Should().Be(6);
         });
     }
 

@@ -45,7 +45,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
                                        HorseDto.FromHorse(success.Value)),
             _ => NotFound());
     }
-    
+
     /// <summary>
     ///     Removes a horse
     /// </summary>
@@ -109,7 +109,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             success => Ok(PersonListResponse.FromPersons(success.Value)),
             _ => NotFound());
     }
-    
+
     /// <summary>
     ///     Adds a saddle to a horse
     /// </summary>
@@ -144,7 +144,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
 
         return Ok(SaddleCategoryListResponse.FromCategories(categories));
     }
-    
+
     /// <summary>
     ///     Changes the given values of a horse
     /// </summary>

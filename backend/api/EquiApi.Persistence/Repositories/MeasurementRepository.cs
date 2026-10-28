@@ -84,6 +84,28 @@ public interface IMeasurementRepository
     public ValueTask<MeasurementData?> GetDataByIdAsync(int measurementId, int dataId);
 
     /// <summary>
+    ///     Checks if a person may share a measurement group: the persons of the horse, the rider, the owner of the
+    ///     measurement device (e.g. the saddler who measured) and the persons the group was released to
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="groupId">The id of the measurement group</param>
+    /// <returns>True if the person may share the group, false otherwise</returns>
+    public ValueTask<bool> CanShareGroupAsync(int personId, int groupId);
+
+    /// <summary>
+    ///     Gets the ids of all measurement groups of a horse
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The ids of the measurement groups</returns>
+    public ValueTask<IReadOnlyCollection<int>> GetGroupIdsOfHorseAsync(int horseId);
+
+    /// <summary>
+    ///     Adds a new release of measurement groups
+    /// </summary>
+    /// <param name="release">The release to add</param>
+    public void AddRelease(Release release);
+
+    /// <summary>
     ///     Adds a new measurement group
     /// </summary>
     /// <param name="group">The measurement group to add</param>
@@ -105,7 +127,8 @@ public interface IMeasurementRepository
 internal sealed class MeasurementRepository(
     DbSet<MeasurementGroup> groupSet,
     DbSet<Measurement> measurementSet,
-    DbSet<MeasurementData> dataSet) : IMeasurementRepository
+    DbSet<MeasurementData> dataSet,
+    DbSet<Release> releaseSet) : IMeasurementRepository
 {
     public async ValueTask<IReadOnlyCollection<MeasurementGroup>> GetGroupsOfHorseAsync(int horseId) =>
         await groupSet.AsNoTracking()
@@ -159,6 +182,19 @@ internal sealed class MeasurementRepository(
     public async ValueTask<MeasurementData?> GetDataByIdAsync(int measurementId, int dataId) =>
         await dataSet.FirstOrDefaultAsync(d => d.MeasurementId == measurementId && d.Id == dataId);
 
+    public async ValueTask<bool> CanShareGroupAsync(int personId, int groupId) =>
+        await groupSet.AnyAsync(mg => mg.Id == groupId
+                                      && (mg.PersonId == personId
+                                          || mg.Device.OwnerId == personId
+                                          || mg.Horse.Persons.Any(ph => ph.PersonId == personId)
+                                          || mg.MeasurementEligibilities.Any(me => me.Release.PersonId
+                                                                                   == personId)));
+
+    public async ValueTask<IReadOnlyCollection<int>> GetGroupIdsOfHorseAsync(int horseId) =>
+        await groupSet.Where(mg => mg.HorseId == horseId)
+                      .Select(mg => mg.Id)
+                      .ToListAsync();
+
     public void AddGroup(MeasurementGroup group)
     {
         groupSet.Add(group);
@@ -172,5 +208,10 @@ internal sealed class MeasurementRepository(
     public void RemoveMeasurement(Measurement measurement)
     {
         measurementSet.Remove(measurement);
+    }
+
+    public void AddRelease(Release release)
+    {
+        releaseSet.Add(release);
     }
 }

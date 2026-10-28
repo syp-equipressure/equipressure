@@ -42,6 +42,10 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     // Location DbSets
     public DbSet<Address> Addresses { get; set; }
 
+    // Chat DbSets
+    public DbSet<ChatMessage> ChatMessages { get; set; }
+    public DbSet<ChatFile> ChatFiles { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -56,6 +60,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         ConfigureMeasurement(modelBuilder);
         ConfigureRelease(modelBuilder);
         ConfigureSaddle(modelBuilder);
+        ConfigureChat(modelBuilder);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -228,7 +233,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                    .WithOne(pra => pra.Role)
                    .HasForeignKey(pra => pra.RoleId)
                    .OnDelete(DeleteBehavior.Cascade);
-        
+
         accountRole.HasData(new { Id = 1, Name = RoleName.Equestrian },
                             new { Id = 2, Name = RoleName.Saddler },
                             new { Id = 3, Name = RoleName.Guest });
@@ -408,5 +413,56 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                 .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
+    }
+
+    /// <summary>
+    ///     Configures the chat messages.
+    ///     The type of a message is persisted as a string, messages are removed together with their persons,
+    ///     a deleted shared horse or measurement group only removes the reference.
+    /// </summary>
+    /// <param name="mb">The model builder to use</param>
+    private static void ConfigureChat(ModelBuilder mb)
+    {
+        var message = mb.Entity<ChatMessage>();
+        message.HasKey(m => m.Id);
+        message.Property(m => m.Id).ValueGeneratedOnAdd();
+        message.Property(m => m.Type)
+               .HasConversion(new EnumToStringConverter<ChatMessageType>());
+        message.HasIndex(m => new { m.SenderId, m.RecipientId, m.SentAt });
+        message.HasIndex(m => new { m.RecipientId, m.ReadAt });
+
+        message.HasOne(m => m.Sender)
+               .WithMany()
+               .HasForeignKey(m => m.SenderId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        message.HasOne(m => m.Recipient)
+               .WithMany()
+               .HasForeignKey(m => m.RecipientId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        // a deleted horse or measurement group keeps the message (and its text) in the chat history,
+        // the clients show that the shared horse or measurement does not exist anymore
+        message.HasOne(m => m.Horse)
+               .WithMany()
+               .HasForeignKey(m => m.HorseId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        message.HasOne(m => m.MeasurementGroup)
+               .WithMany()
+               .HasForeignKey(m => m.MeasurementGroupId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        message.Property(m => m.FileName).HasMaxLength(255);
+        message.Property(m => m.FileContentType).HasMaxLength(255);
+
+        // the content of a file is stored in its own table, so that lists of messages do not load it
+        message.HasOne(m => m.File)
+               .WithOne(f => f.Message)
+               .HasForeignKey<ChatFile>(f => f.MessageId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        var file = mb.Entity<ChatFile>();
+        file.HasKey(f => f.MessageId);
     }
 }

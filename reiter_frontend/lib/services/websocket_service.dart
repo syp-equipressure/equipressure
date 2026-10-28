@@ -1,177 +1,116 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../models/message.dart';
 
-/// WebSocket service for real-time chat communication for later when we
-/// want to implement it in backend (￣y▽,￣)╭
+/// Hält eine WebSocket-Verbindung offen und baut sie nach einem Abbruch
+/// automatisch wieder auf (1 s, 2 s, 4 s … höchstens 30 s Pause).
 ///
-/// Usage:
-/// 1. Call connect() with your backend WebSocket URL
-/// 2. Listen to messageStream for incoming messages
-/// 3. Use sendMessage() to send messages
-/// 4. Call disconnect() when done
-///
-/// Example:
-/// ```dart
-/// final wsService = WebSocketService();
-/// await wsService.connect('ws://your-backend-url/chat');
-/// wsService.messageStream.listen((message) => print('Received: $message'));
-/// wsService.sendMessage(message);
-/// ```
+/// Eingehende Nachrichten werden als JSON-Objekte über [events] geliefert.
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
   factory WebSocketService() => _instance;
   WebSocketService._internal();
 
+  static const Duration _maxReconnectDelay = Duration(seconds: 30);
+
   WebSocketChannel? _channel;
-  final _messageController = StreamController<Message>.broadcast();
+  StreamSubscription? _subscription;
+  final _eventController = StreamController<Map<String, dynamic>>.broadcast();
   final _connectionController = StreamController<ConnectionState>.broadcast();
 
-  bool _isConnected = false;
   String? _currentUrl;
   Timer? _reconnectTimer;
-  int _reconnectAttempts = 0;
-  static const int _maxReconnectAttempts = 5;
+  Duration _reconnectDelay = const Duration(seconds: 1);
+  bool _isConnected = false;
 
-  /// Stream of incoming messages
-  Stream<Message> get messageStream => _messageController.stream;
+  /// Eingehende Ereignisse des Servers
+  Stream<Map<String, dynamic>> get events => _eventController.stream;
 
-  /// Stream of connection state changes
+  /// Änderungen des Verbindungszustands
   Stream<ConnectionState> get connectionStream => _connectionController.stream;
 
-  /// Whether currently connected
   bool get isConnected => _isConnected;
 
-  /// Connect to WebSocket server
-  ///
-  /// [url] - WebSocket URL (e.g., 'ws://localhost:8080/chat' or 'wss://api.example.com/chat')
-  /// [token] - Optional auth token to send on connection
-  Future<bool> connect(String url, {String? token}) async {
-    if (_isConnected && _currentUrl == url) {
-      return true;
-    }
+  /// Verbindet mit [url], eine bestehende Verbindung zu einer anderen URL wird
+  /// vorher getrennt.
+  Future<void> connect(String url) async {
+    if (_currentUrl == url && (_isConnected || _reconnectTimer != null)) return;
 
-    try {
-      disconnect();
-      _currentUrl = url;
-
-      // Add auth token to URL if provided
-      final uri = token != null
-          ? Uri.parse('$url?token=$token')
-          : Uri.parse(url);
-
-      _channel = WebSocketChannel.connect(uri);
-
-      // Wait for connection to establish
-      await _channel!.ready;
-
-      _isConnected = true;
-      _reconnectAttempts = 0;
-      _connectionController.add(ConnectionState.connected);
-
-      // Listen for incoming messages
-      _channel!.stream.listen(
-        _onMessage,
-        onError: _onError,
-        onDone: _onDone,
-      );
-
-      return true;
-    } catch (e) {
-      _isConnected = false;
-      _connectionController.add(ConnectionState.error);
-      return false;
-    }
+    disconnect();
+    _currentUrl = url;
+    await _open();
   }
 
-  /// Send a message through WebSocket
-  void sendMessage(Message message) {
-    if (!_isConnected || _channel == null) {
-      return;
-    }
-
-    final jsonData = jsonEncode(message.toJson());
-    _channel!.sink.add(jsonData);
-  }
-
-  /// Send raw JSON data
-  void sendRaw(Map<String, dynamic> data) {
-    if (!_isConnected || _channel == null) {
-      return;
-    }
-
-    _channel!.sink.add(jsonEncode(data));
-  }
-
-  /// Disconnect from WebSocket server
   void disconnect() {
+    _currentUrl = null;
     _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _subscription?.cancel();
+    _subscription = null;
     _channel?.sink.close();
     _channel = null;
-    _isConnected = false;
-    _connectionController.add(ConnectionState.disconnected);
+    _setConnected(false);
   }
 
-  void _onMessage(dynamic data) {
+  Future<void> _open() async {
+    final url = _currentUrl;
+    if (url == null) return;
+
+    _connectionController.add(ConnectionState.connecting);
     try {
-      final jsonData = jsonDecode(data as String);
-
-      // Handle different message types from backend
-      if (jsonData['type'] == 'message') {
-        final message = Message.fromJson(jsonData['payload']);
-        _messageController.add(message);
-      } else if (jsonData['type'] == 'messages') {
-        // Batch of messages (e.g., chat history)
-        final messages = (jsonData['payload'] as List)
-            .map((m) => Message.fromJson(m))
-            .toList();
-        for (final message in messages) {
-          _messageController.add(message);
-        }
+      final channel = WebSocketChannel.connect(Uri.parse(url));
+      await channel.ready;
+      if (_currentUrl != url) {
+        channel.sink.close();
+        return;
       }
-    } catch (e) {
-      // Handle parse error
+
+      _channel = channel;
+      _reconnectDelay = const Duration(seconds: 1);
+      _setConnected(true);
+      _subscription = channel.stream.listen(
+        _onData,
+        onError: (_) => _onClosed(),
+        onDone: _onClosed,
+      );
+    } catch (_) {
+      _onClosed();
     }
   }
 
-  void _onError(dynamic error) {
-    _isConnected = false;
-    _connectionController.add(ConnectionState.error);
-    _attemptReconnect();
-  }
-
-  void _onDone() {
-    _isConnected = false;
-    _connectionController.add(ConnectionState.disconnected);
-    _attemptReconnect();
-  }
-
-  void _attemptReconnect() {
-    if (_reconnectAttempts >= _maxReconnectAttempts || _currentUrl == null) {
-      return;
+  void _onData(dynamic data) {
+    if (data is! String) return;
+    try {
+      final json = jsonDecode(data);
+      if (json is Map<String, dynamic>) _eventController.add(json);
+    } catch (_) {
+      // keine gültige JSON-Nachricht
     }
+  }
 
-    _reconnectTimer?.cancel();
-    _reconnectAttempts++;
-
-    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-    final delay = Duration(seconds: 1 << (_reconnectAttempts - 1));
+  void _onClosed() {
+    _subscription?.cancel();
+    _subscription = null;
+    _channel = null;
+    _setConnected(false);
+    if (_currentUrl == null) return;
 
     _connectionController.add(ConnectionState.reconnecting);
-
-    _reconnectTimer = Timer(delay, () {
-      if (_currentUrl != null) {
-        connect(_currentUrl!);
-      }
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(_reconnectDelay, () {
+      _reconnectTimer = null;
+      _open();
     });
+    final next = _reconnectDelay * 2;
+    _reconnectDelay = next > _maxReconnectDelay ? _maxReconnectDelay : next;
   }
 
-  /// Dispose resources
-  void dispose() {
-    disconnect();
-    _messageController.close();
-    _connectionController.close();
+  void _setConnected(bool connected) {
+    if (_isConnected == connected) return;
+    _isConnected = connected;
+    _connectionController.add(
+      connected ? ConnectionState.connected : ConnectionState.disconnected,
+    );
   }
 }
 
@@ -180,5 +119,4 @@ enum ConnectionState {
   connecting,
   connected,
   reconnecting,
-  error,
 }
