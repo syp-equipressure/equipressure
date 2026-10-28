@@ -24,6 +24,11 @@ export class AuthService {
     return this.oauth.hasValidAccessToken();
   }
 
+  /** For requests that cannot send the Authorization header, e.g. the chat websocket and chat images */
+  get accessToken(): string {
+    return this.oauth.getAccessToken();
+  }
+
   /** Redirects to the Keycloak login page, afterwards the user comes back to the start page */
   login(): void {
     this.oauth.initCodeFlow();

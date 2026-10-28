@@ -6,6 +6,7 @@ import '../models/chat.dart';
 import '../models/message.dart';
 import 'api_client.dart';
 import 'api_config.dart';
+import 'auth_service.dart';
 import 'horse_service.dart';
 import 'websocket_service.dart';
 
@@ -77,7 +78,10 @@ class ChatService extends ChangeNotifier {
       _chats = [];
       _messages.clear();
       final wsBase = _baseUrl.replaceFirst(RegExp('^http'), 'ws');
-      await _webSocket.connect('$wsBase/persons/$personId/chats/ws');
+      await _webSocket.connect(
+        '$wsBase/persons/$personId/chats/ws',
+        queryParameters: _accessTokenQuery,
+      );
     }
     await refreshChats();
   }
@@ -173,9 +177,18 @@ class ChatService extends ChangeNotifier {
 
   /// Adresse des Inhalts einer gesendeten Datei. Sender*in und Empfänger*in
   /// dürfen sie abrufen, daher geht notfalls auch die Id aus der Nachricht.
+  /// Das Token steht in der Adresse, weil Bilder und Downloads keinen Header mitschicken.
   String fileUrl(Message message) {
     final personId = _personId ?? message.recipientId;
-    return '$_baseUrl/persons/$personId/chats/messages/${message.id}/file';
+    final url = Uri.parse('$_baseUrl/persons/$personId/chats/messages/${message.id}/file');
+    final token = AuthService().accessToken;
+    return (token == null ? url : url.replace(queryParameters: {'access_token': token})).toString();
+  }
+
+  /// Beim WebSocket kann kein Authorization-Header mitgeschickt werden (im Browser)
+  static Future<Map<String, String>> _accessTokenQuery() async {
+    final token = await AuthService().freshAccessToken();
+    return token == null ? const {} : {'access_token': token};
   }
 
   /// Markiert alle Nachrichten der Sattler*in als gelesen.

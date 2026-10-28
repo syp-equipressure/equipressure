@@ -49,8 +49,9 @@ class AuthService {
         ApiConfig.keycloakRedirectUrl,
         issuer: ApiConfig.keycloakIssuer,
         scopes: const ['openid', 'profile', 'email', 'offline_access'],
-        additionalParameters:
-            identityProvider != null ? {'kc_idp_hint': identityProvider} : null,
+        additionalParameters: identityProvider != null
+            ? {'kc_idp_hint': identityProvider}
+            : null,
         // lokales Keycloak läuft ohne HTTPS
         allowInsecureConnections: true,
       ),
@@ -91,13 +92,23 @@ class AuthService {
 
   /// Wie [authHeaders], erneuert das Token vorher falls es (fast) abgelaufen ist.
   Future<Map<String, String>> freshAuthHeaders() async {
+    await freshAccessToken();
+    return authHeaders();
+  }
+
+  /// Aktuelles Access Token, z.B. für den Chat-WebSocket und Bilder im Chat,
+  /// die keinen Authorization-Header mitschicken können
+  String? get accessToken => _accessToken;
+
+  /// Wie [accessToken], erneuert das Token vorher falls es (fast) abgelaufen ist.
+  Future<String?> freshAccessToken() async {
     final expiry = _accessTokenExpiry;
     if (_refreshToken != null &&
         expiry != null &&
         expiry.isBefore(DateTime.now().add(const Duration(seconds: 30)))) {
       await _refresh();
     }
-    return authHeaders();
+    return _accessToken;
   }
 
   Future<void> _refresh() async {
