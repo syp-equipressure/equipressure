@@ -7,6 +7,8 @@ export interface Customer {
   websiteLink?: string;
   description?: string;
   birthDate?: string;
+  /** ISO timestamp when the person was added, shown as "member since" */
+  createdAt?: string;
   address?: string;
   heightCm: number;
   weightKg: number;

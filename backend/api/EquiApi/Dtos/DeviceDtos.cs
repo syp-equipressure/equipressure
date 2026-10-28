@@ -61,6 +61,21 @@ public sealed record DeviceCategoryListResponse(IReadOnlyList<DeviceCategoryDto>
 /// <param name="DeviceId">The serial number of the device</param>
 /// <param name="OwnerId">The id of the owner</param>
 /// <param name="CategoryId">The id of the device category</param>
+/// <summary>
+///     Request to claim a device for the logged-in user (QR code scan), the serial number is part of the route
+/// </summary>
+/// <param name="CategoryId">The id of the device category, decides if the owner becomes saddler or equestrian</param>
+public sealed record ClaimDeviceRequest(int CategoryId)
+{
+    public sealed class Validator : AbstractValidator<ClaimDeviceRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.CategoryId).GreaterThan(0);
+        }
+    }
+}
+
 public sealed record AddDeviceRequest(string DeviceId, int OwnerId, int CategoryId)
 {
     public sealed class Validator : AbstractValidator<AddDeviceRequest>

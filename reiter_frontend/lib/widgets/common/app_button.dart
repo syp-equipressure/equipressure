@@ -55,7 +55,13 @@ class AppSocialButton extends StatelessWidget {
           children: [
             Icon(icon, size: 20),
             const SizedBox(width: 16),
-            Text(label, style: AppTextStyles.button),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.button,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

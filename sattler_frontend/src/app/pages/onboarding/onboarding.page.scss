@@ -1,0 +1,184 @@
+@use '../../styles/theme' as t;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: t.$bg-page;
+}
+
+.onboarding {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+}
+
+.onboarding-card {
+  width: min(100%, 640px);
+  padding: 32px;
+  border: 1px solid t.$border;
+  border-radius: 14px;
+  background: t.$bg-card;
+  box-shadow: t.$shadow-card;
+  box-sizing: border-box;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 0;
+    color: t.$text-strong;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: t.$text-soft;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.eyebrow {
+  margin: 0 0 6px !important;
+  color: t.$purple-500 !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.card-icon {
+  color: t.$purple-500;
+  font-size: 28px;
+}
+
+.account-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: t.$purple-50;
+  color: t.$text;
+  font-size: 13px;
+
+  .material-icons {
+    color: t.$purple-500;
+    font-size: 18px;
+  }
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field-label {
+  color: t.$text-soft;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid t.$border;
+  border-radius: 8px;
+  background: t.$bg-panel;
+  color: t.$text-strong;
+  font-size: 14px;
+}
+
+.field-help {
+  margin: -4px 0 0;
+  color: t.$text-muted;
+  font-size: 12px;
+}
+
+.feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+
+  &.error {
+    background: #fdecec;
+    color: #a12622;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btn-primary,
+.btn-secondary {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  border: none;
+  background: t.$purple-500;
+  color: #fff;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.btn-secondary {
+  border: 1px solid t.$border;
+  background: t.$bg-card;
+  color: t.$text;
+}
+
+@media (max-width: 560px) {
+  .onboarding-card {
+    padding: 22px 18px;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -35,6 +35,11 @@ public sealed class ChatController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<ConversationListResponse>> GetConversations([FromRoute][ValidId] int personId)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         var result = await chatService.GetConversationsAsync(personId);
 
         return result.Match<ActionResult<ConversationListResponse>>(
@@ -52,6 +57,11 @@ public sealed class ChatController(
     public async ValueTask<ActionResult<ChatMessageListResponse>> GetMessages([FromRoute][ValidId] int personId,
                                                                               [FromRoute][ValidId] int contactId)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         var result = await chatService.GetConversationAsync(personId, contactId);
 
         return result.Match<ActionResult<ChatMessageListResponse>>(
@@ -72,6 +82,11 @@ public sealed class ChatController(
                                                                      [FromRoute][ValidId] int contactId,
                                                                      [FromBody] SendChatMessageRequest request)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         if (!IsValid<SendChatMessageRequest.Validator, SendChatMessageRequest>(request))
         {
             return ValidationProblem();
@@ -106,6 +121,11 @@ public sealed class ChatController(
                                                                   [FromRoute][ValidId] int contactId,
                                                                   [FromForm] SendChatFileRequest request)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         if (!IsValid<SendChatFileRequest.Validator, SendChatFileRequest>(request) || request.File is not { } file)
         {
             return ValidationProblem();
@@ -130,7 +150,8 @@ public sealed class ChatController(
     }
 
     /// <summary>
-    ///     Gets the content of a file sent in a message, only for the sender and the recipient
+    ///     Gets the content of a file sent in a message, only for the sender and the recipient.
+    ///     The access token may be sent as query parameter <see cref="Setup.AccessTokenQueryKey" /> (e.g. for images).
     /// </summary>
     [HttpGet("messages/{messageId:int}/file")]
     [ProducesResponseType<FileContentResult>(StatusCodes.Status200OK)]
@@ -139,6 +160,11 @@ public sealed class ChatController(
     public async ValueTask<IActionResult> GetFile([FromRoute][ValidId] int personId,
                                                   [FromRoute][ValidId] int messageId)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         var result = await chatService.GetFileAsync(personId, messageId);
 
         return result.Match<IActionResult>(
@@ -156,6 +182,11 @@ public sealed class ChatController(
     public async ValueTask<IActionResult> MarkAsRead([FromRoute][ValidId] int personId,
                                                      [FromRoute][ValidId] int contactId)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         var result = await chatService.MarkAsReadAsync(personId, contactId);
         if (!result.TryPickT0(out var success, out _))
         {
@@ -182,6 +213,11 @@ public sealed class ChatController(
     public async ValueTask<ActionResult<ChatMessageDto>> AcceptShare([FromRoute][ValidId] int personId,
                                                                      [FromRoute][ValidId] int messageId)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         var result = await chatService.AcceptShareAsync(personId, messageId);
         if (result.TryPickT0(out var success, out var failure))
         {
@@ -198,7 +234,8 @@ public sealed class ChatController(
 
     /// <summary>
     ///     Opens a websocket that receives the chat events (new, read and accepted messages) of the person.
-    ///     There is no login yet, so the person is identified by the id in the route only.
+    ///     Browsers cannot send a header for websockets, so the access token may be sent as query parameter
+    ///     <see cref="Setup.AccessTokenQueryKey" />.
     /// </summary>
     [HttpGet("ws")]
     [ProducesResponseType(StatusCodes.Status101SwitchingProtocols)]
@@ -206,6 +243,11 @@ public sealed class ChatController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<IActionResult> Connect([FromRoute][ValidId] int personId)
     {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
         if (!HttpContext.WebSockets.IsWebSocketRequest)
         {
             return Problem(statusCode: StatusCodes.Status400BadRequest, detail: "Websocket request expected");

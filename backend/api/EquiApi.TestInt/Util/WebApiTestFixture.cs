@@ -1,4 +1,5 @@
 ﻿using EquiApi.Persistence.Util;
+using EquiApi.Util;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
@@ -13,7 +14,22 @@ public sealed class WebApiTestFixture : IAsyncLifetime
                                                               .WithPassword("postgres")
                                                               .Build();
 
+    public const string DefaultTestUser = "test-user";
+
+    /// <summary>
+    ///     Client logged in as <see cref="DefaultTestUser" /> with the admin role, so it may access all data.
+    ///     The access rules are tested with <see cref="WebApiTestBase.SendAsUserAsync" /> and real persons
+    /// </summary>
     public HttpClient Client
+    {
+        get => field ?? throw new InvalidOperationException("Client not created");
+        private set;
+    }
+
+    /// <summary>
+    ///     Client without a logged-in user
+    /// </summary>
+    public HttpClient AnonymousClient
     {
         get => field ?? throw new InvalidOperationException("Client not created");
         private set;
@@ -37,13 +53,30 @@ public sealed class WebApiTestFixture : IAsyncLifetime
 
         Factory = new WebAppFactory(_postgresContainer.GetConnectionString());
         Client = Factory.CreateClient();
+        Client.DefaultRequestHeaders.Add(TestAuthHandler.UserHeader, DefaultTestUser);
+        Client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, ClaimsPrincipalExtensions.AdminRole);
+        AnonymousClient = Factory.CreateClient();
         Clock = Factory.TestClock;
     }
 
     /// <summary>
-    ///     Creates a client for websocket endpoints of the test server
+    ///     Creates a client for websocket endpoints of the test server, logged in like <see cref="Client" />
+    ///     or as the given user
     /// </summary>
-    public Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient() => Factory.Server.CreateWebSocketClient();
+    public Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient(string? externalId = null)
+    {
+        var client = Factory.Server.CreateWebSocketClient();
+        client.ConfigureRequest = request =>
+        {
+            request.Headers[TestAuthHandler.UserHeader] = externalId ?? DefaultTestUser;
+            if (externalId is null)
+            {
+                request.Headers[TestAuthHandler.RoleHeader] = ClaimsPrincipalExtensions.AdminRole;
+            }
+        };
+
+        return client;
+    }
 
     public async ValueTask DisposeAsync()
     {

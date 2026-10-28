@@ -1,4 +1,4 @@
-using EquiApi;
+﻿using EquiApi;
 using EquiApi.BackgroundServices;
 using EquiApi.Shared;
 using EquiApi.Util;
@@ -14,6 +14,7 @@ builder.AddLogging();
 builder.Services.AddApplicationServices(configurationManager, isDev);
 builder.Services.AddOpenApi();
 builder.Services.AddCors(settings);
+builder.Services.AddKeycloakAuthentication(configurationManager);
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => { o.ModelBinderProviders.Insert(0, new NodaTimeModelBinderProvider()); })
        .AddJsonOptions(o => ConfigureJsonSerialization(o, isDev));
@@ -32,6 +33,8 @@ app.UseCors(Setup.CorsPolicyName);
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 // chat events are pushed to the clients over websockets, the interval keeps idle connections open behind proxies
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 if (app.Environment.IsDevelopment())
 {

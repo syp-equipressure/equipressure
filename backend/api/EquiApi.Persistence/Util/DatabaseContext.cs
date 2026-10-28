@@ -86,7 +86,9 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         person.Property(p => p.Id).ValueGeneratedOnAdd();
         person.HasIndex(p => new { p.FirstName, p.LastName });
         person.HasIndex(p => p.Email).IsUnique();
+        person.HasIndex(p => p.ExternalId).IsUnique();
         person.HasIndex(p => p.DateOfBirth);
+        person.Property(p => p.CreatedAt).HasDefaultValueSql("now()");
 
         person.HasMany(p => p.Roles)
               .WithOne(pra => pra.Person)
@@ -303,6 +305,9 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         var category = mb.Entity<DeviceCategory>();
         category.HasKey(c => c.Id);
         category.Property(c => c.Id).ValueGeneratedOnAdd();
+        category.Property(c => c.Role)
+                .HasConversion(new EnumToStringConverter<RoleName>())
+                .HasDefaultValue(RoleName.Equestrian);
 
         category.HasMany(c => c.Devices)
                 .WithOne(d => d.Category)

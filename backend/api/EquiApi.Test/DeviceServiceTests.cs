@@ -11,6 +11,8 @@ namespace EquiApi.Test;
 public sealed class DeviceServiceTests
 {
     private const string DeviceId = "device-1";
+    private const string ExternalId = "0e6982b9-0a93-4fdd-8af5-65b85d73b52f";
+    private const int CategoryId = 1;
 
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
     private readonly DeviceService _sut;
@@ -18,6 +20,97 @@ public sealed class DeviceServiceTests
     public DeviceServiceTests()
     {
         _sut = new DeviceService(_uowMock, NullLogger<DeviceService>.Instance);
+
+        _uowMock.PersonRepository.GetRolesByNameAsync(Arg.Any<IReadOnlyCollection<RoleName>>())
+                .Returns(call => call.Arg<IReadOnlyCollection<RoleName>>().Select(TestData.CreateRole).ToList());
+    }
+
+    [Fact]
+    public async Task ClaimDeviceAsync_DeviceAlreadyExists_ReturnsDeviceAlreadyExists()
+    {
+        _uowMock.DeviceRepository.DeviceExistsAsync(DeviceId).Returns(true);
+
+        var result = await _sut.ClaimDeviceAsync(DeviceId, ExternalId, CategoryId);
+
+        result.Value.Should().BeOfType<IDeviceService.DeviceAlreadyExists>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ClaimDeviceAsync_NoLinkedPerson_ReturnsNotFound()
+    {
+        _uowMock.DeviceRepository.DeviceExistsAsync(DeviceId).Returns(false);
+        _uowMock.PersonRepository.GetPersonByExternalIdAsync(ExternalId).Returns((Person?) null);
+
+        var result = await _sut.ClaimDeviceAsync(DeviceId, ExternalId, CategoryId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ClaimDeviceAsync_CategoryNotFound_ReturnsNotFound()
+    {
+        _uowMock.DeviceRepository.DeviceExistsAsync(DeviceId).Returns(false);
+        _uowMock.PersonRepository.GetPersonByExternalIdAsync(ExternalId).Returns(TestData.CreatePerson());
+        _uowMock.DeviceRepository.GetCategoryByIdAsync(CategoryId).Returns((DeviceCategory?) null);
+
+        var result = await _sut.ClaimDeviceAsync(DeviceId, ExternalId, CategoryId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ClaimDeviceAsync_SaddlerDeviceWithoutStreet_ReturnsStreetRequiredForSaddler()
+    {
+        SetUpClaim(TestData.CreatePerson(), RoleName.Saddler);
+
+        var result = await _sut.ClaimDeviceAsync(DeviceId, ExternalId, CategoryId);
+
+        result.Value.Should().BeOfType<IPersonService.StreetRequiredForSaddler>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData(RoleName.Equestrian)]
+    [InlineData(RoleName.Saddler)]
+    public async Task ClaimDeviceAsync_ValidData_AddsDeviceAndRoleOfCategory(RoleName categoryRole)
+    {
+        var owner = TestData.CreatePerson(address: TestData.CreateAddress(addressName: "Hauptstraße 1"));
+        SetUpClaim(owner, categoryRole);
+
+        var result = await _sut.ClaimDeviceAsync(DeviceId, ExternalId, CategoryId);
+
+        var device = result.Value.Should().BeOfType<Success<MeasurementDevice>>().Which.Value;
+        device.Id.Should().Be(DeviceId);
+        device.Owner.Should().Be(owner);
+        owner.Roles.Should().ContainSingle().Which.Role.Name.Should().Be(categoryRole);
+        _uowMock.DeviceRepository.Received(1).AddDevice(device);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ClaimDeviceAsync_PersonAlreadyHasRole_DoesNotAddRoleTwice()
+    {
+        var owner = TestData.CreatePerson(role: RoleName.Equestrian);
+        SetUpClaim(owner, RoleName.Equestrian);
+
+        var result = await _sut.ClaimDeviceAsync(DeviceId, ExternalId, CategoryId);
+
+        result.Value.Should().BeOfType<Success<MeasurementDevice>>();
+        owner.Roles.Should().ContainSingle();
+    }
+
+    private void SetUpClaim(Person owner, RoleName categoryRole)
+    {
+        _uowMock.DeviceRepository.DeviceExistsAsync(DeviceId).Returns(false);
+        _uowMock.PersonRepository.GetPersonByExternalIdAsync(ExternalId).Returns(owner);
+        _uowMock.DeviceRepository.GetCategoryByIdAsync(CategoryId)
+                .Returns(new DeviceCategory
+                {
+                    Id = CategoryId, Name = "Standard", NumOfAllowedPeople = 5, Role = categoryRole
+                });
     }
 
     [Fact]
@@ -150,7 +243,6 @@ public sealed class DeviceServiceTests
     public async Task AddDeviceAsync_CategoryNotFound_ReturnsNotFound()
     {
         const int OwnerId = 1;
-        const int CategoryId = 1;
         _uowMock.DeviceRepository.DeviceExistsAsync(DeviceId).Returns(false);
         _uowMock.PersonRepository.GetPersonByIdAsync(OwnerId).Returns(TestData.CreatePerson(OwnerId));
         _uowMock.DeviceRepository.GetCategoryByIdAsync(CategoryId).Returns((DeviceCategory?) null);
@@ -165,7 +257,6 @@ public sealed class DeviceServiceTests
     public async Task AddDeviceAsync_ValidData_AddsDeviceAndSaves()
     {
         const int OwnerId = 1;
-        const int CategoryId = 1;
         var owner = TestData.CreatePerson(OwnerId);
         var category = new DeviceCategory { Id = CategoryId, Name = "Standard", NumOfAllowedPeople = 5 };
         _uowMock.DeviceRepository.DeviceExistsAsync(DeviceId).Returns(false);

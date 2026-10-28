@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/horses/horses_screen.dart';
+import 'screens/onboarding/auth_gate.dart';
 import 'services/app_navigation.dart';
 import 'widgets/chat_notification_listener.dart';
 
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       // neue Chat-Nachrichten werden auf jedem Screen benachrichtigt
       builder: (context, child) =>
           ChatNotificationListener(child: child ?? const SizedBox.shrink()),
-      home: const HorsesScreen(),
+      home: const AuthGate(),
     );
   }
 }

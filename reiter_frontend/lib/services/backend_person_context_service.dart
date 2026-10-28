@@ -19,4 +19,9 @@ class BackendPersonContextService {
     await preferences.setString(_personIdKey, personId);
     return true;
   }
+
+  static Future<void> clearPersonId() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_personIdKey);
+  }
 }

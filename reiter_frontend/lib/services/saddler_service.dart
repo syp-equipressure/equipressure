@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/services/backend_person_context_service.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
@@ -28,7 +28,7 @@ class SaddlerService {
 
   Future<Set<String>> _fetchFavoriteIds(int personId) async {
     final url = Uri.parse('$baseUrl/persons/$personId/favourites');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return {};
     if (response.statusCode != 200) {
       throw Exception('Failed to load favorites: HTTP ${response.statusCode}');
@@ -68,7 +68,7 @@ class SaddlerService {
 
   Future<List<Saddler>> fetchSaddlersFromBackend() async {
     final url = Uri.parse('$baseUrl/persons/saddlers');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
@@ -107,8 +107,8 @@ class SaddlerService {
     final isFavNow = !_favoriteIds.contains(saddlerId);
     final url = Uri.parse('$baseUrl/persons/$personId/favourites/$saddlerIdNum');
     final response = isFavNow
-        ? await http.put(url).timeout(_timeout)
-        : await http.delete(url).timeout(_timeout);
+        ? await apiHttp.put(url).timeout(_timeout)
+        : await apiHttp.delete(url).timeout(_timeout);
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to update favorite: HTTP ${response.statusCode}');
     }

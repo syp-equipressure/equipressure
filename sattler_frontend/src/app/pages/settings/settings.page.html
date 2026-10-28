@@ -84,31 +84,4 @@
       </button>
     </div>
   </article>
-
-  <article class="settings-card">
-    <header class="card-header">
-      <div>
-        <h2>Backend-Verbindung</h2>
-        <p>Gib deine Personen-ID ein, um verfügbare Kontakte, Pferde, Sättel und Messgeräte zu laden.</p>
-      </div>
-      <span class="material-icons card-icon" aria-hidden="true">cloud</span>
-    </header>
-    <label class="field">
-      <span class="field-label">Backend-Personen-ID</span>
-      <input class="field-input" type="text" inputmode="numeric" autocomplete="off"
-        [ngModel]="backendPersonId()" (ngModelChange)="backendPersonId.set($event)"
-        name="backendPersonId" placeholder="z. B. 7" />
-    </label>
-    @if (backendPersonFeedback()) {
-      <p class="feedback" [class.error]="backendPersonFeedbackIsError()"
-        [class.success]="!backendPersonFeedbackIsError()"
-        [attr.role]="backendPersonFeedbackIsError() ? 'alert' : 'status'">
-        {{ backendPersonFeedback() }}
-      </p>
-    }
-    <div class="card-actions">
-      <button class="primary-button" type="button" (click)="saveBackendPersonId()">Verbinden</button>
-    </div>
-  </article>
-
 </section>

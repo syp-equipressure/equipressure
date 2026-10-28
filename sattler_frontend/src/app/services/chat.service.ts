@@ -12,6 +12,7 @@ import {
   messagePreview,
 } from '../models/chat.model';
 import { BACKEND_BASE_URL, toApiError } from './backend-api.service';
+import { AuthService } from './auth.service';
 import { BackendPersonContextService } from './backend-person-context.service';
 
 const TOAST_DURATION_MS = 6000;
@@ -19,7 +20,7 @@ const MAX_RECONNECT_DELAY_MS = 30000;
 
 /**
  * Chat with the customers. Messages are sent over REST, new, read and accepted messages arrive live over the chat
- * websocket of the backend. There is no login yet, the person is the one set in the settings.
+ * websocket of the backend. The person is the one of the logged-in account.
  */
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -27,6 +28,7 @@ export class ChatService {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly personContext = inject(BackendPersonContextService);
+  private readonly auth = inject(AuthService);
 
   readonly conversations = signal<ChatConversation[]>([]);
   readonly conversationsLoading = signal(false);
@@ -111,9 +113,13 @@ export class ChatService {
     );
   }
 
-  /** Address of the content of a sent file, usable as image source and download link. */
+  /**
+   * Address of the content of a sent file, usable as image source and download link.
+   * Contains the access token, because images and links cannot send the Authorization header.
+   */
   fileUrl(message: ChatMessage): string {
-    return `${BACKEND_BASE_URL}/persons/${this.personContext.personId()}/chats/messages/${message.id}/file`;
+    const url = `${BACKEND_BASE_URL}/persons/${this.personContext.personId()}/chats/messages/${message.id}/file`;
+    return `${url}?access_token=${encodeURIComponent(this.auth.accessToken)}`;
   }
 
   /** Sends a measurement, e.g. one the saddler did for the customer. */
@@ -179,7 +185,9 @@ export class ChatService {
 
   private connect(personId: string): void {
     this.disconnect();
-    const url = `${BACKEND_BASE_URL.replace(/^http/, 'ws')}/persons/${personId}/chats/ws`;
+    // browsers cannot send the Authorization header when opening a websocket
+    const url = `${BACKEND_BASE_URL.replace(/^http/, 'ws')}/persons/${personId}/chats/ws`
+      + `?access_token=${encodeURIComponent(this.auth.accessToken)}`;
     const socket = new WebSocket(url);
     this.socket = socket;
 

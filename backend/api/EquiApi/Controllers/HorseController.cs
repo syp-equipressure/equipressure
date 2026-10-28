@@ -17,6 +17,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<HorseDto>> GetHorseById([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.GetHorseByIdAsync(id);
 
         return result.Match<ActionResult<HorseDto>>(
@@ -38,6 +43,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             return ValidationProblem();
         }
 
+        if (!await HasAccessAsync((access, me) => access.CanManageHorsesOfPersonAsync(me, request.OwnerId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.AddHorseAsync(request.ToData());
 
         return result.Match<ActionResult<HorseDto>>(
@@ -55,6 +65,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult> RemoveHorse([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanRemoveHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.RemoveHorseAsync(id);
 
         return result.Match<ActionResult>(
@@ -71,6 +86,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<SaddleListResponse>> GetSaddles([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.GetSaddlesOfHorseAsync(id);
 
         return result.Match<ActionResult<SaddleListResponse>>(
@@ -87,6 +107,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<PersonListResponse>> GetRiders([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.GetRidersOfHorseAsync(id);
 
         return result.Match<ActionResult<PersonListResponse>>(
@@ -103,6 +128,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<PersonListResponse>> GetHiddenRiders([FromRoute][ValidId] int id)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.GetHiddenRidersOfHorseAsync(id);
 
         return result.Match<ActionResult<PersonListResponse>>(
@@ -120,6 +150,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<IActionResult> AddRider([FromRoute][ValidId] int id, [FromRoute][ValidId] int personId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.AddRiderToHorseAsync(id, personId);
 
         return result.Match<IActionResult>(
@@ -138,6 +173,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<IActionResult> HideRider([FromRoute][ValidId] int id, [FromRoute][ValidId] int personId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.SetRiderHiddenAsync(id, personId, true);
 
         return result.Match<IActionResult>(
@@ -156,6 +196,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<IActionResult> ShowRider([FromRoute][ValidId] int id, [FromRoute][ValidId] int personId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.SetRiderHiddenAsync(id, personId, false);
 
         return result.Match<IActionResult>(
@@ -177,6 +222,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
         if (!IsValid<AddSaddleRequest.Validator, AddSaddleRequest>(request))
         {
             return ValidationProblem();
+        }
+
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
         }
 
         var result = await horseService.AddSaddleToHorse(request.Name, id, request.CategoryId);
@@ -203,6 +253,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             return ValidationProblem();
         }
 
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.UpdateSaddleAsync(id, saddleId, request.Name, request.CategoryId);
 
         return result.Match<ActionResult<SaddleDto>>(
@@ -221,6 +276,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     public async ValueTask<IActionResult> RemoveSaddle([FromRoute][ValidId] int id,
                                                        [FromRoute][ValidId] int saddleId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
         var result = await horseService.RemoveSaddleAsync(id, saddleId);
 
         return result.Match<IActionResult>(
@@ -255,6 +315,11 @@ public sealed class HorseController(IHorseService horseService) : BaseController
         if (!IsValid<PatchHorseRequest.Validator, PatchHorseRequest>(request))
         {
             return ValidationProblem();
+        }
+
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
         }
 
         var result = await horseService.PatchHorseAsync(id, request.ToData());

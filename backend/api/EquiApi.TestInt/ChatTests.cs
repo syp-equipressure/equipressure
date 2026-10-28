@@ -343,6 +343,18 @@ public sealed class ChatTests(WebApiTestFixture webApiFixture) : WebApiTestBase(
     }
 
     [Fact]
+    public async ValueTask Connect_ChatsOfSomebodyElse_IsRejected()
+    {
+        var (_, saddler) = await SeedEquestrianAndSaddlerAsync();
+
+        var connect = async () => await CreateWebSocketClient("somebody-else")
+                                     .ConnectAsync(new Uri($"ws://localhost/api/persons/{saddler.Id}/chats/ws"),
+                                                   TestCancellationToken);
+
+        await connect.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
     public async ValueTask Connect_NoWebSocketRequest_ReturnsBadRequest()
     {
         var (equestrian, _) = await SeedEquestrianAndSaddlerAsync();

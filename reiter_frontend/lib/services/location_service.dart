@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 
 import 'package:reiterappfrontend/services/api_config.dart';
 
@@ -54,7 +55,7 @@ class LocationService {
 
     final url = Uri.parse('$baseUrl/locations')
         .replace(queryParameters: query.isEmpty ? null : query);
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
@@ -71,7 +72,7 @@ class LocationService {
 
   static Future<Map<String, dynamic>> getAddressById(int id) async {
     final url = Uri.parse('$baseUrl/locations/$id');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
@@ -95,7 +96,7 @@ class LocationService {
       'plz': plz,
     });
     final response =
-        await http.post(url, headers: _jsonHeaders, body: body).timeout(_timeout);
+        await apiHttp.post(url, headers: _jsonHeaders, body: body).timeout(_timeout);
 
     if (response.statusCode == 201) {
       return;

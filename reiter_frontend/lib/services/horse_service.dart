@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
@@ -135,7 +135,7 @@ class HorseService {
   /// GET /api/persons/{personId}/horses -> HorseListResponse { "horses": [HorseDto] }
   Future<List<Horse>> fetchHorsesOfPerson(int personId) async {
     final url = Uri.parse('$baseUrl/persons/$personId/horses');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
@@ -151,7 +151,7 @@ class HorseService {
   /// GET /api/horses/{id} -> HorseDto
   Future<Horse?> fetchHorseById(int id) async {
     final url = Uri.parse('$baseUrl/horses/$id');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
       return _horseFromBackend(jsonDecode(response.body) as Map<String, dynamic>);
@@ -173,7 +173,7 @@ class HorseService {
   }
 
   Future<List<Map<String, dynamic>>> _fetchHorsePeople(String url) async {
-    final response = await http.get(Uri.parse(url)).timeout(_timeout);
+    final response = await apiHttp.get(Uri.parse(url)).timeout(_timeout);
     if (response.statusCode == 200) {
       return _extractList(jsonDecode(response.body));
     }
@@ -186,7 +186,7 @@ class HorseService {
     final url = Uri.parse('$baseUrl/horses');
     final body = jsonEncode({..._horseRequestBody(horse), 'ownerId': ownerId});
 
-    final response = await http.post(
+    final response = await apiHttp.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: body,

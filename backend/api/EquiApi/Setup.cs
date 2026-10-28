@@ -1,6 +1,7 @@
 ﻿using EquiApi.Core.Util;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -9,6 +10,19 @@ namespace EquiApi;
 public static class Setup
 {
     public const string CorsPolicyName = "DefaultCorsPolicy";
+
+    /// <summary>
+    ///     Query parameter with the access token, only accepted for the chat websocket and the content of chat files
+    /// </summary>
+    public const string AccessTokenQueryKey = "access_token";
+
+    // browsers cannot send an Authorization header when opening a websocket or loading an image (<img src>)
+    private static bool AllowsTokenInQuery(PathString path) =>
+        path.Value is { } value
+        && value.StartsWith("/api/persons/", StringComparison.Ordinal)
+        && (value.EndsWith("/chats/ws", StringComparison.Ordinal)
+            || (value.Contains("/chats/messages/", StringComparison.Ordinal)
+                && value.EndsWith("/file", StringComparison.Ordinal)));
 
     extension(IServiceCollection services)
     {
@@ -67,6 +81,43 @@ public static class Setup
             }));
 
             Log.Logger.Debug("Added CORS policy with client origin {ClientOrigin}", settings.ClientOrigin);
+        }
+
+        /// <summary>
+        ///     Validates the access tokens (JWT) issued by Keycloak, the backend itself never handles logins
+        /// </summary>
+        public void AddKeycloakAuthentication(IConfigurationManager configurationManager)
+        {
+            var keycloakSettings = configurationManager.GetSection(KeycloakSettings.SectionKey)
+                                                       .Get<KeycloakSettings>()
+                                   ?? throw new InvalidOperationException("Keycloak has to be configured");
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
+                    {
+                        options.Authority = keycloakSettings.Authority;
+                        options.Audience = keycloakSettings.Audience;
+                        options.RequireHttpsMetadata = keycloakSettings.RequireHttpsMetadata;
+                        // keep the original claim names (sub, email, ...) instead of the long Microsoft URIs
+                        options.MapInboundClaims = false;
+                        options.TokenValidationParameters.RoleClaimType = ClaimsPrincipalExtensions.RoleClaimType;
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                if (AllowsTokenInQuery(context.Request.Path)
+                                    && context.Request.Query.TryGetValue(AccessTokenQueryKey, out var token))
+                                {
+                                    context.Token = token;
+                                }
+
+                                return Task.CompletedTask;
+                            }
+                        };
+                    });
+            services.AddAuthorization();
+
+            Log.Logger.Debug("Added Keycloak authentication with authority {Authority}", keycloakSettings.Authority);
         }
 
         public void ConfigureAdditionalRouteConstraints()

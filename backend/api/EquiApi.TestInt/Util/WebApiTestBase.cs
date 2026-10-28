@@ -20,8 +20,10 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
     protected static JsonSerializerOptions JsonOptions => jsonOptions.Value;
 
     protected HttpClient ApiClient => webApiFixture.Client;
+    protected HttpClient AnonymousClient => webApiFixture.AnonymousClient;
     protected IClock TestClock => webApiFixture.Clock;
-    protected Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient() => webApiFixture.CreateWebSocketClient();
+    protected Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient(string? externalId = null) =>
+        webApiFixture.CreateWebSocketClient(externalId);
     protected CancellationToken TestCancellationToken => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync()
@@ -58,6 +60,27 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
             context.AddRange(entities);
             await context.SaveChangesAsync();
         });
+    }
+
+    /// <summary>
+    ///     Sends a request as a logged-in user, see <see cref="TestAuthHandler" />
+    /// </summary>
+    protected async ValueTask<HttpResponseMessage> SendAsUserAsync(HttpMethod method, string url, string externalId,
+                                                                   string? email = null, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, url);
+        request.Headers.Add(TestAuthHandler.UserHeader, externalId);
+        if (email is not null)
+        {
+            request.Headers.Add(TestAuthHandler.EmailHeader, email);
+        }
+
+        if (body is not null)
+        {
+            request.Content = JsonContent.Create(body, options: JsonOptions);
+        }
+
+        return await AnonymousClient.SendAsync(request, TestCancellationToken);
     }
 
     protected async ValueTask<T> ReadContentAsync<T>(HttpResponseMessage response)

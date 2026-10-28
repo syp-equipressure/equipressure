@@ -20,6 +20,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<ActionResult<MeasurementGroupListResponse>> GetGroupsOfHorse(
         [FromRoute][ValidId] int horseId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewHorseAsync(me, horseId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetGroupsOfHorseAsync(horseId);
 
         return result.Match<ActionResult<MeasurementGroupListResponse>>(
@@ -36,6 +41,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<MeasurementGroupDetailDto>> GetGroupById([FromRoute][ValidId] int groupId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetGroupByIdAsync(groupId);
 
         return result.Match<ActionResult<MeasurementGroupDetailDto>>(
@@ -60,6 +70,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
             return ValidationProblem();
         }
 
+        if (!await HasAccessAsync((access, me) => access.CanAddMeasurementGroupAsync(me, request.ToData())))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.AddGroupAsync(request.ToData());
 
         return result.Match<ActionResult<MeasurementGroupDetailDto>>(
@@ -79,6 +94,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<ActionResult<MeasurementListResponse>> GetMeasurementsOfGroup(
         [FromRoute][ValidId] int groupId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetMeasurementsOfGroupAsync(groupId);
 
         return result.Match<ActionResult<MeasurementListResponse>>(
@@ -96,6 +116,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<ActionResult<MeasurementDto>> GetMeasurementByFilter(
         [FromRoute][ValidId] int groupId, [FromQuery] string? pace, [FromQuery] string? hand)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetMeasurementByFilterAsync(groupId, pace, hand);
 
         return result.Match<ActionResult<MeasurementDto>>(
@@ -112,7 +137,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AggregateResponse>> GetGroupAverage(
         [FromRoute][ValidId] int groupId, [FromQuery] string? pace, [FromQuery] string? hand) =>
-        ToAggregateResponse(await measurementService.GetGroupAverageAsync(groupId, pace, hand));
+        await AggregateAsync(groupId, () => measurementService.GetGroupAverageAsync(groupId, pace, hand));
 
     /// <summary>
     ///     Gets the minimum of all data values of a measurement group, optionally filtered by pace and hand
@@ -123,7 +148,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AggregateResponse>> GetGroupMin(
         [FromRoute][ValidId] int groupId, [FromQuery] string? pace, [FromQuery] string? hand) =>
-        ToAggregateResponse(await measurementService.GetGroupMinAsync(groupId, pace, hand));
+        await AggregateAsync(groupId, () => measurementService.GetGroupMinAsync(groupId, pace, hand));
 
     /// <summary>
     ///     Gets the maximum of all data values of a measurement group, optionally filtered by pace and hand
@@ -134,7 +159,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AggregateResponse>> GetGroupMax(
         [FromRoute][ValidId] int groupId, [FromQuery] string? pace, [FromQuery] string? hand) =>
-        ToAggregateResponse(await measurementService.GetGroupMaxAsync(groupId, pace, hand));
+        await AggregateAsync(groupId, () => measurementService.GetGroupMaxAsync(groupId, pace, hand));
 
     /// <summary>
     ///     Gets a measurement of a measurement group
@@ -146,6 +171,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<ActionResult<MeasurementDto>> GetMeasurementById(
         [FromRoute][ValidId] int groupId, [FromRoute][ValidId] int measurementId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetMeasurementByIdAsync(groupId, measurementId);
 
         return result.Match<ActionResult<MeasurementDto>>(
@@ -162,7 +192,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AggregateResponse>> GetMeasurementAverage(
         [FromRoute][ValidId] int groupId, [FromRoute][ValidId] int measurementId) =>
-        ToAggregateResponse(await measurementService.GetMeasurementAverageAsync(groupId, measurementId));
+        await AggregateAsync(groupId, () => measurementService.GetMeasurementAverageAsync(groupId, measurementId));
 
     /// <summary>
     ///     Gets the minimum of all data values of a measurement
@@ -173,7 +203,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AggregateResponse>> GetMeasurementMin(
         [FromRoute][ValidId] int groupId, [FromRoute][ValidId] int measurementId) =>
-        ToAggregateResponse(await measurementService.GetMeasurementMinAsync(groupId, measurementId));
+        await AggregateAsync(groupId, () => measurementService.GetMeasurementMinAsync(groupId, measurementId));
 
     /// <summary>
     ///     Gets the maximum of all data values of a measurement
@@ -184,7 +214,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<AggregateResponse>> GetMeasurementMax(
         [FromRoute][ValidId] int groupId, [FromRoute][ValidId] int measurementId) =>
-        ToAggregateResponse(await measurementService.GetMeasurementMaxAsync(groupId, measurementId));
+        await AggregateAsync(groupId, () => measurementService.GetMeasurementMaxAsync(groupId, measurementId));
 
     /// <summary>
     ///     Gets all data entries of a measurement, ordered by their timestamp
@@ -196,6 +226,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<ActionResult<MeasurementDataListResponse>> GetDataOfMeasurement(
         [FromRoute][ValidId] int groupId, [FromRoute][ValidId] int measurementId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetDataOfMeasurementAsync(groupId, measurementId);
 
         return result.Match<ActionResult<MeasurementDataListResponse>>(
@@ -213,6 +248,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<ActionResult<MeasurementDataDto>> GetDataById(
         [FromRoute][ValidId] int groupId, [FromRoute][ValidId] int measurementId, [FromRoute][ValidId] int dataId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.GetDataByIdAsync(groupId, measurementId, dataId);
 
         return result.Match<ActionResult<MeasurementDataDto>>(
@@ -236,6 +276,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
             return ValidationProblem();
         }
 
+        if (!await HasAccessAsync((access, me) => access.CanManageMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.AddMeasurementAsync(groupId, request.Pace, request.Hand,
                                                                   request.Description, request.ToRecordingData());
 
@@ -257,6 +302,11 @@ public sealed class MeasurementController(IMeasurementService measurementService
     public async ValueTask<IActionResult> DeleteMeasurement([FromRoute][ValidId] int groupId,
                                                             [FromRoute][ValidId] int measurementId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.DeleteMeasurementAsync(groupId, measurementId);
 
         return result.Match<IActionResult>(
@@ -274,11 +324,28 @@ public sealed class MeasurementController(IMeasurementService measurementService
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<IActionResult> DeleteGroup([FromRoute][ValidId] int groupId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await measurementService.DeleteGroupAsync(groupId);
 
         return result.Match<IActionResult>(
             _ => NoContent(),
             _ => NotFound());
+    }
+
+    private async ValueTask<ActionResult<AggregateResponse>> AggregateAsync(
+        int groupId,
+        Func<ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>> aggregate)
+    {
+        if (!await HasAccessAsync((access, me) => access.CanViewMeasurementGroupAsync(me, groupId)))
+        {
+            return AccessDenied();
+        }
+
+        return ToAggregateResponse(await aggregate());
     }
 
     private ActionResult<AggregateResponse> ToAggregateResponse(
