@@ -626,6 +626,23 @@ class _ChatScreenState extends State<ChatScreen> {
     final measurement = message.measurement;
     final date = measurement?.date;
 
+    // das Backend entfernt den Verweis, wenn das Pferd bzw. die Messung gelöscht wird
+    if (horse == null && measurement == null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(
+          message.type == MessageType.horse
+              ? 'Das geteilte Pferd wurde gelöscht.'
+              : 'Die geteilte Messung wurde gelöscht.',
+          style: TextStyle(
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            color: Colors.grey[600],
+          ),
+        ),
+      );
+    }
+
     final card = Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.all(12),

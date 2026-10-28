@@ -610,8 +610,7 @@ public sealed class PersonServiceTests
         var result = await _sut.AddContactAsync(PersonId, SaddlerId);
 
         result.Value.Should().BeOfType<Success>();
-        _uowMock.PersonRepository.Received(1).AddRelationship(Arg.Is<PersonRelationship>(r =>
-            r.Equestrian == equestrian && r.Saddler == saddler && r.IsContact && !r.IsFavourite));
+        await _uowMock.PersonRepository.Received(1).MarkAsContactAsync(equestrian, saddler);
         await _uowMock.Received(1).SaveChangesAsync();
     }
 
@@ -627,8 +626,8 @@ public sealed class PersonServiceTests
         var result = await _sut.AddContactAsync(PersonId, EquestrianId);
 
         result.Value.Should().BeOfType<Success>();
-        _uowMock.PersonRepository.Received(1).AddRelationship(Arg.Is<PersonRelationship>(r =>
-            r.Equestrian == equestrian && r.Saddler == saddler && r.IsContact));
+        // the saddler added the contact, but the sides stay equestrian and saddler
+        await _uowMock.PersonRepository.Received(1).MarkAsContactAsync(equestrian, saddler);
     }
 
     [Fact]
@@ -648,7 +647,7 @@ public sealed class PersonServiceTests
         result.Value.Should().BeOfType<Success>();
         relationship.IsContact.Should().BeTrue();
         relationship.IsFavourite.Should().BeTrue();
-        _uowMock.PersonRepository.DidNotReceive().AddRelationship(Arg.Any<PersonRelationship>());
+        await _uowMock.PersonRepository.DidNotReceive().MarkAsContactAsync(Arg.Any<Person>(), Arg.Any<Person>());
     }
 
     [Theory]

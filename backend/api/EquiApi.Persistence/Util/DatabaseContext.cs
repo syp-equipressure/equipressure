@@ -418,7 +418,7 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     /// <summary>
     ///     Configures the chat messages.
     ///     The type of a message is persisted as a string, messages are removed together with their persons,
-    ///     the shared horse or the shared measurement group.
+    ///     a deleted shared horse or measurement group only removes the reference.
     /// </summary>
     /// <param name="mb">The model builder to use</param>
     private static void ConfigureChat(ModelBuilder mb)
@@ -441,15 +441,17 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                .HasForeignKey(m => m.RecipientId)
                .OnDelete(DeleteBehavior.Cascade);
 
+        // a deleted horse or measurement group keeps the message (and its text) in the chat history,
+        // the clients show that the shared horse or measurement does not exist anymore
         message.HasOne(m => m.Horse)
                .WithMany()
                .HasForeignKey(m => m.HorseId)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.SetNull);
 
         message.HasOne(m => m.MeasurementGroup)
                .WithMany()
                .HasForeignKey(m => m.MeasurementGroupId)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.SetNull);
 
         message.Property(m => m.FileName).HasMaxLength(255);
         message.Property(m => m.FileContentType).HasMaxLength(255);

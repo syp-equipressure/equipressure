@@ -92,6 +92,14 @@ public interface IPersonRepository
     public void AddRelationship(PersonRelationship relationship);
 
     /// <summary>
+    ///     Makes an equestrian and a saddler contacts: an existing relationship (e.g. a favourite) is marked as contact,
+    ///     otherwise a new relationship is added
+    /// </summary>
+    /// <param name="equestrian">The equestrian</param>
+    /// <param name="saddler">The saddler</param>
+    public ValueTask MarkAsContactAsync(Person equestrian, Person saddler);
+
+    /// <summary>
     ///     Removes a relationship between an equestrian and a saddler
     /// </summary>
     /// <param name="relationship">The relationship to remove</param>
@@ -177,6 +185,24 @@ internal sealed class PersonRepository(
     public void AddRelationship(PersonRelationship relationship)
     {
         relationshipSet.Add(relationship);
+    }
+
+    public async ValueTask MarkAsContactAsync(Person equestrian, Person saddler)
+    {
+        var relationship = await GetRelationshipAsync(equestrian.Id, saddler.Id);
+        if (relationship is null)
+        {
+            AddRelationship(new PersonRelationship
+            {
+                Equestrian = equestrian,
+                Saddler = saddler,
+                IsContact = true
+            });
+        }
+        else
+        {
+            relationship.IsContact = true;
+        }
     }
 
     public void RemoveRelationship(PersonRelationship relationship)

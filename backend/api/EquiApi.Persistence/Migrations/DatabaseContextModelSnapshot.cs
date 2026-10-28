@@ -587,12 +587,12 @@ namespace EquiApi.Persistence.Migrations
                     b.HasOne("EquiApi.Persistence.Model.Horse", "Horse")
                         .WithMany()
                         .HasForeignKey("HorseId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("EquiApi.Persistence.Model.MeasurementGroup", "MeasurementGroup")
                         .WithMany()
                         .HasForeignKey("MeasurementGroupId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("EquiApi.Persistence.Model.Person", "Recipient")
                         .WithMany()

@@ -177,7 +177,7 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
         switch (data.Type)
         {
             case ChatMessageType.Horse:
-                if (await uow.HorseRepository.GetHorseByIdAsync(data.HorseId ?? 0) is null)
+                if (!await uow.HorseRepository.HorseExistsAsync(data.HorseId ?? 0))
                 {
                     logger.LogInformation("Cannot share horse {HorseId}, it does not exist", data.HorseId);
 
@@ -197,7 +197,7 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
                     return new NotFound();
                 }
 
-                if (!await uow.ChatRepository.CanShareGroupAsync(data.SenderId, group.Id))
+                if (!await uow.MeasurementRepository.CanShareGroupAsync(data.SenderId, group.Id))
                 {
                     logger.LogWarning("Person {PersonId} cannot share measurement group {GroupId}", data.SenderId,
                                       group.Id);
@@ -211,7 +211,7 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
                 break;
         }
 
-        if (horseId is not null && !await uow.ChatRepository.IsPersonOfHorseAsync(data.SenderId, horseId.Value))
+        if (horseId is not null && !await uow.HorseRepository.IsPersonOfHorseAsync(data.SenderId, horseId.Value))
         {
             logger.LogWarning("Person {PersonId} cannot share horse {HorseId}, it is not one of their horses",
                               data.SenderId, horseId);
@@ -337,7 +337,8 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             return new NotFound();
         }
 
-        if (message.Type == ChatMessageType.Text)
+        // texts and files cannot be added, only shared horses and measurements
+        if (message.Type is not (ChatMessageType.Horse or ChatMessageType.Measurement))
         {
             return new IChatService.InvalidMessage("The message does not share a horse or a measurement");
         }
@@ -347,6 +348,12 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             return new Success<ChatMessage>(message);
         }
 
+        // the horse or measurement group was deleted after it was shared
+        if (message.HorseId is null && message.MeasurementGroupId is null)
+        {
+            return new IChatService.InvalidMessage("The shared horse or measurement does not exist anymore");
+        }
+
         var equestrian = await uow.PersonRepository.GetPersonByIdAsync(message.SenderId);
         var saddler = await uow.PersonRepository.GetPersonByIdAsync(message.RecipientId);
         if (equestrian is null || saddler is null)
@@ -354,7 +361,8 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             return new NotFound();
         }
 
-        if (!HasRole(equestrian, RoleName.Equestrian) || !HasRole(saddler, RoleName.Saddler))
+        if (!PersonService.HasRole(equestrian, RoleName.Equestrian)
+            || !PersonService.HasRole(saddler, RoleName.Saddler))
         {
             logger.LogWarning("Person {PersonId} cannot accept message {MessageId}, they are no saddler", personId,
                               messageId);
@@ -362,28 +370,15 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             return new IChatService.InvalidMessage("Only saddlers can add horses and measurements of equestrians");
         }
 
-        var relationship = await uow.PersonRepository.GetRelationshipAsync(equestrian.Id, saddler.Id);
-        if (relationship is null)
-        {
-            uow.PersonRepository.AddRelationship(new PersonRelationship
-            {
-                Equestrian = equestrian,
-                Saddler = saddler,
-                IsContact = true
-            });
-        }
-        else
-        {
-            relationship.IsContact = true;
-        }
+        await uow.PersonRepository.MarkAsContactAsync(equestrian, saddler);
 
         var now = clock.GetCurrentInstant();
-        IReadOnlyCollection<int> groupIds = message.Type == ChatMessageType.Horse
-            ? await uow.ChatRepository.GetGroupIdsOfHorseAsync(message.HorseId ?? 0)
-            : [message.MeasurementGroupId ?? 0];
+        IReadOnlyCollection<int> groupIds = message.HorseId is { } horseId
+            ? await uow.MeasurementRepository.GetGroupIdsOfHorseAsync(horseId)
+            : [message.MeasurementGroupId!.Value];
         if (groupIds.Count > 0)
         {
-            uow.ChatRepository.AddRelease(new Release
+            uow.MeasurementRepository.AddRelease(new Release
             {
                 PersonId = saddler.Id,
                 ReleaseTimestamp = now,
@@ -414,9 +409,6 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
 
         return true;
     }
-
-    private static bool HasRole(Person person, RoleName role) =>
-        person.Roles.Any(assignment => assignment.Role.Name == role);
 
     private void LogPersonNotFound(int personId)
     {

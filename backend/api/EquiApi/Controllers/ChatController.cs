@@ -12,7 +12,6 @@ public sealed class ChatController(
     IPersonService personService,
     IChatSocketManager socketManager) : BaseController
 {
-    private const int MaxFileSize = 10 * 1024 * 1024;
     private const string UnknownContentType = "application/octet-stream";
     private static readonly FileExtensionContentTypeProvider contentTypes = new();
 
@@ -97,26 +96,18 @@ public sealed class ChatController(
     ///     Both persons are notified over the chat websocket.
     /// </summary>
     [HttpPost("{contactId:int}/files")]
-    [RequestSizeLimit(MaxFileSize + 64 * 1024)]
+    // a bit more than the file itself, for the text and the multipart boundaries
+    [RequestSizeLimit(SendChatFileRequest.MaxFileSize + 64 * 1024)]
     [ProducesResponseType<ChatMessageDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<ActionResult<ChatMessageDto>> SendFile([FromRoute][ValidId] int personId,
                                                                   [FromRoute][ValidId] int contactId,
-                                                                  IFormFile file, [FromForm] string? text)
+                                                                  [FromForm] SendChatFileRequest request)
     {
-        if (file.Length is 0 or > MaxFileSize)
+        if (!IsValid<SendChatFileRequest.Validator, SendChatFileRequest>(request) || request.File is not { } file)
         {
-            ModelState.AddModelError(nameof(file), "The file has to be between 1 byte and 10 MB");
-
-            return ValidationProblem();
-        }
-
-        if (text is { Length: > 2000 })
-        {
-            ModelState.AddModelError(nameof(text), "The text must not be longer than 2000 characters");
-
             return ValidationProblem();
         }
 
@@ -124,7 +115,7 @@ public sealed class ChatController(
         await file.CopyToAsync(content, HttpContext.RequestAborted);
         var data = new ChatFileData(file.FileName, ContentTypeOf(file), content.ToArray());
 
-        var result = await chatService.SendFileAsync(personId, contactId, text, data);
+        var result = await chatService.SendFileAsync(personId, contactId, request.Text, data);
         if (result.TryPickT0(out var success, out var failure))
         {
             await socketManager.SendAsync([personId, contactId], ChatEventDto.NewMessage(success.Value));

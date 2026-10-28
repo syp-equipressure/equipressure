@@ -5,8 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/chat.dart';
 import '../models/message.dart';
 import 'api_config.dart';
-import 'auth_service.dart';
-import 'backend_person_context_service.dart';
+import 'horse_service.dart';
 import 'websocket_service.dart';
 
 /// Eine neue Nachricht, die als Benachrichtigung angezeigt wird.
@@ -63,7 +62,15 @@ class ChatService extends ChangeNotifier {
   /// Verbindet den WebSocket und lädt die Unterhaltungen. Wird beim Start der
   /// App aufgerufen und erneut, falls sich die Backend-Person geändert hat.
   Future<void> start() async {
-    final personId = await _currentPersonId();
+    final String personId;
+    try {
+      personId = await _currentPersonId();
+    } on StateError {
+      // ohne Backend-Person gibt es keinen Chat
+      _error = 'Keine Person ausgewählt.';
+      notifyListeners();
+      return;
+    }
     if (personId != _personId) {
       _personId = personId;
       _chats = [];
@@ -325,9 +332,10 @@ class ChatService extends ChangeNotifier {
     });
   }
 
+  /// Wirft wie die anderen Services einen [StateError], wenn keine
+  /// Backend-Person ausgewählt ist.
   static Future<String> _currentPersonId() async =>
-      await BackendPersonContextService.loadPersonId() ??
-      AuthService().currentUserId().toString();
+      (await HorseService().currentPersonId()).toString();
 
   static List<Map<String, dynamic>> _decodeList(
     http.Response response,

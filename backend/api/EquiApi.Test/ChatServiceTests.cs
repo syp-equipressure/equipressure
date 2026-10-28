@@ -82,8 +82,8 @@ public sealed class ChatServiceTests
     [Fact]
     public async Task SendMessageAsync_HorseOfSomebodyElse_ReturnsInvalidMessage()
     {
-        _uowMock.HorseRepository.GetHorseByIdAsync(1).Returns(TestData.CreateHorse());
-        _uowMock.ChatRepository.IsPersonOfHorseAsync(EquestrianId, 1).Returns(false);
+        _uowMock.HorseRepository.HorseExistsAsync(1).Returns(true);
+        _uowMock.HorseRepository.IsPersonOfHorseAsync(EquestrianId, 1).Returns(false);
 
         var result = await _sut.SendMessageAsync(CreateData(EquestrianId, SaddlerId, ChatMessageType.Horse,
                                                             horseId: 1));
@@ -96,7 +96,7 @@ public sealed class ChatServiceTests
     public async Task SendMessageAsync_MeasurementTheSenderMayShare_AddsMessageWithGroupOnly()
     {
         _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns(TestData.CreateMeasurementGroup());
-        _uowMock.ChatRepository.CanShareGroupAsync(SaddlerId, 1).Returns(true);
+        _uowMock.MeasurementRepository.CanShareGroupAsync(SaddlerId, 1).Returns(true);
 
         var result = await _sut.SendMessageAsync(CreateData(SaddlerId, EquestrianId, ChatMessageType.Measurement,
                                                             groupId: 1));
@@ -110,7 +110,7 @@ public sealed class ChatServiceTests
     public async Task SendMessageAsync_MeasurementTheSenderMayNotShare_ReturnsInvalidMessage()
     {
         _uowMock.MeasurementRepository.GetGroupByIdAsync(1).Returns(TestData.CreateMeasurementGroup());
-        _uowMock.ChatRepository.CanShareGroupAsync(SaddlerId, 1).Returns(false);
+        _uowMock.MeasurementRepository.CanShareGroupAsync(SaddlerId, 1).Returns(false);
 
         var result = await _sut.SendMessageAsync(CreateData(SaddlerId, EquestrianId, ChatMessageType.Measurement,
                                                             groupId: 1));
@@ -157,15 +157,28 @@ public sealed class ChatServiceTests
         _uowMock.ChatRepository.GetMessageByIdAsync(1).Returns(message);
         _uowMock.PersonRepository.GetPersonByIdAsync(EquestrianId).Returns(equestrian);
         _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns(saddler);
-        _uowMock.PersonRepository.GetRelationshipAsync(EquestrianId, SaddlerId).Returns((PersonRelationship?) null);
 
         var result = await _sut.AcceptShareAsync(SaddlerId, 1);
 
         result.Value.Should().BeOfType<Success<ChatMessage>>();
         message.AcceptedAt.Should().Be(_clock.GetCurrentInstant());
-        _uowMock.PersonRepository.Received(1).AddRelationship(Arg.Is<PersonRelationship>(r => r.IsContact));
-        _uowMock.ChatRepository.Received(1).AddRelease(Arg.Is<Release>(r =>
+        await _uowMock.PersonRepository.Received(1).MarkAsContactAsync(equestrian, saddler);
+        _uowMock.MeasurementRepository.Received(1).AddRelease(Arg.Is<Release>(r =>
             r.PersonId == SaddlerId && r.MeasurementEligibilities.Single().MeasurementGroupId == 5));
+    }
+
+    [Fact]
+    public async Task AcceptShareAsync_SharedHorseWasDeleted_ReturnsInvalidMessage()
+    {
+        // the reference is set to null when the horse is deleted
+        var message = CreateMessage(1, TestData.CreatePerson(EquestrianId), TestData.CreatePerson(SaddlerId),
+                                    ChatMessageType.Horse);
+        _uowMock.ChatRepository.GetMessageByIdAsync(1).Returns(message);
+
+        var result = await _sut.AcceptShareAsync(SaddlerId, 1);
+
+        result.Value.Should().BeOfType<IChatService.InvalidMessage>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
@@ -181,10 +194,12 @@ public sealed class ChatServiceTests
         await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
-    [Fact]
-    public async Task AcceptShareAsync_TextMessage_ReturnsInvalidMessage()
+    [Theory]
+    [InlineData(ChatMessageType.Text)]
+    [InlineData(ChatMessageType.File)]
+    public async Task AcceptShareAsync_NothingShared_ReturnsInvalidMessage(ChatMessageType type)
     {
-        var message = CreateMessage(1, TestData.CreatePerson(EquestrianId), TestData.CreatePerson(SaddlerId));
+        var message = CreateMessage(1, TestData.CreatePerson(EquestrianId), TestData.CreatePerson(SaddlerId), type);
         _uowMock.ChatRepository.GetMessageByIdAsync(1).Returns(message);
 
         var result = await _sut.AcceptShareAsync(SaddlerId, 1);

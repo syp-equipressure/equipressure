@@ -72,9 +72,11 @@ class Message {
   String get preview {
     switch (type) {
       case MessageType.horse:
-        return 'Pferd geteilt: ${horse?.name ?? ''}'.trim();
+        return horse == null ? 'Geteiltes Pferd gelöscht' : 'Pferd geteilt: ${horse!.name}';
       case MessageType.measurement:
-        return 'Messung geteilt: ${measurement?.horseName ?? ''}'.trim();
+        return measurement == null
+            ? 'Geteilte Messung gelöscht'
+            : 'Messung geteilt: ${measurement!.horseName}';
       case MessageType.file:
         return file?.isImage == true ? 'Bild' : 'Datei: ${file?.fileName ?? ''}';
       case MessageType.text:

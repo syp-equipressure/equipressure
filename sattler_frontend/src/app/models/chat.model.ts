@@ -58,10 +58,11 @@ export interface ChatToast {
 /** Short text of a message for previews and notifications. */
 export function messagePreview(message: ChatMessage): string {
   switch (message.type) {
+    // the backend removes the reference when the horse or measurement is deleted
     case 'Horse':
-      return `Pferd geteilt: ${message.horse?.name ?? ''}`.trim();
+      return message.horse ? `Pferd geteilt: ${message.horse.name}` : 'Geteiltes Pferd gelöscht';
     case 'Measurement':
-      return `Messung geteilt: ${message.measurement?.horseName ?? ''}`.trim();
+      return message.measurement ? `Messung geteilt: ${message.measurement.horseName}` : 'Geteilte Messung gelöscht';
     case 'File':
       return message.file?.contentType.startsWith('image/') ? 'Bild' : `Datei: ${message.file?.fileName ?? ''}`;
     default:

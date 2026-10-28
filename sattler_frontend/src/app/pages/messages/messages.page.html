@@ -105,6 +105,11 @@
                   } @else if (message.acceptedAt) {
                     <small class="share-state">Hinzugefügt</small>
                   }
+                } @else if (message.type === 'Horse' || message.type === 'Measurement') {
+                  <!-- the backend removes the reference when the horse or measurement is deleted -->
+                  <small class="share-state">
+                    {{ message.type === 'Horse' ? 'Das geteilte Pferd wurde gelöscht.' : 'Die geteilte Messung wurde gelöscht.' }}
+                  </small>
                 }
                 @if (message.file; as file) {
                   @if (isImage(message)) {

@@ -36,11 +36,11 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
         field ??= new SaddleRepository(context.SaddleCategories);
 
     public IMeasurementRepository MeasurementRepository =>
-        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates);
+        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates,
+                                            context.Releases);
 
     public IChatRepository ChatRepository =>
-        field ??= new ChatRepository(context.ChatMessages, context.PersonHorses, context.MeasurementGroups,
-                                     context.Releases, context.ChatFiles);
+        field ??= new ChatRepository(context.ChatMessages, context.ChatFiles);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }

@@ -145,6 +145,11 @@ public sealed record SendChatMessageRequest(
     int? HorseId,
     int? MeasurementGroupId)
 {
+    /// <summary>
+    ///     The maximum length of the text of a message, also used for files
+    /// </summary>
+    public const int MaxTextLength = 2000;
+
     public NewChatMessageData ToData(int senderId, int recipientId) =>
         new(senderId, recipientId, Type, Text, HorseId, MeasurementGroupId);
 
@@ -155,11 +160,35 @@ public sealed record SendChatMessageRequest(
             RuleFor(x => x.Type).IsInEnum();
             // files are uploaded with their own endpoint
             RuleFor(x => x.Type).NotEqual(ChatMessageType.File);
-            RuleFor(x => x.Text).MaximumLength(2000).When(x => x.Text is not null);
+            RuleFor(x => x.Text).MaximumLength(MaxTextLength).When(x => x.Text is not null);
             RuleFor(x => x.Text).NotEmpty().When(x => x.Type == ChatMessageType.Text);
             RuleFor(x => x.HorseId).NotNull().GreaterThan(0).When(x => x.Type == ChatMessageType.Horse);
             RuleFor(x => x.MeasurementGroupId).NotNull().GreaterThan(0)
                                               .When(x => x.Type == ChatMessageType.Measurement);
+        }
+    }
+}
+
+/// <summary>
+///     Request to send a file (e.g. an image) as multipart form data
+/// </summary>
+/// <param name="File">The file, at most 10 MB</param>
+/// <param name="Text">An optional text</param>
+public sealed record SendChatFileRequest(IFormFile? File, string? Text)
+{
+    /// <summary>
+    ///     The maximum size of a file in bytes
+    /// </summary>
+    public const int MaxFileSize = 10 * 1024 * 1024;
+
+    public sealed class Validator : AbstractValidator<SendChatFileRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.File).NotNull()
+                                .Must(file => file is { Length: > 0 and <= MaxFileSize })
+                                .WithMessage("The file has to be between 1 byte and 10 MB");
+            RuleFor(x => x.Text).MaximumLength(SendChatMessageRequest.MaxTextLength).When(x => x.Text is not null);
         }
     }
 }

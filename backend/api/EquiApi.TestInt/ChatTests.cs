@@ -241,6 +241,65 @@ public sealed class ChatTests(WebApiTestFixture webApiFixture) : WebApiTestBase(
     }
 
     [Fact]
+    public async ValueTask AcceptShare_File_ReturnsConflict()
+    {
+        var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent([1, 2, 3]), "file", "notizen.txt");
+        var message = await ReadContentAsync<ChatMessageDto>(
+            await ApiClient.PostAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}/files", form,
+                                      TestCancellationToken));
+
+        var response = await ApiClient.PutAsync($"api/persons/{saddler.Id}/chats/messages/{message.Id}/accept", null,
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask SendFile_NoFile_ReturnsBadRequest()
+    {
+        var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent("nur Text"), "text");
+
+        var response = await ApiClient.PostAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}/files", form,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask SharedHorseDeleted_MessageStaysWithoutHorse()
+    {
+        var equestrian = TestData.CreatePerson("Lena", "Grassauer");
+        var saddler = TestData.CreatePerson("Sophie", "Grüneis", role: RoleName.Saddler);
+        var horse = TestData.CreateHorse();
+        await SeedAsync(saddler, TestData.CreatePersonHorse(equestrian, horse, isOwner: true));
+        var shared = await ReadContentAsync<ChatMessageDto>(
+            await ApiClient.PostAsJsonAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}",
+                                            new SendChatMessageRequest(ChatMessageType.Horse, "Schau mal", horse.Id,
+                                                                       null),
+                                            JsonOptions, TestCancellationToken));
+
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            context.Horses.Remove(await context.Horses.SingleAsync(h => h.Id == horse.Id, TestCancellationToken));
+            await context.SaveChangesAsync(TestCancellationToken);
+        });
+
+        var messages = await ReadContentAsync<ChatMessageListResponse>(
+            await ApiClient.GetAsync($"api/persons/{saddler.Id}/chats/{equestrian.Id}", TestCancellationToken));
+        var message = messages.Messages.Should().ContainSingle().Which;
+        message.Id.Should().Be(shared.Id);
+        message.Text.Should().Be("Schau mal");
+        message.Horse.Should().BeNull();
+        var accept = await ApiClient.PutAsync($"api/persons/{saddler.Id}/chats/messages/{shared.Id}/accept", null,
+                                              TestCancellationToken);
+        ShouldBeProblem(accept, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async ValueTask Connect_NewMessage_PushesMessageToRecipient()
     {
         var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
