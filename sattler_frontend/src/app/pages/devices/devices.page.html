@@ -32,16 +32,17 @@
             <p><span>Gerätenummer</span>{{ device.number }}</p>
           </div>
           <div class="device-actions">
+            <!-- im Backend können Geräte nicht bearbeitet werden -->
             @if (!backendPersonId()) {
-            <button type="button" class="icon-button" aria-label="Gerät {{ device.name }} bearbeiten"
-              title="Bearbeiten" (click)="editDevice(device)">
-              <span class="material-icons" aria-hidden="true">edit</span>
-            </button>
-              <button type="button" class="icon-button delete" aria-label="Gerät {{ device.name }} löschen"
-                title="Löschen" (click)="deleteDevice(device)">
-                <span class="material-icons" aria-hidden="true">delete_outline</span>
+              <button type="button" class="icon-button" aria-label="Gerät {{ device.name }} bearbeiten"
+                title="Bearbeiten" (click)="editDevice(device)">
+                <span class="material-icons" aria-hidden="true">edit</span>
               </button>
             }
+            <button type="button" class="icon-button delete" aria-label="Gerät {{ device.name }} löschen"
+              title="Löschen" (click)="deleteDevice(device)">
+              <span class="material-icons" aria-hidden="true">delete_outline</span>
+            </button>
           </div>
         </article>
       }
@@ -72,8 +73,8 @@
         <label>
           <span>Kategorie</span>
           <select name="category" [ngModel]="categoryId()" (ngModelChange)="categoryId.set(+$event)">
-            @for (category of categories; track category.id) {
-              <option [value]="category.id">{{ category.name }}</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }} (bis {{ category.numOfAllowedPeople }} weitere Personen)</option>
             }
           </select>
         </label>

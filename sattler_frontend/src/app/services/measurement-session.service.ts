@@ -2,7 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { MeasurementSession, MeasurementSegment } from '../models/measurement-session.model';
 import { Gait, Side } from '../models/measurement.model';
 import { DataService } from './data.service';
-import { BackendApiService } from './backend-api.service';
+import { BackendApiService, Recording } from './backend-api.service';
+import { MBAR_PER_NCM2 } from './measurement-mapper';
 import { BackendPersonContextService } from './backend-person-context.service';
 import { Observable, concat, map, of, switchMap, throwError, toArray } from 'rxjs';
 
@@ -59,13 +60,13 @@ export class MeasurementSessionService {
     } : null);
   }
 
-  completeSegment(segmentId: string, gait: Gait, side: Side, durationSeconds: number): void {
+  completeSegment(segmentId: string, gait: Gait, side: Side, durationSeconds: number, frames: number[][][] = []): void {
     if (durationSeconds <= 0) return;
     this._session.update(session => session ? {
       ...session,
       segments: session.segments.map(segment =>
         segment.id === segmentId
-          ? { ...segment, gait, side, durationSeconds, completed: true }
+          ? { ...segment, gait, side, durationSeconds, completed: true, frames }
           : segment,
       ),
     } : null);
@@ -142,7 +143,8 @@ export class MeasurementSessionService {
       }),
       // nacheinander anlegen, damit die Reihenfolge der Teilmessungen erhalten bleibt
       switchMap(groupId => concat(
-        ...segments.map(segment => this.api.createMeasurement(groupId, segment.gait, segment.side)),
+        ...segments.map(segment =>
+          this.api.createMeasurement(groupId, segment.gait, segment.side, toRecordings(segment, date))),
       ).pipe(toArray(), map(() => groupId))),
       map(groupId => {
         this.data.addSessionMeasurement({ ...session, segments }, groupId);
@@ -151,6 +153,14 @@ export class MeasurementSessionService {
       }),
     );
   }
+}
+
+/** The frames of a segment as the backend stores them: one recording per second, flattened row by row in mbar. */
+function toRecordings(segment: MeasurementSegment, start: Date): Recording[] {
+  return (segment.frames ?? []).map((frame, index) => ({
+    timestamp: new Date(start.getTime() + index * 1000).toISOString(),
+    values: frame.flat().map(value => Math.max(0, value) * MBAR_PER_NCM2),
+  }));
 }
 
 function createSegment(index: number): MeasurementSegment {

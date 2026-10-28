@@ -326,7 +326,7 @@ export class MeasurementsPage implements OnDestroy {
   deleteMeasurement(id: string, event: Event): void {
     event.stopPropagation();
     const measurement = this.data.getMeasurement(id);
-    if (!measurement) return;
+    if (!measurement || !this.canManageHorse()) return;
     if (!window.confirm(`Möchtest du die Messung vom ${measurement.date} wirklich löschen?`)) return;
     if (!isBackendId(id)) {
       this.removeMeasurementLocally(id);

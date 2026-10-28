@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { PressureDevice } from '../models/device.model';
@@ -20,14 +20,23 @@ export interface SaddleCategory {
   name: string;
 }
 
-/** Device categories of the development data, the backend has no endpoint to list them. */
-export const DEVELOPMENT_DEVICE_CATEGORIES = [
-  { name: 'Basic', id: 1 },
-  { name: 'Standard', id: 2 },
-  { name: 'Family', id: 3 },
-  { name: 'Stable', id: 4 },
-  { name: 'Professional', id: 5 },
-] as const;
+export interface DeviceCategory {
+  id: number;
+  name: string;
+  /** How many users a device of this category can have besides its owner */
+  numOfAllowedPeople: number;
+}
+
+export interface Breed {
+  id: number;
+  name: string;
+}
+
+/** A recording of the sensor mat at one point in time, values in mbar row by row */
+export interface Recording {
+  timestamp: string;
+  values: number[];
+}
 
 export interface MeasurementSummary {
   id: string;
@@ -47,17 +56,6 @@ export interface NewMeasurementGroup {
   saddleId: string;
   deviceId: string;
 }
-
-export const DEVELOPMENT_HORSE_BREEDS = [
-  { name: 'Hannoveraner', id: 1 },
-  { name: 'Holsteiner', id: 2 },
-  { name: 'Westfale', id: 3 },
-  { name: 'Trakehner', id: 4 },
-  { name: 'Haflinger', id: 5 },
-  { name: 'Noriker', id: 6 },
-  { name: 'Lipizzaner', id: 7 },
-  { name: 'Quarter Horse', id: 8 },
-] as const;
 
 @Injectable({ providedIn: 'root' })
 export class BackendApiService {
@@ -86,28 +84,46 @@ export class BackendApiService {
   }
 
   createHorse(ownerId: string, horse: Horse): Observable<Horse> {
-    const values = horseRequestValues(horse);
-    if (values instanceof Error) return throwError(() => values);
-
-    return this.http.post<unknown>(`${this.baseUrl}/horses`, {
-      ...values,
-      ownerId: Number(ownerId),
-    }).pipe(
-      map(response => mapHorse(response, ownerId, 0)),
-      catchError(toApiError),
+    return this.getBreeds().pipe(
+      switchMap(breeds => {
+        const values = horseRequestValues(horse, breeds);
+        if (values instanceof Error) return throwError(() => values);
+        return this.http.post<unknown>(`${this.baseUrl}/horses`, { ...values, ownerId: Number(ownerId) }).pipe(
+          map(response => mapHorse(response, ownerId, 0)),
+          catchError(toApiError),
+        );
+      }),
     );
   }
 
   /** Saves all values of the horse, the image only exists in the frontend and is kept. */
   updateHorse(horse: Horse): Observable<Horse> {
-    const values = horseRequestValues(horse);
-    if (values instanceof Error) return throwError(() => values);
-
-    return this.http.patch<unknown>(`${this.baseUrl}/horses/${horse.id}`, values).pipe(
-      map(response => ({ ...mapHorse(response, horse.ownerId, 0), imageUrl: horse.imageUrl })),
-      catchError(toApiError),
+    return this.getBreeds().pipe(
+      switchMap(breeds => {
+        const values = horseRequestValues(horse, breeds);
+        if (values instanceof Error) return throwError(() => values);
+        return this.http.patch<unknown>(`${this.baseUrl}/horses/${horse.id}`, values).pipe(
+          map(response => ({ ...mapHorse(response, horse.ownerId, 0), imageUrl: horse.imageUrl })),
+          catchError(toApiError),
+        );
+      }),
     );
   }
+
+  /** All breeds ordered by name, loaded once. */
+  getBreeds(): Observable<Breed[]> {
+    return this.breeds$;
+  }
+
+  private readonly breeds$ = this.http.get<unknown>(`${this.baseUrl}/breeds`).pipe(
+    map(response => listFrom(response, 'breeds').map(breed => {
+      if (!isRecord(breed)) throw new Error('Das Backend hat eine ungültige Rasse zurückgegeben.');
+      return { id: numeric(breed, 'id'), name: required(breed, 'name') };
+    })),
+    catchError(toApiError),
+    // nach einem Fehler beim nächsten Aufruf neu laden
+    shareReplay({ bufferSize: 1, refCount: false }),
+  );
 
   /** Deletes the horse together with its saddles and measurements. */
   deleteHorse(horseId: string): Observable<void> {
@@ -179,7 +195,43 @@ export class BackendApiService {
     );
   }
 
+  /** Changes name and category of a saddle, the horse of a saddle cannot be changed. */
+  updateSaddle(horseId: string, saddleId: string, name: string, categoryId: number): Observable<Saddle> {
+    return this.http.patch<unknown>(`${this.baseUrl}/horses/${horseId}/saddles/${saddleId}`, { name, categoryId }).pipe(
+      map(response => mapSaddle(response, horseId)),
+      catchError(toApiError),
+    );
+  }
+
+  /** Removes a saddle, a saddle that was used for measurements cannot be removed (HTTP 409). */
+  deleteSaddle(horseId: string, saddleId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/horses/${horseId}/saddles/${saddleId}`).pipe(
+      catchError(toApiErrorOnConflict('Mit dem Sattel wurde schon gemessen. Lösche zuerst die Messungen.')),
+    );
+  }
+
   // ── Devices ────────────────────────────────────────────────────────────────
+
+  getDeviceCategories(): Observable<DeviceCategory[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/devices/categories`).pipe(
+      map(response => listFrom(response, 'categories').map(category => {
+        if (!isRecord(category)) throw new Error('Das Backend hat eine ungültige Gerätekategorie zurückgegeben.');
+        return {
+          id: numeric(category, 'id'),
+          name: required(category, 'name'),
+          numOfAllowedPeople: numeric(category, 'numOfAllowedPeople'),
+        };
+      })),
+      catchError(toApiError),
+    );
+  }
+
+  /** Removes a device including its users, a device that was used for measurements cannot be removed (HTTP 409). */
+  deleteDevice(deviceId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/devices/${encodeURIComponent(deviceId)}`).pipe(
+      catchError(toApiErrorOnConflict('Mit dem Gerät wurde schon gemessen. Lösche zuerst die Messungen.')),
+    );
+  }
 
   createDevice(deviceId: string, ownerId: string, categoryId: number): Observable<PressureDevice> {
     return this.http.post<unknown>(`${this.baseUrl}/devices`, {
@@ -247,7 +299,7 @@ export class BackendApiService {
       switchMap(groupIds => groupIds.length
         ? forkJoin(groupIds.map(groupId => this.getMeasurementGroup(horseId, groupId, withData)))
         : of([] as Measurement[])),
-      // groups without measurements count as deleted (see deleteMeasurementGroup)
+      // groups without measurements were emptied instead of deleted before the backend could delete groups
       map(measurements => measurements
         .filter(measurement => (measurement.detail.segments?.length ?? 0) > 0)
         .sort((a, b) => toSortableDate(b.date).localeCompare(toSortableDate(a.date)))),
@@ -301,31 +353,22 @@ export class BackendApiService {
     );
   }
 
-  /** Adds a measurement (pace + hand) to a measurement group. */
-  createMeasurement(groupId: string, pace: string, hand: string): Observable<void> {
+  /** Adds a measurement (pace + hand) with its recordings of the sensor mat to a measurement group. */
+  createMeasurement(groupId: string, pace: string, hand: string, recordings: Recording[] = []): Observable<void> {
     return this.http.post<unknown>(`${this.baseUrl}/measurementgroups/${groupId}/measurements`, {
       pace,
       hand,
       description: null,
+      recordings: recordings.length ? recordings : null,
     }).pipe(
       map(() => undefined),
       catchError(toApiError),
     );
   }
 
-  /**
-   * Deletes all measurements of a group. The backend has no endpoint to delete a whole group,
-   * the empty group is hidden by getMeasurementsOfHorse.
-   */
+  /** Deletes a measurement group including its measurements, their data and the releases of the group. */
   deleteMeasurementGroup(groupId: string): Observable<void> {
-    const groupUrl = `${this.baseUrl}/measurementgroups/${groupId}`;
-    return this.http.get<unknown>(`${groupUrl}/measurements`).pipe(
-      map(response => listFrom(response, 'measurements') as BackendMeasurement[]),
-      switchMap(measurements => measurements.length
-        ? forkJoin(measurements.map(measurement =>
-            this.http.delete<void>(`${groupUrl}/measurements/${measurement.id}`)))
-        : of([])),
-      map(() => undefined),
+    return this.http.delete<void>(`${this.baseUrl}/measurementgroups/${groupId}`).pipe(
       catchError(toApiError),
     );
   }
@@ -396,10 +439,10 @@ function mapCreatedPersonId(value: unknown): string {
   throw new Error('Das Backend hat nach dem Anlegen keine gültige Personen-ID zurückgegeben.');
 }
 
-function breedIdsForNames(value: string): number[] | null {
+function breedIdsForNames(value: string, breeds: readonly Breed[]): number[] | null {
   const names = value.split(',').map(name => name.trim().toLocaleLowerCase('de')).filter(Boolean);
   const breedIds: Array<number | undefined> = names.map((name): number | undefined =>
-    DEVELOPMENT_HORSE_BREEDS.find(breed => breed.name.toLocaleLowerCase('de') === name)?.id,
+    breeds.find(breed => breed.name.toLocaleLowerCase('de') === name)?.id,
   );
   if (names.length === 0 || breedIds.some(id => id === undefined)) return null;
   return [...new Set(breedIds.filter((id): id is number => id !== undefined))];
@@ -423,11 +466,10 @@ function toIsoDate(value: string | undefined): string {
 }
 
 /** The values of a horse as the backend expects them when adding or changing it. */
-function horseRequestValues(horse: Horse) {
-  const breedIds = breedIdsForNames(horse.breed);
+function horseRequestValues(horse: Horse, breeds: readonly Breed[]) {
+  const breedIds = breedIdsForNames(horse.breed, breeds);
   if (!breedIds) {
-    const supportedBreeds = DEVELOPMENT_HORSE_BREEDS.map(breed => breed.name).join(', ');
-    return new Error(`Bitte eine unterstützte Pferderasse angeben: ${supportedBreeds}.`);
+    return new Error('Bitte eine Pferderasse aus der Liste auswählen.');
   }
   const address = parseHorseAddress(horse.address);
   if (!address) {
@@ -528,6 +570,13 @@ function ageFromDate(value: string): number {
     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
   ) age--;
   return Math.max(0, age);
+}
+
+/** Like toApiError, but replaces the (English) detail of the backend for HTTP 409 with [message]. */
+function toApiErrorOnConflict(message: string) {
+  return (error: unknown) => error instanceof HttpErrorResponse && error.status === 409
+    ? throwError(() => new Error(message))
+    : toApiError(error);
 }
 
 export function toApiError(error: unknown) {

@@ -142,6 +142,9 @@ export class StubPage {
 
   readonly selectedSaddleId = signal<string | null>(null);
   readonly saddleFormOpen = signal(false);
+  readonly saddleListOpen = signal(false);
+  /** Id des Sattels, der im Formular bearbeitet wird, null beim Anlegen */
+  readonly editingSaddleId = signal<string | null>(null);
   readonly saddleName = signal('');
   readonly saddleCategory = signal('Dressur');
   readonly saddleError = signal('');
@@ -356,11 +359,50 @@ export class StubPage {
   }
 
   openSaddleForm(): void {
+    this.editingSaddleId.set(null);
     this.saddleName.set('');
     this.saddleCategory.set(this.saddleCategories()[0]?.name ?? 'Dressur');
     this.saddleError.set('');
     this.saddleFormOpen.set(true);
     if (this.selectedOwner()?.backend) this.loadSaddleCategories();
+  }
+
+  /** Öffnet das Formular für einen Sattel aus der Liste, dort kann er auch gelöscht werden. */
+  openEditSaddleForm(saddle: Saddle): void {
+    this.editingSaddleId.set(saddle.id);
+    this.saddleName.set(saddle.name);
+    this.saddleCategory.set(saddle.category);
+    this.saddleError.set('');
+    this.saddleFormOpen.set(true);
+    if (this.selectedOwner()?.backend) this.loadSaddleCategories();
+  }
+
+  deleteSaddle(): void {
+    const horse = this.selectedHorse();
+    const saddleId = this.editingSaddleId();
+    if (!horse || !saddleId) return;
+    if (!window.confirm(`Möchtest du den Sattel „${this.saddleName()}“ wirklich löschen?`)) return;
+
+    const removed = () => {
+      this.data.deleteSaddle(saddleId);
+      if (this.selectedSaddleId() === saddleId) this.selectedSaddleId.set(null);
+      this.saddleFormOpen.set(false);
+    };
+    if (!this.selectedOwner()?.backend) {
+      removed();
+      return;
+    }
+    this.saddleSaving.set(true);
+    this.api.deleteSaddle(horse.id, saddleId).subscribe({
+      next: () => {
+        this.saddleSaving.set(false);
+        removed();
+      },
+      error: error => {
+        this.saddleSaving.set(false);
+        this.saddleError.set(error instanceof Error ? error.message : 'Der Sattel konnte nicht gelöscht werden.');
+      },
+    });
   }
 
   /** Lädt die Sattelkategorien aus dem Backend, sonst bleiben die lokalen Kategorien. */
@@ -399,7 +441,11 @@ export class StubPage {
         return;
       }
       this.saddleSaving.set(true);
-      this.api.createSaddle(horse.id, name, category.id).subscribe({
+      const editingId = this.editingSaddleId();
+      const request = editingId
+        ? this.api.updateSaddle(horse.id, editingId, name, category.id)
+        : this.api.createSaddle(horse.id, name, category.id);
+      request.subscribe({
         next: saddle => {
           this.data.upsertSaddles([saddle]);
           this.selectedSaddleId.set(saddle.id);
@@ -415,12 +461,12 @@ export class StubPage {
     }
 
     const saddle: Saddle = {
-      id: crypto.randomUUID(),
+      id: this.editingSaddleId() ?? crypto.randomUUID(),
       horseId: horse.id,
       name,
       category: this.saddleCategory(),
     };
-    this.data.addSaddle(saddle);
+    this.data.upsertSaddles([saddle]);
     this.selectedSaddleId.set(saddle.id);
     this.saddleFormOpen.set(false);
   }

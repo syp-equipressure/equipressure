@@ -424,6 +424,10 @@ export class DataService {
     this._saddles.update(list => [...list, saddle]);
   }
 
+  deleteSaddle(id: string): void {
+    this._saddles.update(list => list.filter(saddle => saddle.id !== id));
+  }
+
   addHorse(horse: Horse): void {
     this._horses.update(list => [...list, horse]);
   }

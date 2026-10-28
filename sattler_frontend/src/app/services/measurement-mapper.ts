@@ -2,7 +2,7 @@ import { Gait, Measurement, MeasurementSegmentResult, Side } from '../models/mea
 import { formatDuration } from '../utils/time-format';
 
 /** The backend stores pressure values in mbar, the app shows N/cm² (100 mbar = 1 N/cm²). */
-const MBAR_PER_NCM2 = 100;
+export const MBAR_PER_NCM2 = 100;
 const GRID_SIZE = 20;
 
 export interface BackendGroupDetail {

@@ -54,7 +54,7 @@
         (ngModelChange)="breed.set($event)"
       />
       <datalist id="supported-horse-breeds">
-        @for (supportedBreed of supportedBreeds; track supportedBreed) {
+        @for (supportedBreed of supportedBreeds(); track supportedBreed) {
           <option [value]="supportedBreed"></option>
         }
       </datalist>
@@ -62,7 +62,7 @@
         <span class="form-error">{{ errors()['breed'] }}</span>
       }
       @if (backendMode()) {
-        <span class="form-hint">Unterstützte Rassen: {{ supportedBreeds.join(', ') }}. Mehrere Rassen mit Komma trennen.</span>
+        <span class="form-hint">Rasse aus der Liste auswählen, mehrere Rassen mit Komma trennen.</span>
       }
     </div>
 

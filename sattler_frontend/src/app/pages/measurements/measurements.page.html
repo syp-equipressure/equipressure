@@ -124,15 +124,18 @@
               }
             </div>
           </button>
-          <button
-            type="button"
-            class="icon-btn ghost delete-measurement"
-            aria-label="Messung vom {{ m.date }} löschen"
-            title="Messung löschen"
-            (click)="deleteMeasurement(m.id, $event)"
-          >
-            <span class="material-icons">delete_outline</span>
-          </button>
+          <!-- nur Messungen der eigenen Pferde dürfen gelöscht werden -->
+          @if (canManageHorse()) {
+            <button
+              type="button"
+              class="icon-btn ghost delete-measurement"
+              aria-label="Messung vom {{ m.date }} löschen"
+              title="Messung löschen"
+              (click)="deleteMeasurement(m.id, $event)"
+            >
+              <span class="material-icons">delete_outline</span>
+            </button>
+          }
         </div>
       }
 

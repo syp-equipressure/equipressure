@@ -14,4 +14,6 @@ export interface MeasurementSegment {
   side: Side;
   durationSeconds: number;
   completed: boolean;
+  /** The recorded frames of the sensor mat (N/cm²), one per second */
+  frames?: number[][][];
 }

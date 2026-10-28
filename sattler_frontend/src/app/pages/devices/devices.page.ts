@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { PressureDevice } from '../../models/device.model';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { BackendApiService, DEVELOPMENT_DEVICE_CATEGORIES } from '../../services/backend-api.service';
+import { BackendApiService, DeviceCategory } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 
 @Component({
@@ -30,8 +30,8 @@ export class DevicesPage {
   readonly error = signal('');
   readonly saveError = signal('');
   readonly saving = signal(false);
-  readonly categories = DEVELOPMENT_DEVICE_CATEGORIES;
-  readonly categoryId = signal<number>(DEVELOPMENT_DEVICE_CATEGORIES[0].id);
+  readonly categories = signal<DeviceCategory[]>([]);
+  readonly categoryId = signal<number | null>(null);
 
   constructor() {
     effect(onCleanup => {
@@ -62,10 +62,26 @@ export class DevicesPage {
     this.editingId.set(null);
     this.name.set('');
     this.number.set('');
-    this.categoryId.set(DEVELOPMENT_DEVICE_CATEGORIES[0].id);
     this.error.set('');
     this.saveError.set('');
     this.formOpen.set(true);
+    if (this.backendPersonId()) this.loadCategories();
+  }
+
+  private loadCategories(): void {
+    if (this.categories().length) {
+      this.categoryId.set(this.categories()[0].id);
+      return;
+    }
+    this.api.getDeviceCategories().subscribe({
+      next: categories => {
+        this.categories.set(categories);
+        this.categoryId.set(categories[0]?.id ?? null);
+      },
+      error: error => this.error.set(
+        error instanceof Error ? error.message : 'Gerätekategorien konnten nicht geladen werden.',
+      ),
+    });
   }
 
   editDevice(device: PressureDevice): void {
@@ -122,11 +138,16 @@ export class DevicesPage {
     }
   }
 
-  /** Das Backend kann Geräte nur anlegen (Seriennummer + Kategorie), nicht bearbeiten oder löschen. */
+  /** Das Backend kann Geräte anlegen (Seriennummer + Kategorie) und löschen, aber nicht bearbeiten. */
   private saveBackendDevice(personId: string): void {
     const number = this.number().trim();
+    const categoryId = this.categoryId();
     if (!number) {
       this.error.set('Bitte die Gerätenummer eingeben.');
+      return;
+    }
+    if (categoryId === null) {
+      this.error.set('Bitte eine Kategorie auswählen.');
       return;
     }
     if (this.devices().some(device => device.number.toLocaleLowerCase('de') === number.toLocaleLowerCase('de'))) {
@@ -135,7 +156,7 @@ export class DevicesPage {
     }
 
     this.saving.set(true);
-    this.api.createDevice(number, personId, this.categoryId()).subscribe({
+    this.api.createDevice(number, personId, categoryId).subscribe({
       next: device => {
         this.backendDevices.update(devices => [...(devices ?? []), device]);
         this.saving.set(false);
@@ -149,11 +170,19 @@ export class DevicesPage {
   }
 
   deleteDevice(device: PressureDevice): void {
+    if (!window.confirm(`Möchtest du das Gerät „${device.name}“ wirklich löschen?`)) return;
     if (this.backendPersonId()) {
-      this.saveError.set('Das Backend unterstützt derzeit kein Löschen von Geräten.');
+      this.api.deleteDevice(device.id).subscribe({
+        next: () => {
+          this.backendDevices.update(devices => devices?.filter(item => item.id !== device.id) ?? null);
+          this.saveError.set('');
+        },
+        error: error => this.saveError.set(
+          error instanceof Error ? error.message : 'Das Gerät konnte nicht gelöscht werden.',
+        ),
+      });
       return;
     }
-    if (!window.confirm(`Möchtest du das Gerät „${device.name}“ wirklich löschen?`)) return;
     try {
       this.data.deleteDevice(device.id);
       this.saveError.set('');

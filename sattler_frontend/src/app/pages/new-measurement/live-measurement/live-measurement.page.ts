@@ -25,6 +25,7 @@ export class LiveMeasurementPage implements OnDestroy {
   });
   private timer?: number;
   private readonly startedAt = Date.now();
+  private readonly frames: number[][][] = [];
 
   readonly session = this.sessionService.session;
   readonly segment = computed(() => {
@@ -48,6 +49,8 @@ export class LiveMeasurementPage implements OnDestroy {
     this.side.set(this.segment()!.side);
     this.timer = window.setInterval(() => {
       this.phase.set((Date.now() - this.startedAt) / 1000);
+      // eine Aufnahme pro Sekunde wird mit der Teilmessung gespeichert
+      if (this.frames.length < this.elapsedSeconds()) this.frames.push(this.pressureGrid());
     }, 250);
   }
 
@@ -63,6 +66,7 @@ export class LiveMeasurementPage implements OnDestroy {
       this.gait(),
       this.side(),
       this.elapsedSeconds(),
+      this.frames,
     );
     void this.router.navigate(['/new-measurement/session']);
   }

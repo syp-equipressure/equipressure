@@ -1,7 +1,9 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { catchError, map, of } from 'rxjs';
 import { Horse } from '../../../models/horse.model';
-import { BackendApiService, DEVELOPMENT_HORSE_BREEDS } from '../../../services/backend-api.service';
+import { BackendApiService } from '../../../services/backend-api.service';
 import { addressError, composeAddress, splitAddress } from '../../../utils/address';
 
 @Component({
@@ -26,7 +28,6 @@ export class AddHorse {
   sex = signal<Exclude<Horse['sex'], undefined>>('Weiblich');
   birthDate = signal('');
   readonly today = formatDateInput(new Date());
-  readonly supportedBreeds = DEVELOPMENT_HORSE_BREEDS.map(breed => breed.name);
   readonly calculatedAge = computed(() => calculateAge(this.birthDate()));
   street = signal('');
   postalCode = signal('');
@@ -36,6 +37,14 @@ export class AddHorse {
   readonly saving = signal(false);
   readonly saveError = signal('');
   private readonly api = inject(BackendApiService);
+  /** Die Rassen aus dem Backend, leer solange sie nicht geladen sind (das Backend prüft beim Speichern) */
+  readonly supportedBreeds = toSignal(
+    this.api.getBreeds().pipe(
+      map(breeds => breeds.map(breed => breed.name)),
+      catchError(() => of([] as string[])),
+    ),
+    { initialValue: [] as string[] },
+  );
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -69,8 +78,8 @@ export class AddHorse {
       e.birthDate = 'Bitte ein gültiges Geburtsdatum in der Vergangenheit auswählen.';
     }
     if (!this.breed().trim()) e.breed = 'Rasse ist erforderlich.';
-    if (this.backendMode() && !isSupportedBreedList(this.breed())) {
-      e.breed = `Bitte nur unterstützte Rassen verwenden: ${this.supportedBreeds.join(', ')}.`;
+    if (this.backendMode() && this.supportedBreeds().length && !isSupportedBreedList(this.breed(), this.supportedBreeds())) {
+      e.breed = 'Bitte nur Rassen aus der Liste verwenden.';
     }
     const addressProblem = addressError(
       { street: this.street(), postalCode: this.postalCode(), city: this.city() },
@@ -201,10 +210,10 @@ function normalizeSex(sex: string | undefined): Exclude<Horse['sex'], undefined>
   return 'Weiblich';
 }
 
-function isSupportedBreedList(value: string): boolean {
+function isSupportedBreedList(value: string, supportedBreeds: string[]): boolean {
   const names = value.split(',').map(name => name.trim().toLocaleLowerCase('de')).filter(Boolean);
   return names.length > 0 && names.every(name =>
-    DEVELOPMENT_HORSE_BREEDS.some(breed => breed.name.toLocaleLowerCase('de') === name),
+    supportedBreeds.some(breed => breed.toLocaleLowerCase('de') === name),
   );
 }
 

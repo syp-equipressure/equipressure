@@ -113,28 +113,47 @@
         </div>
 
         <div class="saddle-grid">
-            <label class="field">
-              <span class="field-label">Modell</span>
+            <!-- eigene Liste statt <select>, damit jeder Sattel einen Stift zum Bearbeiten hat -->
+            <div class="field">
+              <span class="field-label" id="saddle-label">Modell</span>
               <div class="select-shell">
-                <select
-                  class="select-input"
-                  [value]="selectedSaddleId() ?? ''"
+                <button
+                  type="button"
+                  class="select-input saddle-toggle"
+                  aria-labelledby="saddle-label"
+                  aria-haspopup="listbox"
+                  [attr.aria-expanded]="saddleListOpen()"
+                  [class.placeholder]="!selectedSaddle()"
                   [disabled]="!selectedHorse() || availableSaddles().length === 0"
-                  (change)="selectSaddle($any($event.target).value)"
+                  (click)="saddleListOpen.set(!saddleListOpen())"
                 >
-                  <option value="" disabled>Sattel auswählen</option>
-                  @for (saddle of availableSaddles(); track saddle.id) {
-                    <option [value]="saddle.id">{{ saddle.name }}</option>
-                  }
-                </select>
-                <span class="select-icon material-icons" [class.disabled]="!selectedHorse() || availableSaddles().length === 0">chevron_right</span>
+                  {{ selectedSaddleName() || 'Sattel auswählen' }}
+                </button>
+                <span class="select-icon material-icons" [class.disabled]="!selectedHorse() || availableSaddles().length === 0">expand_more</span>
+                @if (saddleListOpen()) {
+                  <div class="saddle-list-backdrop" (click)="saddleListOpen.set(false)"></div>
+                  <ul class="saddle-list" role="listbox" aria-labelledby="saddle-label">
+                    @for (saddle of availableSaddles(); track saddle.id) {
+                      <li role="option" [attr.aria-selected]="saddle.id === selectedSaddleId()"
+                        [class.selected]="saddle.id === selectedSaddleId()">
+                        <button type="button" class="saddle-option" (click)="selectSaddle(saddle.id); saddleListOpen.set(false)">
+                          {{ saddle.name }}
+                        </button>
+                        <button type="button" class="edit-saddle-button" aria-label="Sattel {{ saddle.name }} bearbeiten"
+                          title="Sattel bearbeiten" (click)="openEditSaddleForm(saddle); saddleListOpen.set(false)">
+                          <span class="material-icons" aria-hidden="true">edit</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
               </div>
               @if (saddlesLoading()) {
                 <small role="status">Sättel werden geladen …</small>
               } @else if (saddlesError()) {
                 <small class="error" role="alert">{{ saddlesError() }}</small>
               }
-            </label>
+            </div>
 
             <label class="field">
               <span class="field-label">Kategorie</span>
@@ -196,9 +215,16 @@
 
 @if (saddleFormOpen()) {
   <div class="form-overlay" (click)="cancelSaddleForm()"></div>
-  <section class="saddle-form" role="dialog" aria-modal="true" aria-label="Sattel anlegen">
+  <section class="saddle-form" role="dialog" aria-modal="true"
+    [attr.aria-label]="editingSaddleId() ? 'Sattel bearbeiten' : 'Sattel anlegen'">
     <header>
-      <h2>Sattel für {{ selectedHorse()?.name }} anlegen</h2>
+      <h2>
+        @if (editingSaddleId()) {
+          Sattel bearbeiten
+        } @else {
+          Sattel für {{ selectedHorse()?.name }} anlegen
+        }
+      </h2>
       <button type="button" class="form-close" aria-label="Schließen" (click)="cancelSaddleForm()">
         <span class="material-icons" aria-hidden="true">close</span>
       </button>
@@ -222,6 +248,9 @@
         <p class="saddle-error" role="alert">{{ saddleError() }}</p>
       }
       <footer>
+        @if (editingSaddleId()) {
+          <button type="button" class="delete-saddle" [disabled]="saddleSaving()" (click)="deleteSaddle()">Löschen</button>
+        }
         <button type="button" class="cancel-saddle" (click)="cancelSaddleForm()">Abbrechen</button>
         <button type="submit" class="save-saddle" [disabled]="saddleSaving()">
           {{ saddleSaving() ? 'Wird gespeichert …' : 'Sattel speichern' }}
