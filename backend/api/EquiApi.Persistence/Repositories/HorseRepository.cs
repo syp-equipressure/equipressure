@@ -56,6 +56,23 @@ public interface IHorseRepository
     public ValueTask<IReadOnlyCollection<Person>> GetHiddenRidersOfHorseAsync(int horseId);
 
     /// <summary>
+    ///     Gets the assignment of a person to a horse, no matter if the person is the owner, a rider or a hidden rider
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The tracked assignment or null if the person does not belong to the horse</returns>
+    public ValueTask<PersonHorse?> GetPersonOfHorseAsync(int horseId, int personId);
+
+    /// <summary>
+    ///     Checks if a person is the owner or a rider of a horse that is not hidden, i.e. if they can be selected as
+    ///     rider of a measurement
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>True if the person is the owner or a visible rider of the horse, false otherwise</returns>
+    public ValueTask<bool> IsVisibleRiderOfHorseAsync(int horseId, int personId);
+
+    /// <summary>
     ///     Checks if a person is the owner or a rider of a horse
     /// </summary>
     /// <param name="personId">The id of the person</param>
@@ -82,6 +99,11 @@ public interface IHorseRepository
     /// <param name="horse">The horse to delete</param>
     public void DeleteHorse(Horse horse);
 
+    /// <summary>
+    ///     Adds a person to a horse, e.g. as a new rider
+    /// </summary>
+    /// <param name="personHorse">The assignment to add</param>
+    public void AddPersonToHorse(PersonHorse personHorse);
 }
 
 internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> personHorseSet, DbSet<Breed> breedSet)
@@ -131,6 +153,13 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
                             .Select(ph => ph.Person)
                             .ToListAsync();
 
+    public async ValueTask<PersonHorse?> GetPersonOfHorseAsync(int horseId, int personId) =>
+        await personHorseSet.FirstOrDefaultAsync(ph => ph.HorseId == horseId && ph.PersonId == personId);
+
+    public async ValueTask<bool> IsVisibleRiderOfHorseAsync(int horseId, int personId) =>
+        await personHorseSet.AnyAsync(ph => ph.HorseId == horseId && ph.PersonId == personId
+                                            && (ph.IsOwner || !ph.IsHidden));
+
     public async ValueTask<bool> IsPersonOfHorseAsync(int personId, int horseId) =>
         await personHorseSet.AnyAsync(ph => ph.PersonId == personId && ph.HorseId == horseId);
 
@@ -146,5 +175,10 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
     public void DeleteHorse(Horse horse)
     {
         horseSet.Remove(horse);
+    }
+
+    public void AddPersonToHorse(PersonHorse personHorse)
+    {
+        personHorseSet.Add(personHorse);
     }
 }

@@ -82,6 +82,32 @@ public interface IHorseService
     public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetHiddenRidersOfHorseAsync(int horseId);
 
     /// <summary>
+    ///     Adds a person as rider (Reitbeteiligung) of a horse. A rider measures with the device of the owner and does
+    ///     not need a device of their own.
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="personId">The id of the new rider</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the horse or the person does not exist
+    ///     or <see cref="RiderAlreadyAssigned" /> if the person already is the owner or a (hidden) rider of the horse
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, RiderAlreadyAssigned>> AddRiderToHorseAsync(int horseId, int personId);
+
+    /// <summary>
+    ///     Hides a rider of a horse (e.g. a former rider) or shows them again. Hidden riders cannot be selected for new
+    ///     measurements, their previous measurements are kept.
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="personId">The id of the rider</param>
+    /// <param name="isHidden">True to hide the rider, false to show them again</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the person is no rider of the horse
+    ///     or <see cref="OwnerCannotBeHidden" /> if the person is the owner of the horse
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, OwnerCannotBeHidden>> SetRiderHiddenAsync(int horseId, int personId,
+                                                                                        bool isHidden);
+
+    /// <summary>
     /// Adds a new saddle to an existing horse
     /// </summary>
     /// <param name="name">name of the saddle</param>
@@ -103,6 +129,16 @@ public interface IHorseService
     /// <param name="data">The values to change</param>
     /// <returns>The updated horse or <see cref="NotFound" /> if the horse or one of the breeds does not exist</returns>
     public ValueTask<OneOf<Success<Horse>, NotFound>> PatchHorseAsync(int horseId, PatchHorseData data);
+
+    /// <summary>
+    ///     Returned if a person already is the owner or a (hidden) rider of a horse
+    /// </summary>
+    public readonly record struct RiderAlreadyAssigned;
+
+    /// <summary>
+    ///     Returned if the owner of a horse should be hidden
+    /// </summary>
+    public readonly record struct OwnerCannotBeHidden;
 }
 
 internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
@@ -240,6 +276,72 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
         var riders = await uow.HorseRepository.GetHiddenRidersOfHorseAsync(horseId);
 
         return new Success<IReadOnlyCollection<Person>>(riders);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IHorseService.RiderAlreadyAssigned>> AddRiderToHorseAsync(
+        int horseId, int personId)
+    {
+        if (!await uow.HorseRepository.HorseExistsAsync(horseId))
+        {
+            LogHorseNotFound(horseId);
+
+            return new NotFound();
+        }
+
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
+        {
+            logger.LogInformation("Person {PersonId} not found", personId);
+
+            return new NotFound();
+        }
+
+        if (await uow.HorseRepository.GetPersonOfHorseAsync(horseId, personId) is not null)
+        {
+            logger.LogWarning("Person {PersonId} already is the owner or a rider of horse {HorseId}", personId,
+                              horseId);
+
+            return new IHorseService.RiderAlreadyAssigned();
+        }
+
+        uow.HorseRepository.AddPersonToHorse(new PersonHorse
+        {
+            HorseId = horseId,
+            PersonId = personId,
+            IsOwner = false,
+            IsHidden = false
+        });
+
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Person {PersonId} added as rider of horse {HorseId}", personId, horseId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IHorseService.OwnerCannotBeHidden>> SetRiderHiddenAsync(
+        int horseId, int personId, bool isHidden)
+    {
+        var rider = await uow.HorseRepository.GetPersonOfHorseAsync(horseId, personId);
+        if (rider is null)
+        {
+            logger.LogInformation("Person {PersonId} is no rider of horse {HorseId}", personId, horseId);
+
+            return new NotFound();
+        }
+
+        if (rider.IsOwner)
+        {
+            logger.LogWarning("Person {PersonId} is the owner of horse {HorseId} and cannot be hidden", personId,
+                              horseId);
+
+            return new IHorseService.OwnerCannotBeHidden();
+        }
+
+        rider.IsHidden = isHidden;
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Rider {PersonId} of horse {HorseId} is hidden: {IsHidden}", personId, horseId,
+                              isHidden);
+
+        return new Success();
     }
 
     private void LogHorseNotFound(int horseId)

@@ -254,6 +254,111 @@ public sealed class HorseTests(WebApiTestFixture webApiFixture) : WebApiTestBase
     }
 
     [Fact]
+    public async ValueTask AddRider_NewRider_RiderIsListedAfterOwner()
+    {
+        var horse = TestData.CreateHorse();
+        var owner = TestData.CreatePerson("Otto");
+        var rider = TestData.CreatePerson("Ria", role: RoleName.Guest);
+        await SeedAsync(TestData.CreatePersonHorse(owner, horse, isOwner: true), rider);
+
+        var response = await ApiClient.PostAsync($"api/horses/{horse.Id}/riders/{rider.Id}", null,
+                                                 TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var ridersResponse = await ApiClient.GetAsync($"api/horses/{horse.Id}/riders", TestCancellationToken);
+        var riders = await ReadContentAsync<PersonListResponse>(ridersResponse);
+        riders.Persons.Select(p => p.Id).Should().Equal(owner.Id, rider.Id);
+    }
+
+    [Fact]
+    public async ValueTask AddRider_HiddenRider_ReturnsConflict()
+    {
+        var horse = TestData.CreateHorse();
+        var hiddenRider = TestData.CreatePerson("Hans");
+        await SeedAsync(TestData.CreatePersonHorse(hiddenRider, horse, isHidden: true));
+
+        var response = await ApiClient.PostAsync($"api/horses/{horse.Id}/riders/{hiddenRider.Id}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask AddRider_NonExistingPerson_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse();
+        await SeedAsync(horse);
+
+        var response = await ApiClient.PostAsync($"api/horses/{horse.Id}/riders/{TestData.NonExistingId}", null,
+                                                 TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask HideRider_VisibleRider_RiderIsOnlyListedAsHidden()
+    {
+        var horse = TestData.CreateHorse();
+        var owner = TestData.CreatePerson("Otto");
+        var rider = TestData.CreatePerson("Ria");
+        await SeedAsync(TestData.CreatePersonHorse(owner, horse, isOwner: true),
+                        TestData.CreatePersonHorse(rider, horse));
+
+        var response = await ApiClient.PutAsync($"api/horses/{horse.Id}/riders/{rider.Id}/hidden", null,
+                                                TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var riders = await ReadContentAsync<PersonListResponse>(
+            await ApiClient.GetAsync($"api/horses/{horse.Id}/riders", TestCancellationToken));
+        riders.Persons.Should().ContainSingle().Which.Id.Should().Be(owner.Id);
+        var hiddenRiders = await ReadContentAsync<PersonListResponse>(
+            await ApiClient.GetAsync($"api/horses/{horse.Id}/riders/hidden", TestCancellationToken));
+        hiddenRiders.Persons.Should().ContainSingle().Which.Id.Should().Be(rider.Id);
+    }
+
+    [Fact]
+    public async ValueTask HideRider_Owner_ReturnsConflict()
+    {
+        var horse = TestData.CreateHorse();
+        var owner = TestData.CreatePerson("Otto");
+        await SeedAsync(TestData.CreatePersonHorse(owner, horse, isOwner: true));
+
+        var response = await ApiClient.PutAsync($"api/horses/{horse.Id}/riders/{owner.Id}/hidden", null,
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask HideRider_PersonIsNoRider_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse();
+        var stranger = TestData.CreatePerson("Fremd");
+        await SeedAsync(horse, stranger);
+
+        var response = await ApiClient.PutAsync($"api/horses/{horse.Id}/riders/{stranger.Id}/hidden", null,
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask ShowRider_HiddenRider_RiderIsListedAgain()
+    {
+        var horse = TestData.CreateHorse();
+        var hiddenRider = TestData.CreatePerson("Hans");
+        await SeedAsync(TestData.CreatePersonHorse(hiddenRider, horse, isHidden: true));
+
+        var response = await ApiClient.DeleteAsync($"api/horses/{horse.Id}/riders/{hiddenRider.Id}/hidden",
+                                                   TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var riders = await ReadContentAsync<PersonListResponse>(
+            await ApiClient.GetAsync($"api/horses/{horse.Id}/riders", TestCancellationToken));
+        riders.Persons.Should().ContainSingle().Which.Id.Should().Be(hiddenRider.Id);
+    }
+
+    [Fact]
     public async ValueTask AddSaddleToHorse_ValidData_ReturnsCreatedSaddle()
     {
         var horse = TestData.CreateHorse();

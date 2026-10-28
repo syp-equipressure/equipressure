@@ -220,6 +220,100 @@ public sealed class HorseServiceTests
     }
 
     [Fact]
+    public async Task AddRiderToHorseAsync_HorseNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(false);
+
+        var result = await _sut.AddRiderToHorseAsync(HorseId, 2);
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.HorseRepository.DidNotReceive().AddPersonToHorse(Arg.Any<PersonHorse>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddRiderToHorseAsync_PersonNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.PersonRepository.PersonExistsAsync(2).Returns(false);
+
+        var result = await _sut.AddRiderToHorseAsync(HorseId, 2);
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.HorseRepository.DidNotReceive().AddPersonToHorse(Arg.Any<PersonHorse>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddRiderToHorseAsync_PersonAlreadyBelongsToHorse_ReturnsRiderAlreadyAssigned()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.PersonRepository.PersonExistsAsync(2).Returns(true);
+        _uowMock.HorseRepository.GetPersonOfHorseAsync(HorseId, 2)
+                .Returns(new PersonHorse { HorseId = HorseId, PersonId = 2, IsHidden = true });
+
+        var result = await _sut.AddRiderToHorseAsync(HorseId, 2);
+
+        result.Value.Should().BeOfType<IHorseService.RiderAlreadyAssigned>();
+        _uowMock.HorseRepository.DidNotReceive().AddPersonToHorse(Arg.Any<PersonHorse>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddRiderToHorseAsync_NewRider_AddsVisibleRider()
+    {
+        _uowMock.HorseRepository.HorseExistsAsync(HorseId).Returns(true);
+        _uowMock.PersonRepository.PersonExistsAsync(2).Returns(true);
+        _uowMock.HorseRepository.GetPersonOfHorseAsync(HorseId, 2).Returns((PersonHorse?) null);
+
+        var result = await _sut.AddRiderToHorseAsync(HorseId, 2);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.HorseRepository.Received(1).AddPersonToHorse(Arg.Is<PersonHorse>(ph =>
+            ph.HorseId == HorseId && ph.PersonId == 2 && !ph.IsOwner && !ph.IsHidden));
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task SetRiderHiddenAsync_PersonIsNoRider_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.GetPersonOfHorseAsync(HorseId, 2).Returns((PersonHorse?) null);
+
+        var result = await _sut.SetRiderHiddenAsync(HorseId, 2, true);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task SetRiderHiddenAsync_Owner_ReturnsOwnerCannotBeHidden()
+    {
+        var owner = new PersonHorse { HorseId = HorseId, PersonId = 2, IsOwner = true };
+        _uowMock.HorseRepository.GetPersonOfHorseAsync(HorseId, 2).Returns(owner);
+
+        var result = await _sut.SetRiderHiddenAsync(HorseId, 2, true);
+
+        result.Value.Should().BeOfType<IHorseService.OwnerCannotBeHidden>();
+        owner.IsHidden.Should().BeFalse();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SetRiderHiddenAsync_Rider_SetsIsHidden(bool isHidden)
+    {
+        var rider = new PersonHorse { HorseId = HorseId, PersonId = 2, IsHidden = !isHidden };
+        _uowMock.HorseRepository.GetPersonOfHorseAsync(HorseId, 2).Returns(rider);
+
+        var result = await _sut.SetRiderHiddenAsync(HorseId, 2, isHidden);
+
+        result.Value.Should().BeOfType<Success>();
+        rider.IsHidden.Should().Be(isHidden);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
     public async Task AddSaddleToHorse_HorseNotFound_ReturnsNotFound()
     {
         _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns((Horse?) null);

@@ -183,6 +183,81 @@ public sealed class MeasurementTests(WebApiTestFixture webApiFixture) : WebApiTe
     }
 
     [Fact]
+    public async ValueTask CreateGroup_RiderWithDeviceOfOwner_ReturnsCreated()
+    {
+        var (_, horse, saddle, device) = await SeedGroupPartsAsync();
+        var rider = TestData.CreatePerson("Ria", "Reitbeteiligung", role: RoleName.Guest);
+        // the horse is already stored, so the rider is linked by its id
+        await SeedAsync(new PersonHorse { Person = rider, HorseId = horse.Id });
+        var request = TestData.CreateAddMeasurementGroupRequest(rider.Id, horse.Id, saddle.Id, device.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/measurementgroups", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var content = await ReadContentAsync<MeasurementGroupDetailDto>(response);
+        content.RiderFirstName.Should().Be("Ria");
+    }
+
+    [Fact]
+    public async ValueTask CreateGroup_HiddenRider_ReturnsConflict()
+    {
+        var (_, horse, saddle, device) = await SeedGroupPartsAsync();
+        var hiddenRider = TestData.CreatePerson("Hans");
+        await SeedAsync(new PersonHorse { Person = hiddenRider, HorseId = horse.Id, IsHidden = true });
+        var request = TestData.CreateAddMeasurementGroupRequest(hiddenRider.Id, horse.Id, saddle.Id, device.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/measurementgroups", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask CreateGroup_PersonIsNoRiderOfHorse_ReturnsConflict()
+    {
+        var (_, horse, saddle, device) = await SeedGroupPartsAsync();
+        var stranger = TestData.CreatePerson("Fremd");
+        await SeedAsync(stranger);
+        var request = TestData.CreateAddMeasurementGroupRequest(stranger.Id, horse.Id, saddle.Id, device.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/measurementgroups", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask CreateGroup_DeviceOfOtherEquestrian_ReturnsConflict()
+    {
+        var (person, horse, saddle, _) = await SeedGroupPartsAsync();
+        var otherDevice = TestData.CreateDevice("EP0002", TestData.CreatePerson("Fremd"),
+                                                TestData.CreateDeviceCategory());
+        await SeedAsync(otherDevice);
+        var request = TestData.CreateAddMeasurementGroupRequest(person.Id, horse.Id, saddle.Id, otherDevice.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/measurementgroups", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask CreateGroup_DeviceOfSaddler_ReturnsCreated()
+    {
+        var (person, horse, saddle, _) = await SeedGroupPartsAsync();
+        var saddlerDevice = TestData.CreateDevice("EP0002", TestData.CreatePerson("Sophie", role: RoleName.Saddler),
+                                                  TestData.CreateDeviceCategory());
+        await SeedAsync(saddlerDevice);
+        var request = TestData.CreateAddMeasurementGroupRequest(person.Id, horse.Id, saddle.Id, saddlerDevice.Id);
+
+        var response = await ApiClient.PostAsJsonAsync("api/measurementgroups", request, JsonOptions,
+                                                       TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
     public async ValueTask CreateGroup_DateInFuture_ReturnsBadRequest()
     {
         var request = TestData.CreateAddMeasurementGroupRequest(1, 1, 1, "EP0001",
@@ -582,7 +657,8 @@ public sealed class MeasurementTests(WebApiTestFixture webApiFixture) : WebApiTe
     }
 
     /// <summary>
-    ///     Seeds everything a new measurement group needs: a rider, the horse Luna (Haflinger) with a saddle and a device
+    ///     Seeds everything a new measurement group needs: the owner, who rides, the horse Luna (Haflinger) with a
+    ///     saddle and the device of the owner
     /// </summary>
     private async ValueTask<(Person Person, Horse Horse, Saddle Saddle, MeasurementDevice Device)>
         SeedGroupPartsAsync()
@@ -591,7 +667,7 @@ public sealed class MeasurementTests(WebApiTestFixture webApiFixture) : WebApiTe
         var horse = TestData.CreateHorse("Luna", null, TestData.CreateBreed("Haflinger"));
         var saddle = TestData.CreateSaddle(horse);
         var device = TestData.CreateDevice("EP0001", person, TestData.CreateDeviceCategory());
-        await SeedAsync(saddle, device);
+        await SeedAsync(saddle, device, TestData.CreatePersonHorse(person, horse, isOwner: true));
 
         return (person, horse, saddle, device);
     }
