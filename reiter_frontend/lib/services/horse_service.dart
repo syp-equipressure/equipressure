@@ -9,16 +9,6 @@ import 'package:reiterappfrontend/services/geocoding_service.dart';
 class HorseService {
   static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 5);
-  static const Map<String, int> _developmentBreedIds = {
-    'hannoveraner': 1,
-    'holsteiner': 2,
-    'westfale': 3,
-    'trakehner': 4,
-    'haflinger': 5,
-    'noriker': 6,
-    'lipizzaner': 7,
-    'quarter horse': 8,
-  };
 
   static final HorseService _instance = HorseService._internal();
   factory HorseService() => _instance;
@@ -26,18 +16,33 @@ class HorseService {
 
   List<Horse>? _cachedHorses;
   int? _cachedPersonId;
+  List<Breed>? _cachedBreeds;
 
-  /// Lädt die Pferde einer Person aus dem Backend.
+  /// Lädt alle Rassen nach Namen sortiert (`GET /api/breeds`).
+  Future<List<Breed>> getBreeds() async {
+    if (_cachedBreeds != null) return _cachedBreeds!;
+
+    final url = Uri.parse('$baseUrl/breeds');
+    final response = await apiHttp.get(url).timeout(_timeout);
+    if (response.statusCode != 200) {
+      throw Exception('Rassen konnten nicht geladen werden (HTTP ${response.statusCode}).');
+    }
+    _cachedBreeds = _extractList(jsonDecode(response.body))
+        .map((json) => Breed(id: (json['id'] as num).toInt(), name: json['name'].toString()))
+        .toList();
+    return _cachedBreeds!;
+  }
+
+  /// Lädt die Pferde einer Person aus dem Backend. Gibt eine Kopie des Caches zurück,
+  /// sonst landet ein neues Pferd doppelt in der Liste des Aufrufers (Cache + eigenes add).
   Future<List<Horse>> getHorses() async {
     final personId = await currentPersonId();
-    if (_cachedHorses != null && _cachedPersonId == personId) {
-      return _cachedHorses!;
+    if (_cachedHorses == null || _cachedPersonId != personId) {
+      final horses = await fetchHorsesOfPerson(personId);
+      _cachedHorses = await Future.wait(horses.map(_withStableLocation));
+      _cachedPersonId = personId;
     }
-
-    final horses = await fetchHorsesOfPerson(personId);
-    _cachedHorses = await Future.wait(horses.map(_withStableLocation));
-    _cachedPersonId = personId;
-    return _cachedHorses!;
+    return List.of(_cachedHorses!);
   }
 
   /// Das Backend speichert keine Koordinaten, daher wird die Stalladresse geocodiert.
@@ -73,7 +78,7 @@ class HorseService {
         .patch(
           url,
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(_horseRequestBody(horse)),
+          body: jsonEncode(await _horseRequestBody(horse)),
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
@@ -184,7 +189,7 @@ class HorseService {
   /// POST /api/horses -> AddHorseRequest
   Future<Horse> createHorseOnBackend(Horse horse, int ownerId) async {
     final url = Uri.parse('$baseUrl/horses');
-    final body = jsonEncode({..._horseRequestBody(horse), 'ownerId': ownerId});
+    final body = jsonEncode({...await _horseRequestBody(horse), 'ownerId': ownerId});
 
     final response = await apiHttp.post(
       url,
@@ -201,7 +206,7 @@ class HorseService {
   }
 
   /// Die Werte eines Pferdes, wie sie das Backend beim Anlegen und Ändern erwartet
-  static Map<String, dynamic> _horseRequestBody(Horse horse) {
+  Future<Map<String, dynamic>> _horseRequestBody(Horse horse) async {
     final cityName = horse.stableCity?.trim() ?? '';
     final postalCode = horse.stablePostalCode?.trim() ?? '';
     if (cityName.isEmpty || postalCode.isEmpty) {
@@ -222,27 +227,29 @@ class HorseService {
         'cityName': cityName,
         'plz': postalCode,
       },
-      'breedIds': _breedIdsForNames(horse.breed),
+      'breedIds': await _breedIdsForNames(horse.breed),
     };
   }
 
-  static List<int> _breedIdsForNames(String breedNames) {
+  /// Die Rassen sind im Pferd als Namen gespeichert ("Haflinger, Noriker")
+  Future<List<int>> _breedIdsForNames(String breedNames) async {
     final names = breedNames
         .split(',')
         .map((name) => name.trim().toLowerCase())
         .where((name) => name.isNotEmpty)
         .toSet();
     if (names.isEmpty) {
-      throw ArgumentError('Bitte eine unterstützte Pferderasse angeben.');
+      throw ArgumentError('Bitte eine Pferderasse auswählen.');
     }
 
-    final unknownNames = names.where((name) => !_developmentBreedIds.containsKey(name));
+    final idsByName = {
+      for (final breed in await getBreeds()) breed.name.toLowerCase(): breed.id,
+    };
+    final unknownNames = names.where((name) => !idsByName.containsKey(name));
     if (unknownNames.isNotEmpty) {
-      throw ArgumentError(
-        'Unbekannte Rasse: ${unknownNames.join(', ')}. Unterstützt werden die Rassen aus den Entwicklungsdaten.',
-      );
+      throw ArgumentError('Unbekannte Rasse: ${unknownNames.join(', ')}');
     }
-    return names.map((name) => _developmentBreedIds[name]!).toList();
+    return names.map((name) => idsByName[name]!).toList();
   }
 
   Future<int> currentPersonId() async {

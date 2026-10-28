@@ -4,6 +4,13 @@ import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
 
+/// Ein Sattel, mit dem schon gemessen wurde, kann nicht gelöscht werden.
+class SaddleInUseException implements Exception {
+  @override
+  String toString() =>
+      'Mit dem Sattel wurde schon gemessen. Lösche zuerst die Messungen.';
+}
+
 class SaddleService {
   static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 5);
@@ -51,22 +58,26 @@ class SaddleService {
         .toList();
   }
 
-  /// Fügt einem Pferd einen Sattel hinzu (`POST /api/horses/{id}/saddles`).
-  /// Die Kategorie wird über ihren Namen einer Backend-Kategorie zugeordnet.
-  Future<Saddle> addSaddle(Saddle saddle) async {
+  /// Ordnet den Kategorienamen eines Sattels der Backend-Kategorie zu.
+  Future<int> _categoryIdOf(Saddle saddle) async {
     final categories = await getSaddleCategories();
     final categoryName = saddle.category.trim().toLowerCase();
     final matching = categories.where((c) => c.name.toLowerCase() == categoryName);
     if (matching.isEmpty) {
       throw Exception('Unbekannte Sattelkategorie "${saddle.category}"');
     }
+    return matching.first.id;
+  }
 
+  /// Fügt einem Pferd einen Sattel hinzu (`POST /api/horses/{id}/saddles`).
+  Future<Saddle> addSaddle(Saddle saddle) async {
+    final categoryId = await _categoryIdOf(saddle);
     final url = Uri.parse('$baseUrl/horses/${saddle.horseId}/saddles');
     final response = await apiHttp
         .post(
           url,
           headers: const {'Content-Type': 'application/json'},
-          body: jsonEncode({'name': saddle.name, 'categoryId': matching.first.id}),
+          body: jsonEncode({'name': saddle.name, 'categoryId': categoryId}),
         )
         .timeout(_timeout);
     final Saddle savedSaddle;
@@ -112,14 +123,39 @@ class SaddleService {
     return _cachedCategories!;
   }
 
-  /// Sattel-Änderungen werden vom Backend derzeit nicht unterstützt.
-  Future<void> updateSaddle(Saddle saddle) async {
-    throw UnsupportedError('The backend does not provide a saddle update endpoint.');
+  /// Ändert Name und Kategorie eines Sattels (`PATCH /api/horses/{id}/saddles/{saddleId}`).
+  /// Das Pferd eines Sattels kann nicht geändert werden.
+  Future<Saddle> updateSaddle(Saddle saddle) async {
+    final categoryId = await _categoryIdOf(saddle);
+    final url = Uri.parse('$baseUrl/horses/${saddle.horseId}/saddles/${saddle.id}');
+    final response = await apiHttp
+        .patch(
+          url,
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode({'name': saddle.name, 'categoryId': categoryId}),
+        )
+        .timeout(_timeout);
+    if (response.statusCode != 200) {
+      throw Exception('Sattel konnte nicht gespeichert werden (HTTP ${response.statusCode}).');
+    }
+
+    final updated = Saddle.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    final index = _cachedSaddles?.indexWhere((s) => s.id == saddle.id) ?? -1;
+    if (index != -1) _cachedSaddles![index] = updated;
+    return updated;
   }
 
-  /// Sattel-Löschung wird vom Backend derzeit nicht unterstützt.
-  Future<void> deleteSaddle(String id) async {
-    throw UnsupportedError('The backend does not provide a saddle deletion endpoint.');
+  /// Entfernt einen Sattel (`DELETE /api/horses/{id}/saddles/{saddleId}`). Wurde mit dem
+  /// Sattel schon gemessen, wirft das [SaddleInUseException].
+  Future<void> deleteSaddle(Saddle saddle) async {
+    final url = Uri.parse('$baseUrl/horses/${saddle.horseId}/saddles/${saddle.id}');
+    final response = await apiHttp.delete(url).timeout(_timeout);
+    if (response.statusCode == 409) throw SaddleInUseException();
+    // 404: den Sattel gibt es schon nicht mehr
+    if (response.statusCode != 204 && response.statusCode != 404) {
+      throw Exception('Sattel konnte nicht gelöscht werden (HTTP ${response.statusCode}).');
+    }
+    _cachedSaddles?.removeWhere((s) => s.id == saddle.id);
   }
 
   /// Cache leeren (z.B. beim Logout)

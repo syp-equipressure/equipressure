@@ -43,11 +43,6 @@ class MeasurementService {
   factory MeasurementService() => _instance;
   MeasurementService._internal();
 
-  // Das Backend bietet keinen Endpunkt zum Speichern von Messdaten an. Damit live
-  // aufgenommene Druckwerte in dieser Sitzung trotzdem angezeigt werden, werden sie
-  // pro Backend-Messung zwischengespeichert. Key: "{groupId}/{measurementId}"
-  static final Map<String, MeasurementSectionData> _recordedSections = {};
-
   static Never _throwForStatus(http.Response r, String action) {
     throw MeasurementApiException(
       r.statusCode,
@@ -83,7 +78,7 @@ class MeasurementService {
       ),
     );
 
-    // Gruppen ohne Teilmessungen gelten als gelöscht (siehe deleteMeasurement)
+    // Gruppen ohne Teilmessungen wurden früher statt eines Löschens geleert, sie werden ausgeblendet
     final result = measurements
         .whereType<Measurement>()
         .where((m) => m.sections.isNotEmpty)
@@ -128,26 +123,46 @@ class MeasurementService {
         '${section.gait}|${section.hand}': section,
     };
     for (final section in uniqueSections.values) {
-      final created = await createMeasurement(
+      await createMeasurement(
         groupId,
         pace: section.gait,
         hand: section.hand,
+        recordings: recordingsOf(section, measurement.date),
       );
-      _recordedSections['$groupId/${created['id']}'] = section;
     }
 
     return await _loadMeasurement(groupId, measurement.horseId) ??
         _copyWithId(measurement, groupId.toString());
   }
 
-  /// Löscht alle Teilmessungen einer Messung. Das Backend bietet keinen Endpunkt
-  /// zum Löschen einer ganzen Messgruppe an, die leere Gruppe wird ausgeblendet.
-  Future<void> deleteMeasurement(String id) async {
-    final groupId = int.parse(id);
-    final measurements = await fetchMeasurementsOfGroup(groupId);
-    for (final measurement in measurements) {
-      await deleteMeasurementOfGroup(groupId, measurement['id'] as int);
-    }
+  /// Löscht eine Messung samt Teilmessungen und Messdaten im Backend.
+  Future<void> deleteMeasurement(String id) => deleteGroup(int.parse(id));
+
+  /// Die Aufnahmen einer Teilmessung, wie sie das Backend beim Anlegen erwartet.
+  /// Die App kennt nur die Dauer, daher werden die Zeitstempel gleichmäßig darauf
+  /// verteilt (das Backend verlangt pro Aufnahme einen eigenen Zeitstempel).
+  static List<Map<String, dynamic>> recordingsOf(
+    MeasurementSectionData section,
+    DateTime start,
+  ) {
+    final frames = section.frames.isNotEmpty
+        ? section.frames
+        : [if (section.pressureData.isNotEmpty) section.pressureData];
+    if (frames.isEmpty) return const [];
+
+    final totalMs = section.duration?.inMilliseconds ?? 0;
+    final stepMs = max(1, frames.length > 1 ? totalMs ~/ (frames.length - 1) : 0);
+    final startUtc = start.toUtc();
+    return [
+      for (var i = 0; i < frames.length; i++)
+        {
+          'timestamp': startUtc
+              .add(Duration(milliseconds: i * stepMs))
+              .toIso8601String(),
+          // das Backend akzeptiert keine negativen Druckwerte
+          'values': frames[i].map((v) => v.isFinite ? max(0.0, v) : 0.0).toList(),
+        },
+    ];
   }
 
   /// [withData] false lädt nur Gruppe und Teilmessungen, ohne die Aufnahmen.
@@ -169,18 +184,8 @@ class MeasurementService {
         final measurementId = m['id'] as int;
         final gait = (m['pace'] ?? '').toString();
         final hand = (m['hand'] ?? '').toString();
-        if (!withData) {
-          return _recordedSections['$groupId/$measurementId'] ??
-              MeasurementSectionData(gait: gait, hand: hand);
-        }
-        final loaded = await _loadSectionData(
-          groupId,
-          measurementId,
-          gait,
-          hand,
-        );
-        if (loaded.pressureData.isNotEmpty) return loaded;
-        return _recordedSections['$groupId/$measurementId'] ?? loaded;
+        if (!withData) return MeasurementSectionData(gait: gait, hand: hand);
+        return _loadSectionData(groupId, measurementId, gait, hand);
       }),
     );
 
@@ -396,6 +401,17 @@ class MeasurementService {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// DELETE /api/measurementgroups/{groupId} -> 204, löscht auch Teilmessungen,
+  /// Messdaten und Freigaben der Gruppe
+  Future<void> deleteGroup(int groupId) async {
+    final url = Uri.parse('$baseUrl/measurementgroups/$groupId');
+    final response = await apiHttp.delete(url).timeout(_timeout);
+    // 404: die Messung gibt es schon nicht mehr
+    if (response.statusCode != 204 && response.statusCode != 404) {
+      _throwForStatus(response, 'delete measurement group $groupId');
+    }
+  }
+
   // --- Messungen einer Gruppe -----------------------------------------------
 
   /// GET /api/measurementgroups/{groupId}/measurements -> { "measurements": [MeasurementDto] }
@@ -478,12 +494,14 @@ class MeasurementService {
     required String pace,
     required String hand,
     String? description,
+    List<Map<String, dynamic>>? recordings,
   }) async {
     final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements');
     final body = jsonEncode({
       'pace': pace,
       'hand': hand,
       'description': description,
+      if (recordings != null && recordings.isNotEmpty) 'recordings': recordings,
     });
     final response = await apiHttp
         .post(url, headers: _jsonHeaders, body: body)
@@ -503,7 +521,6 @@ class MeasurementService {
     if (response.statusCode != 204 && response.statusCode != 200) {
       _throwForStatus(response, 'delete measurement $measurementId');
     }
-    _recordedSections.remove('$groupId/$measurementId');
   }
 
   // --- Messdaten -------------------------------------------------------------

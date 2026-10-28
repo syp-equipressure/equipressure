@@ -41,50 +41,51 @@ class _DevicesScreenState extends State<DevicesScreen> {
   }
 
   Future<void> _handleScannedCode(String code) async {
-    final categoryController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+    final List<DeviceCategory> categories;
+    try {
+      categories = await DeviceService.getCategories();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gerätekategorien konnten nicht geladen werden.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    int? selectedId = categories.isEmpty ? null : categories.first.id;
     final categoryId = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Gerät hinzufügen'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: categoryController,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Gerätekategorie-ID',
-              helperText: 'Das Backend bietet keine Kategorienliste an.',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Gerät hinzufügen'),
+          content: DropdownButtonFormField<int>(
+            initialValue: selectedId,
+            decoration: const InputDecoration(labelText: 'Gerätekategorie'),
+            items: [
+              for (final category in categories)
+                DropdownMenuItem(
+                  value: category.id,
+                  child: Text(
+                    '${category.name} (bis ${category.numOfAllowedPeople} weitere Personen)',
+                  ),
+                ),
+            ],
+            onChanged: (id) => setDialogState(() => selectedId = id),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Abbrechen'),
             ),
-            validator: (value) {
-              final id = int.tryParse(value?.trim() ?? '');
-              return id == null || id <= 0
-                  ? 'Bitte eine positive Kategorien-ID eingeben.'
-                  : null;
-            },
-          ),
+            FilledButton(
+              onPressed: selectedId == null ? null : () => Navigator.pop(context, selectedId),
+              child: const Text('Hinzufügen'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(
-                  context,
-                  int.parse(categoryController.text.trim()),
-                );
-              }
-            },
-            child: const Text('Hinzufügen'),
-          ),
-        ],
       ),
     );
-    categoryController.dispose();
     if (categoryId == null || !mounted) return;
 
     try {
@@ -241,12 +242,71 @@ class _DevicesScreenState extends State<DevicesScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: () => _confirmDeleteDevice(device),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Gerät entfernen'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red[700],
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
               ],
             ),
           ),
       ],
     );
+  }
+
+  Future<void> _confirmDeleteDevice(Device device) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gerät entfernen'),
+        content: Text(
+          'Möchtest du das Gerät "${device.name}" (${device.number}) wirklich entfernen? '
+          'Alle Personen der Gerätegruppe verlieren den Zugriff.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Entfernen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await DeviceService.deleteDevice(device.id);
+      if (!mounted) return;
+      setState(() {
+        widget.devices.removeWhere((d) => d.id == device.id);
+        expandedIndex = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gerät wurde entfernt.')),
+      );
+    } on DeviceApiException catch (error) {
+      if (!mounted) return;
+      final message = error.isConflict
+          ? 'Mit dem Gerät wurde schon gemessen. Lösche zuerst die Messungen.'
+          : error.statusCode == 403
+              ? 'Nur der Eigentümer kann das Gerät entfernen.'
+              : 'Gerät konnte nicht entfernt werden.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gerät konnte nicht entfernt werden.')),
+      );
+    }
   }
 
   Widget _buildInfoRow(String label, String value) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -21,7 +22,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
 
-  Future<void> _login(String identityProvider) async {
+  /// Ohne [identityProvider] öffnet sich die Keycloak-Seite selbst (für die Testkonten)
+  Future<void> _login(String? identityProvider) async {
     setState(() => _loading = true);
     try {
       await AuthService().login(identityProvider: identityProvider);
@@ -84,6 +86,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: 'Mit GitHub anmelden',
                   onPressed: () => _login('github'),
                 ),
+                // nur beim Entwickeln: Anmelden mit den Testkonten aus backend/keycloak
+                // (z.B. reiter.dev / reiter), dafür KC_LOGIN_THEME=keycloak.v2 in der .env
+                if (kDebugMode) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => _login(null),
+                    child: const Text('Mit Testkonto anmelden (nur Entwicklung)'),
+                  ),
+                ],
               ],
               const Spacer(),
               const PageIndicator(currentPage: 1, totalPages: 5),

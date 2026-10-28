@@ -242,6 +242,27 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
     });
   }
 
+  /// Öffnet einen Sattel zum Bearbeiten oder Löschen
+  Future<void> _showEditSaddleScreen(Saddle saddle) async {
+    final previousSelection = selectedSaddle;
+    final updated = await Navigator.push<Saddle>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewSaddleScreen(
+          preselectedHorse: selectedHorse,
+          existingSaddle: saddle,
+        ),
+      ),
+    );
+    await _loadData();
+    if (!mounted) return;
+    setState(() {
+      // der bearbeitete Sattel wird ausgewählt, nach dem Löschen bleibt die bisherige Auswahl (falls es sie noch gibt)
+      final id = updated?.id ?? previousSelection?.id;
+      selectedSaddle = saddles.where((s) => s.id == id).firstOrNull;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Filtere Sättel für das ausgewählte Pferd
@@ -339,10 +360,10 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Sattel Dropdown
+                  // Sattel Dropdown, mit dem Stift in der Liste wird ein Sattel bearbeitet
                   SelectionDropdown<Saddle>(
                     label: 'Sattel',
-                    value: selectedSaddle != null && 
+                    value: selectedSaddle != null &&
                            saddlesForHorse.any((s) => s.id == selectedSaddle!.id)
                         ? selectedSaddle
                         : null,
@@ -357,6 +378,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                     enabled: selectedHorse != null,
                     onAddNew: _showAddSaddleDialog,
                     addNewText: 'Sattel hinzufügen',
+                    onEditItem: _showEditSaddleScreen,
                   ),
 
                   if (selectedSaddle != null) ...[

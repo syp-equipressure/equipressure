@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/horse_service.dart';
 import 'package:reiterappfrontend/widgets/info_button.dart';
 
 class AddHorseScreen extends StatefulWidget {
@@ -88,6 +89,45 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       stableStreetController.text = horse.stableStreet ?? '';
       stableHouseNumberController.text = horse.stableHouseNumber ?? '';
     }
+    _loadBreeds();
+  }
+
+  /// Die Rassen aus dem Backend für die Vorschläge beim Tippen, leer solange sie nicht geladen sind
+  List<Breed> _breeds = [];
+  final FocusNode _breedFocusNode = FocusNode();
+
+  Future<void> _loadBreeds() async {
+    try {
+      final breeds = await HorseService().getBreeds();
+      if (mounted) setState(() => _breeds = breeds);
+    } catch (_) {
+      // ohne Vorschläge kann man die Rasse trotzdem eintippen, das Backend prüft beim Speichern
+    }
+  }
+
+  /// Mehrere Rassen werden mit Komma getrennt, vorgeschlagen wird zum Teil nach dem letzten Komma
+  Iterable<String> _breedSuggestions(TextEditingValue value) {
+    final typed = value.text.split(',').last.trim().toLowerCase();
+    if (typed.isEmpty) return const [];
+    return _breeds
+        .map((breed) => breed.name)
+        .where((name) => name.toLowerCase().contains(typed));
+  }
+
+  void _selectBreedSuggestion(String name) {
+    final previous = breedController.text.split(',');
+    previous.removeLast();
+    final text = [...previous.map((part) => part.trim()).where((part) => part.isNotEmpty), name].join(', ');
+    breedController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  @override
+  void dispose() {
+    _breedFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -431,9 +471,38 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: breedController,
+                      RawAutocomplete<String>(
+                        textEditingController: breedController,
+                        focusNode: _breedFocusNode,
+                        optionsBuilder: _breedSuggestions,
+                        onSelected: _selectBreedSuggestion,
+                        optionsViewBuilder: (context, onSelected, options) => Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(8),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 260),
+                              child: ListView(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                children: [
+                                  for (final option in options)
+                                    ListTile(
+                                      dense: true,
+                                      title: Text(option),
+                                      onTap: () => onSelected(option),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) => TextField(
+                        controller: controller,
+                        focusNode: focusNode,
                         decoration: InputDecoration(
+                          hintText: 'z. B. Haflinger',
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
@@ -452,6 +521,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                             horizontal: 16,
                             vertical: 12,
                           ),
+                        ),
                         ),
                       ),
                     ],
@@ -1056,7 +1126,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                       breedController.text.trim().toLowerCase() == 'unbekannt') {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Bitte eine unterstützte Pferderasse eingeben'),
+                        content: Text('Bitte eine Pferderasse auswählen'),
                         duration: Duration(seconds: 2),
                       ),
                     );

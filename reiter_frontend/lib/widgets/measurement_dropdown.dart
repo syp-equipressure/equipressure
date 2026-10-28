@@ -10,6 +10,8 @@ class SelectionDropdown<T> extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onAddNew;
   final String? addNewText;
+  /// Zeigt in der aufgeklappten Liste neben jedem Eintrag einen Stift zum Bearbeiten
+  final ValueChanged<T>? onEditItem;
 
   const SelectionDropdown({
     super.key,
@@ -22,6 +24,7 @@ class SelectionDropdown<T> extends StatelessWidget {
     this.enabled = true,
     this.onAddNew,
     this.addNewText,
+    this.onEditItem,
   });
 
   @override
@@ -61,11 +64,38 @@ class SelectionDropdown<T> extends StatelessWidget {
                 'Bitte wählen...',
                 style: TextStyle(color: Colors.grey[400]),
               ),
+              // im zugeklappten Zustand nur der Name, ohne Stift
+              selectedItemBuilder: (context) => [
+                for (final item in items)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(getItemText(item), overflow: TextOverflow.ellipsis),
+                  ),
+                if (onAddNew != null) const SizedBox.shrink(),
+              ],
               items: [
                 ...items.map((T item) {
                   return DropdownMenuItem<String>(
                     value: getItemId(item),
-                    child: Text(getItemText(item), overflow: TextOverflow.ellipsis),
+                    child: onEditItem == null
+                        ? Text(getItemText(item), overflow: TextOverflow.ellipsis)
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Text(getItemText(item), overflow: TextOverflow.ellipsis),
+                              ),
+                              IconButton(
+                                tooltip: '$label bearbeiten',
+                                icon: Icon(Icons.edit_outlined, size: 20, color: Colors.grey[700]),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () {
+                                  // zuerst die aufgeklappte Liste schließen
+                                  Navigator.of(context).pop();
+                                  onEditItem!(item);
+                                },
+                              ),
+                            ],
+                          ),
                   );
                 }),
                 if (onAddNew != null)

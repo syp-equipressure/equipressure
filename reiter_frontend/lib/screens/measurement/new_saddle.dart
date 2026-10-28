@@ -5,12 +5,16 @@ import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/saddle_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
 
+/// Legt einen Sattel an, mit [existingSaddle] wird dieser bearbeitet oder gelöscht.
+/// Gibt den gespeicherten Sattel zurück, nach dem Löschen null.
 class NewSaddleScreen extends StatefulWidget {
   final Horse? preselectedHorse;
-  
+  final Saddle? existingSaddle;
+
   const NewSaddleScreen({
     super.key,
     this.preselectedHorse,
+    this.existingSaddle,
   });
 
   @override
@@ -27,10 +31,13 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
   List<SaddleCategory> _categories = [];
   bool _isLoading = false;
 
+  bool get _isEditing => widget.existingSaddle != null;
+
   @override
   void initState() {
     super.initState();
     _selectedHorse = widget.preselectedHorse;
+    _nameController.text = widget.existingSaddle?.name ?? '';
     _loadHorses();
     _loadCategories();
   }
@@ -39,8 +46,12 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
     try {
       final categories = await SaddleService().getSaddleCategories();
       if (!mounted) return;
+      final existingCategory = widget.existingSaddle?.category.toLowerCase();
       setState(() {
         _categories = categories;
+        _selectedCategory ??= categories
+            .where((c) => c.name.toLowerCase() == existingCategory)
+            .firstOrNull;
       });
     } catch (e) {
       // Fehler beim Laden ignorieren
@@ -55,11 +66,10 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
         _horses = horses;
         
         // Stelle sicher, dass das vorausgewählte Pferd aus der geladenen Liste kommt
-        if (widget.preselectedHorse != null) {
-          _selectedHorse = horses.firstWhere(
-            (h) => h.id == widget.preselectedHorse!.id,
-            orElse: () => widget.preselectedHorse!,
-          );
+        final horseId = widget.existingSaddle?.horseId ?? widget.preselectedHorse?.id;
+        if (horseId != null) {
+          _selectedHorse = horses.where((h) => h.id == horseId).firstOrNull ??
+              widget.preselectedHorse;
         }
       });
     } catch (e) {
@@ -78,14 +88,22 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Neuen Sattel anlegen',
-          style: TextStyle(
+        title: Text(
+          _isEditing ? 'Sattel bearbeiten' : 'Neuen Sattel anlegen',
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              tooltip: 'Sattel löschen',
+              icon: Icon(Icons.delete_outline, color: Colors.red[700]),
+              onPressed: _isLoading ? null : _confirmDelete,
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -215,13 +233,16 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
                   child: Text(horse.name, overflow: TextOverflow.ellipsis),
                 );
               }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _selectedHorse = _horses.firstWhere((h) => h.id == newValue);
-                  });
-                }
-              },
+              // das Pferd eines bestehenden Sattels kann nicht geändert werden
+              onChanged: _isEditing
+                  ? null
+                  : (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedHorse = _horses.firstWhere((h) => h.id == newValue);
+                        });
+                      }
+                    },
             ),
           ),
         ),
@@ -297,13 +318,14 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
       final service = SaddleService();
       
       final saddle = Saddle(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: widget.existingSaddle?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
         category: _selectedCategory!.name,
         horseId: _selectedHorse!.id,
       );
 
-      final savedSaddle = await service.addSaddle(saddle);
+      final savedSaddle =
+          _isEditing ? await service.updateSaddle(saddle) : await service.addSaddle(saddle);
 
       if (mounted) {
         Navigator.pop(context, savedSaddle); // Gib den erstellten Sattel zurück
@@ -318,6 +340,45 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final saddle = widget.existingSaddle!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sattel löschen'),
+        content: Text('Möchtest du den Sattel "${saddle.name}" wirklich löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await SaddleService().deleteSaddle(saddle);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e is SaddleInUseException ? e.toString() : 'Sattel konnte nicht gelöscht werden.',
+          ),
+        ),
+      );
     }
   }
 

@@ -201,6 +201,33 @@ class DeviceService {
     _throwForStatus(response, 'change owner of device $deviceId to $userId');
   }
 
+  /// Entfernt ein Gerät samt Nutzern (`DELETE /api/devices/{deviceId}`), 409 wenn
+  /// mit dem Gerät schon gemessen wurde
+  static Future<void> deleteDevice(String deviceId) async {
+    final url = Uri.parse('$baseUrl/devices/$deviceId');
+    final response = await apiHttp.delete(url).timeout(_timeout);
+
+    // 404: das Gerät gibt es schon nicht mehr
+    if (response.statusCode == 204 || response.statusCode == 404) {
+      DeviceService().clearCache();
+      return;
+    }
+    _throwForStatus(response, 'delete device $deviceId');
+  }
+
+  /// Lädt alle Gerätekategorien (`GET /api/devices/categories`)
+  static Future<List<DeviceCategory>> getCategories() async {
+    final url = Uri.parse('$baseUrl/devices/categories');
+    final response = await apiHttp.get(url).timeout(_timeout);
+
+    if (response.statusCode == 200) {
+      return _extractList(jsonDecode(response.body))
+          .map(DeviceCategory.fromJson)
+          .toList();
+    }
+    _throwForStatus(response, 'load device categories');
+  }
+
   static List<Map<String, dynamic>> _extractList(dynamic decoded) {
     if (decoded is List) {
       return decoded.cast<Map<String, dynamic>>();
