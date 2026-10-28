@@ -86,29 +86,32 @@ export class BackendApiService {
   }
 
   createHorse(ownerId: string, horse: Horse): Observable<Horse> {
-    const breedIds = breedIdsForNames(horse.breed);
-    if (!breedIds) {
-      const supportedBreeds = DEVELOPMENT_HORSE_BREEDS.map(breed => breed.name).join(', ');
-      return throwError(() => new Error(`Bitte eine unterstützte Pferderasse angeben: ${supportedBreeds}.`));
-    }
-    const address = parseHorseAddress(horse.address);
-    if (!address) {
-      return throwError(() => new Error('Bitte den Standort als „Straße, PLZ Ort“ angeben.'));
-    }
+    const values = horseRequestValues(horse);
+    if (values instanceof Error) return throwError(() => values);
 
     return this.http.post<unknown>(`${this.baseUrl}/horses`, {
-      name: horse.name,
-      dateOfBirth: toIsoDate(horse.birthDate),
-      weight: horse.weightKg,
-      height: horse.heightCm,
-      gender: horse.sex === 'Männlich' ? 'Male' : 'Female',
-      address,
-      breedIds,
+      ...values,
       ownerId: Number(ownerId),
     }).pipe(
       map(response => mapHorse(response, ownerId, 0)),
       catchError(toApiError),
     );
+  }
+
+  /** Saves all values of the horse, the image only exists in the frontend and is kept. */
+  updateHorse(horse: Horse): Observable<Horse> {
+    const values = horseRequestValues(horse);
+    if (values instanceof Error) return throwError(() => values);
+
+    return this.http.patch<unknown>(`${this.baseUrl}/horses/${horse.id}`, values).pipe(
+      map(response => ({ ...mapHorse(response, horse.ownerId, 0), imageUrl: horse.imageUrl })),
+      catchError(toApiError),
+    );
+  }
+
+  /** Deletes the horse together with its saddles and measurements. */
+  deleteHorse(horseId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/horses/${horseId}`).pipe(catchError(toApiError));
   }
 
   getSaddles(horseId: string): Observable<Saddle[]> {
@@ -416,6 +419,28 @@ function toIsoDate(value: string | undefined): string {
   if (!value) return '';
   const germanDate = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
   return germanDate ? `${germanDate[3]}-${germanDate[2]}-${germanDate[1]}` : value;
+}
+
+/** The values of a horse as the backend expects them when adding or changing it. */
+function horseRequestValues(horse: Horse) {
+  const breedIds = breedIdsForNames(horse.breed);
+  if (!breedIds) {
+    const supportedBreeds = DEVELOPMENT_HORSE_BREEDS.map(breed => breed.name).join(', ');
+    return new Error(`Bitte eine unterstützte Pferderasse angeben: ${supportedBreeds}.`);
+  }
+  const address = parseHorseAddress(horse.address);
+  if (!address) {
+    return new Error('Bitte den Standort als „Straße, PLZ Ort“ angeben.');
+  }
+  return {
+    name: horse.name,
+    dateOfBirth: toIsoDate(horse.birthDate),
+    weight: horse.weightKg,
+    height: horse.heightCm,
+    gender: horse.sex === 'Männlich' ? 'Male' : 'Female',
+    address,
+    breedIds,
+  };
 }
 
 function mapHorse(value: unknown, ownerId: string, index: number): Horse {

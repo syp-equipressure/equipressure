@@ -111,7 +111,9 @@ export class AddHorse {
       if (this.saving()) return;
       this.saving.set(true);
       this.saveError.set('');
-      this.api.createHorse(this.ownerId(), horse).subscribe({
+      // an existing horse is changed, a new one is added
+      const request = existing ? this.api.updateHorse(horse) : this.api.createHorse(this.ownerId(), horse);
+      request.subscribe({
         next: savedHorse => {
           this.saving.set(false);
           this.saved.emit(savedHorse);

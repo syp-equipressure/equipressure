@@ -65,20 +65,43 @@ class HorseService {
     return savedHorse;
   }
 
-  /// Aktualisiert ein Pferd
-  Future<void> updateHorse(Horse horse) async {
-    if (_cachedHorses == null) return;
-    
-    final index = _cachedHorses!.indexWhere((h) => h.id == horse.id);
-    if (index != -1) {
-      _cachedHorses![index] = horse;
+  /// Speichert die geänderten Werte eines Pferdes im Backend (PATCH /api/horses/{id}).
+  /// Das Bild gibt es nur in der App, es bleibt erhalten.
+  Future<Horse> updateHorse(Horse horse) async {
+    final url = Uri.parse('$baseUrl/horses/${horse.id}');
+    final response = await http
+        .patch(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(_horseRequestBody(horse)),
+        )
+        .timeout(_timeout);
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Pferd konnte nicht gespeichert werden (HTTP ${response.statusCode}).',
+      );
     }
+
+    final saved = _horseFromBackend(jsonDecode(response.body) as Map<String, dynamic>);
+    final updated = await _withStableLocation(
+      saved.copyWith(image: horse.image, assetImage: horse.assetImage),
+    );
+    final index = _cachedHorses?.indexWhere((h) => h.id == horse.id) ?? -1;
+    if (index != -1) _cachedHorses![index] = updated;
+    return updated;
   }
 
-  /// Löscht ein Pferd
+  /// Löscht ein Pferd samt Sätteln und Messungen im Backend (DELETE /api/horses/{id}).
   Future<void> deleteHorse(String id) async {
-    if (_cachedHorses == null) return;
-    _cachedHorses!.removeWhere((h) => h.id == id);
+    final url = Uri.parse('$baseUrl/horses/$id');
+    final response = await http.delete(url).timeout(_timeout);
+    // 404: das Pferd gibt es schon nicht mehr
+    if (response.statusCode != 204 && response.statusCode != 404) {
+      throw Exception(
+        'Pferd konnte nicht gelöscht werden (HTTP ${response.statusCode}).',
+      );
+    }
+    _cachedHorses?.removeWhere((h) => h.id == id);
   }
 
   /// Findet ein Pferd anhand der ID
@@ -161,30 +184,7 @@ class HorseService {
   /// POST /api/horses -> AddHorseRequest
   Future<Horse> createHorseOnBackend(Horse horse, int ownerId) async {
     final url = Uri.parse('$baseUrl/horses');
-    final breedIds = _breedIdsForNames(horse.breed);
-    final cityName = horse.stableCity?.trim() ?? '';
-    final postalCode = horse.stablePostalCode?.trim() ?? '';
-    if (cityName.isEmpty || postalCode.isEmpty) {
-      throw ArgumentError('Stallort und Postleitzahl müssen angegeben werden.');
-    }
-    final street = [horse.stableStreet?.trim(), horse.stableHouseNumber?.trim()]
-        .where((part) => part != null && part.isNotEmpty)
-        .join(' ');
-
-    final body = jsonEncode({
-      'name': horse.name,
-      'dateOfBirth': _dotToIsoDate(horse.birthDate),
-      'weight': double.tryParse(horse.weight),
-      'height': double.tryParse(horse.height),
-      'gender': horse.sex.toLowerCase() == 'male' ? 'Male' : 'Female',
-      'address': {
-        'addressName': street.isEmpty ? null : street,
-        'cityName': cityName,
-        'plz': postalCode,
-      },
-      'breedIds': breedIds,
-      'ownerId': ownerId,
-    });
+    final body = jsonEncode({..._horseRequestBody(horse), 'ownerId': ownerId});
 
     final response = await http.post(
       url,
@@ -198,6 +198,32 @@ class HorseService {
     throw Exception(
       'Pferd konnte nicht gespeichert werden (HTTP ${response.statusCode}): ${response.body}',
     );
+  }
+
+  /// Die Werte eines Pferdes, wie sie das Backend beim Anlegen und Ändern erwartet
+  static Map<String, dynamic> _horseRequestBody(Horse horse) {
+    final cityName = horse.stableCity?.trim() ?? '';
+    final postalCode = horse.stablePostalCode?.trim() ?? '';
+    if (cityName.isEmpty || postalCode.isEmpty) {
+      throw ArgumentError('Stallort und Postleitzahl müssen angegeben werden.');
+    }
+    final street = [horse.stableStreet?.trim(), horse.stableHouseNumber?.trim()]
+        .where((part) => part != null && part.isNotEmpty)
+        .join(' ');
+
+    return {
+      'name': horse.name,
+      'dateOfBirth': _dotToIsoDate(horse.birthDate),
+      'weight': double.tryParse(horse.weight),
+      'height': double.tryParse(horse.height),
+      'gender': horse.sex.toLowerCase() == 'male' ? 'Male' : 'Female',
+      'address': {
+        'addressName': street.isEmpty ? null : street,
+        'cityName': cityName,
+        'plz': postalCode,
+      },
+      'breedIds': _breedIdsForNames(horse.breed),
+    };
   }
 
   static List<int> _breedIdsForNames(String breedNames) {

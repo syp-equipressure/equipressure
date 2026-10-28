@@ -40,6 +40,7 @@ export class MeasurementsPage implements OnDestroy {
   private readonly personContext = inject(BackendPersonContextService);
 
   readonly horseLoading = signal(false);
+  readonly horseActionError = signal('');
   readonly measurementsLoading = signal(false);
   readonly measurementsError = signal('');
 
@@ -52,6 +53,17 @@ export class MeasurementsPage implements OnDestroy {
   readonly measurements = computed(() => {
     const h = this.horse();
     return h ? this.data.getMeasurementsOf(h.id) : [];
+  });
+
+  /**
+   * The saddler may only change and delete their own horses, not the horses of customers.
+   * With a backend person the owner of the horse decides, without it the local "me" customer.
+   */
+  readonly canManageHorse = computed(() => {
+    const horse = this.horse();
+    if (!horse) return false;
+    const personId = this.personContext.personId();
+    return personId ? horse.ownerId === personId : !!this.customer()?.isMe;
   });
 
   readonly customerName = computed(() => {
@@ -267,21 +279,37 @@ export class MeasurementsPage implements OnDestroy {
   }
 
   editHorse(): void {
-    if (this.customer()?.isMe) this.showHorseForm.set(true);
+    if (this.canManageHorse()) this.showHorseForm.set(true);
   }
 
+  /** Backend horses are already saved by the form, local ones only exist in the store. */
   saveHorse(horse: HorseModel): void {
-    if (!this.customer()?.isMe) return;
+    if (!this.canManageHorse()) return;
     this.data.updateHorse(horse);
     this.showHorseForm.set(false);
   }
 
+  isBackendHorse(horse: HorseModel): boolean {
+    return isBackendId(horse.id);
+  }
+
   deleteHorse(): void {
     const horse = this.horse();
-    if (!horse || !this.customer()?.isMe) return;
+    if (!horse || !this.canManageHorse()) return;
     if (!window.confirm(`Möchtest du ${horse.name} und alle zugehörigen Messungen und Sättel wirklich löschen?`)) return;
-    this.data.removeHorse(horse.id);
-    void this.router.navigate(['/my-horses']);
+    if (!isBackendId(horse.id)) {
+      this.data.removeHorse(horse.id);
+      void this.router.navigate(['/my-horses']);
+      return;
+    }
+    this.horseActionError.set('');
+    this.api.deleteHorse(horse.id).subscribe({
+      next: () => {
+        this.data.removeHorse(horse.id);
+        void this.router.navigate(['/my-horses']);
+      },
+      error: (error: Error) => this.horseActionError.set(error.message),
+    });
   }
 
   selectGait(value: string): void {

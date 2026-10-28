@@ -38,7 +38,7 @@
                 }
               </div>
             </div>
-            @if (customer()?.isMe) {
+            @if (canManageHorse()) {
               <div class="horse-profile-manage">
                 <button type="button" aria-label="Pferd bearbeiten" title="Pferd bearbeiten" (click)="editHorse()">
                   <span class="material-icons">edit</span>
@@ -49,6 +49,9 @@
               </div>
             }
           </div>
+          @if (horseActionError()) {
+            <p role="alert" style="margin: 0 0 12px; font-size: 13px; color: var(--accent-red)">{{ horseActionError() }}</p>
+          }
 
           <section class="horse-profile-stats" aria-label="Pferdedaten">
             <div class="horse-profile-stat">
@@ -86,6 +89,7 @@
     <add-horse
       [ownerId]="h.ownerId"
       [horse]="h"
+      [backendMode]="isBackendHorse(h)"
       (saved)="saveHorse($event)"
       (cancelled)="showHorseForm.set(false)"
     />

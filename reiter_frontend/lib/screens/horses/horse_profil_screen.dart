@@ -42,7 +42,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
     String stableStreet,     // ← NEU
     String stableHouseNumber, // ← NEU
   ) async {
-    final updatedHorse = Horse(
+    final changedHorse = Horse(
       id: currentHorse.id,
       name: name,
       image: image,
@@ -57,21 +57,30 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber, // ← NEU
     );
 
-    await _horseService.updateHorse(updatedHorse);
-
-    setState(() {
-      currentHorse = updatedHorse;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final updatedHorse = await _horseService.updateHorse(changedHorse);
+      if (!mounted) return;
+      setState(() {
+        currentHorse = updatedHorse;
+      });
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Pferd erfolgreich aktualisiert'),
           duration: Duration(seconds: 2),
         ),
       );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_errorText(e))),
+      );
+      // das Formular bleibt offen, damit nichts verloren geht
+      rethrow;
     }
   }
+
+  static String _errorText(Object error) =>
+      error.toString().replaceFirst(RegExp(r'^(Exception|Invalid argument\(s\)): '), '');
 
   @override
   Widget build(BuildContext context) {
@@ -138,14 +147,25 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               horse: currentHorse,
                               onSave: (name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber) async {
                                 final nav = Navigator.of(context);
-                                await _updateHorse(name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber);
+                                try {
+                                  await _updateHorse(name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber);
+                                } catch (_) {
+                                  return; // Fehler wird schon angezeigt, Formular bleibt offen
+                                }
                                 if (mounted) nav.pop();
                               },
                               onCancel: () => Navigator.pop(context),
 
                               onDelete: () async {
                                 final nav = Navigator.of(context);
-                                await _horseService.deleteHorse(currentHorse.id);
+                                try {
+                                  await _horseService.deleteHorse(currentHorse.id);
+                                } catch (e) {
+                                  scaffoldMessenger.showSnackBar(
+                                    SnackBar(content: Text(_errorText(e))),
+                                  );
+                                  return;
+                                }
                                 if (mounted) {
                                   nav.pop();
                                   nav.pop('deleted');
