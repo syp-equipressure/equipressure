@@ -59,6 +59,13 @@ public interface IMeasurementRepository
     public ValueTask<bool> MeasurementExistsAsync(int groupId, int measurementId);
 
     /// <summary>
+    ///     Gets the most recently added measurement of all measurement groups of a device
+    /// </summary>
+    /// <param name="deviceId">The id of the measurement device</param>
+    /// <returns>The measurement or null if the device has no measurements</returns>
+    public ValueTask<Measurement?> GetLatestMeasurementOfDeviceAsync(string deviceId);
+
+    /// <summary>
     ///     Gets all data entries of a measurement, ordered by their timestamp
     /// </summary>
     /// <param name="measurementId">The id of the measurement</param>
@@ -96,22 +103,16 @@ public interface IMeasurementRepository
     public void AddMeasurement(Measurement measurement);
 
     /// <summary>
+    ///     Adds a new data entry
+    /// </summary>
+    /// <param name="data">The data entry to add</param>
+    public void AddData(MeasurementData data);
+
+    /// <summary>
     ///     Removes a measurement, its data entries are removed as well
     /// </summary>
     /// <param name="measurement">The measurement to remove</param>
     public void RemoveMeasurement(Measurement measurement);
-    
-    /// <summary>
-    /// Gets the latest measurement of a device
-    /// </summary>
-    /// <param name="deviceId"></param>
-    /// <returns></returns>
-    public Task<Measurement?> GetLatestMeasurementOfDeviceAsync(string deviceId);
-    /// <summary>
-    /// Adds measurement data
-    /// </summary>
-    /// <param name="data"></param>
-    public void AddData(MeasurementData data);
 }
 
 internal sealed class MeasurementRepository(
@@ -154,6 +155,11 @@ internal sealed class MeasurementRepository(
     public async ValueTask<bool> MeasurementExistsAsync(int groupId, int measurementId) =>
         await measurementSet.AnyAsync(m => m.GroupId == groupId && m.Id == measurementId);
 
+    public async ValueTask<Measurement?> GetLatestMeasurementOfDeviceAsync(string deviceId) =>
+        await measurementSet.Where(m => m.Group.DeviceId == deviceId)
+                            .OrderByDescending(m => m.Id)
+                            .FirstOrDefaultAsync();
+
     public async ValueTask<IReadOnlyCollection<MeasurementData>> GetDataOfMeasurementAsync(int measurementId) =>
         await dataSet.AsNoTracking()
                      .Where(d => d.MeasurementId == measurementId)
@@ -181,16 +187,13 @@ internal sealed class MeasurementRepository(
         measurementSet.Add(measurement);
     }
 
+    public void AddData(MeasurementData data)
+    {
+        dataSet.Add(data);
+    }
+
     public void RemoveMeasurement(Measurement measurement)
     {
         measurementSet.Remove(measurement);
     }
-    
-    public Task<Measurement?> GetLatestMeasurementOfDeviceAsync(string deviceId) =>
-        measurementSet
-               .Where(m => m.Group.DeviceId == deviceId)
-               .OrderByDescending(m => m.Id)
-               .FirstOrDefaultAsync();
-
-    public void AddData(MeasurementData data) => dataSet.Add(data);
 }

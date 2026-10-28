@@ -20,7 +20,7 @@ builder.Services.AddControllers(o => { o.ModelBinderProviders.Insert(0, new Noda
 builder.Services.ConfigureAdditionalRouteConstraints();
 
 builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
-builder.Services.AddSingleton<IBluetoothDataHandler, LoggingBluetoothDataHandler>();
+// only one handler is used, register LoggingBluetoothDataHandler instead to inspect the raw data
 builder.Services.AddSingleton<IBluetoothDataHandler, MeasurementDataBluetoothHandler>();
 builder.Services.AddHostedService<BluetoothConnectionService>();
 

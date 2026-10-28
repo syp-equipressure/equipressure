@@ -196,7 +196,7 @@ public interface IMeasurementService
     /// <param name="measurementId">The id of the measurement</param>
     /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the measurement does not exist in the group</returns>
     public ValueTask<OneOf<Success, NotFound>> DeleteMeasurementAsync(int groupId, int measurementId);
-    
+
     /// <summary>
     ///     Adds a data entry to the measurement that is currently recorded by a device, which is the most recently
     ///     added measurement of the device's measurement groups
@@ -221,8 +221,6 @@ public interface IMeasurementService
     ///     Returned if a measurement with the same pace and hand already exists in the group
     /// </summary>
     public readonly record struct MeasurementAlreadyExists;
-    
-    
 }
 
 internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementService> logger) : IMeasurementService
@@ -463,6 +461,37 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
         return new Success();
     }
 
+    public async ValueTask<OneOf<Success, NotFound, IMeasurementService.InvalidMeasurementData>>
+        AddDataToLatestMeasurementOfDeviceAsync(string deviceId, string data, Instant timestamp)
+    {
+        var trimmedData = data.Trim();
+        if (!TryParseValues(trimmedData, []))
+        {
+            logger.LogWarning("Data from device {DeviceId} cannot be parsed as numbers: {Data}", deviceId, trimmedData);
+
+            return new IMeasurementService.InvalidMeasurementData();
+        }
+
+        var measurement = await uow.MeasurementRepository.GetLatestMeasurementOfDeviceAsync(deviceId);
+        if (measurement is null)
+        {
+            logger.LogWarning("Dropping data, device {DeviceId} has no measurement to record into", deviceId);
+
+            return new NotFound();
+        }
+
+        uow.MeasurementRepository.AddData(new MeasurementData
+        {
+            Data = trimmedData,
+            Timestamp = timestamp,
+            MeasurementId = measurement.Id
+        });
+        await uow.SaveChangesAsync();
+        logger.LogDebug("Data stored in measurement {MeasurementId}", measurement.Id);
+
+        return new Success();
+    }
+
     private async ValueTask<OneOf<Success<double>, NotFound, IMeasurementService.InvalidMeasurementData>>
         GetAggregateOfGroupAsync(int groupId, string? pace, string? hand, Func<List<double>, double> aggregate)
     {
@@ -516,38 +545,6 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
 
         return new Success<double>(aggregate(values));
     }
-    
-    public async ValueTask<OneOf<Success, NotFound, IMeasurementService.InvalidMeasurementData>>
-        AddDataToLatestMeasurementOfDeviceAsync(string deviceId, string data, Instant timestamp)
-    {
-        var trimmedData = data.Trim();
-
-        if (!TryParseValues(trimmedData, new List<double>()))
-        {
-            logger.LogWarning("Data from device {DeviceId} cannot be parsed as numbers: {Data}", deviceId, trimmedData);
-
-            return new IMeasurementService.InvalidMeasurementData();
-        }
-
-        var measurement = await uow.MeasurementRepository.GetLatestMeasurementOfDeviceAsync(deviceId);
-        if (measurement is null)
-        {
-            logger.LogWarning("Dropping data, device {DeviceId} has no measurement to record into", deviceId);
-
-            return new NotFound();
-        }
-
-        uow.MeasurementRepository.AddData(new MeasurementData
-        {
-            Data = trimmedData,
-            Timestamp = timestamp,
-            MeasurementId = measurement.Id
-        });
-        await uow.SaveChangesAsync();
-        logger.LogDebug("Data stored in measurement {MeasurementId}", measurement.Id);
-
-        return new Success();
-    }
 
     /// <summary>
     ///     Parses a data entry, which is either a single number or a JSON array of numbers (e.g. a pressure curve).
@@ -591,7 +588,6 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
 
         return true;
     }
-    
 
     private void LogGroupNotFound(int groupId)
     {

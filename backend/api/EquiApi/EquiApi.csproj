@@ -17,6 +17,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\EquiApi.Core\EquiApi.Core.csproj"/>
+        <InternalsVisibleTo Include="EquiApi.Test"/>
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
     </ItemGroup>
 
 </Project>
