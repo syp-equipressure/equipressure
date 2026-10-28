@@ -11,6 +11,19 @@ public static class Setup
 {
     public const string CorsPolicyName = "DefaultCorsPolicy";
 
+    /// <summary>
+    ///     Query parameter with the access token, only accepted for the chat websocket and the content of chat files
+    /// </summary>
+    public const string AccessTokenQueryKey = "access_token";
+
+    // browsers cannot send an Authorization header when opening a websocket or loading an image (<img src>)
+    private static bool AllowsTokenInQuery(PathString path) =>
+        path.Value is { } value
+        && value.StartsWith("/api/persons/", StringComparison.Ordinal)
+        && (value.EndsWith("/chats/ws", StringComparison.Ordinal)
+            || (value.Contains("/chats/messages/", StringComparison.Ordinal)
+                && value.EndsWith("/file", StringComparison.Ordinal)));
+
     extension(IServiceCollection services)
     {
         public void AddApplicationServices(IConfigurationManager configurationManager,
@@ -88,6 +101,19 @@ public static class Setup
                         // keep the original claim names (sub, email, ...) instead of the long Microsoft URIs
                         options.MapInboundClaims = false;
                         options.TokenValidationParameters.RoleClaimType = ClaimsPrincipalExtensions.RoleClaimType;
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                if (AllowsTokenInQuery(context.Request.Path)
+                                    && context.Request.Query.TryGetValue(AccessTokenQueryKey, out var token))
+                                {
+                                    context.Token = token;
+                                }
+
+                                return Task.CompletedTask;
+                            }
+                        };
                     });
             services.AddAuthorization();
 

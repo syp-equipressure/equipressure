@@ -60,9 +60,23 @@ public sealed class WebApiTestFixture : IAsyncLifetime
     }
 
     /// <summary>
-    ///     Creates a client for websocket endpoints of the test server
+    ///     Creates a client for websocket endpoints of the test server, logged in like <see cref="Client" />
+    ///     or as the given user
     /// </summary>
-    public Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient() => Factory.Server.CreateWebSocketClient();
+    public Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient(string? externalId = null)
+    {
+        var client = Factory.Server.CreateWebSocketClient();
+        client.ConfigureRequest = request =>
+        {
+            request.Headers[TestAuthHandler.UserHeader] = externalId ?? DefaultTestUser;
+            if (externalId is null)
+            {
+                request.Headers[TestAuthHandler.RoleHeader] = ClaimsPrincipalExtensions.AdminRole;
+            }
+        };
+
+        return client;
+    }
 
     public async ValueTask DisposeAsync()
     {

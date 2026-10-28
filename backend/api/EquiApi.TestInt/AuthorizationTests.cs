@@ -79,6 +79,11 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
     [InlineData("anna", "POST", "api/devices/EP1000/users/{carla}", HttpStatusCode.NoContent)]
     [InlineData("ben", "DELETE", "api/devices/EP1000/users/{ben}", HttpStatusCode.NoContent)]
     [InlineData("ben", "PATCH", "api/devices/EP1000/owner/{ben}", HttpStatusCode.Forbidden)]
+    // chats
+    [InlineData("anna", "GET", "api/persons/{anna}/chats", HttpStatusCode.OK)]
+    [InlineData("sam", "GET", "api/persons/{anna}/chats", HttpStatusCode.Forbidden)]
+    [InlineData("carla", "GET", "api/persons/{anna}/chats/{sam}", HttpStatusCode.Forbidden)]
+    [InlineData("carla", "PUT", "api/persons/{anna}/chats/{sam}/read", HttpStatusCode.Forbidden)]
     // measurements
     [InlineData("sam", "GET", "api/measurementgroups/{group}", HttpStatusCode.OK)]
     [InlineData("carla", "GET", "api/measurementgroups/{group}", HttpStatusCode.Forbidden)]
