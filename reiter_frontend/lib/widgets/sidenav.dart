@@ -112,7 +112,7 @@ class _DrawerItem extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF7C4DFF),
+                color: const Color(0xFF6955AE),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(

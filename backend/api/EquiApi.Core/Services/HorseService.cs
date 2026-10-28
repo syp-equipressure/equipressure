@@ -59,7 +59,7 @@ public interface IHorseService
     /// <param name="horseId">the id of the horse that should be deleted</param>
     /// <returns>success if it works, not found if it does not exist</returns>
     public ValueTask<OneOf<Success, NotFound>> RemoveHorseAsync(int horseId);
-    
+
     /// <summary>
     ///     Gets all saddles of a horse
     /// </summary>
@@ -95,7 +95,7 @@ public interface IHorseService
     /// </summary>
     /// <returns>a list of the saddle categories</returns>
     public ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories();
-    
+
     /// <summary>
     ///     Changes the given values of a horse, values that are null stay unchanged
     /// </summary>
@@ -281,7 +281,7 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
 
     public async ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories()
         => await uow.SaddleRepository.GetAllSaddleCategories();
-    
+
     public async ValueTask<OneOf<Success<Horse>, NotFound>> PatchHorseAsync(int horseId, PatchHorseData data)
     {
         var horse = await uow.HorseRepository.GetHorseByIdAsync(horseId);

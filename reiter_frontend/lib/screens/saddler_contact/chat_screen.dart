@@ -20,6 +20,20 @@ import '../../widgets/chat_attachment_menu.dart';
 import '../../widgets/horse_selection_dialog.dart';
 import '../../widgets/measurement_selection_dialog.dart';
 
+/// Farben des Chats, gleich wie im Sattler-Frontend (helles Theme)
+class _ChatColors {
+  static const accent = Color(0xFF6955AE);
+  static const outgoing = Color(0xFFF4F2FB);
+  static const outgoingBorder = Color(0xFFEAE6F7);
+  static const incoming = Colors.white;
+  static const incomingBorder = Color(0xFFDDE1E7);
+  static const card = Color(0xFFFAFAFC);
+  static const textStrong = Color(0xFF18212F);
+  static const text = Color(0xFF293342);
+  static const textSoft = Color(0xFF5F6B7A);
+  static const textMuted = Color(0xFF8993A0);
+}
+
 class ChatScreen extends StatefulWidget {
   final Chat chat;
 
@@ -493,13 +507,25 @@ class _ChatScreenState extends State<ChatScreen> {
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.75,
             ),
+            // wie im Sattler-Frontend: auf der Seite des Absenders unten eine kleine Ecke
             decoration: BoxDecoration(
-              color:
-                  isFromMe ? const Color(0xFFD6EAF8) : const Color(0xFFFCE4EC),
-              borderRadius: BorderRadius.circular(16),
+              color: isFromMe ? _ChatColors.outgoing : _ChatColors.incoming,
+              border: Border.all(
+                color: isFromMe
+                    ? _ChatColors.outgoingBorder
+                    : _ChatColors.incomingBorder,
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(14),
+                topRight: const Radius.circular(14),
+                bottomLeft: Radius.circular(isFromMe ? 14 : 4),
+                bottomRight: Radius.circular(isFromMe ? 4 : 14),
+              ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: isFromMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 if (message.file != null)
                   _buildFile(message)
@@ -508,13 +534,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (message.text != null && message.text!.isNotEmpty)
                   Text(
                     message.text!,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isFromMe ? _ChatColors.textStrong : _ChatColors.text,
+                    ),
                   ),
                 const SizedBox(height: 4),
-                Text(
-                  _formatMeta(message, isFromMe),
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                ),
+                _buildMeta(message, isFromMe),
               ],
             ),
           ),
@@ -523,11 +549,35 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  String _formatMeta(Message message, bool isFromMe) {
+  /// Uhrzeit, bei eigenen Nachrichten mit Häkchen wie bei WhatsApp/Signal:
+  /// eines wenn gesendet, zwei farbige wenn gelesen.
+  Widget _buildMeta(Message message, bool isFromMe) {
     final time = TimeOfDay.fromDateTime(message.sentAt);
     final text =
         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-    return isFromMe && message.readAt != null ? '$text · Gelesen' : text;
+    final isRead = message.readAt != null;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: isFromMe ? _ChatColors.textSoft : _ChatColors.textMuted,
+          ),
+        ),
+        if (isFromMe) ...[
+          const SizedBox(width: 3),
+          Icon(
+            isRead ? Icons.done_all : Icons.done,
+            size: 15,
+            color: isRead ? _ChatColors.accent : _ChatColors.textSoft,
+            semanticLabel: isRead ? 'Gelesen' : 'Gesendet',
+          ),
+        ],
+      ],
+    );
   }
 
   Widget _buildDateDivider(DateTime date) {
@@ -542,10 +592,13 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3E5F5),
+          color: _ChatColors.outgoing,
           borderRadius: BorderRadius.circular(999),
         ),
-        child: Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[700])),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: _ChatColors.textSoft),
+        ),
       ),
     );
   }
@@ -588,13 +641,13 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.7),
+          color: _ChatColors.card,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.insert_drive_file_outlined, color: Color(0xFF7C4DFF)),
+            const Icon(Icons.insert_drive_file_outlined, color: _ChatColors.accent),
             const SizedBox(width: 12),
             Flexible(
               child: Column(
@@ -647,7 +700,7 @@ class _ChatScreenState extends State<ChatScreen> {
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: _ChatColors.card,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -658,10 +711,10 @@ class _ChatScreenState extends State<ChatScreen> {
               width: 26,
               height: 26,
               colorFilter:
-                  const ColorFilter.mode(Color(0xFF7C4DFF), BlendMode.srcIn),
+                  const ColorFilter.mode(_ChatColors.accent, BlendMode.srcIn),
             )
           else
-            const Icon(Icons.analytics_outlined, color: Color(0xFF7C4DFF)),
+            const Icon(Icons.analytics_outlined, color: _ChatColors.accent),
           const SizedBox(width: 12),
           Flexible(
             child: Column(
@@ -773,7 +826,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: _isSending ? null : _showAttachmentMenu,
                   ),
                   IconButton(
-                    icon: Icon(Icons.send, color: Colors.purple[400]),
+                    icon: const Icon(Icons.send, color: _ChatColors.accent),
                     tooltip: 'Senden',
                     onPressed: _isSending ? null : _sendMessage,
                   ),

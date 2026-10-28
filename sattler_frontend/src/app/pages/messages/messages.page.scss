@@ -250,10 +250,18 @@
   }
 
   time {
-    display: block;
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    justify-content: flex-end;
     margin-top: 6px;
     color: t.$text-muted;
     font-size: 10px;
+  }
+
+  .ticks {
+    font-size: 15px;
+    &.read { color: t.$purple-500; }
   }
 
   .attachment {
@@ -330,7 +338,6 @@
 
     time {
       color: t.$text-soft;
-      text-align: right;
     }
   }
 }
