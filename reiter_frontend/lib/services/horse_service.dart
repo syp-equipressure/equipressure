@@ -69,7 +69,7 @@ class HorseService {
   /// Das Bild gibt es nur in der App, es bleibt erhalten.
   Future<Horse> updateHorse(Horse horse) async {
     final url = Uri.parse('$baseUrl/horses/${horse.id}');
-    final response = await http
+    final response = await apiHttp
         .patch(
           url,
           headers: {'Content-Type': 'application/json'},
@@ -94,7 +94,7 @@ class HorseService {
   /// Löscht ein Pferd samt Sätteln und Messungen im Backend (DELETE /api/horses/{id}).
   Future<void> deleteHorse(String id) async {
     final url = Uri.parse('$baseUrl/horses/$id');
-    final response = await http.delete(url).timeout(_timeout);
+    final response = await apiHttp.delete(url).timeout(_timeout);
     // 404: das Pferd gibt es schon nicht mehr
     if (response.statusCode != 204 && response.statusCode != 404) {
       throw Exception(
