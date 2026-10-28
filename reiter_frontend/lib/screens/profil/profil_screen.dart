@@ -273,7 +273,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
         border: Border.all(color: Colors.white, width: 5),
       ),
       child: ClipOval(
-        child: imageUrl != null
+        child: imageUrl != null && imageUrl.isNotEmpty
             ? Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
