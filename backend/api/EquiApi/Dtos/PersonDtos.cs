@@ -69,6 +69,17 @@ public sealed record PersonDetailDto(
             person.Roles.Select(assignment => assignment.Role.Name).ToList());
 }
 
+
+/// <summary>
+///     A detail list of persons
+/// </summary>
+/// <param name="Persons">The persons</param>
+public sealed record PersonDetailListResponse(IReadOnlyList<PersonDetailDto> Persons)
+{
+    public static PersonDetailListResponse FromPersons(IEnumerable<Person> persons) =>
+        new(persons.Select(PersonDetailDto.FromPerson).ToList());
+}
+
 /// <summary>
 ///     The name of a person
 /// </summary>

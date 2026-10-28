@@ -75,6 +75,13 @@ public interface IHorseRepository
     /// </summary>
     /// <param name="horse">The horse to add</param>
     public void AddHorse(Horse horse);
+
+    /// <summary>
+    /// Deletes a horse
+    /// </summary>
+    /// <param name="horse">The horse to delete</param>
+    public void DeleteHorse(Horse horse);
+
 }
 
 internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> personHorseSet, DbSet<Breed> breedSet)
@@ -134,5 +141,10 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
     public void AddHorse(Horse horse)
     {
         horseSet.Add(horse);
+    }
+
+    public void DeleteHorse(Horse horse)
+    {
+        horseSet.Remove(horse);
     }
 }
