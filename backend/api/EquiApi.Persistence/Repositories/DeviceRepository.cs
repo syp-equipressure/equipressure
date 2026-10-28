@@ -48,14 +48,35 @@ public interface IDeviceRepository
     public ValueTask<DeviceCategory?> GetCategoryByIdAsync(int categoryId);
 
     /// <summary>
+    ///     Gets all device categories, ordered by the number of allowed users
+    /// </summary>
+    /// <returns>All device categories</returns>
+    public ValueTask<IReadOnlyCollection<DeviceCategory>> GetAllCategoriesAsync();
+
+    /// <summary>
+    ///     Checks if measurement groups were recorded with a device
+    /// </summary>
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <returns>True if at least one measurement group uses the device, false otherwise</returns>
+    public ValueTask<bool> HasMeasurementGroupsAsync(string deviceId);
+
+    /// <summary>
     ///     Adds a new device
     /// </summary>
     /// <param name="device">The device to add</param>
     public void AddDevice(MeasurementDevice device);
+
+    /// <summary>
+    ///     Removes a device, its users are removed as well
+    /// </summary>
+    /// <param name="device">The device to remove</param>
+    public void RemoveDevice(MeasurementDevice device);
 }
 
-internal sealed class DeviceRepository(DbSet<MeasurementDevice> deviceSet, DbSet<DeviceCategory> categorySet)
-    : IDeviceRepository
+internal sealed class DeviceRepository(
+    DbSet<MeasurementDevice> deviceSet,
+    DbSet<DeviceCategory> categorySet,
+    DbSet<MeasurementGroup> groupSet) : IDeviceRepository
 {
     private IQueryable<MeasurementDevice> DevicesWithDetails =>
         deviceSet.Include(d => d.Owner)
@@ -92,8 +113,22 @@ internal sealed class DeviceRepository(DbSet<MeasurementDevice> deviceSet, DbSet
     public async ValueTask<DeviceCategory?> GetCategoryByIdAsync(int categoryId) =>
         await categorySet.FirstOrDefaultAsync(c => c.Id == categoryId);
 
+    public async ValueTask<IReadOnlyCollection<DeviceCategory>> GetAllCategoriesAsync() =>
+        await categorySet.AsNoTracking()
+                         .OrderBy(c => c.NumOfAllowedPeople)
+                         .ThenBy(c => c.Name)
+                         .ToListAsync();
+
+    public async ValueTask<bool> HasMeasurementGroupsAsync(string deviceId) =>
+        await groupSet.AnyAsync(mg => mg.DeviceId == deviceId);
+
     public void AddDevice(MeasurementDevice device)
     {
         deviceSet.Add(device);
+    }
+
+    public void RemoveDevice(MeasurementDevice device)
+    {
+        deviceSet.Remove(device);
     }
 }

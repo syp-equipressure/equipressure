@@ -9,6 +9,19 @@ namespace EquiApi.Controllers;
 public sealed class DeviceController(IDeviceService deviceService) : BaseController
 {
     /// <summary>
+    ///     Gets all device categories, ordered by the number of allowed users
+    /// </summary>
+    // a literal segment has precedence over {deviceId}, so this route is not mistaken for a device
+    [HttpGet("categories")]
+    [ProducesResponseType<DeviceCategoryListResponse>(StatusCodes.Status200OK)]
+    public async ValueTask<ActionResult<DeviceCategoryListResponse>> GetCategories()
+    {
+        var categories = await deviceService.GetAllCategoriesAsync();
+
+        return Ok(DeviceCategoryListResponse.FromCategories(categories));
+    }
+
+    /// <summary>
     ///     Gets a device
     /// </summary>
     [HttpGet("{deviceId}")]
@@ -130,5 +143,23 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
             _ => NoContent(),
             _ => NotFound(),
             _ => Conflict());
+    }
+
+    /// <summary>
+    ///     Removes a device including its users, a device that was used for measurements cannot be removed
+    /// </summary>
+    [HttpDelete("{deviceId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<IActionResult> DeleteDevice([FromRoute] string deviceId)
+    {
+        var result = await deviceService.DeleteDeviceAsync(deviceId);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound(),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         detail: "The device was used for measurements, delete its measurement groups first"));
     }
 }

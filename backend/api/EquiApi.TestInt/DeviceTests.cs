@@ -338,4 +338,69 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
 
         ShouldBeProblem(response, HttpStatusCode.Conflict);
     }
+
+    [Fact]
+    public async ValueTask GetCategories_CategoriesExist_ReturnsCategoriesOrderedByAllowedUsers()
+    {
+        var stable = TestData.CreateDeviceCategory(numOfAllowedPeople: 10);
+        var basic = TestData.CreateDeviceCategory(numOfAllowedPeople: 1);
+        await SeedAsync(stable, basic);
+
+        var response = await ApiClient.GetAsync("api/devices/categories", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<DeviceCategoryListResponse>(response);
+        content.Categories.Should().Equal(new DeviceCategoryDto(basic.Id, basic.Name, 1),
+                                          new DeviceCategoryDto(stable.Id, stable.Name, 10));
+    }
+
+    [Fact]
+    public async ValueTask GetCategories_NoCategories_ReturnsEmptyList()
+    {
+        var response = await ApiClient.GetAsync("api/devices/categories", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadContentAsync<DeviceCategoryListResponse>(response);
+        content.Categories.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async ValueTask DeleteDevice_UnusedDevice_RemovesDeviceAndItsUsers()
+    {
+        var owner = TestData.CreatePerson("Max");
+        var user = TestData.CreatePerson("Anna");
+        await SeedAsync(TestData.CreateDevice(DeviceId, owner, TestData.CreateDeviceCategory(), user));
+
+        var response = await ApiClient.DeleteAsync($"api/devices/{DeviceId}", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var getResponse = await ApiClient.GetAsync($"api/devices/{DeviceId}", TestCancellationToken);
+        ShouldBeProblem(getResponse, HttpStatusCode.NotFound);
+        var userDevices = await ReadContentAsync<DeviceListResponse>(
+            await ApiClient.GetAsync($"api/persons/{user.Id}/devices", TestCancellationToken));
+        userDevices.Devices.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async ValueTask DeleteDevice_DeviceUsedForMeasurements_ReturnsConflictAndKeepsDevice()
+    {
+        var owner = TestData.CreatePerson();
+        var device = TestData.CreateDevice(DeviceId, owner, TestData.CreateDeviceCategory());
+        var horse = TestData.CreateHorse();
+        await SeedAsync(TestData.CreateMeasurementGroup(owner, horse, TestData.CreateSaddle(horse), device));
+
+        var response = await ApiClient.DeleteAsync($"api/devices/{DeviceId}", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+        var getResponse = await ApiClient.GetAsync($"api/devices/{DeviceId}", TestCancellationToken);
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async ValueTask DeleteDevice_NonExistingDevice_ReturnsNotFound()
+    {
+        var response = await ApiClient.DeleteAsync("api/devices/non-existing-device", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
 }

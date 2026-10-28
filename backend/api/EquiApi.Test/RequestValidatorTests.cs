@@ -226,6 +226,68 @@ public sealed class RequestValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }
 
+    [Fact]
+    public void AddMeasurementRequest_ValidRecordings_HasNoErrors()
+    {
+        var timestamp = Instant.FromUtc(2026, 10, 1, 14, 0, 0);
+        var request = new AddMeasurementRequest("Schritt", "Links", null,
+                                                [
+                                                    new RecordingRequest(timestamp, [0, 12.5, 340]),
+                                                    new RecordingRequest(timestamp.Plus(Duration.FromSeconds(3)),
+                                                                         [1, 13, 350])
+                                                ]);
+
+        var result = new AddMeasurementRequest.Validator().TestValidate(request);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void AddMeasurementRequest_RecordingWithoutValuesOrNegativeValue_HasErrors()
+    {
+        var timestamp = Instant.FromUtc(2026, 10, 1, 14, 0, 0);
+        var request = new AddMeasurementRequest("Schritt", "Links", null,
+                                                [
+                                                    new RecordingRequest(timestamp, []),
+                                                    new RecordingRequest(timestamp.Plus(Duration.FromSeconds(3)),
+                                                                         [5, -1])
+                                                ]);
+
+        var result = new AddMeasurementRequest.Validator().TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor("Recordings[0].Values");
+        result.ShouldHaveValidationErrorFor("Recordings[1].Values[1]");
+    }
+
+    [Fact]
+    public void AddMeasurementRequest_RecordingsWithSameTimestamp_HasError()
+    {
+        var timestamp = Instant.FromUtc(2026, 10, 1, 14, 0, 0);
+        var request = new AddMeasurementRequest("Schritt", "Links", null,
+                                                [new RecordingRequest(timestamp, [1]), new RecordingRequest(timestamp, [2])]);
+
+        var result = new AddMeasurementRequest.Validator().TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Recordings);
+    }
+
+    [Fact]
+    public void PatchSaddleRequest_InvalidValues_HasErrors()
+    {
+        var result = new PatchSaddleRequest.Validator().TestValidate(new PatchSaddleRequest("", 0));
+
+        result.ShouldHaveValidationErrorFor(x => x.Name);
+        result.ShouldHaveValidationErrorFor(x => x.CategoryId);
+    }
+
+    [Fact]
+    public void PatchSaddleRequest_AllValuesNull_HasNoErrors()
+    {
+        var result = new PatchSaddleRequest.Validator().TestValidate(new PatchSaddleRequest(null, null));
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-30)]

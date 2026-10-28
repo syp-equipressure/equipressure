@@ -165,8 +165,18 @@ public sealed record AddMeasurementGroupRequest(
 /// <param name="Pace">The pace (Gangart) of the measurement</param>
 /// <param name="Hand">The hand (Seite) of the measurement</param>
 /// <param name="Description">An optional description of the measurement</param>
-public sealed record AddMeasurementRequest(string Pace, string Hand, string? Description)
+/// <param name="Recordings">
+///     The optional recordings of the measurement, every recording is stored as one data entry
+/// </param>
+public sealed record AddMeasurementRequest(
+    string Pace,
+    string Hand,
+    string? Description,
+    IReadOnlyList<RecordingRequest>? Recordings = null)
 {
+    public IReadOnlyList<NewRecordingData> ToRecordingData() =>
+        (Recordings ?? []).Select(recording => recording.ToData()).ToList();
+
     public sealed class Validator : AbstractValidator<AddMeasurementRequest>
     {
         public Validator()
@@ -174,6 +184,32 @@ public sealed record AddMeasurementRequest(string Pace, string Hand, string? Des
             RuleFor(x => x.Pace).NotEmpty();
             RuleFor(x => x.Hand).NotEmpty();
             RuleFor(x => x.Description).MaximumLength(500).When(x => x.Description is not null);
+            RuleForEach(x => x.Recordings).NotNull().SetValidator(new RecordingRequest.Validator());
+            RuleFor(x => x.Recordings)
+                .Must(recordings => recordings!.Select(r => r?.Timestamp).Distinct().Count() == recordings!.Count)
+                .When(x => x.Recordings is not null)
+                .WithMessage("Every recording of a measurement needs its own timestamp");
+        }
+    }
+}
+
+/// <summary>
+///     A recording of the sensor mat at one point in time
+/// </summary>
+/// <param name="Timestamp">When the values were recorded</param>
+/// <param name="Values">The pressure values of all sensors in mbar, row by row (e.g. 400 values for a 20×20 mat)</param>
+public sealed record RecordingRequest(Instant Timestamp, IReadOnlyList<double> Values)
+{
+    public NewRecordingData ToData() => new(Timestamp, Values);
+
+    public sealed class Validator : AbstractValidator<RecordingRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Values).NotEmpty().WithMessage("A recording needs at least one value");
+            RuleForEach(x => x.Values)
+                .Must(value => double.IsFinite(value) && value >= 0)
+                .WithMessage("Pressure values have to be positive numbers");
         }
     }
 }
