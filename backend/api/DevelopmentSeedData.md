@@ -8,6 +8,16 @@ the database has no persons yet. Existing data is never changed. The data is def
 - Get a fresh copy: drop the database (or the `EquiPressure` schema) and start the API again.
 - The ids below are correct for a **fresh** database. If you add data before the seeder runs, they can differ.
 
+## Test accounts
+
+Sophie and Lena are linked to Keycloak users from `backend/keycloak/realm-equipressure.json`, so you can log in
+as them (with `KC_LOGIN_THEME=keycloak.v2`) and e.g. chat with each other:
+
+| Person | Username | Password | App |
+|---|---|---|---|
+| 1 Sophie Grüneis | `sophie.grueneis` | `sophie` | Sattler frontend |
+| 6 Lena Grassauer | `lena.grassauer` | `lena` | Reiter app |
+
 ## Persons
 
 | Id | Name | Role | Address |
@@ -50,6 +60,7 @@ the database has no persons yet. Existing data is never changed. The data is def
 | 8 | Cash | Quarter Horse | 7 Max | | 8 |
 
 Breed ids 1–8: Hannoveraner, Holsteiner, Westfale, Trakehner, Haflinger, Noriker, Lipizzaner, Quarter Horse.
+Ids 9–41 are further common breeds (Oldenburger … Mischling) for the suggestions in the apps, no horse uses them.
 Saddle category ids 1–5: Dressur, Springen, Vielseitigkeit, Freizeit, Western.
 
 ## Devices

@@ -202,7 +202,8 @@
       "emailVerified": true,
       "firstName": "Reiter",
       "lastName": "Dev",
-      "credentials": [{ "type": "password", "value": "reiter", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "reiter", "temporary": false }],
+      "realmRoles": ["default-roles-equipressure"]
     },
     {
       "username": "sattler.dev",
@@ -211,7 +212,30 @@
       "emailVerified": true,
       "firstName": "Sattler",
       "lastName": "Dev",
-      "credentials": [{ "type": "password", "value": "sattler", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "sattler", "temporary": false }],
+      "realmRoles": ["default-roles-equipressure"]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "username": "sophie.grueneis",
+      "enabled": true,
+      "email": "sophie.grueneis@example.com",
+      "emailVerified": true,
+      "firstName": "Sophie",
+      "lastName": "Grüneis",
+      "credentials": [{ "type": "password", "value": "sophie", "temporary": false }],
+      "realmRoles": ["default-roles-equipressure"]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "username": "lena.grassauer",
+      "enabled": true,
+      "email": "lena.grassauer@example.com",
+      "emailVerified": true,
+      "firstName": "Lena",
+      "lastName": "Grassauer",
+      "credentials": [{ "type": "password", "value": "lena", "temporary": false }],
+      "realmRoles": ["default-roles-equipressure"]
     }
   ]
 }

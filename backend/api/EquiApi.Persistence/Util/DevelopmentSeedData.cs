@@ -10,6 +10,10 @@ namespace EquiApi.Persistence.Util;
 /// </summary>
 public static class DevelopmentSeedData
 {
+    // Keycloak user ids of the test accounts sophie.grueneis and lena.grassauer (backend/keycloak/realm-equipressure.json)
+    private const string SophieExternalId = "00000000-0000-4000-8000-000000000001";
+    private const string LenaExternalId = "00000000-0000-4000-8000-000000000006";
+
     /// <summary>
     ///     Adds the test data if the database does not contain any persons yet, existing data is never touched
     /// </summary>
@@ -89,8 +93,9 @@ public static class DevelopmentSeedData
     {
         Person Create(string firstName, string lastName, decimal height, decimal weight, LocalDate dateOfBirth,
                       string email, Address address, RoleName[] roleNames, string? websiteLink = null,
-                      string? description = null) => new()
+                      string? description = null, string? externalId = null) => new()
                       {
+                          ExternalId = externalId,
                           FirstName = firstName,
                           LastName = lastName,
                           Height = height,
@@ -108,7 +113,8 @@ public static class DevelopmentSeedData
             /* 1 */ Create("Sophie", "Grüneis", 168M, 60M, new LocalDate(1985, 4, 12), "sophie.grueneis@example.com",
                            addresses[0], [RoleName.Saddler], "https://www.flexibler-sattel.at",
                            "Wir passen alle Sättel an, die gepolstert werden können und deren Kopfeisen sich kalt "
-                           + "verstellen lässt. Spezialisiert auf Dressur- und Springsättel."),
+                           + "verstellen lässt. Spezialisiert auf Dressur- und Springsättel.",
+                           SophieExternalId),
             /* 2 */ Create("Ferdinand", "Feldhofer", 182M, 85M, new LocalDate(1968, 9, 3), "info@feldhofer.example.com",
                            addresses[1], [RoleName.Saddler], "https://feldhofer-sattlerei.at",
                            "Traditionelle Sattlerei seit 1985. Reparaturen, Neuanfertigungen und Sattelanpassungen "
@@ -124,7 +130,7 @@ public static class DevelopmentSeedData
                            addresses[4], [RoleName.Saddler, RoleName.Equestrian], "https://hofmann-sattel.at",
                            "Ergonomische Sattelanpassung mit modernster Druckmessung. Beratung für Pferd und Reiter."),
             /* 6 */ Create("Lena", "Grassauer", 167M, 55M, new LocalDate(2000, 3, 15), "lena.grassauer@example.com",
-                           addresses[5], [RoleName.Equestrian]),
+                           addresses[5], [RoleName.Equestrian], externalId: LenaExternalId),
             /* 7 */ Create("Max", "Mustermann", 181M, 78M, new LocalDate(1997, 8, 2), "max.mustermann@example.com",
                            addresses[6], [RoleName.Equestrian]),
             // equestrian without street
@@ -169,7 +175,41 @@ public static class DevelopmentSeedData
         /* 5 */ new() { Name = "Haflinger" },
         /* 6 */ new() { Name = "Noriker" },
         /* 7 */ new() { Name = "Lipizzaner" },
-        /* 8 */ new() { Name = "Quarter Horse" }
+        /* 8 */ new() { Name = "Quarter Horse" },
+        // further breeds for the suggestions in the apps, not used by the horses below
+        /* 9 */ new() { Name = "Oldenburger" },
+        /* 10 */ new() { Name = "Österreichisches Warmblut" },
+        /* 11 */ new() { Name = "Bayerisches Warmblut" },
+        /* 12 */ new() { Name = "Württemberger" },
+        /* 13 */ new() { Name = "Rheinländer" },
+        /* 14 */ new() { Name = "Holländisches Warmblut (KWPN)" },
+        /* 15 */ new() { Name = "Selle Français" },
+        /* 16 */ new() { Name = "Irish Sport Horse" },
+        /* 17 */ new() { Name = "Englisches Vollblut" },
+        /* 18 */ new() { Name = "Arabisches Vollblut" },
+        /* 19 */ new() { Name = "Shagya-Araber" },
+        /* 20 */ new() { Name = "Traber" },
+        /* 21 */ new() { Name = "Andalusier (PRE)" },
+        /* 22 */ new() { Name = "Lusitano" },
+        /* 23 */ new() { Name = "Friese" },
+        /* 24 */ new() { Name = "Kladruber" },
+        /* 25 */ new() { Name = "Knabstrupper" },
+        /* 26 */ new() { Name = "Freiberger" },
+        /* 27 */ new() { Name = "Fjordpferd" },
+        /* 28 */ new() { Name = "Islandpferd" },
+        /* 29 */ new() { Name = "Tinker" },
+        /* 30 */ new() { Name = "Appaloosa" },
+        /* 31 */ new() { Name = "Paint Horse" },
+        /* 32 */ new() { Name = "Criollo" },
+        /* 33 */ new() { Name = "Mustang" },
+        /* 34 */ new() { Name = "Deutsches Reitpony" },
+        /* 35 */ new() { Name = "Welsh Pony" },
+        /* 36 */ new() { Name = "Connemara Pony" },
+        /* 37 */ new() { Name = "Shetlandpony" },
+        /* 38 */ new() { Name = "Süddeutsches Kaltblut" },
+        /* 39 */ new() { Name = "Shire Horse" },
+        /* 40 */ new() { Name = "Percheron" },
+        /* 41 */ new() { Name = "Mischling" }
     ];
 
     private static Horse[] CreateHorses(Address[] addresses, Breed[] breeds)

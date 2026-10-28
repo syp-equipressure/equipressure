@@ -27,7 +27,7 @@ public sealed class DevelopmentSeedDataTests(WebApiTestFixture webApiFixture) : 
             (await context.Persons.CountAsync(TestCancellationToken)).Should().Be(10);
             (await context.PersonRoleAssignments.CountAsync(TestCancellationToken)).Should().Be(11);
             (await context.PersonRelationships.CountAsync(TestCancellationToken)).Should().Be(8);
-            (await context.Breeds.CountAsync(TestCancellationToken)).Should().Be(8);
+            (await context.Breeds.CountAsync(TestCancellationToken)).Should().Be(41);
             (await context.Horses.CountAsync(TestCancellationToken)).Should().Be(8);
             (await context.HorseBreeds.CountAsync(TestCancellationToken)).Should().Be(9);
             (await context.PersonHorses.CountAsync(TestCancellationToken)).Should().Be(11);
