@@ -41,9 +41,9 @@ class _HorsesScreenState extends State<HorsesScreen> {
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Laden: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler beim Laden: $e')));
       }
     }
   }
@@ -91,7 +91,9 @@ class _HorsesScreenState extends State<HorsesScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pferd konnte nicht gespeichert werden: $error')),
+        SnackBar(
+          content: Text('Pferd konnte nicht gespeichert werden: $error'),
+        ),
       );
     }
   }
@@ -103,14 +105,12 @@ class _HorsesScreenState extends State<HorsesScreen> {
       drawer: const SideNav(),
       appBar: view == HorsesView.add
           ? null
-          : const CustomAppBar(
-              title: 'EquiPressure',
-            ),
+          : const CustomAppBar(title: 'EquiPressure'),
       body: view == HorsesView.add
           ? _addView()
           : isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _listView(),
+          ? const Center(child: CircularProgressIndicator())
+          : _listView(),
       floatingActionButton: horses.isNotEmpty && view == HorsesView.list
           ? FloatingActionButton(
               backgroundColor: const Color.fromARGB(255, 178, 149, 230),
@@ -132,9 +132,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 40),
-          Expanded(
-            child: horses.isEmpty ? _emptyBox() : _horseGrid(),
-          ),
+          Expanded(child: horses.isEmpty ? _emptyBox() : _horseGrid()),
         ],
       ),
     );
@@ -167,10 +165,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
                   'Füge ein Pferd hinzu um mit\n'
                   'den Messungen starten zu\nkönnen',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], height: 1.5),
                 ),
               ],
             ),
@@ -199,9 +194,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
         // Warte auf das Ergebnis vom HorseProfileScreen
         final result = await Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => HorseProfileScreen(horse: horse),
-          ),
+          MaterialPageRoute(builder: (_) => HorseProfileScreen(horse: horse)),
         );
 
         // Falls das Pferd aktualisiert wurde, lade die Liste neu
@@ -235,19 +228,24 @@ class _HorsesScreenState extends State<HorsesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: horse.image != null
-                    ? Image.file(horse.image!, fit: BoxFit.cover)
-                    : horse.assetImage != null
-                        ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
-                        : Container(
-                            color: Colors.grey[200],
-                            child: Icon(Icons.image_outlined,
-                                size: 48, color: Colors.grey[400]),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: horse.image != null
+                      ? Image.file(horse.image!, fit: BoxFit.cover)
+                      : horse.assetImage != null
+                      ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
+                      : Container(
+                          color: Colors.grey[200],
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
                           ),
+                        ),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -257,10 +255,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 4),
             // ✅ Alter | Rasse wird bei Überlänge mit ... abgekürzt
@@ -269,10 +264,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
