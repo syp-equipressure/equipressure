@@ -53,7 +53,8 @@ public sealed record PersonDetailDto(
     string? WebsiteLink,
     string? Description,
     AddressDto Address,
-    IReadOnlyList<RoleName> Roles)
+    IReadOnlyList<RoleName> Roles,
+    Instant CreatedAt)
 {
     public static PersonDetailDto FromPerson(Person person) =>
         new(person.Id,
@@ -66,7 +67,8 @@ public sealed record PersonDetailDto(
             person.WebsiteLink,
             person.Description,
             AddressDto.FromAddress(person.Address),
-            person.Roles.Select(assignment => assignment.Role.Name).ToList());
+            person.Roles.Select(assignment => assignment.Role.Name).ToList(),
+            person.CreatedAt);
 }
 
 

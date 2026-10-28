@@ -2,6 +2,9 @@
 
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="12.1.1" />
+        <PackageReference Include="InTheHand.BluetoothLE" Version="4.0.45" />
+        <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.2.5" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
             <PrivateAssets>all</PrivateAssets>

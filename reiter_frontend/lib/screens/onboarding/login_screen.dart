@@ -1,14 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../services/account_service.dart';
+import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/common/app_button.dart';
 import 'widgets/page_indicator.dart';
 
-class LoginScreen extends StatelessWidget {
-  final VoidCallback onNext;
+/// Login über Keycloak, die Buttons gehen direkt zum jeweiligen Anbieter
+class LoginScreen extends StatefulWidget {
+  final ValueChanged<AccountState> onLoggedIn;
 
-  const LoginScreen({super.key, required this.onNext});
+  const LoginScreen({super.key, required this.onLoggedIn});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _loading = false;
+
+  Future<void> _login(String identityProvider) async {
+    setState(() => _loading = true);
+    try {
+      await AuthService().login(identityProvider: identityProvider);
+      final state = await AccountService.loadState();
+      widget.onLoggedIn(state);
+    } on PlatformException {
+      // Login im Browser abgebrochen
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anmelden hat nicht funktioniert. Bitte versuche es noch einmal.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,24 +54,37 @@ class LoginScreen extends StatelessWidget {
             children: [
               const Spacer(),
               const Text('Login mit', style: AppTextStyles.h1),
-              const SizedBox(height: 48),
-              AppSocialButton(
-                icon: FontAwesomeIcons.google,
-                label: 'Mit Google anmelden',
-                onPressed: onNext,
-              ),
               const SizedBox(height: 16),
-              AppSocialButton(
-                icon: FontAwesomeIcons.apple,
-                label: 'Mit Apple anmelden',
-                onPressed: onNext,
+              const Text(
+                'Eine Registrierung ist nicht nötig, melde dich einfach mit einem bestehenden Konto an.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body,
               ),
-              const SizedBox(height: 16),
-              AppSocialButton(
-                icon: FontAwesomeIcons.facebook,
-                label: 'Mit Facebook anmelden',
-                onPressed: onNext,
-              ),
+              const SizedBox(height: 32),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                )
+              else ...[
+                AppSocialButton(
+                  icon: FontAwesomeIcons.google,
+                  label: 'Mit Google anmelden',
+                  onPressed: () => _login('google'),
+                ),
+                const SizedBox(height: 16),
+                AppSocialButton(
+                  icon: FontAwesomeIcons.microsoft,
+                  label: 'Mit Microsoft anmelden',
+                  onPressed: () => _login('microsoft'),
+                ),
+                const SizedBox(height: 16),
+                AppSocialButton(
+                  icon: FontAwesomeIcons.github,
+                  label: 'Mit GitHub anmelden',
+                  onPressed: () => _login('github'),
+                ),
+              ],
               const Spacer(),
               const PageIndicator(currentPage: 1, totalPages: 5),
               const SizedBox(height: 40),

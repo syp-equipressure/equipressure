@@ -19,6 +19,7 @@ class WebSocketService {
   final _connectionController = StreamController<ConnectionState>.broadcast();
 
   String? _currentUrl;
+  Future<Map<String, String>> Function()? _queryParameters;
   Timer? _reconnectTimer;
   Duration _reconnectDelay = const Duration(seconds: 1);
   bool _isConnected = false;
@@ -32,17 +33,23 @@ class WebSocketService {
   bool get isConnected => _isConnected;
 
   /// Verbindet mit [url], eine bestehende Verbindung zu einer anderen URL wird
-  /// vorher getrennt.
-  Future<void> connect(String url) async {
+  /// vorher getrennt. [queryParameters] wird bei jedem Verbindungsaufbau neu
+  /// geholt, z.B. für ein Access Token, das zwischendurch abläuft.
+  Future<void> connect(
+    String url, {
+    Future<Map<String, String>> Function()? queryParameters,
+  }) async {
     if (_currentUrl == url && (_isConnected || _reconnectTimer != null)) return;
 
     disconnect();
     _currentUrl = url;
+    _queryParameters = queryParameters;
     await _open();
   }
 
   void disconnect() {
     _currentUrl = null;
+    _queryParameters = null;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _subscription?.cancel();
@@ -58,7 +65,14 @@ class WebSocketService {
 
     _connectionController.add(ConnectionState.connecting);
     try {
-      final channel = WebSocketChannel.connect(Uri.parse(url));
+      var uri = Uri.parse(url);
+      final queryParameters = await _queryParameters?.call();
+      if (queryParameters != null && queryParameters.isNotEmpty) {
+        uri = uri.replace(
+          queryParameters: {...uri.queryParameters, ...queryParameters},
+        );
+      }
+      final channel = WebSocketChannel.connect(uri);
       await channel.ready;
       if (_currentUrl != url) {
         channel.sink.close();

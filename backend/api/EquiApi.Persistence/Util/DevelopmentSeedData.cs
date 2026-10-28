@@ -267,7 +267,7 @@ public static class DevelopmentSeedData
         /* 2 */ new() { Name = "Standard", NumOfAllowedPeople = 3 },
         /* 3 */ new() { Name = "Family", NumOfAllowedPeople = 5 },
         /* 4 */ new() { Name = "Stable", NumOfAllowedPeople = 10 },
-        /* 5 */ new() { Name = "Professional", NumOfAllowedPeople = 20 }
+        /* 5 */ new() { Name = "Professional", NumOfAllowedPeople = 20, Role = RoleName.Saddler }
     ];
 
     private static MeasurementDevice[] CreateDevices(Person[] persons, DeviceCategory[] categories)

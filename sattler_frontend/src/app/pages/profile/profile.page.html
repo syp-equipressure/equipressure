@@ -38,7 +38,9 @@
         @if (sattler().companyName) {
           <div class="company">{{ sattler().companyName }}</div>
         }
-        <div class="member-since">Mitglied seit {{ sattler().memberSince }}</div>
+        @if (sattler().memberSince) {
+          <div class="member-since">Mitglied seit {{ sattler().memberSince }}</div>
+        }
       </div>
 
       @if (!editMode()) {

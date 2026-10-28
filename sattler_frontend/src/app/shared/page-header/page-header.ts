@@ -4,6 +4,8 @@ import { Router, RouterLink } from '@angular/router';
 import { SidenavService } from '../../services/sidenav.service';
 import { DataService } from '../../services/data.service';
 import { fullName } from '../../models/customer.model';
+import { AuthService } from '../../services/auth.service';
+import { AccountService } from '../../services/account.service';
 
 @Component({
   selector: 'app-page-header',
@@ -22,13 +24,20 @@ export class PageHeaderComponent {
   private readonly sidenav = inject(SidenavService);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
+  private readonly auth = inject(AuthService);
+  private readonly account = inject(AccountService);
 
   get accountName(): string {
-    return fullName(this.data.getMe());
+    const me = this.account.me();
+    return me ? `${me.firstName} ${me.lastName}` : fullName(this.data.getMe());
   }
 
   get accountEmail(): string {
-    return this.data.getMe().email ?? '';
+    return this.account.me()?.email ?? this.data.getMe().email ?? '';
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 
   get profileActive(): boolean {

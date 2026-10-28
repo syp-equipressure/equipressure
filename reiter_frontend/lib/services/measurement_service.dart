@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
@@ -345,7 +346,7 @@ class MeasurementService {
   /// GET /api/measurementgroups/horse/{horseId} -> { "groups": [MeasurementGroupSummaryDto] }
   Future<List<Map<String, dynamic>>> fetchGroupsOfHorse(int horseId) async {
     final url = Uri.parse('$baseUrl/measurementgroups/horse/$horseId');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return [];
     if (response.statusCode != 200) {
       _throwForStatus(response, 'load measurement groups of horse $horseId');
@@ -356,7 +357,7 @@ class MeasurementService {
   /// GET /api/measurementgroups/{groupId} -> MeasurementGroupDetailDto
   Future<Map<String, dynamic>?> fetchGroup(int groupId) async {
     final url = Uri.parse('$baseUrl/measurementgroups/$groupId');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       _throwForStatus(response, 'load measurement group $groupId');
@@ -386,7 +387,7 @@ class MeasurementService {
       'saddleId': saddleId,
       'deviceId': deviceId,
     });
-    final response = await http
+    final response = await apiHttp
         .post(url, headers: _jsonHeaders, body: body)
         .timeout(_timeout);
     if (response.statusCode != 201 && response.statusCode != 200) {
@@ -402,7 +403,7 @@ class MeasurementService {
     int groupId,
   ) async {
     final url = Uri.parse('$baseUrl/measurementgroups/$groupId/measurements');
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return [];
     if (response.statusCode != 200) {
       _throwForStatus(response, 'load measurements of group $groupId');
@@ -419,7 +420,7 @@ class MeasurementService {
     final url = Uri.parse(
       '$baseUrl/measurementgroups/$groupId/measurements/filter',
     ).replace(queryParameters: _filterParameters(pace, hand));
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       _throwForStatus(response, 'filter measurements of group $groupId');
@@ -448,7 +449,7 @@ class MeasurementService {
     final url = Uri.parse(
       '$baseUrl/measurementgroups/$groupId/measurements/$measurementId',
     );
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       _throwForStatus(response, 'load measurement $measurementId');
@@ -484,7 +485,7 @@ class MeasurementService {
       'hand': hand,
       'description': description,
     });
-    final response = await http
+    final response = await apiHttp
         .post(url, headers: _jsonHeaders, body: body)
         .timeout(_timeout);
     if (response.statusCode != 201 && response.statusCode != 200) {
@@ -498,7 +499,7 @@ class MeasurementService {
     final url = Uri.parse(
       '$baseUrl/measurementgroups/$groupId/measurements/$measurementId',
     );
-    final response = await http.delete(url).timeout(_timeout);
+    final response = await apiHttp.delete(url).timeout(_timeout);
     if (response.statusCode != 204 && response.statusCode != 200) {
       _throwForStatus(response, 'delete measurement $measurementId');
     }
@@ -516,7 +517,7 @@ class MeasurementService {
     final url = Uri.parse(
       '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/measurementData',
     );
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return [];
     if (response.statusCode != 200) {
       _throwForStatus(response, 'load data of measurement $measurementId');
@@ -533,7 +534,7 @@ class MeasurementService {
     final url = Uri.parse(
       '$baseUrl/measurementgroups/$groupId/measurements/$measurementId/measurementData/$dataId',
     );
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       _throwForStatus(response, 'load data entry $dataId');
@@ -544,7 +545,7 @@ class MeasurementService {
   // --- helpers -------------------------------------------------------------
 
   Future<double?> _fetchAggregate(Uri url, String action) async {
-    final response = await http.get(url).timeout(_timeout);
+    final response = await apiHttp.get(url).timeout(_timeout);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) _throwForStatus(response, action);
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;

@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using EquiApi.Dtos;
+using EquiApi.Persistence.Model;
 using EquiApi.TestInt.Util;
 
 namespace EquiApi.TestInt;
@@ -7,6 +8,7 @@ namespace EquiApi.TestInt;
 public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBase(webApiFixture)
 {
     private const string DeviceId = "device-1";
+    private const string AccountExternalId = "0e6982b9-0a93-4fdd-8af5-65b85d73b52f";
 
     [Fact]
     public async ValueTask GetDeviceById_ExistingDevice_ReturnsDeviceWithOwnerAndUsers()
@@ -338,4 +340,108 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
 
         ShouldBeProblem(response, HttpStatusCode.Conflict);
     }
+
+    [Theory]
+    [InlineData(RoleName.Equestrian)]
+    [InlineData(RoleName.Saddler)]
+    public async ValueTask ClaimDevice_ValidData_ReturnsCreatedDeviceAndAssignsRoleOfCategory(RoleName categoryRole)
+    {
+        var person = await SeedAccountPersonAsync("Hauptstraße 1");
+        var category = TestData.CreateDeviceCategory(role: categoryRole);
+        await SeedAsync(category);
+
+        var response = await ClaimAsync(category.Id);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var content = await ReadContentAsync<DeviceDto>(response);
+        content.Id.Should().Be(DeviceId);
+        content.CategoryId.Should().Be(category.Id);
+        content.Owner.Id.Should().Be(person.Id);
+
+        var meResponse = await SendAsUserAsync(HttpMethod.Get, "api/account/me", AccountExternalId);
+        var me = await ReadContentAsync<PersonDetailDto>(meResponse);
+        me.Roles.Should().Equal(categoryRole);
+    }
+
+    [Fact]
+    public async ValueTask ClaimDevice_SaddlerDeviceWithoutStreet_ReturnsConflict()
+    {
+        await SeedAccountPersonAsync(null);
+        var category = TestData.CreateDeviceCategory(role: RoleName.Saddler);
+        await SeedAsync(category);
+
+        var response = await ClaimAsync(category.Id);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask ClaimDevice_AlreadyClaimed_ReturnsConflict()
+    {
+        await SeedAccountPersonAsync(null);
+        var category = TestData.CreateDeviceCategory();
+        await SeedAsync(TestData.CreateDevice(DeviceId, TestData.CreatePerson("Other"), category));
+
+        var response = await ClaimAsync(category.Id);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask ClaimDevice_ProfileNotSetUp_ReturnsNotFound()
+    {
+        var category = TestData.CreateDeviceCategory();
+        await SeedAsync(category);
+
+        var response = await ClaimAsync(category.Id);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask ClaimDevice_CategoryNotFound_ReturnsNotFound()
+    {
+        await SeedAccountPersonAsync(null);
+
+        var response = await ClaimAsync(TestData.NonExistingId);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask ClaimDevice_InvalidCategoryId_ReturnsBadRequest()
+    {
+        await SeedAccountPersonAsync(null);
+
+        var response = await ClaimAsync(0);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask ClaimDevice_NotLoggedIn_ReturnsUnauthorized()
+    {
+        var response = await AnonymousClient.PostAsJsonAsync($"api/devices/{DeviceId}/claim",
+                                                             new ClaimDeviceRequest(1), JsonOptions,
+                                                             TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    /// <summary>
+    ///     Seeds the person of a new account: linked to Keycloak, but without role until a device is claimed
+    /// </summary>
+    private async ValueTask<Person> SeedAccountPersonAsync(string? street)
+    {
+        var person = TestData.CreatePerson("Anna", address: TestData.CreateAddress(street));
+        person.ExternalId = AccountExternalId;
+        person.Roles = [];
+        await SeedAsync(person);
+
+        return person;
+    }
+
+    private async ValueTask<HttpResponseMessage> ClaimAsync(int categoryId) =>
+        await SendAsUserAsync(HttpMethod.Post, $"api/devices/{DeviceId}/claim", AccountExternalId,
+                              body: new ClaimDeviceRequest(categoryId));
 }

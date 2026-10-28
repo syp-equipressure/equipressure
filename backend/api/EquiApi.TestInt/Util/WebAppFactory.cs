@@ -1,5 +1,6 @@
 ﻿using EquiApi.Persistence.Util;
 using EquiApi.Shared;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +27,15 @@ internal sealed class WebAppFactory(string connectionString) : WebApplicationFac
         {
             SetTestDbContext(services);
             SetTestClock(services);
+            SetTestAuthentication(services);
         });
+    }
+
+    private static void SetTestAuthentication(IServiceCollection services)
+    {
+        // there is no Keycloak in tests, the user is passed in a header instead (see TestAuthHandler)
+        services.AddAuthentication(TestAuthHandler.SchemeName)
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
     }
 
     private void SetTestDbContext(IServiceCollection services)

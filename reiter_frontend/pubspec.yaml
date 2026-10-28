@@ -56,6 +56,8 @@ dependencies:
   share_plus: ^12.0.1
   mobile_scanner: ^7.2.0
   http: ^1.1.0
+  flutter_appauth: ^12.1.0
+  flutter_secure_storage: ^10.0.0
 
 dev_dependencies:
   flutter_test:
@@ -82,6 +84,7 @@ flutter:
     - assets/icon/horseIcon.svg
     - assets/icon/saddleIcon.svg
     - assets/horseImg/
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

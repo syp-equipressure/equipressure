@@ -10,6 +10,7 @@ public interface IUnitOfWork
     public IHorseRepository HorseRepository { get; }
     public IMeasurementRepository MeasurementRepository { get; }
     public ISaddleRepository SaddleRepository { get; }
+    public IAccessRepository AccessRepository { get; }
     public IChatRepository ChatRepository { get; }
 
     /// <summary>
@@ -41,6 +42,10 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IChatRepository ChatRepository =>
         field ??= new ChatRepository(context.ChatMessages, context.ChatFiles);
+
+    public IAccessRepository AccessRepository =>
+        field ??= new AccessRepository(context.Persons, context.PersonRelationships, context.Horses, context.Devices,
+                                       context.MeasurementGroups);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/user_data.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
+import 'package:reiterappfrontend/screens/onboarding/auth_gate.dart';
+import 'package:reiterappfrontend/services/auth_service.dart';
 import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/screens/profil/personal_data_screen.dart';
 import 'package:reiterappfrontend/screens/profil/devices_screen.dart';
@@ -73,58 +75,15 @@ class _ProfilScreenState extends State<ProfilScreen> {
     }
   }
 
-  Future<void> _configurePersonId() async {
-    final controller = TextEditingController(text: _personId ?? '');
-    final formKey = GlobalKey<FormState>();
-    final personId = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Backend-Person auswählen'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Personen-ID',
-              helperText: 'Numerische ID aus dem Backend eingeben.',
-            ),
-            validator: (value) =>
-                RegExp(r'^[1-9]\d*$').hasMatch(value?.trim() ?? '')
-                ? null
-                : 'Bitte eine positive numerische ID eingeben.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(context, controller.text.trim());
-              }
-            },
-            child: const Text('Verbinden'),
-          ),
-        ],
-      ),
+  /// Meldet ab und startet wieder beim Login
+  Future<void> _logout() async {
+    await AuthService().logout();
+    await BackendPersonContextService.clearPersonId();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+      (_) => false,
     );
-    controller.dispose();
-    if (personId == null || !mounted) return;
-
-    try {
-      final saved = await BackendPersonContextService.savePersonId(personId);
-      if (!saved) throw const FormatException('Ungültige Personen-ID');
-      await _loadPerson(personId);
-    } catch (error) {
-      if (!mounted) return;
-      setState(
-        () => _error = 'Personen-ID konnte nicht gespeichert werden: $error',
-      );
-    }
   }
 
   @override
@@ -135,22 +94,25 @@ class _ProfilScreenState extends State<ProfilScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    if (_personId == null) return _buildPersonIdPrompt();
-    if (_error != null || _userData == null || _devices == null) {
+    if (_error != null ||
+        _personId == null ||
+        _userData == null ||
+        _devices == null) {
       return Scaffold(
         backgroundColor: const Color(0xFFB8A5C8),
         appBar: AppBar(
           backgroundColor: const Color(0xFFB8A5C8),
           actions: [
+            if (_personId != null)
+              IconButton(
+                tooltip: 'Erneut laden',
+                onPressed: () => _loadPerson(_personId!),
+                icon: const Icon(Icons.refresh),
+              ),
             IconButton(
-              tooltip: 'Personen-ID ändern',
-              onPressed: _configurePersonId,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-            IconButton(
-              tooltip: 'Erneut laden',
-              onPressed: () => _loadPerson(_personId!),
-              icon: const Icon(Icons.refresh),
+              tooltip: 'Logout',
+              onPressed: _logout,
+              icon: const Icon(Icons.logout),
             ),
           ],
         ),
@@ -181,13 +143,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
             );
           },
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Personen-ID ändern',
-            onPressed: _configurePersonId,
-            icon: const Icon(Icons.edit_outlined, color: Colors.black),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -280,21 +235,24 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     },
                   ),
                   const Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.logout, size: 20, color: Colors.red),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Logout',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                  InkWell(
+                    onTap: _logout,
+                    child: const Padding(
+                      padding: EdgeInsets.fromLTRB(24, 16, 24, 32),
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -302,40 +260,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPersonIdPrompt() {
-    return Scaffold(
-      backgroundColor: const Color(0xFFB8A5C8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFB8A5C8),
-        title: const Text('Profil mit Backend verbinden'),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Für Profildaten und Geräte fehlt noch die Anmeldung. '
-                'Gib vorübergehend eine numerische Personen-ID aus dem Backend ein.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              if (_error != null) ...[
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-                const SizedBox(height: 12),
-              ],
-              FilledButton(
-                onPressed: _configurePersonId,
-                child: const Text('Personen-ID eingeben'),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

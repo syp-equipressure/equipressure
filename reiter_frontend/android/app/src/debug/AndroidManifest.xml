@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Backend and Keycloak run without HTTPS locally (http://localhost via adb reverse),
+         only debug builds may use unencrypted connections -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

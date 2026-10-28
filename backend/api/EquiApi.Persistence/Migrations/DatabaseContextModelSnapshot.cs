@@ -190,6 +190,12 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("NumOfAllowedPeople")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Equestrian");
+
                     b.HasKey("Id");
 
                     b.ToTable("DeviceCategory", "EquiPressure");
@@ -409,6 +415,11 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("AddressId")
                         .HasColumnType("integer");
 
+                    b.Property<Instant>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
                     b.Property<LocalDate>("DateOfBirth")
                         .HasColumnType("date");
 
@@ -416,6 +427,9 @@ namespace EquiApi.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExternalId")
                         .HasColumnType("text");
 
                     b.Property<string>("FirstName")
@@ -442,6 +456,9 @@ namespace EquiApi.Persistence.Migrations
                     b.HasIndex("DateOfBirth");
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("ExternalId")
                         .IsUnique();
 
                     b.HasIndex("FirstName", "LastName");

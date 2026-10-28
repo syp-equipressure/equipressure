@@ -1,0 +1,39 @@
+# Keycloak für die lokale Entwicklung
+# Start: docker compose up -d   (im Ordner backend/keycloak)
+# Admin-Konsole: http://localhost:8180/admin  (admin / admin)
+#
+# Der Realm "equipressure" wird beim ersten Start aus realm-equipressure.json importiert.
+# Die Keycloak-Daten (User, Sessions) liegen im Volume keycloak-data und bleiben bei Neustarts erhalten,
+# damit die User-Ids (ExternalId der Personen im Backend) gleich bleiben.
+# Dauerhafte Konfigurationsänderungen immer in die JSON-Datei übernehmen, nicht nur in der Admin-Konsole.
+#
+# Nach Änderungen an der JSON-Datei oder an der .env: docker compose down -v && docker compose up -d
+# (ein bestehender Realm wird beim Import nicht überschrieben; -v löscht auch alle Keycloak-User,
+#  deren Personen im Backend sind danach nicht mehr verknüpft)
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    container_name: equipressure-keycloak
+    command: start-dev --import-realm --http-port=8180
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Zugangsdaten der Identity Provider kommen aus der .env Datei (siehe .env.example)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-not-configured}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-not-configured}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-not-configured}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-not-configured}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-not-configured}
+      # equipressure = nur Anbieter-Buttons, keycloak.v2 = mit Passwort-Formular (für die Dev-User)
+      KC_LOGIN_THEME: ${KC_LOGIN_THEME:-equipressure}
+    ports:
+      - "127.0.0.1:8180:8180"
+    volumes:
+      - ./realm-equipressure.json:/opt/keycloak/data/import/realm-equipressure.json:ro
+      - ./themes/equipressure:/opt/keycloak/themes/equipressure:ro
+      - keycloak-data:/opt/keycloak/data
+
+volumes:
+  keycloak-data:

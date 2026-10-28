@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/account_service.dart';
+import '../horses/horses_screen.dart';
 import 'welcome_screen.dart';
 import 'login_screen.dart';
 import 'profile_setup_screen.dart';
@@ -6,23 +8,29 @@ import 'qr_scanner_screen.dart';
 import 'connection_success_screen.dart';
 
 class OnboardingFlow extends StatefulWidget {
-  const OnboardingFlow({super.key});
+  static const int loginPage = 1;
+  static const int profilePage = 2;
+  static const int devicePage = 3;
+  static const int successPage = 4;
+
+  final int initialPage;
+
+  const OnboardingFlow({super.key, this.initialPage = 0});
 
   @override
   State<OnboardingFlow> createState() => _OnboardingFlowState();
 }
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  late final PageController _pageController =
+      PageController(initialPage: widget.initialPage);
+  String? _claimedSerialNumber;
 
   void nextPage() {
-    if (_currentPage < 4) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void goToPage(int page) {
@@ -31,6 +39,24 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  void _onLoggedIn(AccountState state) {
+    switch (state) {
+      case AccountState.ready:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HorsesScreen()),
+        );
+      case AccountState.noProfile:
+        goToPage(OnboardingFlow.profilePage);
+      case AccountState.noDevice:
+        goToPage(OnboardingFlow.devicePage);
+    }
+  }
+
+  void _onDeviceClaimed(String serialNumber) {
+    setState(() => _claimedSerialNumber = serialNumber);
+    goToPage(OnboardingFlow.successPage);
   }
 
   @override
@@ -44,17 +70,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentPage = index;
-          });
-        },
+        // die Schritte dürfen nicht übersprungen werden
+        physics: const NeverScrollableScrollPhysics(),
         children: [
           WelcomeScreen(onNext: nextPage),
-          LoginScreen(onNext: nextPage),
+          LoginScreen(onLoggedIn: _onLoggedIn),
           ProfileSetupScreen(onNext: nextPage),
-          QRScannerScreen(onNext: nextPage),
-          const ConnectionSuccessScreen(),
+          QRScannerScreen(onClaimed: _onDeviceClaimed),
+          ConnectionSuccessScreen(serialNumber: _claimedSerialNumber ?? ''),
         ],
       ),
     );

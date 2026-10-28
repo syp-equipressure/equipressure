@@ -16,6 +16,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<DeviceDto>> GetDeviceById([FromRoute] string deviceId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanUseDeviceAsync(me, deviceId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.GetDeviceByIdAsync(deviceId);
 
         return result.Match<ActionResult<DeviceDto>>(
@@ -31,6 +36,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<PersonDto>> GetOwner([FromRoute] string deviceId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanUseDeviceAsync(me, deviceId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.GetOwnerOfDeviceAsync(deviceId);
 
         return result.Match<ActionResult<PersonDto>>(
@@ -46,6 +56,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<PersonListResponse>> GetUsers([FromRoute] string deviceId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanUseDeviceAsync(me, deviceId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.GetUsersOfDeviceAsync(deviceId);
 
         return result.Match<ActionResult<PersonListResponse>>(
@@ -68,6 +83,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
             return ValidationProblem();
         }
 
+        if (!await IsCurrentPersonAsync(request.OwnerId))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.AddDeviceAsync(request.DeviceId, request.OwnerId, request.CategoryId);
 
         return result.Match<ActionResult<DeviceDto>>(
@@ -75,6 +95,36 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
                                        DeviceDto.FromDevice(success.Value)),
             _ => NotFound(),
             _ => Conflict());
+    }
+
+    /// <summary>
+    ///     Claims a device for the logged-in user (QR code scan): the user becomes the owner and gets the role of the
+    ///     device category. 404 means that the profile has not been set up yet or the category does not exist.
+    /// </summary>
+    [HttpPost("{deviceId}/claim")]
+    [ProducesResponseType<DeviceDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<DeviceDto>> ClaimDevice([FromRoute] string deviceId,
+                                                                [FromBody] ClaimDeviceRequest request)
+    {
+        if (!IsValid<ClaimDeviceRequest.Validator, ClaimDeviceRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await deviceService.ClaimDeviceAsync(deviceId, User.ExternalId, request.CategoryId);
+
+        return result.Match<ActionResult<DeviceDto>>(
+            success => CreatedAtAction(nameof(GetDeviceById), new { deviceId = success.Value.Id },
+                                       DeviceDto.FromDevice(success.Value)),
+            _ => NotFound(),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         title: "The device has already been claimed"),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict,
+                         title: "A saddler needs an address with street"));
     }
 
     /// <summary>
@@ -87,6 +137,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<IActionResult> AddUser([FromRoute] string deviceId, [FromRoute][ValidId] int userId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageDeviceAsync(me, deviceId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.AddUserToDeviceAsync(deviceId, userId);
 
         return result.Match<IActionResult>(
@@ -106,6 +161,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<IActionResult> RemoveUser([FromRoute] string deviceId, [FromRoute][ValidId] int userId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanRemoveDeviceUserAsync(me, deviceId, userId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.RemoveUserFromDeviceAsync(deviceId, userId);
 
         return result.Match<IActionResult>(
@@ -124,6 +184,11 @@ public sealed class DeviceController(IDeviceService deviceService) : BaseControl
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async ValueTask<IActionResult> ChangeOwner([FromRoute] string deviceId, [FromRoute][ValidId] int userId)
     {
+        if (!await HasAccessAsync((access, me) => access.CanManageDeviceAsync(me, deviceId)))
+        {
+            return AccessDenied();
+        }
+
         var result = await deviceService.ChangeOwnerOfDeviceAsync(deviceId, userId);
 
         return result.Match<IActionResult>(

@@ -161,6 +161,9 @@ internal static class TestData
                                                     RoleName role = RoleName.Equestrian) =>
         new("Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1), email, null, null, CreateAddressData(), role);
 
+    public static NewAccountData CreateNewAccountData(string? email = "max@example.com") =>
+        new("Max", "Mustermann", 180M, 75M, new LocalDate(1990, 1, 1), email, CreateAddressData());
+
     public static NewHorseData CreateNewHorseData(int ownerId = 1, params int[] breedIds) =>
         new("Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, CreateAddressData(),
             breedIds.Length > 0 ? breedIds : [1], ownerId);
