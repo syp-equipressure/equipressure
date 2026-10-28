@@ -4,6 +4,7 @@ import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
 import 'package:reiterappfrontend/services/backend_person_context_service.dart';
+import 'package:reiterappfrontend/services/geocoding_service.dart';
 
 class HorseService {
   static String get baseUrl => ApiConfig.baseUrl;
@@ -33,15 +34,31 @@ class HorseService {
       return _cachedHorses!;
     }
 
-    _cachedHorses = await fetchHorsesOfPerson(personId);
+    final horses = await fetchHorsesOfPerson(personId);
+    _cachedHorses = await Future.wait(horses.map(_withStableLocation));
     _cachedPersonId = personId;
     return _cachedHorses!;
+  }
+
+  /// Das Backend speichert keine Koordinaten, daher wird die Stalladresse geocodiert.
+  static Future<Horse> _withStableLocation(Horse horse) async {
+    if (horse.hasStableLocation) return horse;
+    final location = await GeocodingService().geocode(
+      street: horse.stableStreet,
+      postalCode: horse.stablePostalCode,
+      city: horse.stableCity,
+    );
+    if (location == null) return horse;
+    return horse.copyWith(
+      stableLatitude: location.latitude,
+      stableLongitude: location.longitude,
+    );
   }
 
   /// Fügt ein neues Pferd hinzu
   Future<Horse> addHorse(Horse horse) async {
     final personId = await currentPersonId();
-    final savedHorse = await createHorseOnBackend(horse, personId);
+    final savedHorse = await _withStableLocation(await createHorseOnBackend(horse, personId));
     if (_cachedPersonId == personId && _cachedHorses != null) {
       _cachedHorses!.add(savedHorse);
     }

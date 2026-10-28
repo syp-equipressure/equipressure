@@ -42,94 +42,11 @@ export class PressureHeatmapComponent implements AfterViewInit, OnChanges {
     // Get canvas size from parent
     const rect = canvas.parentElement?.getBoundingClientRect();
     if (!rect) return;
-    
+
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    const imgData = ctx.createImageData(canvas.width, canvas.height);
-    const data = imgData.data;
-
-    const rows = this.grid.length;
-    const cols = this.grid[0].length;
-
-    // Bilinear interpolation
-    for (let py = 0; py < canvas.height; py++) {
-      for (let px = 0; px < canvas.width; px++) {
-        const gx = (px / canvas.width) * (cols - 1);
-        const gy = (py / canvas.height) * (rows - 1);
-
-        const x0 = Math.floor(gx);
-        const x1 = Math.min(x0 + 1, cols - 1);
-        const y0 = Math.floor(gy);
-        const y1 = Math.min(y0 + 1, rows - 1);
-
-        const fx = gx - x0;
-        const fy = gy - y0;
-
-        const v00 = this.grid[y0]?.[x0] ?? 0;
-        const v10 = this.grid[y0]?.[x1] ?? 0;
-        const v01 = this.grid[y1]?.[x0] ?? 0;
-        const v11 = this.grid[y1]?.[x1] ?? 0;
-
-        const vx0 = v00 * (1 - fx) + v10 * fx;
-        const vx1 = v01 * (1 - fx) + v11 * fx;
-        const value = vx0 * (1 - fy) + vx1 * fy;
-
-        const color = this.valueToRgba(value);
-        const idx = (py * canvas.width + px) * 4;
-        data[idx] = color.r;
-        data[idx + 1] = color.g;
-        data[idx + 2] = color.b;
-        data[idx + 3] = color.a;
-      }
-    }
-
-    ctx.putImageData(imgData, 0, 0);
-  }
-
-  private valueToRgba(value: number): { r: number; g: number; b: number; a: number } {
-    if (value <= 0.05) {
-      return { r: 10, g: 16, b: 48, a: 255 };
-    }
-
-    const t = Math.min(1, value / this.max);
-    const hue = (1 - t) * 240;
-    const saturation = 95;
-    const lightness = 50;
-
-    return this.hslToRgba(hue, saturation, lightness, 255);
-  }
-
-  private hslToRgba(h: number, s: number, l: number, a: number): { r: number; g: number; b: number; a: number } {
-    s /= 100;
-    l /= 100;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-    const m = l - c / 2;
-
-    let r = 0, g = 0, b = 0;
-
-    if (h >= 0 && h < 60) {
-      r = c; g = x; b = 0;
-    } else if (h >= 60 && h < 120) {
-      r = x; g = c; b = 0;
-    } else if (h >= 120 && h < 180) {
-      r = 0; g = c; b = x;
-    } else if (h >= 180 && h < 240) {
-      r = 0; g = x; b = c;
-    } else if (h >= 240 && h < 300) {
-      r = x; g = 0; b = c;
-    } else if (h >= 300 && h < 360) {
-      r = c; g = 0; b = x;
-    }
-
-    return {
-      r: Math.round((r + m) * 255),
-      g: Math.round((g + m) * 255),
-      b: Math.round((b + m) * 255),
-      a,
-    };
+    drawHeatmap(ctx, this.grid, this.max, canvas.width, canvas.height);
   }
 
   colorFor(value: number): string {
@@ -153,4 +70,111 @@ export class PressureHeatmapComponent implements AfterViewInit, OnChanges {
     const hue = (1 - t) * 240;
     return `hsl(${hue}, 60%, 55%)`;
   }
+}
+
+/** Draws [grid] bilinearly interpolated onto a canvas of [width] x [height] pixels. */
+export function drawHeatmap(
+  ctx: CanvasRenderingContext2D,
+  grid: number[][],
+  max: number,
+  width: number,
+  height: number,
+): void {
+  if (!grid.length || !grid[0]?.length || width <= 0 || height <= 0) return;
+
+  const imgData = ctx.createImageData(width, height);
+  const data = imgData.data;
+
+  const rows = grid.length;
+  const cols = grid[0].length;
+
+  // Bilinear interpolation
+  for (let py = 0; py < height; py++) {
+    for (let px = 0; px < width; px++) {
+      const gx = (px / width) * (cols - 1);
+      const gy = (py / height) * (rows - 1);
+
+      const x0 = Math.floor(gx);
+      const x1 = Math.min(x0 + 1, cols - 1);
+      const y0 = Math.floor(gy);
+      const y1 = Math.min(y0 + 1, rows - 1);
+
+      const fx = gx - x0;
+      const fy = gy - y0;
+
+      const v00 = grid[y0]?.[x0] ?? 0;
+      const v10 = grid[y0]?.[x1] ?? 0;
+      const v01 = grid[y1]?.[x0] ?? 0;
+      const v11 = grid[y1]?.[x1] ?? 0;
+
+      const vx0 = v00 * (1 - fx) + v10 * fx;
+      const vx1 = v01 * (1 - fx) + v11 * fx;
+      const value = vx0 * (1 - fy) + vx1 * fy;
+
+      const color = valueToRgba(value, max);
+      const idx = (py * width + px) * 4;
+      data[idx] = color.r;
+      data[idx + 1] = color.g;
+      data[idx + 2] = color.b;
+      data[idx + 3] = color.a;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+
+/** Renders [grid] as a PNG data URL, e.g. for a report. */
+export function heatmapToDataUrl(grid: number[][], max: number, size = 400): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  drawHeatmap(ctx, grid, max, size, size);
+  return canvas.toDataURL('image/png');
+}
+
+function valueToRgba(value: number, max: number): { r: number; g: number; b: number; a: number } {
+  if (value <= 0.05) {
+    return { r: 10, g: 16, b: 48, a: 255 };
+  }
+
+  const t = Math.min(1, value / max);
+  const hue = (1 - t) * 240;
+  const saturation = 95;
+  const lightness = 50;
+
+  return hslToRgba(hue, saturation, lightness, 255);
+}
+
+function hslToRgba(h: number, s: number, l: number, a: number): { r: number; g: number; b: number; a: number } {
+  s /= 100;
+  l /= 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+
+  let r = 0, g = 0, b = 0;
+
+  if (h >= 0 && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (h >= 60 && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (h >= 120 && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (h >= 180 && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (h >= 240 && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (h >= 300 && h < 360) {
+    r = c; g = 0; b = x;
+  }
+
+  return {
+    r: Math.round((r + m) * 255),
+    g: Math.round((g + m) * 255),
+    b: Math.round((b + m) * 255),
+    a,
+  };
 }

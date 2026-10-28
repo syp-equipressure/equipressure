@@ -101,6 +101,80 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("Breed", "EquiPressure");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatFile", b =>
+                {
+                    b.Property<int>("MessageId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("MessageId");
+
+                    b.ToTable("ChatFile", "EquiPressure");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Instant?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileContentType")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("HorseId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MeasurementGroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<Instant?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RecipientId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("integer");
+
+                    b.Property<Instant>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HorseId");
+
+                    b.HasIndex("MeasurementGroupId");
+
+                    b.HasIndex("RecipientId", "ReadAt");
+
+                    b.HasIndex("SenderId", "RecipientId", "SentAt");
+
+                    b.ToTable("ChatMessage", "EquiPressure");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -514,6 +588,50 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("SaddleCategory", "EquiPressure");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatFile", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.ChatMessage", "Message")
+                        .WithOne("File")
+                        .HasForeignKey("EquiApi.Persistence.Model.ChatFile", "MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatMessage", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.Horse", "Horse")
+                        .WithMany()
+                        .HasForeignKey("HorseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("EquiApi.Persistence.Model.MeasurementGroup", "MeasurementGroup")
+                        .WithMany()
+                        .HasForeignKey("MeasurementGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("EquiApi.Persistence.Model.Person", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EquiApi.Persistence.Model.Person", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Horse");
+
+                    b.Navigation("MeasurementGroup");
+
+                    b.Navigation("Recipient");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceUser", b =>
                 {
                     b.HasOne("EquiApi.Persistence.Model.MeasurementDevice", "Device")
@@ -771,6 +889,11 @@ namespace EquiApi.Persistence.Migrations
             modelBuilder.Entity("EquiApi.Persistence.Model.Breed", b =>
                 {
                     b.Navigation("HorseBreeds");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.ChatMessage", b =>
+                {
+                    b.Navigation("File");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.DeviceCategory", b =>

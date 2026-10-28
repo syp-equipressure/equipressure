@@ -1,10 +1,52 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap, throwError } from 'rxjs';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { PressureDevice } from '../models/device.model';
+import { Measurement } from '../models/measurement.model';
 import { Saddle } from '../models/saddle.model';
+import {
+  BackendGroupDetail,
+  BackendMeasurement,
+  BackendMeasurementData,
+  toMeasurement,
+} from './measurement-mapper';
+
+export const BACKEND_BASE_URL = 'http://localhost:5200/api';
+
+export interface SaddleCategory {
+  id: number;
+  name: string;
+}
+
+/** Device categories of the development data, the backend has no endpoint to list them. */
+export const DEVELOPMENT_DEVICE_CATEGORIES = [
+  { name: 'Basic', id: 1 },
+  { name: 'Standard', id: 2 },
+  { name: 'Family', id: 3 },
+  { name: 'Stable', id: 4 },
+  { name: 'Professional', id: 5 },
+] as const;
+
+export interface MeasurementSummary {
+  id: string;
+  horseId: string;
+  /** yyyy-mm-dd */
+  date: string;
+  riderName: string;
+  saddleName: string;
+}
+
+export interface NewMeasurementGroup {
+  name: string;
+  date: Date;
+  notes: string | null;
+  personId: string;
+  horseId: string;
+  saddleId: string;
+  deviceId: string;
+}
 
 export const DEVELOPMENT_HORSE_BREEDS = [
   { name: 'Hannoveraner', id: 1 },
@@ -20,7 +62,7 @@ export const DEVELOPMENT_HORSE_BREEDS = [
 @Injectable({ providedIn: 'root' })
 export class BackendApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:5200/api';
+  private readonly baseUrl = BACKEND_BASE_URL;
 
   getContacts(personId: string): Observable<Customer[]> {
     return this.http.get<unknown>(`${this.baseUrl}/persons/${personId}/contacts`).pipe(
@@ -101,6 +143,201 @@ export class BackendApiService {
       catchError(toApiError),
     );
   }
+
+  // ── Saddles ────────────────────────────────────────────────────────────────
+
+  getSaddleCategories(): Observable<SaddleCategory[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/horses/saddles/categories`).pipe(
+      map(response => listFrom(response, 'categories').map(category => {
+        if (!isRecord(category)) throw new Error('Das Backend hat eine ungültige Sattelkategorie zurückgegeben.');
+        return { id: numeric(category, 'id'), name: required(category, 'name') };
+      })),
+      catchError(toApiError),
+    );
+  }
+
+  createSaddle(horseId: string, name: string, categoryId: number): Observable<Saddle> {
+    return this.http.post<unknown>(`${this.baseUrl}/horses/${horseId}/saddles`, { name, categoryId }).pipe(
+      map(response => mapSaddle(response, horseId)),
+      catchError(error => {
+        // The backend saves the saddle but fails to build the response (HTTP 500),
+        // so load the saddles of the horse again and take the newest one with this name.
+        if (error instanceof HttpErrorResponse && error.status === 500) {
+          return this.getSaddles(horseId).pipe(map(saddles => {
+            const created = saddles
+              .filter(saddle => saddle.name === name)
+              .sort((a, b) => Number(b.id) - Number(a.id))[0];
+            if (!created) throw new Error('Der Sattel konnte nicht gespeichert werden.');
+            return created;
+          }));
+        }
+        return toApiError(error);
+      }),
+    );
+  }
+
+  // ── Devices ────────────────────────────────────────────────────────────────
+
+  createDevice(deviceId: string, ownerId: string, categoryId: number): Observable<PressureDevice> {
+    return this.http.post<unknown>(`${this.baseUrl}/devices`, {
+      deviceId,
+      ownerId: Number(ownerId),
+      categoryId,
+    }).pipe(
+      map(mapDevice),
+      catchError(toApiError),
+    );
+  }
+
+  // ── Measurements ───────────────────────────────────────────────────────────
+
+  /** Loads the measurement groups of a horse as short overview (no measurement data), newest first. */
+  getMeasurementSummariesOfHorse(horseId: string): Observable<MeasurementSummary[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
+      map(response => listFrom(response, 'groups')
+        .filter(isRecord)
+        .map(group => ({
+          id: required(group, 'id'),
+          horseId,
+          date: required(group, 'date'),
+          riderName: [optional(group, 'personFirstName'), optional(group, 'personLastName')].filter(Boolean).join(' '),
+          saddleName: optional(group, 'saddleName') ?? '',
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date))),
+      catchError(toApiError),
+    );
+  }
+
+  /** Name and average pressure (N/cm²) of a measurement group, the backend computes the average. */
+  getMeasurementGroupOverview(groupId: string): Observable<{ name: string; meanNcm2: number | null }> {
+    const groupUrl = `${this.baseUrl}/measurementgroups/${groupId}`;
+    return forkJoin({
+      group: this.http.get<BackendGroupDetail>(groupUrl),
+      // 404 = keine Messdaten vorhanden
+      average: this.http.get<{ value: number }>(`${groupUrl}/measurements/average`).pipe(
+        map(response => response.value / 100),
+        catchError(() => of(null)),
+      ),
+    }).pipe(
+      map(({ group, average }) => ({ name: group.name, meanNcm2: average })),
+      catchError(toApiError),
+    );
+  }
+
+  /** Loads only the dates (yyyy-mm-dd) of the measurement groups of a horse, without any measurement data. */
+  getMeasurementDatesOfHorse(horseId: string): Observable<string[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
+      map(response => listFrom(response, 'groups')
+        .map(group => isRecord(group) ? optional(group, 'date') : undefined)
+        .filter((date): date is string => !!date)),
+      catchError(toApiError),
+    );
+  }
+
+  /**
+   * Loads all measurement groups of a horse, newest first. Without [withData] the recorded frames are not loaded
+   * (the measurements only have pace and hand), load them later with getMeasurement.
+   */
+  getMeasurementsOfHorse(horseId: string, withData = true): Observable<Measurement[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/measurementgroups/horse/${horseId}`).pipe(
+      map(response => listFrom(response, 'groups').map(group => isRecord(group) ? required(group, 'id') : '')),
+      switchMap(groupIds => groupIds.length
+        ? forkJoin(groupIds.map(groupId => this.getMeasurementGroup(horseId, groupId, withData)))
+        : of([] as Measurement[])),
+      // groups without measurements count as deleted (see deleteMeasurementGroup)
+      map(measurements => measurements
+        .filter(measurement => (measurement.detail.segments?.length ?? 0) > 0)
+        .sort((a, b) => toSortableDate(b.date).localeCompare(toSortableDate(a.date)))),
+      catchError(toApiError),
+    );
+  }
+
+  /** Loads a measurement group including all recorded frames. */
+  getMeasurement(horseId: string, groupId: string): Observable<Measurement> {
+    return this.getMeasurementGroup(horseId, groupId, true).pipe(catchError(toApiError));
+  }
+
+  private getMeasurementGroup(horseId: string, groupId: string, withData: boolean): Observable<Measurement> {
+    const groupUrl = `${this.baseUrl}/measurementgroups/${groupId}`;
+    return forkJoin({
+      group: this.http.get<BackendGroupDetail>(groupUrl),
+      measurements: this.http.get<unknown>(`${groupUrl}/measurements`).pipe(
+        map(response => listFrom(response, 'measurements') as BackendMeasurement[]),
+        switchMap(measurements => {
+          if (!withData) return of(measurements.map(measurement => ({ measurement, data: [] })));
+          return measurements.length
+            ? forkJoin(measurements.map(measurement =>
+                this.http.get<unknown>(`${groupUrl}/measurements/${measurement.id}/measurementData`).pipe(
+                  map(response => ({
+                    measurement,
+                    data: listFrom(response, 'data') as BackendMeasurementData[],
+                  })),
+                )))
+            : of([]);
+        }),
+      ),
+    }).pipe(map(({ group, measurements }) => toMeasurement(horseId, group, measurements)));
+  }
+
+  /** Adds a measurement group and returns its id. */
+  createMeasurementGroup(group: NewMeasurementGroup): Observable<string> {
+    return this.http.post<unknown>(`${this.baseUrl}/measurementgroups`, {
+      name: group.name.slice(0, 100),
+      date: toIsoLocalDate(group.date),
+      notes: group.notes ? group.notes.slice(0, 500) : null,
+      personId: Number(group.personId),
+      horseId: Number(group.horseId),
+      saddleId: Number(group.saddleId),
+      deviceId: group.deviceId,
+    }).pipe(
+      map(response => {
+        if (!isRecord(response)) throw new Error('Das Backend hat keine gültige Messgruppe zurückgegeben.');
+        return required(response, 'id');
+      }),
+      catchError(toApiError),
+    );
+  }
+
+  /** Adds a measurement (pace + hand) to a measurement group. */
+  createMeasurement(groupId: string, pace: string, hand: string): Observable<void> {
+    return this.http.post<unknown>(`${this.baseUrl}/measurementgroups/${groupId}/measurements`, {
+      pace,
+      hand,
+      description: null,
+    }).pipe(
+      map(() => undefined),
+      catchError(toApiError),
+    );
+  }
+
+  /**
+   * Deletes all measurements of a group. The backend has no endpoint to delete a whole group,
+   * the empty group is hidden by getMeasurementsOfHorse.
+   */
+  deleteMeasurementGroup(groupId: string): Observable<void> {
+    const groupUrl = `${this.baseUrl}/measurementgroups/${groupId}`;
+    return this.http.get<unknown>(`${groupUrl}/measurements`).pipe(
+      map(response => listFrom(response, 'measurements') as BackendMeasurement[]),
+      switchMap(measurements => measurements.length
+        ? forkJoin(measurements.map(measurement =>
+            this.http.delete<void>(`${groupUrl}/measurements/${measurement.id}`)))
+        : of([])),
+      map(() => undefined),
+      catchError(toApiError),
+    );
+  }
+}
+
+function toIsoLocalDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/** dd.mm.yyyy → yyyy-mm-dd, so dates can be compared as strings. */
+function toSortableDate(value: string): string {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
 }
 
 function mapContact(value: unknown): Customer {
@@ -268,7 +505,7 @@ function ageFromDate(value: string): number {
   return Math.max(0, age);
 }
 
-function toApiError(error: unknown) {
+export function toApiError(error: unknown) {
   if (error instanceof HttpErrorResponse) {
     const body: unknown = error.error;
     if (isRecord(body)) {

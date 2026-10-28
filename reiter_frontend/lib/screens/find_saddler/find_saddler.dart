@@ -11,6 +11,8 @@ import '../../models/saddler.dart';
 import '../../models/horse.dart';
 import '../../services/saddler_service.dart';
 import '../../services/horse_service.dart';
+import '../../services/data_service.dart';
+import '../../services/geocoding_service.dart';
 import 'saddler_profile_screen.dart';
 import '../horses/horse_profil_screen.dart';
 
@@ -32,7 +34,6 @@ class _FindSaddlerState extends State<FindSaddler> {
   Saddler? _selectedSaddler;
   List<Horse>? _selectedHorses;
   bool _isLoading = true;
-  bool _showSearch = false;
   bool _isSatelliteView = false;
   bool _showFavoritesList = false;
   bool _showListView = true;
@@ -45,7 +46,8 @@ class _FindSaddlerState extends State<FindSaddler> {
   static const double _initialZoom = 10.5;
 
   // User's home location
-  static const LatLng _userHomeLocation = LatLng(48.2856, 14.2858);
+  // Fallback, bis die Adresse der Person geocodiert ist
+  LatLng _userHomeLocation = const LatLng(48.2856, 14.2858);
 
   @override
   void initState() {
@@ -60,9 +62,39 @@ class _FindSaddlerState extends State<FindSaddler> {
     super.dispose();
   }
 
+  Future<void> _loadHomeLocation() async {
+    try {
+      final personId = await _horseService.currentPersonId();
+      final address = await DataService.loadPersonLocation(personId.toString());
+      final location = await GeocodingService().geocode(
+        street: address['addressName']?.toString(),
+        postalCode: address['plz']?.toString(),
+        city: address['cityName']?.toString(),
+      );
+      if (location != null && mounted) {
+        setState(() => _userHomeLocation = location);
+      }
+    } catch (_) {
+      // Fallback-Position behalten
+    }
+  }
+
   Future<void> _loadData() async {
-    final saddlers = await _saddlerService.getSaddlersWithLocation();
-    final horses = await _horseService.getHorses();
+    _loadHomeLocation();
+    final List<Saddler> saddlers;
+    final List<Horse> horses;
+    try {
+      saddlers = await _saddlerService.getSaddlersWithLocation();
+      horses = await _horseService.getHorses();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Laden: $e')),
+      );
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       _saddlers = saddlers;
       _horses = horses;
@@ -182,7 +214,6 @@ class _FindSaddlerState extends State<FindSaddler> {
     setState(() {
       _selectedSaddler = saddler;
       _selectedHorses = null;
-      _showSearch = false;
     });
 
     if (saddler.hasLocation) {
@@ -197,7 +228,6 @@ class _FindSaddlerState extends State<FindSaddler> {
     setState(() {
       _selectedHorses = horses;
       _selectedSaddler = null;
-      _showSearch = false;
     });
 
     if (horses.isNotEmpty && horses.first.hasStableLocation) {
@@ -212,7 +242,6 @@ class _FindSaddlerState extends State<FindSaddler> {
     setState(() {
       _showFavoritesList = !_showFavoritesList;
       if (_showFavoritesList) {
-        _showSearch = false;
         _selectedSaddler = null;
         _selectedHorses = null;
       }
@@ -225,11 +254,6 @@ class _FindSaddlerState extends State<FindSaddler> {
     });
   }
 
-  void _toggleSearch() {
-    setState(() {
-      _showSearch = !_showSearch;
-    });
-  }
 
   void _toggleMapType() {
     setState(() {
@@ -241,7 +265,6 @@ class _FindSaddlerState extends State<FindSaddler> {
     if (_showListView == showList) return;
     setState(() {
       _showListView = showList;
-      _showSearch = false;
       if (showList) {
         _selectedSaddler = null;
         _selectedHorses = null;
@@ -260,7 +283,6 @@ class _FindSaddlerState extends State<FindSaddler> {
     setState(() {
       _selectedSaddler = null;
       _selectedHorses = null;
-      _showSearch = false;
     });
   }
 
@@ -284,9 +306,7 @@ class _FindSaddlerState extends State<FindSaddler> {
   }
 
   void _closeSearch() {
-    setState(() {
-      _showSearch = false;
-    });
+    FocusScope.of(context).unfocus();
   }
 
   void _openProfile(Saddler saddler) {
@@ -552,7 +572,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: saddlers.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final saddler = saddlers[index];
                       return _buildSaddlerListCard(saddler);
@@ -925,7 +945,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                         height: 24,
                         colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
                       ),
-                      title: Text(horse.name),
+                      title: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                       subtitle: Text(horse.stableCity ?? 'Stall'),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       onTap: () {
@@ -1133,7 +1153,7 @@ class _FindSaddlerState extends State<FindSaddler> {
       options: MapOptions(
         initialCenter: _initialCenter,
         initialZoom: _initialZoom,
-        onTap: (_, __) {
+        onTap: (_, _) {
           _closePopup();
           _closeSearch();
         },
@@ -1517,7 +1537,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 shrinkWrap: true,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: horses.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+                separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
                 itemBuilder: (context, index) {
                   final horse = horses[index];
                   return _buildHorseListItem(horse);
@@ -1613,7 +1633,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _favoriteSaddlers.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, indent: 72, color: Colors.grey[200]),
+                  separatorBuilder: (_, _) => Divider(height: 1, indent: 72, color: Colors.grey[200]),
                   itemBuilder: (context, index) {
                     final saddler = _favoriteSaddlers[index];
                     return _buildFavoriteListItem(saddler);
@@ -1699,6 +1719,8 @@ class _FindSaddlerState extends State<FindSaddler> {
               children: [
                 Text(
                   horse.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,

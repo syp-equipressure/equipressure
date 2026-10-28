@@ -3,6 +3,7 @@ import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/services/backend_person_context_service.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
+import 'package:reiterappfrontend/services/geocoding_service.dart';
 import '../models/saddler.dart';
 
 class SaddlerService {
@@ -50,9 +51,18 @@ class SaddlerService {
     ]);
     _favoriteIds = results[1] as Set<String>;
     _cachedPersonId = personId;
-    _cachedSaddlers = (results[0] as List<Saddler>).map((saddler) {
-      return saddler.copyWith(isFavorite: _favoriteIds.contains(saddler.id));
-    }).toList();
+    _cachedSaddlers = await Future.wait((results[0] as List<Saddler>).map((saddler) async {
+      final location = await GeocodingService().geocode(
+        street: saddler.street,
+        postalCode: saddler.postalCode,
+        city: saddler.city,
+      );
+      return saddler.copyWith(
+        isFavorite: _favoriteIds.contains(saddler.id),
+        latitude: location?.latitude,
+        longitude: location?.longitude,
+      );
+    }));
     return _cachedSaddlers!;
   }
 

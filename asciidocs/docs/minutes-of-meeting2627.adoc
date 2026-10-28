@@ -159,7 +159,7 @@ a| Frontend einarbeiten und Aufgaben von Lena bekommen
 |Di. 06/10/2026
 
 |Dauer
-|12:10 - 
+|12:10 - 13:00
 |===
 ====
 
@@ -246,5 +246,119 @@ a| Bluetooth Verbindung Prototypen-Dummy
 |Silnovic
 a| Sattler Frontend Chat
 | 20.10.2026
+
+|===
+
+== 2026-10-20
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 20/10/2026
+
+|Dauer
+|12:12 - 12:45
+|===
+====
+
+=== Besprochenes
+* Project Award Präsentation
+* Frontend Sattler
+* Reiter Frontend
+* Tag der offenen Tür Ausstellung
+* Business Plan
+
+==== Project Award Präsentation
+* Slogan gefällt ihm nicht weil "Schmerzen" ein negatives Wort ist
+** Regel ist in Slogans nie negative Worte verwenden
+** Das Wort "Schmerz" ist komplett falsch
+** "Freiheit für Perde" na bitte ned
+** Kathi "Wohlfühlen für jedes Pferd"
+** Freiheit für Pferde - Freude am Reiten
+* Folie 4
+** 02: Fehlstellung von Pferden vermeiden
+** ist zustand weg
+** rechts "unsere lösung"
+** Haslinger: Einfach ist zustand weg, text drunter so lassen und rechts "lösung" drüber schreiben damit's schön positiv ist
+* Folie 5:
+** Bild wie man Sättel ausbessert, wie das angepasst wird
+** stärkere Visualisierung
+* Folie 6: wie bei Folie 4
+* Folie 7: "Team" statt "das Team"
+* Folie 8: Kreise Proportionen stärker visualisiern damit das Verhältnis klar wird
+** soll zeigen wie verherrend dass Verhältnis zwischen Reiter und Sattler
+** das genaue Verhältnis hinschreiben
+** danach Folie die sagt warum wir EquiPressure genau brauchen (BOTSCHAFT)
+* Folie 9: Lückenfüller den keinen interessiert (AHHHHH!!!!!!)
+* Folie 11: warum wir das nehmen gar nicht hinschreiben, Toolname nehmen mit Entwickler
+* neue Folien:
+** Folie wo wir Prozesse der Demo kurz erzählen/erklären (messungen machen, pferd anlegen, etc.)
+*** Marketing psycho-Trick damit wir's ihnen 2 Mal erzählen damits besser hängen bleibt
+** Live Demo; Backup Folien falls Live Demo nicht geht
+*** Drehbuch für Live-Demo überlegen
+*** wir haben nur 10 Minuten insgesamt
+** Letze Folie: Wir bedanken uns für ihre Aufmerksamkeit und fassen kurz zusammen: Wieso EquiPressure
+
+==== Sattler Frontend
+* Dashboard
+** Zahl aller Pferde die in Betreuung sind
+** noch bisi Füller-Statistiken damit's noch bisi voller sind
+** eye catcher auf der rechten Seite machen; schöne Grafik
+** Slideshow von Heatmaps der letzen Messungen
+** lügen und Grafik machen wie der Gewinn der Sattler gestiegen ist seit sie Equipressure verwenden
+
+
+==== Weiteres
+* Teaser Video überlegen
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Einzenberger
+a| 
+| 17.11.2026
 
 |===

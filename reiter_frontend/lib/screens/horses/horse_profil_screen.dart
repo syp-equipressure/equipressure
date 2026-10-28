@@ -185,11 +185,15 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              currentHorse.name,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
+                            Flexible(
+                              child: Text(
+                                currentHorse.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -248,12 +252,16 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    '${currentHorse.name}\'s Historie',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[800],
-                                      fontWeight: FontWeight.w500,
+                                  Flexible(
+                                    child: Text(
+                                      '${currentHorse.name}\'s Historie',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[800],
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),

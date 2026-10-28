@@ -5,6 +5,7 @@ import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
 import 'package:reiterappfrontend/screens/measurement/live_measurement_screen.dart';
+import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:intl/intl.dart';
@@ -13,12 +14,15 @@ class MeasurementInputScreen extends StatefulWidget {
   final Person user;
   final Horse horse;
   final Saddle saddle;
+  /// Das verbundene Messgerät, mit dem gemessen wird
+  final Device device;
 
   const MeasurementInputScreen({
     super.key,
     required this.user,
     required this.horse,
     required this.saddle,
+    required this.device,
   });
 
   @override
@@ -89,6 +93,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                 Expanded(
                   child: Text(
                     'Messung von ${widget.horse.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -559,7 +565,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
       horseId: widget.horse.id,
       horseName: widget.horse.name,
       date: DateTime.now(),
-      owner: 'Lena Graßauer',
+      owner: widget.user.fullName,
       rider: widget.user.fullName,
       weight: '${widget.horse.weight}kg',
       height: '${widget.horse.height}m',
@@ -578,12 +584,18 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                     : s.gait,
                 hand: s.hand,
                 pressureData: s.pressureData ?? [],
+                duration: s.duration,
               ))
           .toList(),
     );
 
     try {
-      await _measurementService.addMeasurement(newMeasurement);
+      final savedMeasurement = await _measurementService.addMeasurement(
+        newMeasurement,
+        personId: widget.user.id,
+        saddleId: int.parse(widget.saddle.id),
+        deviceId: widget.device.id,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -597,7 +609,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => MeasurementDetailScreen(
-              measurement: newMeasurement,
+              measurement: savedMeasurement,
               horse: widget.horse,
             ),
           ),

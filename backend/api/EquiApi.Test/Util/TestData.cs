@@ -94,7 +94,7 @@ internal static class TestData
         Id = id,
         Name = name
     };
-    
+
     public static Saddle CreateSaddle(int id = 1, int horseId = 1) => new()
     {
         Id = id,

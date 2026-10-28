@@ -22,6 +22,7 @@ public abstract class WebApiTestBase(WebApiTestFixture webApiFixture) : IClassFi
     protected HttpClient ApiClient => webApiFixture.Client;
     protected HttpClient AnonymousClient => webApiFixture.AnonymousClient;
     protected IClock TestClock => webApiFixture.Clock;
+    protected Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient() => webApiFixture.CreateWebSocketClient();
     protected CancellationToken TestCancellationToken => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync()

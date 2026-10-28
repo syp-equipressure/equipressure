@@ -128,7 +128,8 @@
   h2 { margin: 0; color: t.$text-strong; font-size: 18px; }
   form { display: grid; gap: 16px; }
   label { display: grid; gap: 7px; color: t.$text-soft; font-size: 13px; font-weight: 600; }
-  input {
+  input,
+  select {
     box-sizing: border-box;
     width: 100%;
     height: 42px;
@@ -140,7 +141,8 @@
     font: inherit;
     font-weight: 400;
   }
-  input:focus { outline: 2px solid t.$purple-300; outline-offset: 1px; }
+  input:focus,
+  select:focus { outline: 2px solid t.$purple-300; outline-offset: 1px; }
   footer { justify-content: flex-end; margin-top: 4px; }
 }
 

@@ -1,58 +1,60 @@
 import 'message.dart';
-import 'saddler.dart';
 
+/// Die Unterhaltung mit einer Sattler*in.
 class Chat {
-  final String id;
-  final Saddler saddler;
-  final List<Message> messages;
-  final DateTime lastMessageTime;
-  final String lastMessagePreview;
+  /// Person-Id der Sattler*in im Backend
+  final String contactId;
+  final String contactName;
+  final Message? lastMessage;
+  final int unreadCount;
 
   Chat({
-    required this.id,
-    required this.saddler,
-    required this.messages,
-    required this.lastMessageTime,
-    required this.lastMessagePreview,
+    required this.contactId,
+    required this.contactName,
+    this.lastMessage,
+    this.unreadCount = 0,
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) {
-    final messages = (json['messages'] as List<dynamic>?)
-            ?.map((m) => Message.fromJson(m))
-            .toList() ??
-        [];
-
+    final contact = json['contact'] as Map<String, dynamic>? ?? const {};
     return Chat(
-      id: json['id'] ?? '',
-      saddler: Saddler.fromJson(json['saddler']),
-      messages: messages,
-      lastMessageTime: DateTime.parse(json['lastMessageTime']),
-      lastMessagePreview: json['lastMessagePreview'] ?? '',
+      contactId: contact['id'].toString(),
+      contactName:
+          '${contact['firstName'] ?? ''} ${contact['lastName'] ?? ''}'.trim(),
+      lastMessage: json['lastMessage'] is Map<String, dynamic>
+          ? Message.fromJson(json['lastMessage'])
+          : null,
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'saddler': saddler.toJson(),
-      'messages': messages.map((m) => m.toJson()).toList(),
-      'lastMessageTime': lastMessageTime.toIso8601String(),
-      'lastMessagePreview': lastMessagePreview,
-    };
+  Chat copyWith({Message? lastMessage, int? unreadCount}) {
+    return Chat(
+      contactId: contactId,
+      contactName: contactName,
+      lastMessage: lastMessage ?? this.lastMessage,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
   }
 
-  String get formattedLastMessageTime {
-    final now = DateTime.now();
-    final difference = now.difference(lastMessageTime);
+  String get lastMessagePreview =>
+      lastMessage?.preview ?? 'Noch keine Nachrichten';
 
-    if (difference.inMinutes < 60) {
-      return 'vor ${difference.inMinutes} Minuten';
+  String get formattedLastMessageTime {
+    final time = lastMessage?.sentAt;
+    if (time == null) return '';
+
+    final difference = DateTime.now().difference(time);
+    if (difference.inMinutes < 1) {
+      return 'gerade eben';
+    } else if (difference.inMinutes < 60) {
+      return 'vor ${difference.inMinutes} Min.';
     } else if (difference.inHours < 24) {
-      return 'vor ${difference.inHours} Stunden';
+      return 'vor ${difference.inHours} Std.';
     } else if (difference.inDays < 7) {
       return 'vor ${difference.inDays} Tagen';
     } else {
-      return '${lastMessageTime.day}.${lastMessageTime.month}.${lastMessageTime.year}';
+      return '${time.day}.${time.month}.${time.year}';
     }
   }
 }

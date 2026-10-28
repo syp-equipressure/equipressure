@@ -14,5 +14,6 @@ public static class CoreSetup
         services.AddScoped<IDeviceService, DeviceService>();
         services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddScoped<IAccessService, AccessService>();
+        services.AddScoped<IChatService, ChatService>();
     }
 }

@@ -11,6 +11,7 @@ public interface IUnitOfWork
     public IMeasurementRepository MeasurementRepository { get; }
     public ISaddleRepository SaddleRepository { get; }
     public IAccessRepository AccessRepository { get; }
+    public IChatRepository ChatRepository { get; }
 
     /// <summary>
     ///     Saves all pending changes in a single database transaction
@@ -31,12 +32,16 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IHorseRepository HorseRepository =>
         field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds);
-    
+
     public ISaddleRepository SaddleRepository =>
         field ??= new SaddleRepository(context.SaddleCategories);
 
     public IMeasurementRepository MeasurementRepository =>
-        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates);
+        field ??= new MeasurementRepository(context.MeasurementGroups, context.Measurements, context.MeasurementDates,
+                                            context.Releases);
+
+    public IChatRepository ChatRepository =>
+        field ??= new ChatRepository(context.ChatMessages, context.ChatFiles);
 
     public IAccessRepository AccessRepository =>
         field ??= new AccessRepository(context.Persons, context.PersonRelationships, context.Horses, context.Devices,

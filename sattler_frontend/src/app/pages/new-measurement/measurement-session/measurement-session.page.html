@@ -127,8 +127,11 @@
       </aside>
     </div>
 
-    <button type="button" class="finish-button" [disabled]="completedCount() === 0" (click)="finish()">
-      Messung beenden
+    @if (saveError()) {
+      <p class="save-error" role="alert">{{ saveError() }}</p>
+    }
+    <button type="button" class="finish-button" [disabled]="completedCount() === 0 || saving()" (click)="finish()">
+      {{ saving() ? 'Messung wird gespeichert …' : 'Messung beenden' }}
     </button>
   </main>
 } @else {

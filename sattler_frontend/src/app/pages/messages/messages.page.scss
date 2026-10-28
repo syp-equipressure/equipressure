@@ -1,7 +1,7 @@
 @use '../../styles/theme' as t;
 
 .messages-page {
-  height: calc(100vh - 68px);
+  height: calc(100dvh - 68px);
   min-height: 0;
   padding: 0;
   box-sizing: border-box;
@@ -12,6 +12,8 @@
   width: 100%;
   height: 100%;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  // the row must not grow with a long chat history, otherwise the input slides below the screen
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
   background: t.$bg-card;
 }
@@ -21,34 +23,6 @@
   overflow-y: auto;
   border-right: 1px solid t.$border;
   background: t.$bg-card;
-}
-
-.panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 64px;
-  padding: 0 18px;
-  border-bottom: 1px solid t.$border-soft;
-
-  h2 {
-    margin: 0;
-    color: t.$text-strong;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-  }
-
-  span {
-    min-width: 24px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: t.$purple-50;
-    color: t.$purple-600;
-    font-size: 11px;
-    font-weight: 700;
-    text-align: center;
-  }
 }
 
 .customer-list {
@@ -127,8 +101,54 @@
   white-space: nowrap;
 }
 
+.customer-preview.unread {
+  color: t.$text-strong;
+  font-weight: 700;
+}
+
+.contact-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: stretch;
+  gap: 6px;
+}
+
+.unread-badge {
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: t.$purple-500;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.notify-button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: calc(100% - 16px);
+  margin: 8px;
+  padding: 8px 10px;
+  border: 1px dashed t.$purple-300;
+  border-radius: 10px;
+  background: none;
+  color: t.$purple-600;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.send-error {
+  margin: 0;
+  padding: 8px 18px;
+  color: t.$accent-red;
+  font-size: 13px;
+}
+
 .contact-time {
-  align-self: flex-start;
   margin-top: 8px;
   color: t.$text-muted;
   font-size: 10px;
@@ -146,24 +166,27 @@
 .chat-panel {
   display: flex;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   flex-direction: column;
   background: t.$bg-card;
 }
 
 .chat-header {
+  flex-shrink: 0;
   display: flex;
-  min-height: 72px;
+  min-height: 52px;
   align-items: center;
-  gap: 14px;
-  padding: 8px 18px;
+  gap: 12px;
+  padding: 6px 18px;
   border-bottom: 1px solid t.$border;
   background: t.$bg-card;
 
   .customer-avatar {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
-    font-size: 14px;
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    font-size: 13px;
   }
 
   h2 {
@@ -176,6 +199,16 @@
 
 .chat-contact {
   min-width: 0;
+}
+
+.chat-contact-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  &:hover h2 { color: t.$purple-600; text-decoration: underline; }
 }
 
 .chat-history {
@@ -217,11 +250,84 @@
   }
 
   time {
-    display: block;
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    justify-content: flex-end;
     margin-top: 6px;
     color: t.$text-muted;
     font-size: 10px;
   }
+
+  .ticks {
+    font-size: 15px;
+    &.read { color: t.$purple-500; }
+  }
+
+  .attachment {
+    display: block;
+    margin-bottom: 6px;
+    color: inherit;
+    text-decoration: none;
+    img { display: block; max-width: 100%; max-height: 260px; border-radius: 8px; }
+    &.file {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2px 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: t.$bg-panel;
+      .material-icons { grid-row: span 2; color: t.$purple-500; }
+      small { color: t.$text-soft; font-size: 11px; }
+    }
+  }
+
+  .attachment-name { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+
+  .share-card {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: t.$bg-panel;
+  }
+
+  .share-icon { color: t.$purple-500; }
+  .share-horse-icon { width: 24px; height: 24px; flex: 0 0 24px; filter: var(--horse-icon-filter, none); }
+
+  .share-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    small { color: t.$text-muted; font-size: 11px; }
+    strong { color: t.$text-strong; font-size: 14px; }
+    span { color: t.$text-soft; font-size: 12px; }
+  }
+
+  .share-action {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 7px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: t.$purple-500;
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    .material-icons { font-size: 18px; }
+    &:disabled { opacity: 0.6; cursor: default; }
+    &.done { background: t.$purple-50; color: t.$purple-600; }
+  }
+
+  .share-state { color: t.$text-soft; font-size: 11px; }
 
   &.outgoing {
     align-self: flex-end;
@@ -232,7 +338,6 @@
 
     time {
       color: t.$text-soft;
-      text-align: right;
     }
   }
 }
@@ -247,6 +352,7 @@
 }
 
 .chat-composer {
+  flex-shrink: 0;
   display: flex;
   min-height: 52px;
   align-items: center;
@@ -276,6 +382,21 @@
     }
   }
 
+  .attach-button {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: t.$text-soft;
+    cursor: pointer;
+    &:hover, &.active { background: t.$purple-50; color: t.$purple-600; }
+  }
+
   .send-button {
     display: grid;
     width: 42px;
@@ -299,25 +420,6 @@
       opacity: 0.55;
     }
   }
-
-  .attach-button {
-    display: grid;
-    width: 40px;
-    height: 40px;
-    flex: 0 0 40px;
-    place-items: center;
-    padding: 0;
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-    color: t.$text-soft;
-    cursor: pointer;
-
-    &:hover {
-      background: t.$bg-page;
-      color: t.$text-strong;
-    }
-  }
 }
 
 .visually-hidden {
@@ -332,7 +434,7 @@
 
 @media (max-width: 900px) {
   .messages-page {
-    height: calc(100vh - 68px);
+    height: calc(100dvh - 68px);
     min-height: 0;
     padding: 0;
   }
@@ -364,7 +466,7 @@
 
 @media (max-width: 600px) {
   .messages-page {
-    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
     min-height: 0;
   }
 

@@ -55,10 +55,11 @@ public static class DevelopmentSeedData
         await AddAndSaveAsync(context, groups);
 
         var measurements = CreateMeasurements(groups);
-        await AddAndSaveAsync(context, measurements);
-        await AddAndSaveAsync(context, CreateMeasurementData(measurements));
+        await AddAndSaveAsync(context, measurements.Select(m => m.Measurement).ToList());
+        await AddAndSaveAsync(context, CreateMeasurementData(groups, measurements));
 
         await AddAndSaveAsync(context, CreateReleases(persons, groups));
+        await AddAndSaveAsync(context, CreateChatMessages(persons, horses, groups));
 
         return true;
     }
@@ -252,7 +253,10 @@ public static class DevelopmentSeedData
             /* 5 */ Create("Springsattel Light", 3, 2),
             /* 6 */ Create("Freizeitsattel Soft", 3, 4),
             /* 7 */ Create("Dressursattel WINTEC 500", 4, 1),
-            /* 8 */ Create("Westernsattel Ranch", 8, 5)
+            /* 8 */ Create("Westernsattel Ranch", 8, 5),
+            /* 9 */ Create("Freizeitsattel Haflinger Spezial", 5, 4),
+            /* 10 */ Create("Vielseitigkeitssattel Breit", 6, 3),
+            /* 11 */ Create("Barock-Dressursattel", 7, 1)
         ];
     }
 
@@ -311,56 +315,190 @@ public static class DevelopmentSeedData
             /* 4 */ Create("Kontrolle nach Anpassung", new LocalDate(2026, 10, 1), 8, 4, 7, 3,
                             "Sattel wurde von Ferdinand angepasst"),
             /* 5 */ Create("Dressur Apollo", new LocalDate(2026, 10, 5), 6, 2, 4, 1, null),
-            /* 6 */ Create("Westernreiten Cash", new LocalDate(2026, 10, 10), 7, 8, 8, 2, "Ausritt im Gelände")
+            /* 6 */ Create("Westernreiten Cash", new LocalDate(2026, 10, 10), 7, 8, 8, 2, "Ausritt im Gelände"),
+            /* 7 */ Create("Springgymnastik Apollo", new LocalDate(2026, 10, 14), 6, 2, 3, 1, null),
+            /* 8 */ Create("Trainingskontrolle Thunder", new LocalDate(2026, 10, 18), 8, 4, 7, 3,
+                            "Druckbild nach drei Wochen stabil"),
+            /* 9 */ Create("Ausritt Sternchen", new LocalDate(2026, 10, 8), 9, 5, 9, 5,
+                            "Sattel drückt vorne am Widerrist"),
+            /* 10 */ Create("Erste Messung Nora", new LocalDate(2026, 10, 12), 8, 6, 10, 3, null),
+            /* 11 */ Create("Dressur Amadeus", new LocalDate(2026, 9, 25), 5, 7, 11, 6, "Ruhige Einheit"),
+            /* 12 */ Create("Versammlung Amadeus", new LocalDate(2026, 10, 16), 5, 7, 11, 6,
+                             "Mehr Druck hinten bei versammelten Lektionen")
         ];
     }
 
-    private static Measurement[] CreateMeasurements(MeasurementGroup[] groups)
+    // a measurement in the seed data together with how long it took (the duration results from the timestamps of
+    // its recordings, the database has no extra column for it)
+    private sealed record SeedMeasurement(Measurement Measurement, int DurationSeconds);
+
+    private static SeedMeasurement[] CreateMeasurements(MeasurementGroup[] groups)
     {
-        Measurement Create(int group, string pace, string hand, string? description = null) => new()
-        {
-            Group = groups[group - 1],
-            Pace = pace,
-            Hand = hand,
-            Description = description
-        };
+        SeedMeasurement Create(int group, string pace, string hand, int durationSeconds,
+                               string? description = null) =>
+            new(new Measurement
+            {
+                Group = groups[group - 1],
+                Pace = pace,
+                Hand = hand,
+                Description = description
+            },
+                durationSeconds);
 
         return
         [
-            /* 1 */ Create(1, "Schritt", "Links"),
-            /* 2 */ Create(1, "Schritt", "Rechts"),
-            /* 3 */ Create(1, "Trab", "Links", "Gleichmäßige Druckverteilung"),
-            /* 4 */ Create(2, "Galopp", "Links"),
-            /* 5 */ Create(2, "Galopp", "Rechts", "Druckspitze am Widerrist"),
-            /* 6 */ Create(3, "Schritt", "Links"),
-            /* 7 */ Create(4, "Trab", "Rechts"),
-            /* 8 */ Create(5, "Schritt", "Rechts"),
-            /* 9 */ Create(6, "Schritt", "Links"),
-            /* 10 */ Create(6, "Trab", "Links")
+            /* 1 */ Create(1, "Schritt", "Links", 120),
+            /* 2 */ Create(1, "Schritt", "Rechts", 90),
+            /* 3 */ Create(1, "Trab", "Links", 180, "Gleichmäßige Druckverteilung"),
+            /* 4 */ Create(2, "Galopp", "Links", 60),
+            /* 5 */ Create(2, "Galopp", "Rechts", 75, "Druckspitze am Widerrist"),
+            /* 6 */ Create(3, "Schritt", "Links", 150),
+            /* 7 */ Create(4, "Trab", "Rechts", 120),
+            /* 8 */ Create(5, "Schritt", "Rechts", 105),
+            /* 9 */ Create(6, "Schritt", "Links", 240),
+            /* 10 */ Create(6, "Trab", "Links", 150),
+            // added later, so the ids above stay the same
+            /* 11 */ Create(1, "Trab", "Rechts", 165),
+            /* 12 */ Create(2, "Trab", "Links", 90),
+            /* 13 */ Create(3, "Trab", "Links", 105),
+            /* 14 */ Create(3, "Trab", "Rechts", 96),
+            /* 15 */ Create(4, "Schritt", "Links", 81),
+            /* 16 */ Create(4, "Galopp", "Rechts", 54, "Sattel rutscht leicht nach rechts"),
+            /* 17 */ Create(5, "Trab", "Rechts", 141),
+            /* 18 */ Create(5, "Galopp", "Links", 69),
+            /* 19 */ Create(7, "Trab", "Links", 111),
+            /* 20 */ Create(7, "Galopp", "Links", 51),
+            /* 21 */ Create(7, "Galopp", "Rechts", 45),
+            /* 22 */ Create(8, "Schritt", "Rechts", 129),
+            /* 23 */ Create(8, "Trab", "Rechts", 162),
+            /* 24 */ Create(9, "Schritt", "Links", 210, "Gelände, leichter Anstieg"),
+            /* 25 */ Create(9, "Trab", "Links", 120),
+            /* 26 */ Create(10, "Schritt", "Links", 90),
+            /* 27 */ Create(10, "Schritt", "Rechts", 87),
+            /* 28 */ Create(11, "Schritt", "Rechts", 102),
+            /* 29 */ Create(11, "Trab", "Links", 138),
+            /* 30 */ Create(11, "Galopp", "Rechts", 63),
+            /* 31 */ Create(12, "Trab", "Rechts", 120, "Versammelter Trab"),
+            /* 32 */ Create(12, "Galopp", "Links", 60)
         ];
     }
 
-    private static MeasurementData[] CreateMeasurementData(Measurement[] measurements)
+    private const int PressureGridSize = 20;
+    private const int SecondsBetweenFrames = 3;
+
+    // how the saddle of a measurement group fits: pressure factors for the front, middle and back of the saddle and
+    // the balance between the panels (positive = more pressure on the left panel)
+    private static readonly (double Front, double Middle, double Back, double Balance)[] groupFits =
+    [
+        /* 1 */ (1.0, 1.0, 1.0, 0.0),
+        /* 2 */ (1.0, 1.0, 1.25, 0.12), // slight pressure at the back left
+        /* 3 */ (1.25, 0.7, 1.2, 0.0), // the saddle bridges, little pressure in the middle
+        /* 4 */ (1.0, 1.0, 1.0, -0.04),
+        /* 5 */ (1.15, 1.0, 0.9, -0.05),
+        /* 6 */ (0.9, 1.05, 1.0, 0.0),
+        /* 7 */ (1.05, 1.0, 1.1, 0.0),
+        /* 8 */ (1.0, 1.0, 1.05, -0.03),
+        /* 9 */ (1.4, 1.0, 0.8, 0.0), // the saddle is too narrow at the withers
+        /* 10 */ (1.0, 0.95, 1.0, 0.08),
+        /* 11 */ (1.0, 1.0, 1.0, 0.0),
+        /* 12 */ (0.9, 1.0, 1.25, 0.0) // collected work shifts the weight to the back
+    ];
+
+    private static MeasurementData[] CreateMeasurementData(MeasurementGroup[] groups, SeedMeasurement[] measurements)
     {
-        // one recording per measurement: a pressure curve (in mbar) like the mock data of the app
-        return measurements.Select((measurement, index) => new MeasurementData
+        // the measurements of a group are recorded one after another with a short break in between
+        var nextStartOfGroup = new Dictionary<MeasurementGroup, Instant>();
+        List<MeasurementData> data = [];
+        for (var index = 0; index < measurements.Length; index++)
         {
-            Measurement = measurement,
-            Timestamp = measurement.Group.Date.AtStartOfDayInZone(DateTimeZone.Utc)
-                                                      .PlusHours(14)
-                                                      .Plus(Duration.FromMinutes(5 * index))
-                                                      .ToInstant(),
-            Data = CreatePressureCurve(200 + 80 * index)
-        })
-                           .ToArray();
+            var (measurement, durationSeconds) = measurements[index];
+            var group = measurement.Group;
+            var start = nextStartOfGroup.GetValueOrDefault(
+                group, group.Date.AtStartOfDayInZone(DateTimeZone.Utc).PlusHours(14).ToInstant());
+            nextStartOfGroup[group] = start.Plus(Duration.FromSeconds(durationSeconds + 60));
+
+            var fit = groupFits[Array.IndexOf(groups, group)];
+            var frameCount = durationSeconds / SecondsBetweenFrames + 1;
+            for (var frame = 0; frame < frameCount; frame++)
+            {
+                data.Add(new MeasurementData
+                {
+                    Measurement = measurement,
+                    Timestamp = start.Plus(Duration.FromSeconds(frame * SecondsBetweenFrames)),
+                    Data = CreatePressureFrame(measurement, fit, index, frame, (double) frame / (frameCount - 1))
+                });
+            }
+        }
+
+        return data.ToArray();
     }
 
-    private static string CreatePressureCurve(int peak)
+    /// <summary>
+    ///     Creates a frame of the sensor mat as a JSON array with 20x20 values (in mbar) in row-major order, row 0 is the
+    ///     front of the saddle. Like the live measurement of the app it has two panels left and right of the spine with
+    ///     three pressure zones each. The pressure depends on the pace, the side of the hand carries a bit more weight and
+    ///     the movement of the pace shifts the weight over time (left/right in trot, front/back in canter).
+    /// </summary>
+    /// <param name="measurement">The measurement the frame belongs to</param>
+    /// <param name="fit">How the saddle of the measurement group fits</param>
+    /// <param name="measurementIndex">The index of the measurement, makes the measurements differ a bit</param>
+    /// <param name="frame">The number of the frame within the measurement</param>
+    /// <param name="progress">How far the measurement has progressed (0 to 1)</param>
+    private static string CreatePressureFrame(Measurement measurement,
+                                              (double Front, double Middle, double Back, double Balance) fit,
+                                              int measurementIndex, int frame, double progress)
     {
-        int[] shape = [0, 2, 12, 51, 149, 272, 354, 268, 149, 61, 46, 91, 160, 211, 168, 85, 33, 8, 1, 0];
-        const int ShapeMaximum = 354;
+        var (peak, swayLeftRight, rockFrontBack, phaseStep) = measurement.Pace switch
+        {
+            "Galopp" => (340.0, 0.04, 0.16, 1.9),
+            "Trab" => (260.0, 0.1, 0.05, 2.4),
+            _ => (180.0, 0.04, 0.03, 1.3)
+        };
+        var phase = frame * phaseStep + measurementIndex;
+        peak *= 1 + 0.03 * (measurementIndex % 4) + 0.03 * Math.Sin(phase * 0.37);
 
-        return $"[{string.Join(",", shape.Select(value => value * peak / ShapeMaximum))}]";
+        var handBalance = measurement.Hand == "Links" ? 0.08 : -0.08;
+        var balance = fit.Balance + handBalance + swayLeftRight * Math.Sin(phase);
+        var leftFactor = 1 + balance;
+        var rightFactor = 1 - balance;
+
+        // rocking in canter, and towards the end of a measurement the rider sits a bit further back
+        var rock = rockFrontBack * Math.Sin(phase);
+        var frontFactor = fit.Front * (1 + rock);
+        var backFactor = fit.Back * (1 - rock) * (1 + 0.08 * progress);
+
+        const double LeftX = 6.0;
+        const double RightX = 13.0;
+        const double SpreadX = 2.2;
+        (double Y, double SpreadY, double Strength)[] zones =
+        [
+            (4.0 + 0.3 * Math.Sin(phase), 2.5, 0.7 * frontFactor),
+            (10.0, 3.5, 1.0 * fit.Middle),
+            (16.0 - 0.3 * Math.Cos(phase), 2.5, 0.6 * backFactor)
+        ];
+
+        var values = new int[PressureGridSize * PressureGridSize];
+        for (var row = 0; row < PressureGridSize; row++)
+        {
+            for (var col = 0; col < PressureGridSize; col++)
+            {
+                double left = 0;
+                double right = 0;
+                foreach (var zone in zones)
+                {
+                    var dy = (row - zone.Y) / zone.SpreadY;
+                    var dxLeft = (col - LeftX) / SpreadX;
+                    var dxRight = (col - RightX) / SpreadX;
+                    left += zone.Strength * Math.Exp(-(dxLeft * dxLeft + dy * dy));
+                    right += zone.Strength * Math.Exp(-(dxRight * dxRight + dy * dy));
+                }
+
+                values[row * PressureGridSize + col] =
+                    (int) Math.Round(peak * (left * leftFactor + right * rightFactor));
+            }
+        }
+
+        return $"[{string.Join(",", values)}]";
     }
 
     // a release shares measurement groups with a person (e.g. a saddler who should look at them)
@@ -384,6 +522,46 @@ public static class DevelopmentSeedData
             Create(4, Instant.FromUtc(2026, 10, 11, 8, 15), 3, 6), // Max's measurements for Michael
             Create(5, Instant.FromUtc(2026, 10, 2, 17, 45), 4), // Julia's Thunder measurement for Lisa
             Create(3, Instant.FromUtc(2026, 9, 17, 12, 0), 2) // Lena's jumping measurement for Anna
+        ];
+    }
+
+    private static ChatMessage[] CreateChatMessages(Person[] persons, Horse[] horses, MeasurementGroup[] groups)
+    {
+        ChatMessage Create(int sender, int recipient, Instant sentAt, string? text, bool read,
+                           int? horse = null, int? group = null, Instant? acceptedAt = null) => new()
+                           {
+                               Type = horse is not null ? ChatMessageType.Horse
+                : group is not null ? ChatMessageType.Measurement
+                : ChatMessageType.Text,
+                               Text = text,
+                               SentAt = sentAt,
+                               ReadAt = read ? sentAt.Plus(Duration.FromMinutes(5)) : null,
+                               AcceptedAt = acceptedAt,
+                               Sender = persons[sender - 1],
+                               Recipient = persons[recipient - 1],
+                               Horse = horse is null ? null : horses[horse.Value - 1],
+                               MeasurementGroup = group is null ? null : groups[group.Value - 1]
+                           };
+
+        return
+        [
+            // Lena - Sophie: a shared measurement that Sophie already added, the last answer is unread
+            /* 1 */ Create(6, 1, Instant.FromUtc(2026, 10, 20, 8, 30),
+                           "Hallo Sophie, Luna drückt seit dem Springtraining links hinten etwas. Hättest du nächste "
+                           + "Woche Zeit?", read: true),
+            /* 2 */ Create(1, 6, Instant.FromUtc(2026, 10, 20, 9, 12),
+                           "Hallo Lena! Gerne, schick mir die Messung, dann schaue ich sie mir vorher an.", read: true),
+            /* 3 */ Create(6, 1, Instant.FromUtc(2026, 10, 20, 9, 20), "Hier ist die Messung vom Springtraining.",
+                           read: true, group: 2, acceptedAt: Instant.FromUtc(2026, 10, 20, 10, 5)),
+            /* 4 */ Create(1, 6, Instant.FromUtc(2026, 10, 20, 10, 7),
+                           "Danke! Der Druck links hinten ist gut sichtbar. Donnerstag um 10 Uhr bei dir im Stall?",
+                           read: false),
+            // Lena - Anna: a shared horse that Anna has not added yet
+            /* 5 */ Create(6, 3, Instant.FromUtc(2026, 10, 23, 17, 40), "Könntest du dir Apollo einmal anschauen?",
+                           read: false, horse: 2),
+            // Max - Sophie: an unread question
+            /* 6 */ Create(7, 1, Instant.FromUtc(2026, 10, 22, 14, 0), "Hallo, wann hätten Sie wieder einen Termin frei?",
+                           read: false)
         ];
     }
 }

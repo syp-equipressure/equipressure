@@ -570,15 +570,11 @@ internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logg
                 return new IPersonService.InvalidRelationship("A contact has to be between an equestrian and a saddler");
             }
 
-            uow.PersonRepository.AddRelationship(new PersonRelationship
-            {
-                Equestrian = sides.Value.Equestrian,
-                Saddler = sides.Value.Saddler,
-                IsContact = true
-            });
+            await uow.PersonRepository.MarkAsContactAsync(sides.Value.Equestrian, sides.Value.Saddler);
         }
         else
         {
+            // the existing relationship can be in either direction, so it is marked directly
             relationship.IsContact = true;
         }
 
@@ -619,7 +615,8 @@ internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logg
         }
     }
 
-    private static bool HasRole(Person person, RoleName role) =>
+    // also used by the other services, e.g. the chat service
+    internal static bool HasRole(Person person, RoleName role) =>
         person.Roles.Any(assignment => assignment.Role.Name == role);
 
     private async ValueTask<IReadOnlyCollection<AccountRole>> GetRolesAsync(IReadOnlyCollection<RoleName> roleNames)

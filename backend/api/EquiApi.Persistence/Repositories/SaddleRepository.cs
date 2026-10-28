@@ -6,11 +6,11 @@ namespace EquiApi.Persistence.Repositories;
 public interface ISaddleRepository
 {
     /// <summary>
-    /// Checks if the the category exists
+    /// Gets a saddle category
     /// </summary>
-    /// <param name="saddleCategoryId">id of the category it should check</param>
-    /// <returns>true if the category exists, false if not</returns>
-    public ValueTask<bool> DoesSaddleCategoryExist(int saddleCategoryId);
+    /// <param name="saddleCategoryId">id of the category</param>
+    /// <returns>the tracked category or null if it does not exist</returns>
+    public ValueTask<SaddleCategory?> GetSaddleCategoryByIdAsync(int saddleCategoryId);
 
     /// <summary>
     /// Gets all saddle categories
@@ -21,8 +21,8 @@ public interface ISaddleRepository
 }
 public class SaddleRepository(DbSet<SaddleCategory> saddleCategories) : ISaddleRepository
 {
-    public async ValueTask<bool> DoesSaddleCategoryExist(int saddleCategoryId) =>
-        await saddleCategories.AnyAsync(sc => sc.Id == saddleCategoryId);
+    public async ValueTask<SaddleCategory?> GetSaddleCategoryByIdAsync(int saddleCategoryId) =>
+        await saddleCategories.FirstOrDefaultAsync(sc => sc.Id == saddleCategoryId);
 
     public async ValueTask<IReadOnlyCollection<SaddleCategory>> GetAllSaddleCategories() =>
         await saddleCategories.ToListAsync();

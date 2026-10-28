@@ -1,4 +1,5 @@
-import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
+import { EMPTY, Observable, catchError, concat, defer, forkJoin, switchMap, tap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
@@ -10,6 +11,12 @@ import { fullName } from '../../models/customer.model';
 import { formatDuration } from '../../utils/time-format';
 import { AddHorse } from '../horses/add-horse/add-horse';
 import { Horse as HorseModel } from '../../models/horse.model';
+import { BackendApiService } from '../../services/backend-api.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
+import { printMeasurementReport } from '../../services/measurement-report';
+import { hasNoRecordedData } from '../../services/measurement-mapper';
+import { downloadMeasurementCsv } from '../../services/measurement-export';
+import { HeatmapDialogComponent } from '../../shared/heatmap-dialog/heatmap-dialog';
 
 type TabKey = 'profil' | 'messungen' | 'notizen';
 type PressureStatistic = 'average' | 'maximum' | 'pro';
@@ -17,16 +24,24 @@ type PressureStatistic = 'average' | 'maximum' | 'pro';
 @Component({
   selector: 'app-measurements-page',
   standalone: true,
-  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent, AddHorse],
+  imports: [PageHeaderComponent, PressureHeatmapComponent, VideoTileComponent, AddHorse, HeatmapDialogComponent],
   templateUrl: './measurements.page.html',
   styleUrl: './measurements.page.scss',
+  host: { '(document:keydown.escape)': 'closeExpandedHeatmap()' },
 })
 export class MeasurementsPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
+  private readonly api = inject(BackendApiService);
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
+
+  private readonly personContext = inject(BackendPersonContextService);
+
+  readonly horseLoading = signal(false);
+  readonly measurementsLoading = signal(false);
+  readonly measurementsError = signal('');
 
   readonly horse = computed(() => this.data.getHorse(this.params().get('horseId') ?? ''));
   readonly customer = computed(() => {
@@ -84,6 +99,100 @@ export class MeasurementsPage implements OnDestroy {
       this.tab.set('messungen');
       this.selectedId.set(measurementId);
     }
+
+    // Pferd und Kund*in sind nur bekannt, wenn vorher die Kunden- oder Pferdeliste geladen wurde.
+    // Bei einem direkten Aufruf (z.B. "Öffnen" im Chat) werden sie hier aus dem Backend nachgeladen.
+    effect(onCleanup => {
+      const horseId = this.params().get('horseId') ?? '';
+      const ownerId = this.params().get('customerId') ?? this.personContext.personId();
+      if (!isBackendId(horseId) || !isBackendId(ownerId) || untracked(() => this.horse())) {
+        this.horseLoading.set(false);
+        return;
+      }
+      this.horseLoading.set(true);
+      const subscription = forkJoin({
+        owner: this.api.getPerson(ownerId),
+        horses: this.api.getHorses(ownerId),
+      }).subscribe({
+        next: ({ owner, horses }) => {
+          this.data.upsertCustomers([owner]);
+          this.data.upsertHorses(horses);
+          this.horseLoading.set(false);
+        },
+        error: error => {
+          this.measurementsError.set(error instanceof Error ? error.message : 'Pferd konnte nicht geladen werden.');
+          this.horseLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+
+    // Pferde aus dem Backend haben numerische IDs, ihre Messungen kommen ebenfalls aus dem Backend
+    effect(onCleanup => {
+      const horseId = this.params().get('horseId') ?? '';
+      this.measurementsError.set('');
+      if (!isBackendId(horseId)) {
+        this.measurementsLoading.set(false);
+        return;
+      }
+      this.measurementsLoading.set(true);
+      // zuerst nur die Liste (ohne Aufnahmen), danach die einzelnen Messungen nacheinander im Hintergrund
+      const subscription = this.api.getMeasurementsOfHorse(horseId, false).pipe(
+        tap(measurements => {
+          this.data.setMeasurementsOf(horseId, measurements);
+          this.measurementsLoading.set(false);
+        }),
+        switchMap(measurements => {
+          // die ausgewählte Messung lädt der zweite Effekt sofort, hier nur die übrigen
+          const selectedId = untracked(() => this.selected()?.id);
+          const ids = measurements.map(measurement => measurement.id).filter(id => id !== selectedId);
+          return concat(...ids.map(id => defer(() =>
+            untracked(() => this.isLoaded(id)) ? EMPTY : this.loadMeasurement(horseId, id),
+          )));
+        }),
+      ).subscribe({
+        error: error => {
+          this.measurementsError.set(
+            error instanceof Error ? error.message : 'Messungen konnten nicht geladen werden.',
+          );
+          this.measurementsLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+
+    // eine ausgewählte, noch nicht geladene Messung wird sofort geladen (vor der Warteschlange)
+    effect(onCleanup => {
+      const horseId = this.params().get('horseId') ?? '';
+      const id = this.selected()?.id;
+      if (!id || !isBackendId(horseId) || untracked(() => this.isLoaded(id))) return;
+      const subscription = this.loadMeasurement(horseId, id).subscribe();
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
+
+  /** IDs der Messungen, deren Aufnahmen schon geladen wurden. */
+  private readonly loadedIds = signal<ReadonlySet<string>>(new Set());
+
+  /** Lokale Messungen und solche mit Aufnahmen sind vollständig, Backend-Messungen erst nach dem Laden. */
+  isLoaded(id: string): boolean {
+    if (!isBackendId(id) || this.loadedIds().has(id)) return true;
+    const measurement = this.data.getMeasurement(id);
+    return !!measurement && !hasNoRecordedData(measurement);
+  }
+
+  private loadMeasurement(horseId: string, id: string): Observable<unknown> {
+    return this.api.getMeasurement(horseId, id).pipe(
+      tap(measurement => {
+        this.data.upsertMeasurement(measurement);
+        this.loadedIds.update(ids => new Set(ids).add(id));
+      }),
+      // eine einzelne Messung, die nicht lädt, soll die übrigen nicht aufhalten
+      catchError(() => {
+        this.loadedIds.update(ids => new Set(ids).add(id));
+        return EMPTY;
+      }),
+    );
   }
 
   readonly sideOptions = computed<Side[]>(() => {
@@ -114,7 +223,8 @@ export class MeasurementsPage implements OnDestroy {
 
     const segments = this.matchingSegments();
     if (segments.length) {
-      const grids = segments.map(segment => segment.pressureGrid);
+      // Durchschnitt und Maximum über alle Aufnahmen, sonst über die Teilmessungen
+      const grids = segments.flatMap(segment => segment.frames ?? [segment.pressureGrid]);
       return this.pressureStatistic() === 'maximum' ? maximumGrid(grids) : averageGrids(grids);
     }
 
@@ -125,11 +235,9 @@ export class MeasurementsPage implements OnDestroy {
   });
   readonly pressureGrid = computed(() => {
     const grid = this.filteredGrid();
-    return this.pressureStatistic() === 'pro' &&
-      this.activeGait() &&
-      this.activeSide()
-      ? animatePressureGrid(grid, this.phase())
-      : grid;
+    if (this.pressureStatistic() !== 'pro' || !this.activeGait() || !this.activeSide()) return grid;
+    // mit aufgenommenen Frames die echte Messung abspielen, sonst eine Bewegung andeuten
+    return frameAt(this.matchingSegments(), this.phase()) ?? animatePressureGrid(grid, this.phase());
   });
 
   readonly statisticMaximum = computed(() => Math.max(0, ...this.filteredGrid().flat()));
@@ -138,6 +246,7 @@ export class MeasurementsPage implements OnDestroy {
 
   ngOnDestroy(): void {
     window.clearInterval(this.animationTimer);
+    window.clearTimeout(this.shareFeedbackTimer);
   }
 
   selectMeasurement(id: string) {
@@ -191,6 +300,19 @@ export class MeasurementsPage implements OnDestroy {
     const measurement = this.data.getMeasurement(id);
     if (!measurement) return;
     if (!window.confirm(`Möchtest du die Messung vom ${measurement.date} wirklich löschen?`)) return;
+    if (!isBackendId(id)) {
+      this.removeMeasurementLocally(id);
+      return;
+    }
+    this.api.deleteMeasurementGroup(id).subscribe({
+      next: () => this.removeMeasurementLocally(id),
+      error: error => this.measurementsError.set(
+        error instanceof Error ? error.message : 'Die Messung konnte nicht gelöscht werden.',
+      ),
+    });
+  }
+
+  private removeMeasurementLocally(id: string): void {
     this.data.removeMeasurement(id);
     if (this.selectedId() === id) {
       const remaining = this.measurements();
@@ -239,6 +361,87 @@ export class MeasurementsPage implements OnDestroy {
     this.heatmapMode.update(m => (m === 'heatmap' ? 'grid' : 'heatmap'));
   }
 
+  // ─── Großansicht, Bericht, Teilen, Bearbeiten ──────────────────────────────
+
+  readonly heatmapExpanded = signal(false);
+  readonly shareFeedback = signal('');
+  private shareFeedbackTimer?: number;
+
+  /** Beschreibt die aktuelle Ansicht, z.B. "Trab · Links · Maximum". */
+  readonly viewLabel = computed(() => [
+    this.activeGait() || 'Alle Gangarten',
+    this.activeSide() || 'Alle Hände',
+    { average: 'Durchschnitt', maximum: 'Maximum', pro: 'Profi' }[this.pressureStatistic()],
+  ].join(' · '));
+
+  expandHeatmap(): void {
+    this.heatmapExpanded.set(true);
+  }
+
+  closeExpandedHeatmap(): void {
+    this.heatmapExpanded.set(false);
+  }
+
+  /** Öffnet den Druckdialog mit einem Bericht der Messung, dort kann er als PDF gespeichert werden. */
+  downloadReport(measurement: Measurement): void {
+    printMeasurementReport({
+      measurement,
+      horseName: this.horse()?.name ?? '',
+      customerName: this.customerName(),
+      grid: this.filteredGrid(),
+      viewLabel: this.viewLabel(),
+      maxNcm2: this.statisticMaximum(),
+      meanNcm2: this.statisticAverage(),
+    });
+  }
+
+  /** Lädt alle Aufnahmen der Messung als CSV-Datei herunter (für Excel). */
+  downloadCsv(measurement: Measurement): void {
+    downloadMeasurementCsv(measurement, this.horse()?.name ?? 'Pferd');
+  }
+
+  /** Teilt einen Link auf die Messung, ohne Web Share API wird der Link kopiert. */
+  async shareMeasurement(measurement: Measurement): Promise<void> {
+    const url = new URL(window.location.href);
+    url.searchParams.set('measurementId', measurement.id);
+    const title = `Satteldruckmessung ${this.horse()?.name ?? ''} vom ${measurement.date}`.trim();
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: title, url: url.toString() });
+        return;
+      } catch (error) {
+        // abgebrochen: nichts tun, sonst auf Kopieren ausweichen
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      this.showShareFeedback('Link zur Messung wurde kopiert.');
+    } catch {
+      this.showShareFeedback('Der Link konnte nicht kopiert werden.');
+    }
+  }
+
+  private showShareFeedback(message: string): void {
+    this.shareFeedback.set(message);
+    window.clearTimeout(this.shareFeedbackTimer);
+    this.shareFeedbackTimer = window.setTimeout(() => this.shareFeedback.set(''), 3000);
+  }
+
+  /** Bearbeiten heißt Notizen bearbeiten: wechselt in den Notizen-Tab und setzt den Cursor ins Feld. */
+  editMeasurement(measurement: Measurement): void {
+    this.setTab('notizen');
+    window.setTimeout(() => {
+      const field = document.getElementById(`notes-${measurement.id}`);
+      if (field instanceof HTMLTextAreaElement) {
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus();
+      }
+    });
+  }
+
   resetView() {
     this.activeGait.set('');
     this.activeSide.set('');
@@ -279,6 +482,31 @@ export class MeasurementsPage implements OnDestroy {
   }
 
   readonly formatDuration = formatDuration;
+}
+
+function isBackendId(id: string): boolean {
+  return /^[1-9]\d*$/.test(id);
+}
+
+/** Pressure grid at [phase] seconds: the segments play one after another, frames are interpolated. */
+function frameAt(segments: MeasurementSegmentResult[], phase: number): number[][] | null {
+  let remaining = phase;
+  for (const [index, segment] of segments.entries()) {
+    const frames = segment.frames;
+    if (!frames?.length) return null;
+    const isLast = index === segments.length - 1;
+    if (remaining > segment.durationSeconds && !isLast) {
+      remaining -= segment.durationSeconds;
+      continue;
+    }
+    if (frames.length === 1 || segment.durationSeconds <= 0) return frames[0];
+    const position = Math.min(1, remaining / segment.durationSeconds) * (frames.length - 1);
+    const lower = Math.floor(position);
+    const upper = Math.min(lower + 1, frames.length - 1);
+    const t = position - lower;
+    return frames[lower].map((row, y) => row.map((value, x) => value * (1 - t) + frames[upper][y][x] * t));
+  }
+  return null;
 }
 
 function isGait(value: string): value is Gait {
