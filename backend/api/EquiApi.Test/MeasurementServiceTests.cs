@@ -526,6 +526,65 @@ public sealed class MeasurementServiceTests
         await _uowMock.Received(1).SaveChangesAsync();
     }
 
+    [Fact]
+    public async Task AddMeasurementAsync_WithRecordings_StoresRecordingsAsJsonArraysOrderedByTimestamp()
+    {
+        var first = Instant.FromUtc(2026, 10, 1, 14, 0, 0);
+        var second = first.Plus(Duration.FromSeconds(3));
+        _uowMock.MeasurementRepository.GroupExistsAsync(GroupId).Returns(true);
+        _uowMock.MeasurementRepository.GetMeasurementByFilterAsync(GroupId, "Trab", "Links")
+                .Returns((Measurement?) null);
+        NewRecordingData[] recordings =
+        [
+            new(second, [3.5, 0, 12]),
+            new(first, [1, 2.25, 4])
+        ];
+
+        var result = await _sut.AddMeasurementAsync(GroupId, "Trab", "Links", null, recordings);
+
+        var measurement = result.Value.Should().BeOfType<Success<Measurement>>().Which.Value;
+        measurement.MeasurementDates.Select(d => d.Timestamp).Should().Equal(first, second);
+        measurement.MeasurementDates.Select(d => d.Data).Should().Equal("[1,2.25,4]", "[3.5,0,12]");
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task AddMeasurementAsync_WithoutRecordings_AddsMeasurementWithoutData()
+    {
+        _uowMock.MeasurementRepository.GroupExistsAsync(GroupId).Returns(true);
+        _uowMock.MeasurementRepository.GetMeasurementByFilterAsync(GroupId, "Trab", "Links")
+                .Returns((Measurement?) null);
+
+        var result = await _sut.AddMeasurementAsync(GroupId, "Trab", "Links", null, []);
+
+        result.Value.Should().BeOfType<Success<Measurement>>().Which.Value.MeasurementDates.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_GroupNotFound_ReturnsNotFound()
+    {
+        _uowMock.MeasurementRepository.GetGroupByIdAsync(GroupId).Returns((MeasurementGroup?) null);
+
+        var result = await _sut.DeleteGroupAsync(GroupId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.MeasurementRepository.DidNotReceive().RemoveGroup(Arg.Any<MeasurementGroup>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_GroupExists_RemovesGroupAndSaves()
+    {
+        var group = TestData.CreateMeasurementGroup(GroupId);
+        _uowMock.MeasurementRepository.GetGroupByIdAsync(GroupId).Returns(group);
+
+        var result = await _sut.DeleteGroupAsync(GroupId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.MeasurementRepository.Received(1).RemoveGroup(group);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
     [Theory]
     [InlineData("abc")]
     [InlineData("[1.5, abc]")]

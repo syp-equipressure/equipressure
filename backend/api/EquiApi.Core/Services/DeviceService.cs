@@ -87,9 +87,31 @@ public interface IDeviceService
                                                                                     int newOwnerId);
 
     /// <summary>
+    ///     Gets all device categories
+    /// </summary>
+    /// <returns>All device categories ordered by the number of allowed users, which may be empty</returns>
+    public ValueTask<IReadOnlyCollection<DeviceCategory>> GetAllCategoriesAsync();
+
+    /// <summary>
+    ///     Removes a device including its users. A device that was used for measurements cannot be removed, because
+    ///     its measurement groups would be deleted as well.
+    /// </summary>
+    /// <param name="deviceId">The serial number of the device</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the device does not exist
+    ///     or <see cref="DeviceInUse" /> if measurement groups were recorded with the device
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, DeviceInUse>> DeleteDeviceAsync(string deviceId);
+
+    /// <summary>
     ///     Returned if a device with the same serial number already exists
     /// </summary>
     public readonly record struct DeviceAlreadyExists;
+
+    /// <summary>
+    ///     Returned if a device cannot be removed because measurement groups were recorded with it
+    /// </summary>
+    public readonly record struct DeviceInUse;
 
     /// <summary>
     ///     Returned if a person already is the owner or a user of a device
@@ -341,6 +363,33 @@ internal sealed class DeviceService(IUnitOfWork uow, ILogger<DeviceService> logg
 
         await uow.SaveChangesAsync();
         logger.LogInformation("Person {PersonId} is the new owner of device {DeviceId}", newOwnerId, deviceId);
+
+        return new Success();
+    }
+
+    public async ValueTask<IReadOnlyCollection<DeviceCategory>> GetAllCategoriesAsync() =>
+        await uow.DeviceRepository.GetAllCategoriesAsync();
+
+    public async ValueTask<OneOf<Success, NotFound, IDeviceService.DeviceInUse>> DeleteDeviceAsync(string deviceId)
+    {
+        var device = await uow.DeviceRepository.GetDeviceByIdAsync(deviceId);
+        if (device is null)
+        {
+            LogDeviceNotFound(deviceId);
+
+            return new NotFound();
+        }
+
+        if (await uow.DeviceRepository.HasMeasurementGroupsAsync(deviceId))
+        {
+            logger.LogWarning("Cannot remove device {DeviceId}, measurement groups were recorded with it", deviceId);
+
+            return new IDeviceService.DeviceInUse();
+        }
+
+        uow.DeviceRepository.RemoveDevice(device);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Device {DeviceId} removed", deviceId);
 
         return new Success();
     }

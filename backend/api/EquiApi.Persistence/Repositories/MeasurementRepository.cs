@@ -113,6 +113,12 @@ public interface IMeasurementRepository
     /// </summary>
     /// <param name="measurement">The measurement to remove</param>
     public void RemoveMeasurement(Measurement measurement);
+
+    /// <summary>
+    ///     Removes a measurement group, its measurements, their data entries and its release entries are removed as well
+    /// </summary>
+    /// <param name="group">The measurement group to remove</param>
+    public void RemoveGroup(MeasurementGroup group);
 }
 
 internal sealed class MeasurementRepository(
@@ -195,5 +201,10 @@ internal sealed class MeasurementRepository(
     public void RemoveMeasurement(Measurement measurement)
     {
         measurementSet.Remove(measurement);
+    }
+
+    public void RemoveGroup(MeasurementGroup group)
+    {
+        groupSet.Remove(group);
     }
 }

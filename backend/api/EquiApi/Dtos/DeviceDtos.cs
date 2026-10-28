@@ -34,6 +34,28 @@ public sealed record DeviceListResponse(IReadOnlyList<DeviceDto> Devices)
 }
 
 /// <summary>
+///     A device category
+/// </summary>
+/// <param name="Id">The id of the category</param>
+/// <param name="Name">The name of the category</param>
+/// <param name="NumOfAllowedPeople">How many users a device of this category can have besides its owner</param>
+public sealed record DeviceCategoryDto(int Id, string Name, int NumOfAllowedPeople)
+{
+    public static DeviceCategoryDto FromCategory(DeviceCategory category) =>
+        new(category.Id, category.Name, category.NumOfAllowedPeople);
+}
+
+/// <summary>
+///     A list of device categories
+/// </summary>
+/// <param name="Categories">The device categories</param>
+public sealed record DeviceCategoryListResponse(IReadOnlyList<DeviceCategoryDto> Categories)
+{
+    public static DeviceCategoryListResponse FromCategories(IEnumerable<DeviceCategory> categories) =>
+        new(categories.Select(DeviceCategoryDto.FromCategory).ToList());
+}
+
+/// <summary>
 ///     Request to add a device
 /// </summary>
 /// <param name="DeviceId">The serial number of the device</param>

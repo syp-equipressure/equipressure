@@ -421,4 +421,57 @@ public sealed class DeviceServiceTests
         device.Users.Select(du => du.UserId).Should().BeEquivalentTo([PreviousOwnerId, 3]);
         await _uowMock.Received(1).SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task GetAllCategoriesAsync_ReturnsCategoriesOfRepository()
+    {
+        var categories = new List<DeviceCategory>
+        {
+            new() { Id = 1, Name = "Basic", NumOfAllowedPeople = 1 },
+            new() { Id = 2, Name = "Standard", NumOfAllowedPeople = 3 }
+        };
+        _uowMock.DeviceRepository.GetAllCategoriesAsync().Returns(categories);
+
+        var result = await _sut.GetAllCategoriesAsync();
+
+        result.Should().Equal(categories);
+    }
+
+    [Fact]
+    public async Task DeleteDeviceAsync_DeviceNotFound_ReturnsNotFound()
+    {
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(DeviceId).Returns((MeasurementDevice?) null);
+
+        var result = await _sut.DeleteDeviceAsync(DeviceId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.DeviceRepository.DidNotReceive().RemoveDevice(Arg.Any<MeasurementDevice>());
+    }
+
+    [Fact]
+    public async Task DeleteDeviceAsync_DeviceUsedForMeasurements_ReturnsDeviceInUse()
+    {
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(DeviceId).Returns(TestData.CreateDevice(DeviceId));
+        _uowMock.DeviceRepository.HasMeasurementGroupsAsync(DeviceId).Returns(true);
+
+        var result = await _sut.DeleteDeviceAsync(DeviceId);
+
+        result.Value.Should().BeOfType<IDeviceService.DeviceInUse>();
+        _uowMock.DeviceRepository.DidNotReceive().RemoveDevice(Arg.Any<MeasurementDevice>());
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task DeleteDeviceAsync_UnusedDevice_RemovesDeviceAndSaves()
+    {
+        var device = TestData.CreateDevice(DeviceId, userIds: [2]);
+        _uowMock.DeviceRepository.GetDeviceByIdAsync(DeviceId).Returns(device);
+        _uowMock.DeviceRepository.HasMeasurementGroupsAsync(DeviceId).Returns(false);
+
+        var result = await _sut.DeleteDeviceAsync(DeviceId);
+
+        result.Value.Should().BeOfType<Success>();
+        _uowMock.DeviceRepository.Received(1).RemoveDevice(device);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
 }

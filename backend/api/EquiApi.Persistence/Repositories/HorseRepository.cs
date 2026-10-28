@@ -63,6 +63,12 @@ public interface IHorseRepository
     public ValueTask<IReadOnlyCollection<Breed>> GetBreedsByIdAsync(IReadOnlyCollection<int> breedIds);
 
     /// <summary>
+    ///     Gets all breeds, ordered by name
+    /// </summary>
+    /// <returns>All breeds</returns>
+    public ValueTask<IReadOnlyCollection<Breed>> GetAllBreedsAsync();
+
+    /// <summary>
     ///     Adds a new horse
     /// </summary>
     /// <param name="horse">The horse to add</param>
@@ -125,6 +131,11 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
 
     public async ValueTask<IReadOnlyCollection<Breed>> GetBreedsByIdAsync(IReadOnlyCollection<int> breedIds) =>
         await breedSet.Where(b => breedIds.Contains(b.Id))
+                      .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<Breed>> GetAllBreedsAsync() =>
+        await breedSet.AsNoTracking()
+                      .OrderBy(b => b.Name)
                       .ToListAsync();
 
     public void AddHorse(Horse horse)

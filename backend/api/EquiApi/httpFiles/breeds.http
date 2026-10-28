@@ -1,0 +1,16 @@
+# Tests für den BreedController (api/breeds)
+#
+# Die erwarteten Werte passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank).
+
+@BaseUrl = http://localhost:5200/api
+
+### Alle Rassen abrufen (8 Rassen, nach Namen sortiert)
+GET {{BaseUrl}}/breeds
+
+> {%
+    client.test("8 Rassen, Haflinger zuerst", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.breeds.length === 8, "Anzahl: " + response.body.breeds.length);
+        client.assert(response.body.breeds[0].name === "Haflinger", "Erste Rasse: " + response.body.breeds[0].name);
+    });
+%}
