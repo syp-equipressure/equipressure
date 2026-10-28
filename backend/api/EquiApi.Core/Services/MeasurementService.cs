@@ -215,6 +215,20 @@ public interface IMeasurementService
     public ValueTask<OneOf<Success, NotFound>> DeleteMeasurementAsync(int groupId, int measurementId);
 
     /// <summary>
+    ///     Adds a data entry to the measurement that is currently recorded by a device, which is the most recently
+    ///     added measurement of the device's measurement groups
+    /// </summary>
+    /// <param name="deviceId">The id of the measurement device</param>
+    /// <param name="data">The data entry, a single number or a JSON array of numbers</param>
+    /// <param name="timestamp">The time the data was received</param>
+    /// <returns>
+    ///     <see cref="Success" />, <see cref="NotFound" /> if the device has no measurement
+    ///     or <see cref="InvalidMeasurementData" /> if the data cannot be parsed as numbers
+    /// </returns>
+    public ValueTask<OneOf<Success, NotFound, InvalidMeasurementData>> AddDataToLatestMeasurementOfDeviceAsync(
+        string deviceId, string data, Instant timestamp);
+
+    /// <summary>
     ///     Returned if a data entry cannot be parsed as numbers, a data entry is either a single number or a JSON
     ///     array of numbers
     /// </summary>
@@ -489,6 +503,37 @@ internal sealed class MeasurementService(IUnitOfWork uow, ILogger<MeasurementSer
         uow.MeasurementRepository.RemoveMeasurement(measurement);
         await uow.SaveChangesAsync();
         logger.LogInformation("Measurement {MeasurementId} deleted from group {GroupId}", measurementId, groupId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound, IMeasurementService.InvalidMeasurementData>>
+        AddDataToLatestMeasurementOfDeviceAsync(string deviceId, string data, Instant timestamp)
+    {
+        var trimmedData = data.Trim();
+        if (!TryParseValues(trimmedData, []))
+        {
+            logger.LogWarning("Data from device {DeviceId} cannot be parsed as numbers: {Data}", deviceId, trimmedData);
+
+            return new IMeasurementService.InvalidMeasurementData();
+        }
+
+        var measurement = await uow.MeasurementRepository.GetLatestMeasurementOfDeviceAsync(deviceId);
+        if (measurement is null)
+        {
+            logger.LogWarning("Dropping data, device {DeviceId} has no measurement to record into", deviceId);
+
+            return new NotFound();
+        }
+
+        uow.MeasurementRepository.AddData(new MeasurementData
+        {
+            Data = trimmedData,
+            Timestamp = timestamp,
+            MeasurementId = measurement.Id
+        });
+        await uow.SaveChangesAsync();
+        logger.LogDebug("Data stored in measurement {MeasurementId}", measurement.Id);
 
         return new Success();
     }
