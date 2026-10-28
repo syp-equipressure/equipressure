@@ -40,6 +40,11 @@ public sealed class WebApiTestFixture : IAsyncLifetime
         Clock = Factory.TestClock;
     }
 
+    /// <summary>
+    ///     Creates a client for websocket endpoints of the test server
+    /// </summary>
+    public Microsoft.AspNetCore.TestHost.WebSocketClient CreateWebSocketClient() => Factory.Server.CreateWebSocketClient();
+
     public async ValueTask DisposeAsync()
     {
         await Factory.DisposeAsync();

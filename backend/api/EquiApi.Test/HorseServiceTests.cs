@@ -321,7 +321,7 @@ public sealed class HorseServiceTests
         var result = await _sut.AddSaddleToHorse("Dressursattel", HorseId, 1);
 
         result.Value.Should().BeOfType<NotFound>();
-        await _uowMock.SaddleRepository.DidNotReceive().DoesSaddleCategoryExist(Arg.Any<int>());
+        await _uowMock.SaddleRepository.DidNotReceive().GetSaddleCategoryByIdAsync(Arg.Any<int>());
         await _uowMock.DidNotReceive().SaveChangesAsync();
     }
 
@@ -331,7 +331,7 @@ public sealed class HorseServiceTests
         const int CategoryId = 5;
         var horse = TestData.CreateHorse(HorseId);
         _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns(horse);
-        _uowMock.SaddleRepository.DoesSaddleCategoryExist(CategoryId).Returns(false);
+        _uowMock.SaddleRepository.GetSaddleCategoryByIdAsync(CategoryId).Returns((SaddleCategory?) null);
 
         var result = await _sut.AddSaddleToHorse("Dressursattel", HorseId, CategoryId);
 
@@ -346,7 +346,8 @@ public sealed class HorseServiceTests
         const int CategoryId = 5;
         var horse = TestData.CreateHorse(HorseId);
         _uowMock.HorseRepository.GetHorseByIdAsync(HorseId).Returns(horse);
-        _uowMock.SaddleRepository.DoesSaddleCategoryExist(CategoryId).Returns(true);
+        var category = TestData.CreateSaddleCategory(CategoryId);
+        _uowMock.SaddleRepository.GetSaddleCategoryByIdAsync(CategoryId).Returns(category);
 
         var result = await _sut.AddSaddleToHorse("Dressursattel", HorseId, CategoryId);
 
@@ -354,6 +355,8 @@ public sealed class HorseServiceTests
         saddle.Name.Should().Be("Dressursattel");
         saddle.HorseId.Should().Be(HorseId);
         saddle.CategoryId.Should().Be(CategoryId);
+        // the response needs the name of the category
+        saddle.Category.Should().Be(category);
         horse.Saddles.Should().ContainSingle().Which.Should().Be(saddle);
         await _uowMock.Received(1).SaveChangesAsync();
     }

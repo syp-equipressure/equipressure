@@ -13,6 +13,8 @@ import {
   toMeasurement,
 } from './measurement-mapper';
 
+export const BACKEND_BASE_URL = 'http://localhost:5200/api';
+
 export interface SaddleCategory {
   id: number;
   name: string;
@@ -60,7 +62,7 @@ export const DEVELOPMENT_HORSE_BREEDS = [
 @Injectable({ providedIn: 'root' })
 export class BackendApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:5200/api';
+  private readonly baseUrl = BACKEND_BASE_URL;
 
   getContacts(personId: string): Observable<Customer[]> {
     return this.http.get<unknown>(`${this.baseUrl}/persons/${personId}/contacts`).pipe(
@@ -502,7 +504,7 @@ function ageFromDate(value: string): number {
   return Math.max(0, age);
 }
 
-function toApiError(error: unknown) {
+export function toApiError(error: unknown) {
   if (error instanceof HttpErrorResponse) {
     const body: unknown = error.error;
     if (isRecord(body)) {

@@ -1,5 +1,5 @@
 import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
-import { EMPTY, Observable, catchError, concat, defer, switchMap, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, concat, defer, forkJoin, switchMap, tap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
@@ -12,6 +12,7 @@ import { formatDuration } from '../../utils/time-format';
 import { AddHorse } from '../horses/add-horse/add-horse';
 import { Horse as HorseModel } from '../../models/horse.model';
 import { BackendApiService } from '../../services/backend-api.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { printMeasurementReport } from '../../services/measurement-report';
 import { hasNoRecordedData } from '../../services/measurement-mapper';
 import { downloadMeasurementCsv } from '../../services/measurement-export';
@@ -36,6 +37,9 @@ export class MeasurementsPage implements OnDestroy {
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
 
+  private readonly personContext = inject(BackendPersonContextService);
+
+  readonly horseLoading = signal(false);
   readonly measurementsLoading = signal(false);
   readonly measurementsError = signal('');
 
@@ -95,6 +99,33 @@ export class MeasurementsPage implements OnDestroy {
       this.tab.set('messungen');
       this.selectedId.set(measurementId);
     }
+
+    // Pferd und Kund*in sind nur bekannt, wenn vorher die Kunden- oder Pferdeliste geladen wurde.
+    // Bei einem direkten Aufruf (z.B. "Öffnen" im Chat) werden sie hier aus dem Backend nachgeladen.
+    effect(onCleanup => {
+      const horseId = this.params().get('horseId') ?? '';
+      const ownerId = this.params().get('customerId') ?? this.personContext.personId();
+      if (!isBackendId(horseId) || !isBackendId(ownerId) || untracked(() => this.horse())) {
+        this.horseLoading.set(false);
+        return;
+      }
+      this.horseLoading.set(true);
+      const subscription = forkJoin({
+        owner: this.api.getPerson(ownerId),
+        horses: this.api.getHorses(ownerId),
+      }).subscribe({
+        next: ({ owner, horses }) => {
+          this.data.upsertCustomers([owner]);
+          this.data.upsertHorses(horses);
+          this.horseLoading.set(false);
+        },
+        error: error => {
+          this.measurementsError.set(error instanceof Error ? error.message : 'Pferd konnte nicht geladen werden.');
+          this.horseLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
 
     // Pferde aus dem Backend haben numerische IDs, ihre Messungen kommen ebenfalls aus dem Backend
     effect(onCleanup => {

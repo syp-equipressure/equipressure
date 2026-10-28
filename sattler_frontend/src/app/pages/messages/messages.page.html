@@ -1,79 +1,163 @@
 <app-page-header title="Nachrichten"></app-page-header>
 
 <section class="messages-page">
+  @if (!personId()) {
+    <p class="empty-chat">
+      Der Chat braucht eine Person aus dem Backend. Trage in den
+      <a routerLink="/settings">Einstellungen</a> deine Person-ID ein.
+    </p>
+  } @else {
   <div class="messages-layout">
     <aside class="customer-panel" aria-label="Kundenliste">
-      <div class="panel-title">
-        <h2>Nachrichten</h2>
-        <span>{{ customers().length }}</span>
-      </div>
+      @if (notificationPermission() === 'default') {
+        <button type="button" class="notify-button" (click)="enableNotifications()">
+          <span class="material-icons" aria-hidden="true">notifications_active</span>
+          Desktop-Benachrichtigungen aktivieren
+        </button>
+      }
+      @if (!chat.connected()) {
+        <p class="list-message" role="status">Live-Verbindung wird aufgebaut …</p>
+      }
+      @if (chat.error()) {
+        <p class="list-message" role="alert">{{ chat.error() }}</p>
+      }
       <div class="customer-list">
-        @for (customer of customers(); track customer.id) {
+        @for (item of contactItems(); track item.contact.id) {
           <button
             class="customer-item"
-            [class.selected]="customer.id === selectedCustomerId()"
-            [attr.aria-pressed]="customer.id === selectedCustomerId()"
-            (click)="selectCustomer(customer.id)"
+            [class.selected]="item.contact.id === selectedContactId()"
+            [attr.aria-pressed]="item.contact.id === selectedContactId()"
+            (click)="selectContact(item.contact.id)"
           >
-            <span class="customer-avatar">
-              @if (avatarUrl(customer)) {
-                <img [src]="avatarUrl(customer)" [alt]="fullName(customer)" />
-              } @else {
-                {{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}
+            <span class="customer-avatar">{{ initials(item.contact) }}</span>
+            <span class="customer-meta">
+              <span class="customer-name">{{ item.contact.firstName }} {{ item.contact.lastName }}</span>
+              <span class="customer-preview" [class.unread]="item.unread">{{ item.preview }}</span>
+            </span>
+            <span class="contact-side">
+              <time class="contact-time">{{ item.time }}</time>
+              @if (item.unread) {
+                <span class="unread-badge" [attr.aria-label]="item.unread + ' ungelesen'">{{ item.unread }}</span>
               }
             </span>
-            <span class="customer-meta">
-              <span class="customer-name">{{ fullName(customer) }}</span>
-              <span class="customer-preview">{{ latestMessage(customer.id) }}</span>
-            </span>
-            <time class="contact-time">{{ latestMessageTime(customer.id) }}</time>
           </button>
+        } @empty {
+          @if (chat.conversationsLoading()) {
+            <p class="list-message" role="status">Nachrichten werden geladen …</p>
+          } @else {
+            <p class="list-message">Noch keine Nachrichten.</p>
+          }
         }
       </div>
     </aside>
 
     <section class="chat-panel" aria-label="Chatverlauf">
-      @if (selectedCustomer(); as customer) {
+      @if (selectedContact(); as contact) {
         <header class="chat-header">
-          <span class="customer-avatar">
-            @if (avatarUrl(customer)) {
-              <img [src]="avatarUrl(customer)" [alt]="fullName(customer)" />
-            } @else {
-              {{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}
-            }
-          </span>
-          <div class="chat-contact">
-            <h2>{{ fullName(customer) }}</h2>
-            @if (customerHorseNames(customer).length) {
-              <span>{{ customerHorseNames(customer).join(' | ') }}</span>
-            }
-          </div>
+          <a class="chat-contact-link" [routerLink]="['/customers', contact.id]" title="Profil öffnen">
+            <span class="customer-avatar">{{ initials(contact) }}</span>
+            <div class="chat-contact">
+              <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
+            </div>
+          </a>
         </header>
 
-        <div class="chat-history" aria-live="polite">
-          <div class="date-divider"><span>Heute</span></div>
-          @for (message of selectedMessages(); track message.id) {
-            <article class="message" [class.outgoing]="message.sender === 'sattler'">
-              @if (message.attachment; as file) {
-                <a class="attachment" [href]="file.url" [download]="file.name" [title]="file.name + ' herunterladen'">
-                  @if (file.isImage) {
-                    <img [src]="file.url" [alt]="file.name" />
-                  } @else {
-                    <span class="material-icons" aria-hidden="true">description</span>
+        <div class="chat-history" aria-live="polite" #history>
+          @for (day of messageDays(); track day.label) {
+            <div class="date-divider"><span>{{ day.label }}</span></div>
+            @for (message of day.messages; track message.id) {
+              <article class="message" [class.outgoing]="isOutgoing(message)">
+                @if (message.horse || message.measurement) {
+                  <div class="share-card">
+                    @if (message.horse) {
+                      <img class="share-horse-icon" src="/assets/horse-icon.svg" alt="" />
+                    } @else {
+                      <span class="material-icons share-icon" aria-hidden="true">analytics</span>
+                    }
+                    <span class="share-info">
+                      @if (message.horse; as horse) {
+                        <small>Pferd geteilt</small>
+                        <strong>{{ horse.name }}</strong>
+                        <span>mit allen Messungen</span>
+                      } @else if (message.measurement; as measurement) {
+                        <small>Messung geteilt</small>
+                        <strong>{{ measurement.horseName }}</strong>
+                        <span>{{ measurement.name }} · {{ germanDate(measurement.date) }}</span>
+                      }
+                    </span>
+                  </div>
+                  @if (!isOutgoing(message)) {
+                    @if (message.acceptedAt) {
+                      <a class="share-action done" [routerLink]="shareLink(message)" [queryParams]="shareQueryParams(message)">
+                        <span class="material-icons" aria-hidden="true">check_circle</span>
+                        Hinzugefügt · Öffnen
+                      </a>
+                    } @else {
+                      <button type="button" class="share-action" [disabled]="acceptingId() === message.id"
+                        (click)="accept(message)">
+                        <span class="material-icons" aria-hidden="true">add</span>
+                        {{ message.horse ? 'Pferd hinzufügen' : 'Messung hinzufügen' }}
+                      </button>
+                    }
+                  } @else if (message.acceptedAt) {
+                    <small class="share-state">Hinzugefügt</small>
                   }
-                  <span class="attachment-name">{{ file.name }}</span>
-                  <small>{{ file.sizeLabel }}</small>
-                </a>
-              }
-              @if (message.message) {
-                <p>{{ message.message }}</p>
-              }
-              <time>{{ message.timestamp }}</time>
-            </article>
+                } @else if (message.type === 'Horse' || message.type === 'Measurement') {
+                  <!-- the backend removes the reference when the horse or measurement is deleted -->
+                  <small class="share-state">
+                    {{ message.type === 'Horse' ? 'Das geteilte Pferd wurde gelöscht.' : 'Die geteilte Messung wurde gelöscht.' }}
+                  </small>
+                }
+                @if (message.file; as file) {
+                  @if (isImage(message)) {
+                    <a class="attachment" [href]="chat.fileUrl(message)" target="_blank" rel="noopener"
+                      [title]="file.fileName + ' öffnen'">
+                      <img [src]="chat.fileUrl(message)" [alt]="file.fileName" loading="lazy" />
+                    </a>
+                  } @else {
+                    <a class="attachment file" [href]="chat.fileUrl(message)" [download]="file.fileName"
+                      [title]="file.fileName + ' herunterladen'">
+                      <span class="material-icons" aria-hidden="true">description</span>
+                      <span class="attachment-name">{{ file.fileName }}</span>
+                      <small>{{ fileSize(file.size) }}</small>
+                    </a>
+                  }
+                }
+                @if (message.text) {
+                  <p>{{ message.text }}</p>
+                }
+                <time>
+                  {{ time(message.sentAt) }}
+                  <!-- like in WhatsApp/Signal: one tick when sent, two coloured ticks when read -->
+                  @if (isOutgoing(message)) {
+                    <span class="material-icons ticks" [class.read]="message.readAt"
+                      [attr.aria-label]="message.readAt ? 'Gelesen' : 'Gesendet'"
+                      [title]="message.readAt ? 'Gelesen' : 'Gesendet'">{{ message.readAt ? 'done_all' : 'done' }}</span>
+                  }
+                </time>
+              </article>
+            }
           } @empty {
-            <p class="empty-chat">Noch keine Nachrichten. Beginne den Chat mit {{ customer.firstName }}.</p>
+            @if (messagesLoading()) {
+              <p class="empty-chat" role="status">Nachrichten werden geladen …</p>
+            } @else {
+              <p class="empty-chat">Noch keine Nachrichten. Beginne den Chat mit {{ contact.firstName }}.</p>
+            }
           }
         </div>
+
+        @if (sendError()) {
+          <p class="send-error" role="alert">{{ sendError() }}</p>
+        }
+
+        @if (showPicker()) {
+          <app-measurement-picker
+            [contactId]="contact.id"
+            [sending]="sending()"
+            (selected)="sendMeasurement($event)"
+            (cancel)="showPicker.set(false)"
+          ></app-measurement-picker>
+        }
 
         <form class="chat-composer" (ngSubmit)="sendMessage()">
           <label class="visually-hidden" for="message-draft">Nachricht schreiben</label>
@@ -81,16 +165,21 @@
             id="message-draft"
             type="text"
             placeholder="Nachricht schreiben …"
+            maxlength="2000"
             [ngModel]="draft()"
             (ngModelChange)="draft.set($event)"
             name="message"
           />
           <input #fileInput type="file" multiple hidden (change)="attachFiles($event)" />
-          <button type="button" class="attach-button" aria-label="Datei anhängen" title="Datei anhängen"
-            (click)="fileInput.click()">
+          <button type="button" class="attach-button" aria-label="Bild oder Datei senden" title="Bild oder Datei senden"
+            [disabled]="sending()" (click)="fileInput.click()">
             <span class="material-icons">attach_file</span>
           </button>
-          <button type="submit" class="send-button" [disabled]="!draft().trim()" aria-label="Nachricht senden">
+          <button type="button" class="attach-button" aria-label="Messung senden" title="Messung senden"
+            [class.active]="showPicker()" (click)="showPicker.set(!showPicker())">
+            <span class="material-icons">analytics</span>
+          </button>
+          <button type="submit" class="send-button" [disabled]="!draft().trim() || sending()" aria-label="Nachricht senden">
             <span class="material-icons">send</span>
           </button>
         </form>
@@ -99,4 +188,5 @@
       }
     </section>
   </div>
+  }
 </section>

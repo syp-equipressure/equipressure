@@ -73,6 +73,14 @@ public interface IHorseRepository
     public ValueTask<bool> IsVisibleRiderOfHorseAsync(int horseId, int personId);
 
     /// <summary>
+    ///     Checks if a person is the owner or a rider of a horse
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>True if the person belongs to the horse, false otherwise</returns>
+    public ValueTask<bool> IsPersonOfHorseAsync(int personId, int horseId);
+
+    /// <summary>
     ///     Gets the (tracked) breeds with the given ids
     /// </summary>
     /// <param name="breedIds">The ids of the breeds</param>
@@ -151,6 +159,9 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
     public async ValueTask<bool> IsVisibleRiderOfHorseAsync(int horseId, int personId) =>
         await personHorseSet.AnyAsync(ph => ph.HorseId == horseId && ph.PersonId == personId
                                             && (ph.IsOwner || !ph.IsHidden));
+
+    public async ValueTask<bool> IsPersonOfHorseAsync(int personId, int horseId) =>
+        await personHorseSet.AnyAsync(ph => ph.PersonId == personId && ph.HorseId == horseId);
 
     public async ValueTask<IReadOnlyCollection<Breed>> GetBreedsByIdAsync(IReadOnlyCollection<int> breedIds) =>
         await breedSet.Where(b => breedIds.Contains(b.Id))

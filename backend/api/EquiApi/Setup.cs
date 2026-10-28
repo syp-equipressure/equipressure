@@ -17,6 +17,7 @@ public static class Setup
         {
             services.ConfigurePersistence(configurationManager, isDev);
             services.ConfigureCore();
+            services.AddSingleton<IChatSocketManager, ChatSocketManager>();
         }
 
         public Settings LoadAndConfigureSettings(IConfigurationManager configurationManager)
