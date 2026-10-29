@@ -47,10 +47,16 @@ class AppSocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // weiß mit Rand, wie die Anmelde-Buttons der Anbieter üblich aussehen
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
+      child: OutlinedButton(
         onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textStrong,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        ),
         child: Row(
           children: [
             Icon(icon, size: 20),

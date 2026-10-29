@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/onboarding/auth_gate.dart';
 import 'services/app_navigation.dart';
+import 'theme/app_theme.dart';
 import 'widgets/chat_notification_listener.dart';
 
 void main() {
@@ -15,6 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
       navigatorKey: AppNavigation.navigatorKey,
       scaffoldMessengerKey: AppNavigation.scaffoldMessengerKey,
       // deutsche Texte in Material-Widgets, z.B. Monatsnamen und Knöpfe im Datumswähler
