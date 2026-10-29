@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../screens/saddler_contact/chat_screen.dart';
@@ -35,10 +36,10 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener> {
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 5),
-        backgroundColor: const Color(0xFF4A3B6B),
+        backgroundColor: AppColors.purple700,
         content: Row(
           children: [
-            const Icon(Icons.chat_bubble, color: Colors.white, size: 20),
+            const Icon(Icons.chat_bubble, color: AppColors.surface, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -63,7 +64,7 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener> {
         ),
         action: SnackBarAction(
           label: 'Öffnen',
-          textColor: const Color(0xFFD1C4E9),
+          textColor: AppColors.purple100,
           onPressed: () => AppNavigation.navigatorKey.currentState?.push(
             MaterialPageRoute(
               builder: (_) => ChatScreen(chat: notification.chat),

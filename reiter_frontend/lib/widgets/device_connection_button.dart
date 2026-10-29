@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/services/device_connection_service.dart';
@@ -8,8 +9,8 @@ class DeviceConnectionButton extends StatelessWidget {
 
   const DeviceConnectionButton({super.key, required this.device});
 
-  static const Color _accent = Color(0xFF6B4C9A);
-  static const Color _accentLight = Color(0xFFD4B5F5);
+  static const Color _accent = AppColors.primary;
+  static const Color _accentLight = AppColors.purple100;
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +28,10 @@ class DeviceConnectionButton extends StatelessWidget {
               Icons.circle,
               size: 10,
               color: connected
-                  ? Colors.green
+                  ? AppColors.success
                   : connecting
-                      ? Colors.orange
-                      : Colors.grey[400],
+                      ? AppColors.warning
+                      : AppColors.textMuted,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -40,7 +41,7 @@ class DeviceConnectionButton extends StatelessWidget {
                     : connecting
                         ? 'Verbinde …'
                         : 'Nicht verbunden',
-                style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                style: TextStyle(fontSize: 14, color: AppColors.textStrong),
               ),
             ),
             if (connected)

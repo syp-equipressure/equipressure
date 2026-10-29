@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../screens/profil/profil_screen.dart';
 
@@ -12,17 +13,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
 
       // 👇 DAS MACHT DEN SCHATTEN WIE IM BILD
       elevation: 3,
-      shadowColor: Colors.black.withValues(alpha: 1.5),
+      shadowColor: AppColors.shadow(1.5),
 
       centerTitle: true,
 
       // ☰ MENU
       leading: IconButton(
-        icon: const Icon(Icons.menu, color: Colors.black),
+        icon: const Icon(Icons.menu, color: AppColors.textStrong),
         onPressed: () => Scaffold.of(context).openDrawer(),
       ),
 
@@ -31,7 +32,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         title,
         style: const TextStyle(
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: AppColors.textStrong,
           fontSize: 18,
         ),
       ),
@@ -51,10 +52,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             },
             child: CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.deepPurple[100],
+              backgroundColor: AppColors.purple100,
               child: Icon(
                 Icons.person_outline,
-                color: Colors.deepPurple[400],
+                color: AppColors.purple400,
               ),
             ),
           ),

@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class StyledDropdown<T> extends StatelessWidget {
@@ -28,7 +29,7 @@ class StyledDropdown<T> extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -39,14 +40,14 @@ class StyledDropdown<T> extends StatelessWidget {
                       placeholder,
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.textSoft,
                       ),
                     )
                   : labelBuilder(value as T),
             ),
             Icon(
               Icons.keyboard_arrow_down,
-              color: Colors.grey[600],
+              color: AppColors.textSoft,
             ),
           ],
         ),

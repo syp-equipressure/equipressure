@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../models/horse.dart';
 
@@ -39,7 +40,7 @@ class _HorseSelectionDialogState extends State<HorseSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -96,8 +97,8 @@ class _HorseSelectionDialogState extends State<HorseSelectionDialog> {
                   child: ElevatedButton(
                     onPressed: _onSend,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7C4DFF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -139,7 +140,7 @@ class _HorseSelectionItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[50] : Colors.transparent,
+          color: isSelected ? AppColors.purple50 : Colors.transparent,
         ),
         child: Row(
           children: [
@@ -148,9 +149,9 @@ class _HorseSelectionItem extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue : Colors.transparent,
+                color: isSelected ? AppColors.primary : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? Colors.blue : Colors.grey[400]!,
+                  color: isSelected ? AppColors.primary : AppColors.textMuted,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(4),
@@ -159,7 +160,7 @@ class _HorseSelectionItem extends StatelessWidget {
                   ? const Icon(
                       Icons.check,
                       size: 18,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     )
                   : null,
             ),
@@ -182,7 +183,7 @@ class _HorseSelectionItem extends StatelessWidget {
                   Text(
                     '${horse.age} | ${horse.breed}',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: AppColors.textSoft,
                       fontSize: 13,
                     ),
                   ),

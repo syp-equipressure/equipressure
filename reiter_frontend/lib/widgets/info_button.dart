@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Ein wiederverwendbarer Info-Button, der beim Klicken einen Dialog mit Text anzeigt
@@ -42,7 +43,7 @@ class InfoButton extends StatelessWidget {
         child: Icon(
           Icons.info_outline,
           size: size,
-          color: iconColor ?? Colors.grey[600],
+          color: iconColor ?? AppColors.textSoft,
         ),
       ),
     );

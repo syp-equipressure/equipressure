@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class SelectionDropdown<T> extends StatelessWidget {
@@ -47,10 +48,10 @@ class SelectionDropdown<T> extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             border: Border.all(
-              color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
+              color: enabled ? AppColors.border : AppColors.borderSoft,
             ),
             borderRadius: BorderRadius.circular(12),
-            color: enabled ? Colors.white : Colors.grey[50],
+            color: enabled ? AppColors.surface : AppColors.bgPanel,
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -58,11 +59,11 @@ class SelectionDropdown<T> extends StatelessWidget {
               isExpanded: true,
               icon: Icon(
                 Icons.expand_more,
-                color: enabled ? Colors.grey[600] : Colors.grey[400],
+                color: enabled ? AppColors.textSoft : AppColors.textMuted,
               ),
               hint: Text(
                 'Bitte wählen...',
-                style: TextStyle(color: Colors.grey[400]),
+                style: TextStyle(color: AppColors.textMuted),
               ),
               // im zugeklappten Zustand nur der Name, ohne Stift
               selectedItemBuilder: (context) => [
@@ -86,7 +87,7 @@ class SelectionDropdown<T> extends StatelessWidget {
                               ),
                               IconButton(
                                 tooltip: '$label bearbeiten',
-                                icon: Icon(Icons.edit_outlined, size: 20, color: Colors.grey[700]),
+                                icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.text),
                                 visualDensity: VisualDensity.compact,
                                 onPressed: () {
                                   // zuerst die aufgeklappte Liste schließen
@@ -106,13 +107,13 @@ class SelectionDropdown<T> extends StatelessWidget {
                         const Icon(
                           Icons.add_circle_outline,
                           size: 20,
-                          color: Color(0xFF6B4C9A),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           addNewText ?? '$label hinzufügen',
                           style: const TextStyle(
-                            color: Color(0xFF6B4C9A),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

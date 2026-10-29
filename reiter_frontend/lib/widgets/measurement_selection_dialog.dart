@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../models/horse.dart';
 import '../models/measurement.dart';
@@ -61,7 +62,7 @@ class _MeasurementSelectionDialogState
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 520),
@@ -160,7 +161,7 @@ class _MeasurementSelectionDialogState
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.grey[600]),
+        style: TextStyle(color: AppColors.textSoft),
       ),
     );
   }

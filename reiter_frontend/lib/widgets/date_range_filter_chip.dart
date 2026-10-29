@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -51,10 +52,10 @@ class DateRangeFilterChip extends StatelessWidget {
           bottom: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.grey[200] : Colors.white,
+          color: isSelected ? AppColors.borderSoft : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.grey[400]! : Colors.grey[300]!,
+            color: isSelected ? AppColors.textMuted : AppColors.border,
           ),
         ),
         child: Row(
@@ -64,7 +65,7 @@ class DateRangeFilterChip extends StatelessWidget {
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: AppColors.text,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -72,10 +73,10 @@ class DateRangeFilterChip extends StatelessWidget {
             if (isSelected)
               GestureDetector(
                 onTap: () => onSelected(null),
-                child: Icon(Icons.close, size: 18, color: Colors.grey[700]),
+                child: Icon(Icons.close, size: 18, color: AppColors.text),
               )
             else
-              Icon(Icons.date_range, size: 18, color: Colors.grey[700]),
+              Icon(Icons.date_range, size: 18, color: AppColors.text),
           ],
         ),
       ),

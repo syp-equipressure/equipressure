@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // <--- NEU
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
@@ -12,7 +13,7 @@ class SideNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           children: [
@@ -112,13 +113,13 @@ class _DrawerItem extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF6955AE),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 '$badge',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -135,7 +136,7 @@ class _DrawerItem extends StatelessWidget {
         svgPath!,
         width: 22,
         height: 22,
-        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+        colorFilter: const ColorFilter.mode(AppColors.textStrong, BlendMode.srcIn),
       );
     }
     return Icon(icon, size: 22);

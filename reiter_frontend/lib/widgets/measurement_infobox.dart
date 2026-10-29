@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class InfoBoxes extends StatelessWidget {
@@ -33,14 +34,14 @@ class InfoBoxes extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AppColors.bgPage,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontSize: 14,
-          color: Colors.grey[700],
+          color: AppColors.text,
         ),
         textAlign: TextAlign.center,
       ),
@@ -62,14 +63,14 @@ class SingleInfoBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AppColors.bgPage,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontSize: 14,
-          color: Colors.grey[700],
+          color: AppColors.text,
         ),
       ),
     );

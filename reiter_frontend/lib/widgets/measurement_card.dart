@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
@@ -23,11 +24,11 @@ class MeasurementCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.shadow(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -56,7 +57,7 @@ class MeasurementCard extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.delete_outline, color: Colors.grey[600], size: 20),
+                      icon: Icon(Icons.delete_outline, color: AppColors.textSoft, size: 20),
                       onPressed: onDelete,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -83,14 +84,14 @@ class MeasurementCard extends StatelessWidget {
   Widget _buildDetailRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 16, color: AppColors.textSoft),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[700],
+              color: AppColors.text,
             ),
           ),
         ),
@@ -105,7 +106,7 @@ class MeasurementCard extends StatelessWidget {
           svgPath,
           width: 16,
           height: 16,
-          colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(AppColors.textSoft, BlendMode.srcIn),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -113,7 +114,7 @@ class MeasurementCard extends StatelessWidget {
             text,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[700],
+              color: AppColors.text,
             ),
           ),
         ),
