@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using EquiApi.BackgroundServices;
 using EquiApi.Core.Services;
 using EquiApi.Test.Util;
