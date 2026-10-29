@@ -128,11 +128,12 @@
                 }
                 <time>
                   {{ time(message.sentAt) }}
-                  <!-- like in WhatsApp/Signal: one tick when sent, two coloured ticks when read -->
+                  <!-- like in WhatsApp/Signal: one tick when sent, two ticks when delivered, coloured when read -->
                   @if (isOutgoing(message)) {
                     <span class="material-icons ticks" [class.read]="message.readAt"
-                      [attr.aria-label]="message.readAt ? 'Gelesen' : 'Gesendet'"
-                      [title]="message.readAt ? 'Gelesen' : 'Gesendet'">{{ message.readAt ? 'done_all' : 'done' }}</span>
+                      [attr.aria-label]="tickLabel(message)" [title]="tickLabel(message)">
+                      {{ message.readAt || message.deliveredAt ? 'done_all' : 'done' }}
+                    </span>
                   }
                 </time>
               </article>

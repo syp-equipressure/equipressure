@@ -137,6 +137,14 @@ export class ChatService {
       .subscribe({ error: () => undefined });
   }
 
+  /** Confirms that all received messages arrived (second tick for the senders). */
+  private markAsDelivered(): void {
+    const personId = this.personContext.personId();
+    if (!personId) return;
+    this.http.put<void>(`${BACKEND_BASE_URL}/persons/${personId}/chats/delivered`, {})
+      .subscribe({ error: () => undefined });
+  }
+
   /** Adds the horse or measurement shared in a received message. */
   accept(message: ChatMessage): Observable<ChatMessage> {
     const personId = this.personContext.personId();
@@ -194,6 +202,8 @@ export class ChatService {
     socket.onopen = () => {
       this.connected.set(true);
       this.reconnectDelay = 1000;
+      // messages sent while offline are delivered now
+      this.markAsDelivered();
     };
     socket.onmessage = event => this.handleEvent(event.data);
     socket.onclose = () => {
@@ -238,6 +248,9 @@ export class ChatService {
       const message = mapMessage(event['message']);
       this.upsertMessage(message);
       if (event['type'] === 'message' && message.recipientId === me) this.onIncoming(message);
+    } else if (event['type'] === 'delivered') {
+      const recipientId = String(event['readerId']);
+      if (recipientId !== me) this.markSent(recipientId, 'deliveredAt');
     } else if (event['type'] === 'read') {
       const readerId = String(event['readerId']);
       const contactId = String(event['contactId']);
@@ -245,13 +258,14 @@ export class ChatService {
         // read in another tab
         this.updateConversation(contactId, item => ({ ...item, unreadCount: 0 }));
       } else {
-        this.markSentAsRead(readerId);
+        this.markSent(readerId, 'readAt');
       }
     }
   }
 
   private onIncoming(message: ChatMessage): void {
     const contactId = message.senderId;
+    this.markAsDelivered();
     const isOpen = this.activeContactId() === contactId && this.router.url.startsWith('/messages');
     if (isOpen && !this.document.hidden) {
       this.markAsRead(contactId);
@@ -321,16 +335,15 @@ export class ChatService {
     }));
   }
 
-  private markSentAsRead(readerId: string): void {
+  /** Sets the status of the messages sent to [recipientId], read messages are always delivered as well. */
+  private markSent(recipientId: string, status: 'deliveredAt' | 'readAt'): void {
     const now = new Date();
-    const loaded = this.messagesByContact().get(readerId);
-    if (loaded) {
-      this.setMessages(readerId, loaded.map(message =>
-        message.recipientId === readerId && !message.readAt ? { ...message, readAt: now } : message));
-    }
-    this.updateConversation(readerId, item => item.lastMessage.recipientId === readerId && !item.lastMessage.readAt
-      ? { ...item, lastMessage: { ...item.lastMessage, readAt: now } }
-      : item);
+    const update = (message: ChatMessage): ChatMessage => message.recipientId === recipientId && !message[status]
+      ? { ...message, [status]: now, deliveredAt: message.deliveredAt ?? now }
+      : message;
+    const loaded = this.messagesByContact().get(recipientId);
+    if (loaded) this.setMessages(recipientId, loaded.map(update));
+    this.updateConversation(recipientId, item => ({ ...item, lastMessage: update(item.lastMessage) }));
   }
 
   private updateConversation(contactId: string, update: (conversation: ChatConversation) => ChatConversation): void {
@@ -372,6 +385,7 @@ function mapMessage(value: unknown): ChatMessage {
       : null,
     text: typeof record['text'] === 'string' ? record['text'] : null,
     sentAt: toDate(record['sentAt']) ?? new Date(),
+    deliveredAt: toDate(record['deliveredAt']),
     readAt: toDate(record['readAt']),
     acceptedAt: toDate(record['acceptedAt']),
     senderId: String(record['senderId'] ?? ''),

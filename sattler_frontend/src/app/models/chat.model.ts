@@ -26,6 +26,8 @@ export interface ChatMessage {
   type: ChatMessageType;
   text: string | null;
   sentAt: Date;
+  /** When an app of the recipient received the message */
+  deliveredAt: Date | null;
   readAt: Date | null;
   acceptedAt: Date | null;
   senderId: string;

@@ -225,6 +225,11 @@ export class MessagesPage implements OnDestroy {
     return message.senderId === this.personId();
   }
 
+  tickLabel(message: ChatMessage): string {
+    if (message.readAt) return 'Gelesen';
+    return message.deliveredAt ? 'Zugestellt' : 'Gesendet';
+  }
+
   /** The horse page of the customer who shared the horse or measurement. */
   shareLink(message: ChatMessage): string[] {
     const horseId = message.horse?.id ?? message.measurement?.horseId ?? '';
