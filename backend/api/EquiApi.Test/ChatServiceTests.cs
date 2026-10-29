@@ -160,8 +160,50 @@ public sealed class ChatServiceTests
         var result = await _sut.MarkAsReadAsync(SaddlerId, EquestrianId);
 
         result.Value.Should().BeOfType<Success<int>>().Which.Value.Should().Be(2);
-        messages.Should().OnlyContain(m => m.ReadAt == _clock.GetCurrentInstant());
+        messages.Should().OnlyContain(m => m.ReadAt == _clock.GetCurrentInstant()
+                                           && m.DeliveredAt == _clock.GetCurrentInstant());
         await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MarkAsDeliveredAsync_UndeliveredMessages_SetsDeliveredAtAndReturnsSenders()
+    {
+        var saddler = TestData.CreatePerson(SaddlerId);
+        var messages = new List<ChatMessage>
+        {
+            CreateMessage(1, TestData.CreatePerson(EquestrianId), saddler),
+            CreateMessage(2, TestData.CreatePerson(EquestrianId), saddler),
+            CreateMessage(3, TestData.CreatePerson(3, "Anna"), saddler)
+        };
+        _uowMock.ChatRepository.GetUndeliveredMessagesAsync(SaddlerId).Returns(messages);
+
+        var result = await _sut.MarkAsDeliveredAsync(SaddlerId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<int>>>()
+              .Which.Value.Should().BeEquivalentTo([EquestrianId, 3]);
+        messages.Should().OnlyContain(m => m.DeliveredAt == _clock.GetCurrentInstant() && m.ReadAt == null);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MarkAsDeliveredAsync_NothingUndelivered_ReturnsNoSendersWithoutSaving()
+    {
+        _uowMock.ChatRepository.GetUndeliveredMessagesAsync(SaddlerId).Returns([]);
+
+        var result = await _sut.MarkAsDeliveredAsync(SaddlerId);
+
+        result.Value.Should().BeOfType<Success<IReadOnlyCollection<int>>>().Which.Value.Should().BeEmpty();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MarkAsDeliveredAsync_PersonNotFound_ReturnsNotFound()
+    {
+        _uowMock.PersonRepository.PersonExistsAsync(SaddlerId).Returns(false);
+
+        var result = await _sut.MarkAsDeliveredAsync(SaddlerId);
+
+        result.Value.Should().BeOfType<NotFound>();
     }
 
     [Fact]

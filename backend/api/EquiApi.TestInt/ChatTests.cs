@@ -90,6 +90,33 @@ public sealed class ChatTests(WebApiTestFixture webApiFixture) : WebApiTestBase(
             await ApiClient.GetAsync($"api/persons/{saddler.Id}/chats", TestCancellationToken));
         conversations.Conversations.Single().UnreadCount.Should().Be(0);
         conversations.Conversations.Single().LastMessage.ReadAt.Should().NotBeNull();
+        conversations.Conversations.Single().LastMessage.DeliveredAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async ValueTask MarkAsDelivered_UndeliveredMessages_SetsDeliveredAtButNotReadAt()
+    {
+        var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
+        var sent = await SendTextAsync(equestrian.Id, saddler.Id, "Hallo!");
+
+        var response = await ApiClient.PutAsync($"api/persons/{saddler.Id}/chats/delivered", null,
+                                                TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var messages = await ReadContentAsync<ChatMessageListResponse>(
+            await ApiClient.GetAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}", TestCancellationToken));
+        var message = messages.Messages.Should().ContainSingle(m => m.Id == sent.Id).Which;
+        message.DeliveredAt.Should().NotBeNull();
+        message.ReadAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async ValueTask MarkAsDelivered_UnknownPerson_ReturnsNotFound()
+    {
+        var response = await ApiClient.PutAsync($"api/persons/{TestData.NonExistingId}/chats/delivered", null,
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
 
     [Fact]
