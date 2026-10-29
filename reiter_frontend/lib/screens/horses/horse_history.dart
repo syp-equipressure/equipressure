@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
@@ -124,7 +125,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
               Navigator.pop(context); // Dialog schließen
               await _deleteMeasurement(measurement);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Löschen'),
           ),
         ],
@@ -180,19 +181,19 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.bgPanel,
       appBar: const CustomAppBar(title: 'EquiPressure'),
       drawer: const SideNav(),
       body: Column(
         children: [
           // Header mit Zurück-Button und Titel
           Container(
-            color: Colors.white,
+            color: AppColors.surface,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
                   onPressed: () {
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
@@ -218,7 +219,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
                 const SizedBox(width: 8),
                 Text(
                   '${filteredMeasurements.length} Messungen',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 14, color: AppColors.textSoft),
                 ),
               ],
             ),
@@ -226,7 +227,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
 
           // Filter Chips
           Container(
-            color: Colors.white,
+            color: AppColors.surface,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             // scrollbar, weil ein gewählter Zeitraum auf schmalen Geräten sonst überläuft
             child: SingleChildScrollView(
@@ -284,7 +285,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
                 ? Center(
                     child: Text(
                       'Keine Messungen vorhanden',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 16, color: AppColors.textSoft),
                     ),
                   )
                 : ListView.builder(

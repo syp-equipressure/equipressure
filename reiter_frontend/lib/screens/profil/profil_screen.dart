@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/user_data.dart';
@@ -90,7 +91,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFB8A5C8),
+        backgroundColor: AppColors.purple300,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -99,9 +100,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
         _userData == null ||
         _devices == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFB8A5C8),
+        backgroundColor: AppColors.purple300,
         appBar: AppBar(
-          backgroundColor: const Color(0xFFB8A5C8),
+          backgroundColor: AppColors.purple300,
           actions: [
             if (_personId != null)
               IconButton(
@@ -128,15 +129,15 @@ class _ProfilScreenState extends State<ProfilScreen> {
     final userData = _userData!;
     final devices = _devices!;
     return Scaffold(
-      backgroundColor: const Color(0xFFB8A5C8),
+      backgroundColor: AppColors.purple300,
       drawer: const SideNav(),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFB8A5C8),
+        backgroundColor: AppColors.purple300,
         elevation: 0,
         leading: Builder(
           builder: (context) {
             return IconButton(
-              icon: const Icon(Icons.menu, color: Colors.black),
+              icon: const Icon(Icons.menu, color: AppColors.textStrong),
               onPressed: () {
                 Scaffold.of(context).openDrawer();
               },
@@ -148,7 +149,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
         children: [
           Container(
             width: double.infinity,
-            color: const Color(0xFFB8A5C8),
+            color: AppColors.purple300,
             padding: const EdgeInsets.only(bottom: 24),
             child: Column(
               children: [
@@ -159,7 +160,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.textStrong,
                   ),
                 ),
               ],
@@ -169,13 +170,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surface,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
                 border: Border.all(
-                  color: const Color.fromARGB(255, 250, 210, 255),
+                  color: AppColors.purple100,
                   width: 3,
                 ),
               ),
@@ -199,7 +200,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     height: 1,
                     indent: 50,
                     endIndent: 50,
-                    color: Colors.grey[300],
+                    color: AppColors.border,
                   ),
                   _buildMenuTile(
                     context,
@@ -220,7 +221,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     height: 1,
                     indent: 50,
                     endIndent: 50,
-                    color: Colors.grey[300],
+                    color: AppColors.border,
                   ),
                   _buildMenuTile(
                     context,
@@ -241,12 +242,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       padding: EdgeInsets.fromLTRB(24, 16, 24, 32),
                       child: Row(
                         children: [
-                          Icon(Icons.logout, size: 20, color: Colors.red),
+                          Icon(Icons.logout, size: 20, color: AppColors.error),
                           SizedBox(width: 8),
                           Text(
                             'Logout',
                             style: TextStyle(
-                              color: Colors.red,
+                              color: AppColors.error,
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
@@ -270,7 +271,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
       height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 5),
+        border: Border.all(color: AppColors.surface, width: 5),
       ),
       child: ClipOval(
         child: imageUrl != null && imageUrl.isNotEmpty
@@ -279,18 +280,18 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     child: const Icon(
                       Icons.person,
                       size: 60,
-                      color: Colors.grey,
+                      color: AppColors.textMuted,
                     ),
                   );
                 },
               )
             : Container(
-                color: Colors.white,
-                child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                color: AppColors.surface,
+                child: const Icon(Icons.person, size: 60, color: AppColors.textMuted),
               ),
       ),
     );
@@ -313,11 +314,11 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: AppColors.textStrong,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward, color: Colors.black, size: 20),
+            const Icon(Icons.arrow_forward, color: AppColors.textStrong, size: 20),
           ],
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
@@ -33,8 +34,8 @@ class LiveMeasurementScreen extends StatefulWidget {
 class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   static const int gridSize = 20;
   static const int outputSize = 300;
-  static const Color _accent = Color(0xFF6B4C9A);
-  static const Color _accentLight = Color(0xFFD4B5F5);
+  static const Color _accent = AppColors.primary;
+  static const Color _accentLight = AppColors.purple100;
 
   late final Stopwatch _stopwatch;
   Timer? _uiTimer;
@@ -253,7 +254,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     final elapsed = _stopwatch.elapsed;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -269,7 +270,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: AppColors.textStrong,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -308,7 +309,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: null,
-                        backgroundColor: Colors.grey[200],
+                        backgroundColor: AppColors.borderSoft,
                         color: _accentLight,
                         minHeight: 6,
                       ),
@@ -318,7 +319,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                       '${_formatDuration(elapsed)} min',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.textSoft,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -382,7 +383,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: AppColors.textSoft,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -391,13 +392,13 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
           ),
           child: Text(
             value,
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.black87,
+              color: AppColors.text,
             ),
           ),
         ),

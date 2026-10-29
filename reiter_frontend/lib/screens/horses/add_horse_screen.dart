@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -326,7 +327,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+              foregroundColor: AppColors.error,
             ),
             child: const Text('Löschen'),
           ),
@@ -344,12 +345,12 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     final isEditMode = widget.horse != null;
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: widget.onCancel,
         ),
         title: Text(
@@ -358,14 +359,14 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: AppColors.textStrong,
           ),
         ),
         centerTitle: false,
         actions: isEditMode && widget.onDelete != null
             ? [
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
                   onPressed: _showDeleteConfirmation,
                 ),
               ]
@@ -381,7 +382,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
               onTap: _pickImage,
               child: CustomPaint(
                 painter: DashedBorderPainter(
-                  color: Colors.grey[300]!,
+                  color: AppColors.border,
                   strokeWidth: 2,
                   borderRadius: 12,
                 ),
@@ -389,18 +390,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   height: 160,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[50],
+                    color: AppColors.bgPanel,
                   ),
                   child: selectedImage == null
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.upload_outlined, size: 40, color: Colors.grey[400]),
+                              Icon(Icons.upload_outlined, size: 40, color: AppColors.textMuted),
                               const SizedBox(height: 8),
                               Text(
                                 'Lade ein Bild hoch',
-                                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
                               ),
                             ],
                           ),
@@ -433,18 +434,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
               controller: nameController,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                  borderSide: BorderSide(color: AppColors.border, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -504,18 +505,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         decoration: InputDecoration(
                           hintText: 'z. B. Haflinger',
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                            borderSide: BorderSide(color: AppColors.primary, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -584,28 +585,28 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'DD',
-                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          hintStyle: TextStyle(color: AppColors.textMuted),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           counterText: '',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.border,
                               width: 1,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.border,
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.blue[400]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.primary,
                               width: 2,
                             ),
                           ),
@@ -634,28 +635,28 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'MM',
-                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          hintStyle: TextStyle(color: AppColors.textMuted),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           counterText: '',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.border,
                               width: 1,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.border,
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.blue[400]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.primary,
                               width: 2,
                             ),
                           ),
@@ -683,28 +684,28 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'YYYY',
-                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          hintStyle: TextStyle(color: AppColors.textMuted),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           counterText: '',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.border,
                               width: 1,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.grey[300]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.border,
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: dateErrorMessage != null ? Colors.red : Colors.blue[400]!,
+                              color: dateErrorMessage != null ? AppColors.error : AppColors.primary,
                               width: 2,
                             ),
                           ),
@@ -723,7 +724,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     child: Text(
                       dateErrorMessage!,
                       style: const TextStyle(
-                        color: Colors.red,
+                        color: AppColors.error,
                         fontSize: 12,
                       ),
                     ),
@@ -764,13 +765,13 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                   onChanged: (value) => _validateHeightWeight(), // ← NEU
                                   decoration: InputDecoration(
                                     filled: true,
-                                    fillColor: Colors.white,
+                                    fillColor: AppColors.surface,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: heightWeightErrorMessage != null 
-                                            ? Colors.red 
-                                            : Colors.grey[300]!,
+                                            ? AppColors.error 
+                                            : AppColors.border,
                                         width: 1,
                                       ),
                                     ),
@@ -778,8 +779,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: heightWeightErrorMessage != null 
-                                            ? Colors.red 
-                                            : Colors.grey[300]!,
+                                            ? AppColors.error 
+                                            : AppColors.border,
                                         width: 1,
                                       ),
                                     ),
@@ -787,8 +788,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: heightWeightErrorMessage != null 
-                                            ? Colors.red 
-                                            : Colors.blue[400]!,
+                                            ? AppColors.error 
+                                            : AppColors.primary,
                                         width: 2,
                                       ),
                                     ),
@@ -804,7 +805,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                 'cm',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: AppColors.textSoft,
                                 ),
                               ),
                             ],
@@ -837,13 +838,13 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                   onChanged: (value) => _validateHeightWeight(), // ← NEU
                                   decoration: InputDecoration(
                                     filled: true,
-                                    fillColor: Colors.white,
+                                    fillColor: AppColors.surface,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: heightWeightErrorMessage != null 
-                                            ? Colors.red 
-                                            : Colors.grey[300]!,
+                                            ? AppColors.error 
+                                            : AppColors.border,
                                         width: 1,
                                       ),
                                     ),
@@ -851,8 +852,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: heightWeightErrorMessage != null 
-                                            ? Colors.red 
-                                            : Colors.grey[300]!,
+                                            ? AppColors.error 
+                                            : AppColors.border,
                                         width: 1,
                                       ),
                                     ),
@@ -860,8 +861,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: heightWeightErrorMessage != null 
-                                            ? Colors.red 
-                                            : Colors.blue[400]!,
+                                            ? AppColors.error 
+                                            : AppColors.primary,
                                         width: 2,
                                       ),
                                     ),
@@ -877,7 +878,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                 'kg',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: AppColors.textSoft,
                                 ),
                               ),
                             ],
@@ -894,7 +895,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     child: Text(
                       heightWeightErrorMessage!,
                       style: const TextStyle(
-                        color: Colors.red,
+                        color: AppColors.error,
                         fontSize: 12,
                       ),
                     ),
@@ -934,7 +935,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         'Ort',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -942,18 +943,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         controller: stableCityController,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                            borderSide: BorderSide(color: AppColors.primary, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -973,7 +974,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         'PLZ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -985,18 +986,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         ],
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                            borderSide: BorderSide(color: AppColors.primary, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -1024,7 +1025,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         'Straße',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1032,18 +1033,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         controller: stableStreetController,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                            borderSide: BorderSide(color: AppColors.primary, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -1063,7 +1064,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         'Hausnr',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1071,18 +1072,18 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         controller: stableHouseNumberController,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide: BorderSide(color: AppColors.border, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                            borderSide: BorderSide(color: AppColors.primary, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -1104,8 +1105,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple[100],
-                  foregroundColor: Colors.black87,
+                  backgroundColor: AppColors.purple100,
+                  foregroundColor: AppColors.text,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1214,14 +1215,14 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.save_outlined, size: 18, color: Colors.black87),
+                    Icon(Icons.save_outlined, size: 18, color: AppColors.text),
                     const SizedBox(width: 8),
                     const Text(
                       'Speichern',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: AppColors.text,
                       ),
                     ),
                   ],
@@ -1242,15 +1243,15 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
     if (isSelected) {
       if (sex == 'female') {
-        backgroundColor = Colors.pink[100]!;
-        borderColor = Colors.pink[300]!;
+        backgroundColor = AppColors.purple100;
+        borderColor = AppColors.purple300;
       } else {
-        backgroundColor = Colors.blue[100]!;
-        borderColor = Colors.blue[300]!;
+        backgroundColor = AppColors.purple100;
+        borderColor = AppColors.purple300;
       }
     } else {
-      backgroundColor = Colors.grey[100]!;
-      borderColor = Colors.grey[300]!;
+      backgroundColor = AppColors.bgPage;
+      borderColor = AppColors.border;
     }
 
     return GestureDetector(
@@ -1268,7 +1269,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         ),
         child: Icon(
           icon,
-          color: Colors.black87,
+          color: AppColors.text,
           size: 20,
         ),
       ),

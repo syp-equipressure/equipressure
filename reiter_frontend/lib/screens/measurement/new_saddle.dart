@@ -1,4 +1,5 @@
 // File: lib/screens/new_saddle_screen.dart
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/models/horse.dart';
@@ -80,18 +81,18 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           _isEditing ? 'Sattel bearbeiten' : 'Neuen Sattel anlegen',
           style: const TextStyle(
-            color: Colors.black,
+            color: AppColors.textStrong,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -100,7 +101,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
           if (_isEditing)
             IconButton(
               tooltip: 'Sattel löschen',
-              icon: Icon(Icons.delete_outline, color: Colors.red[700]),
+              icon: Icon(Icons.delete_outline, color: AppColors.error),
               onPressed: _isLoading ? null : _confirmDelete,
             ),
         ],
@@ -112,7 +113,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   padding: const EdgeInsets.all(24),
@@ -133,8 +134,8 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
                           child: ElevatedButton(
                             onPressed: _save,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple[100],
-                              foregroundColor: Colors.black,
+                              backgroundColor: AppColors.purple100,
+                              foregroundColor: AppColors.textStrong,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -183,15 +184,15 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.deepPurple),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
           validator: (v) => v == null || v.isEmpty ? 'Pflichtfeld' : null,
@@ -215,17 +216,17 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedHorse?.id,
               isExpanded: true,
-              icon: Icon(Icons.expand_more, color: Colors.grey[600]),
+              icon: Icon(Icons.expand_more, color: AppColors.textSoft),
               hint: Text(
                 'Pferd auswählen',
-                style: TextStyle(color: Colors.grey[400]),
+                style: TextStyle(color: AppColors.textMuted),
               ),
               items: _horses.map((Horse horse) {
                 return DropdownMenuItem<String>(
@@ -265,17 +266,17 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               value: _selectedCategory?.id,
               isExpanded: true,
-              icon: Icon(Icons.expand_more, color: Colors.grey[600]),
+              icon: Icon(Icons.expand_more, color: AppColors.textSoft),
               hint: Text(
                 'Kategorie auswählen',
-                style: TextStyle(color: Colors.grey[400]),
+                style: TextStyle(color: AppColors.textMuted),
               ),
               items: _categories.map((SaddleCategory category) {
                 return DropdownMenuItem<int>(
@@ -357,7 +358,7 @@ class _NewSaddleScreenState extends State<NewSaddleScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Löschen'),
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -37,9 +38,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   static const int outputSize = 300;
 
   // Light theme colors
-  static const Color _accent = Color(0xFF6B4C9A);
-  static const Color _accentLight = Color(0xFFD4B5F5);
-  static const Color _textSecondary = Color(0xFF888888);
+  static const Color _accent = AppColors.primary;
+  static const Color _accentLight = AppColors.purple100;
+  static const Color _textSecondary = AppColors.textMuted;
 
   bool showFilters = true;
 
@@ -601,7 +602,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
                 ),
               ),
               SizedBox(width: 16),
@@ -751,7 +752,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         messenger.showSnackBar(
           const SnackBar(
             content: Text('PDF erfolgreich erstellt'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: Duration(seconds: 2),
           ),
         );
@@ -761,7 +762,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fehler beim Erstellen des PDFs: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -793,7 +794,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.bgPanel,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -812,12 +813,12 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
 
   Widget _buildHeader() {
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
             onPressed: () {
               // Navigate back to Horse History
               Navigator.of(context).pushAndRemoveUntil(
@@ -834,12 +835,12 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: AppColors.textStrong,
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.download, color: Colors.black),
+            icon: const Icon(Icons.download, color: AppColors.textStrong),
             onPressed: _generateAndSharePdf,
           ),
         ],
@@ -851,7 +852,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
     if (_recordedSections.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -865,14 +866,14 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey,
+                    color: AppColors.textMuted,
                   ),
                 ),
                 const SizedBox(width: 4),
                 Icon(
                   showFilters ? Icons.arrow_drop_down : Icons.arrow_right,
                   size: 20,
-                  color: Colors.grey,
+                  color: AppColors.textMuted,
                 ),
               ],
             ),
@@ -936,7 +937,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                         child: Text(
                           'Profi',
                           style: TextStyle(
-                            color: _isProAvailable ? null : Colors.grey[400],
+                            color: _isProAvailable ? null : AppColors.textMuted,
                           ),
                         ),
                       ),
@@ -983,15 +984,15 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
         Container(
           padding: const EdgeInsets.only(left: 10, right: 4),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<T>(
               value: value,
               isExpanded: true,
-              icon: Icon(Icons.expand_more, color: Colors.grey[600], size: 20),
-              style: const TextStyle(fontSize: 13, color: Colors.black),
+              icon: Icon(Icons.expand_more, color: AppColors.textSoft, size: 20),
+              style: const TextStyle(fontSize: 13, color: AppColors.textStrong),
               items: items,
               // nebeneinander ist wenig Platz: die Auswahl bei Bedarf mit … abkürzen
               selectedItemBuilder: (_) => items
@@ -1059,7 +1060,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                             'Messdaten werden geladen …',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppColors.textSoft,
                             ),
                           ),
                         ],
@@ -1074,7 +1075,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSoft,
                           ),
                         ),
                       ),
@@ -1092,7 +1093,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                               'Frames werden generiert...',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.grey[600],
+                                color: AppColors.textSoft,
                               ),
                             ),
                           ],
@@ -1115,9 +1116,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
         children: [
@@ -1214,7 +1215,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           height: size,
           decoration: BoxDecoration(
             color: onTap == null
-                ? Colors.grey[300]
+                ? AppColors.border
                 : primary
                 ? _accent
                 : _accentLight.withValues(alpha: 0.5),
@@ -1222,7 +1223,7 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
           ),
           child: Icon(
             icon,
-            color: primary || onTap == null ? Colors.white : _accent,
+            color: primary || onTap == null ? AppColors.surface : _accent,
             size: primary ? 22 : 18,
           ),
         ),
@@ -1255,9 +1256,9 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
         children: infoItems
@@ -1272,16 +1273,16 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                             width: 20,
                             height: 20,
                             colorFilter: ColorFilter.mode(
-                              Colors.grey[600]!,
+                              AppColors.textSoft,
                               BlendMode.srcIn,
                             ),
                           )
-                        : Icon(item.icon, size: 20, color: Colors.grey[600]),
+                        : Icon(item.icon, size: 20, color: AppColors.textSoft),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         item.text,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+                        style: TextStyle(fontSize: 13, color: AppColors.textStrong),
                       ),
                     ),
                   ],

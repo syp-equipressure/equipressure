@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart' show CustomAppBar;
@@ -41,7 +42,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
     return ListenableBuilder(
       listenable: _chatService,
       builder: (context, _) => Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         drawer: const SideNav(),
         appBar: const CustomAppBar(
           title: 'EquiPressure',
@@ -51,9 +52,9 @@ class _SaddlerContactState extends State<SaddlerContact> {
             : _buildBody(),
         floatingActionButton: _chats.isNotEmpty
             ? FloatingActionButton(
-                backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+                backgroundColor: AppColors.primary,
                 onPressed: _navigateToSaddlerMap,
-                child: const Icon(Icons.add, color: Color.fromARGB(255, 83, 83, 83)),
+                child: const Icon(Icons.add, color: AppColors.text),
               )
             : null,
       ),
@@ -80,7 +81,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
             child: Text(
               _chatService.error!,
-              style: TextStyle(color: Colors.red[700], fontSize: 13),
+              style: TextStyle(color: AppColors.error, fontSize: 13),
             ),
           ),
         Expanded(
@@ -113,7 +114,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
           onTap: _navigateToSaddlerMap,
           child: CustomPaint(
             painter: DashedBorderPainter(
-              color: Colors.grey[300]!,
+              color: AppColors.border,
               strokeWidth: 1.5,
               gap: 5,
             ),
@@ -125,14 +126,14 @@ class _SaddlerContactState extends State<SaddlerContact> {
                   Icon(
                     Icons.location_on_outlined,
                     size: 40,
-                    color: Colors.grey[400],
+                    color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Füge eine*n Sattler*in hinzu\num zu chatten',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: AppColors.textMuted,
                       fontSize: 14,
                     ),
                   ),
@@ -185,7 +186,7 @@ class _ChatListItem extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: Colors.purple[100]!,
+              color: AppColors.purple100,
               width: 1,
             ),
           ),
@@ -211,7 +212,7 @@ class _ChatListItem extends StatelessWidget {
                   Text(
                     chat.lastMessagePreview,
                     style: TextStyle(
-                      color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                      color: chat.unreadCount > 0 ? AppColors.text : AppColors.textSoft,
                       fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                       fontSize: 14,
                     ),
@@ -227,7 +228,7 @@ class _ChatListItem extends StatelessWidget {
                 Text(
                   chat.formattedLastMessageTime,
                   style: TextStyle(
-                    color: Colors.grey[400],
+                    color: AppColors.textMuted,
                     fontSize: 12,
                   ),
                 ),
@@ -236,13 +237,13 @@ class _ChatListItem extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6955AE),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       '${chat.unreadCount}',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -260,11 +261,11 @@ class _ChatListItem extends StatelessWidget {
   Widget _buildAvatar() {
     return CircleAvatar(
       radius: 28,
-      backgroundColor: Colors.green[50],
+      backgroundColor: AppColors.successLight,
       child: Text(
         _getInitials(chat.contactName),
         style: TextStyle(
-          color: Colors.green[700],
+          color: AppColors.success,
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),

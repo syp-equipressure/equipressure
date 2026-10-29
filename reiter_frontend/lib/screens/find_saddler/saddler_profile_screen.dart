@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -71,19 +72,19 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
             icon: Icon(
               _saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: _saddler.isFavorite ? Colors.red : Colors.grey[600],
+              color: _saddler.isFavorite ? AppColors.error : AppColors.textSoft,
             ),
             onPressed: _toggleFavorite,
           ),
@@ -115,10 +116,10 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.green[50],
+              color: AppColors.successLight,
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.green[100]!,
+                color: AppColors.successLight,
                 width: 2,
               ),
             ),
@@ -132,7 +133,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
                 : Icon(
                     Icons.eco,
                     size: 50,
-                    color: Colors.green[400],
+                    color: AppColors.success,
                   ),
           ),
           const SizedBox(height: 16),
@@ -199,7 +200,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
               _saddler.description!,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: AppColors.text,
                 height: 1.5,
               ),
             ),
@@ -221,7 +222,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
         Icon(
           icon,
           size: 20,
-          color: Colors.grey[600],
+          color: AppColors.textSoft,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -229,7 +230,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isLink ? const Color(0xFF6B4C9A) : Colors.grey[700],
+              color: isLink ? AppColors.primary : AppColors.text,
               decoration: isLink ? TextDecoration.underline : null,
             ),
           ),
@@ -289,20 +290,20 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE53935),
+                                color: AppColors.error,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                border: Border.all(color: AppColors.surface, width: 2),
                               ),
                               child: const Icon(
                                 Icons.location_on,
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 size: 20,
                               ),
                             ),
                             CustomPaint(
                               size: const Size(10, 7),
                               painter: _MarkerTrianglePainter(
-                                color: const Color(0xFFE53935),
+                                color: AppColors.error,
                               ),
                             ),
                           ],
@@ -323,10 +324,10 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.shadow(0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -336,8 +337,8 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
         child: ElevatedButton(
           onPressed: _startChat,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6B4C9A),
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

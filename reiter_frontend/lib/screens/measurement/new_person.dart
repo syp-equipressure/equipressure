@@ -1,4 +1,5 @@
 // File: lib/screens/new_person_screen.dart
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
@@ -29,18 +30,18 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Neuen Reiter anlegen',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.textStrong,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -53,7 +54,7 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   padding: const EdgeInsets.all(24),
@@ -87,8 +88,8 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                           child: ElevatedButton(
                             onPressed: _save,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple[100],
-                              foregroundColor: Colors.black,
+                              backgroundColor: AppColors.purple100,
+                              foregroundColor: AppColors.textStrong,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -141,15 +142,15 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.deepPurple),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
           validator: (v) => requiredField && (v == null || v.isEmpty)
@@ -221,15 +222,15 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
             suffixText: unit,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.deepPurple),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
           validator: (v) {

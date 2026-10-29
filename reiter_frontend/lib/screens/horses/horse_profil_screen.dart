@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/horses/add_horse_screen.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history.dart';
@@ -92,7 +93,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         body: SafeArea(
           child: Column(
             children: [
@@ -115,11 +116,11 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           : Container(
                               width: double.infinity,
                               height: 350,
-                              color: Colors.grey[300],
+                              color: AppColors.border,
                               child: Icon(
                                 Icons.image_outlined,
                                 size: 80,
-                                color: Colors.grey[500],
+                                color: AppColors.textMuted,
                               ),
                             ),
                   Positioned(
@@ -192,7 +193,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                 child: Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(24),
                       topRight: Radius.circular(24),
@@ -222,7 +223,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                   ? Icons.male
                                   : Icons.female,
                               size: 28,
-                              color: Colors.grey[600],
+                              color: AppColors.textSoft,
                             ),
                           ],
                         ),
@@ -279,7 +280,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 16,
-                                        color: Colors.grey[800],
+                                        color: AppColors.textStrong,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -288,7 +289,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                   Icon(
                                     Icons.arrow_forward,
                                     size: 20,
-                                    color: Colors.grey[800],
+                                    color: AppColors.textStrong,
                                   ),
                                 ],
                               ),
@@ -312,8 +313,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFD4B5F5),
-                              foregroundColor: const Color(0xFF6B4C9A),
+                              backgroundColor: AppColors.purple100,
+                              foregroundColor: AppColors.primary,
                               padding: const EdgeInsets.symmetric(vertical: 18),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -351,7 +352,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[800],
+              color: AppColors.textStrong,
             ),
           ),
         ),
@@ -374,18 +375,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.shadow(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.black),
+        icon: Icon(icon, color: AppColors.textStrong),
         onPressed: onTap,
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/user_data.dart';
 
@@ -12,17 +13,17 @@ class PersonalDataScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFB8A5C8),
+      backgroundColor: AppColors.purple300,
       appBar: AppBar(
-        backgroundColor: Color(0xFFB8A5C8),
+        backgroundColor: AppColors.purple300,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Colors.black),
+            icon: const Icon(Icons.edit_outlined, color: AppColors.textStrong),
             onPressed: () {},
           ),
         ],
@@ -32,7 +33,7 @@ class PersonalDataScreen extends StatelessWidget {
           // Header mit Avatar und Name
           Container(
             width: double.infinity,
-            color: Color(0xFFB8A5C8),
+            color: AppColors.purple300,
             padding: const EdgeInsets.only(bottom: 24),
             child: Column(
               children: [
@@ -43,7 +44,7 @@ class PersonalDataScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.textStrong,
                   ),
                 ),
               ],
@@ -55,13 +56,13 @@ class PersonalDataScreen extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
                 border: Border.all(
-                  color: Color(0xFFE0E0E0),
+                  color: AppColors.borderSoft,
                   width: 2,
                 ),
               ),
@@ -69,13 +70,13 @@ class PersonalDataScreen extends StatelessWidget {
               child: ListView(
                 children: [
                   _buildDataRow('Geburtsdatum:', userData.birthDate),
-                  Divider(height: 32, color: Colors.grey[300]),
+                  Divider(height: 32, color: AppColors.border),
                   _buildDataRow('Adresse:', userData.address),
-                  Divider(height: 32, color: Colors.grey[300]),
+                  Divider(height: 32, color: AppColors.border),
                   _buildDataRow('Email:', userData.email),
-                  Divider(height: 32, color: Colors.grey[300]),
+                  Divider(height: 32, color: AppColors.border),
                   _buildDataRow('Größe:', userData.height),
-                  Divider(height: 32, color: Colors.grey[300]),
+                  Divider(height: 32, color: AppColors.border),
                   _buildDataRow('Gewicht:', userData.weight),
                 ],
               ),
@@ -92,7 +93,7 @@ class PersonalDataScreen extends StatelessWidget {
       height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 5),
+        border: Border.all(color: AppColors.surface, width: 5),
       ),
       child: ClipOval(
         child: imageUrl != null && imageUrl.isNotEmpty
@@ -101,21 +102,21 @@ class PersonalDataScreen extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     child: const Icon(
                       Icons.person,
                       size: 60,
-                      color: Colors.grey,
+                      color: AppColors.textMuted,
                     ),
                   );
                 },
               )
             : Container(
-                color: Colors.white,
+                color: AppColors.surface,
                 child: const Icon(
                   Icons.person,
                   size: 60,
-                  color: Colors.grey,
+                  color: AppColors.textMuted,
                 ),
               ),
       ),
@@ -131,7 +132,7 @@ class PersonalDataScreen extends StatelessWidget {
           style: const TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 15,
-            color: Colors.black,
+            color: AppColors.textStrong,
           ),
         ),
         const SizedBox(width: 8),
@@ -140,7 +141,7 @@ class PersonalDataScreen extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 15,
-              color: Colors.black,
+              color: AppColors.textStrong,
               fontWeight: FontWeight.w400,
             ),
           ),

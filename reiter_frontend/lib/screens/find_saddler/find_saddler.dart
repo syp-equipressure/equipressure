@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -362,7 +363,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                         prefixIcon: const Icon(Icons.search, size: 18),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: AppColors.border),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         isDense: true,
@@ -419,10 +420,10 @@ class _FindSaddlerState extends State<FindSaddler> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF6B4C9A) : Colors.white,
+          color: isActive ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? const Color(0xFF6B4C9A) : Colors.grey[300]!,
+            color: isActive ? AppColors.primary : AppColors.border,
             width: 1.5,
           ),
         ),
@@ -430,7 +431,7 @@ class _FindSaddlerState extends State<FindSaddler> {
           isActive ? '✓ $label' : label,
           style: TextStyle(
             fontSize: 13,
-            color: isActive ? Colors.white : Colors.grey[700],
+            color: isActive ? AppColors.surface : AppColors.text,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -443,19 +444,19 @@ class _FindSaddlerState extends State<FindSaddler> {
     return Scaffold(
       drawer: const SideNav(),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 3,
-        shadowColor: Colors.black.withValues(alpha: 0.3),
+        shadowColor: AppColors.shadow(0.3),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.black),
+            icon: const Icon(Icons.menu, color: AppColors.textStrong),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         title: const Text(
           'EquiPressure',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.textStrong,
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
@@ -488,11 +489,11 @@ class _FindSaddlerState extends State<FindSaddler> {
 
   Widget _buildViewToggle() {
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: AppColors.borderSoft,
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.all(4),
@@ -519,12 +520,12 @@ class _FindSaddlerState extends State<FindSaddler> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
+          color: selected ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: AppColors.shadow(0.08),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),
@@ -537,7 +538,7 @@ class _FindSaddlerState extends State<FindSaddler> {
             Icon(
               icon,
               size: 18,
-              color: selected ? const Color(0xFF6B4C9A) : Colors.grey[600],
+              color: selected ? AppColors.primary : AppColors.textSoft,
             ),
             const SizedBox(width: 6),
             Text(
@@ -545,7 +546,7 @@ class _FindSaddlerState extends State<FindSaddler> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? const Color(0xFF6B4C9A) : Colors.grey[600],
+                color: selected ? AppColors.primary : AppColors.textSoft,
               ),
             ),
           ],
@@ -559,7 +560,7 @@ class _FindSaddlerState extends State<FindSaddler> {
     final horsesWithStable = _horses.where((h) => h.hasStableLocation).toList();
 
     return Container(
-      color: Colors.grey[50],
+      color: AppColors.bgPanel,
       child: Column(
         children: [
           // Top spacer so the floating search header (positioned at top: 16,
@@ -593,7 +594,7 @@ class _FindSaddlerState extends State<FindSaddler> {
           Icon(
             hasReference ? Icons.search_off : Icons.pets,
             size: 48,
-            color: Colors.grey[400],
+            color: AppColors.textMuted,
           ),
           const SizedBox(height: 12),
           Text(
@@ -602,7 +603,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 : 'Wähle ein Pferd mit Stalladresse,\num Sattler*innen in der Nähe zu sehen',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.grey[600],
+              color: AppColors.textSoft,
               fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
@@ -617,12 +618,12 @@ class _FindSaddlerState extends State<FindSaddler> {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: AppColors.borderSoft),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: AppColors.shadow(0.04),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -635,13 +636,13 @@ class _FindSaddlerState extends State<FindSaddler> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFF6B4C9A).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 FontAwesomeIcons.horseHead,
                 size: 16,
-                color: Color(0xFF6B4C9A),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -654,7 +655,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                     'Entfernung ab',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey[500],
+                      color: AppColors.textMuted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -664,7 +665,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                       'Kein Pferd mit Stalladresse',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: AppColors.textSoft,
                         fontStyle: FontStyle.italic,
                       ),
                     )
@@ -673,11 +674,11 @@ class _FindSaddlerState extends State<FindSaddler> {
                       child: DropdownButton<String>(
                         isDense: true,
                         value: _referenceHorse?.id,
-                        icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                        icon: Icon(Icons.arrow_drop_down, color: AppColors.textSoft),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: AppColors.textStrong,
                         ),
                         items: horsesWithStable.map((h) {
                           return DropdownMenuItem<String>(
@@ -713,10 +714,10 @@ class _FindSaddlerState extends State<FindSaddler> {
         : '—';
 
     return Material(
-      color: Colors.white,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(12),
       elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
+      shadowColor: AppColors.shadow(0.1),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openProfile(saddler),
@@ -751,7 +752,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                             padding: const EdgeInsets.only(left: 6),
                             child: Icon(
                               saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: saddler.isFavorite ? Colors.red : Colors.grey[400],
+                              color: saddler.isFavorite ? AppColors.error : AppColors.textMuted,
                               size: 22,
                             ),
                           ),
@@ -762,13 +763,13 @@ class _FindSaddlerState extends State<FindSaddler> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.place, size: 13, color: Colors.grey[500]),
+                          Icon(Icons.place, size: 13, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               saddler.city!,
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: AppColors.textSoft,
                                 fontSize: 13,
                               ),
                               maxLines: 1,
@@ -784,7 +785,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6B4C9A).withValues(alpha: 0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -793,7 +794,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                               const Icon(
                                 Icons.near_me,
                                 size: 12,
-                                color: Color(0xFF6B4C9A),
+                                color: AppColors.primary,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -801,7 +802,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF6B4C9A),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ],
@@ -816,7 +817,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                                   : saddler.brands.take(2).join(' · '),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppColors.textSoft,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -828,7 +829,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
             ],
           ),
         ),
@@ -847,11 +848,11 @@ class _FindSaddlerState extends State<FindSaddler> {
       right: 16,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: AppColors.shadow(0.15),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -898,11 +899,11 @@ class _FindSaddlerState extends State<FindSaddler> {
       child: Container(
         constraints: const BoxConstraints(maxHeight: 300),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: AppColors.shadow(0.15),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -915,7 +916,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   child: Text(
                     'Keine Treffer gefunden',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: AppColors.textSoft,
                       fontSize: 14,
                     ),
                   ),
@@ -934,7 +935,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
+                          color: AppColors.textSoft,
                         ),
                       ),
                     ),
@@ -943,7 +944,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                         'assets/icon/horseIcon.svg',
                         width: 24,
                         height: 24,
-                        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                        colorFilter: const ColorFilter.mode(AppColors.textStrong, BlendMode.srcIn),
                       ),
                       title: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                       subtitle: Text(horse.stableCity ?? 'Stall'),
@@ -968,7 +969,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
+                          color: AppColors.textSoft,
                         ),
                       ),
                     ),
@@ -977,7 +978,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                       title: Text(saddler.name),
                       subtitle: Text(saddler.city ?? ''),
                       trailing: saddler.isFavorite
-                          ? const Icon(Icons.favorite, color: Colors.red, size: 20)
+                          ? const Icon(Icons.favorite, color: AppColors.error, size: 20)
                           : null,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       onTap: () {
@@ -1000,7 +1001,7 @@ class _FindSaddlerState extends State<FindSaddler> {
         children: [
           _buildSmallButton(
             icon: _showFavoritesList ? Icons.favorite : Icons.favorite_border,
-            color: _showFavoritesList ? Colors.red : Colors.grey[700]!,
+            color: _showFavoritesList ? AppColors.error : AppColors.text,
             onTap: _toggleFavoritesList,
             isActive: _showFavoritesList,
           ),
@@ -1028,14 +1029,14 @@ class _FindSaddlerState extends State<FindSaddler> {
                     width: 16,
                     height: 16,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF6B4C9A),
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         '${_selectedBrands.length}',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1062,11 +1063,11 @@ class _FindSaddlerState extends State<FindSaddler> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF6B4C9A) : Colors.white,
+          color: isActive ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: AppColors.shadow(0.15),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1074,7 +1075,7 @@ class _FindSaddlerState extends State<FindSaddler> {
         ),
         child: Icon(
           icon,
-          color: isActive ? Colors.white : (color ?? Colors.grey[700]),
+          color: isActive ? AppColors.surface : (color ?? AppColors.text),
           size: 22,
         ),
       ),
@@ -1119,11 +1120,11 @@ class _FindSaddlerState extends State<FindSaddler> {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: AppColors.shadow(0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1131,7 +1132,7 @@ class _FindSaddlerState extends State<FindSaddler> {
         ),
         child: Icon(
           icon,
-          color: Colors.grey[700],
+          color: AppColors.text,
           size: 24,
         ),
       ),
@@ -1188,12 +1189,12 @@ class _FindSaddlerState extends State<FindSaddler> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3),
+                color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
+                border: Border.all(color: AppColors.surface, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: AppColors.shadow(0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -1202,12 +1203,12 @@ class _FindSaddlerState extends State<FindSaddler> {
               child: const Icon(
                 Icons.home,
                 size: 22,
-                color: Colors.white,
+                color: AppColors.surface,
               ),
             ),
             CustomPaint(
               size: const Size(14, 10),
-              painter: _MarkerTrianglePainter(color: const Color(0xFF2196F3)),
+              painter: _MarkerTrianglePainter(color: AppColors.primary),
             ),
           ],
         ),
@@ -1233,12 +1234,12 @@ class _FindSaddlerState extends State<FindSaddler> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8BC34A),
+                    color: AppColors.success,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
+                    border: Border.all(color: AppColors.surface, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: AppColors.shadow(0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
                       ),
@@ -1250,7 +1251,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                       const Icon(
                         FontAwesomeIcons.horseHead,
                         size: 18,
-                        color: Colors.white,
+                        color: AppColors.surface,
                       ),
                       if (horses.length > 1)
                         Positioned(
@@ -1259,13 +1260,13 @@ class _FindSaddlerState extends State<FindSaddler> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
-                              color: Colors.red,
+                              color: AppColors.error,
                               shape: BoxShape.circle,
                             ),
                             child: Text(
                               '${horses.length}',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1277,7 +1278,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 ),
                 CustomPaint(
                   size: const Size(14, 10),
-                  painter: _MarkerTrianglePainter(color: const Color(0xFF8BC34A)),
+                  painter: _MarkerTrianglePainter(color: AppColors.success),
                 ),
               ],
             ),
@@ -1306,22 +1307,22 @@ class _FindSaddlerState extends State<FindSaddler> {
               height: 40,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF6B4C9A)
+                    ? AppColors.primary
                     : isFavorite
-                        ? const Color(0xFFE53935)
-                        : Colors.white,
+                        ? AppColors.error
+                        : AppColors.surface,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF6B4C9A)
+                      ? AppColors.primary
                       : isFavorite
-                          ? const Color(0xFFE53935)
-                          : const Color(0xFF6B4C9A),
+                          ? AppColors.error
+                          : AppColors.primary,
                   width: 3,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: AppColors.shadow(0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -1331,18 +1332,18 @@ class _FindSaddlerState extends State<FindSaddler> {
                 Icons.person,
                 size: 22,
                 color: isSelected || isFavorite
-                    ? Colors.white
-                    : const Color(0xFF6B4C9A),
+                    ? AppColors.surface
+                    : AppColors.primary,
               ),
             ),
             CustomPaint(
               size: const Size(14, 10),
               painter: _MarkerTrianglePainter(
                 color: isSelected
-                    ? const Color(0xFF6B4C9A)
+                    ? AppColors.primary
                     : isFavorite
-                        ? const Color(0xFFE53935)
-                        : const Color(0xFF6B4C9A),
+                        ? AppColors.error
+                        : AppColors.primary,
               ),
             ),
           ],
@@ -1360,11 +1361,11 @@ class _FindSaddlerState extends State<FindSaddler> {
       right: 16,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: AppColors.shadow(0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1395,7 +1396,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                           saddler.shortAddress,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSoft,
                           ),
                         ),
                       ],
@@ -1407,7 +1408,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                       padding: const EdgeInsets.all(8),
                       child: Icon(
                         saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: saddler.isFavorite ? Colors.red : Colors.grey[400],
+                        color: saddler.isFavorite ? AppColors.error : AppColors.textMuted,
                         size: 28,
                       ),
                     ),
@@ -1425,7 +1426,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF6B4C9A),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(16),
                     bottomRight: Radius.circular(16),
@@ -1435,7 +1436,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   'Zum Profil',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1465,11 +1466,11 @@ class _FindSaddlerState extends State<FindSaddler> {
       child: Container(
         constraints: const BoxConstraints(maxHeight: 300),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: AppColors.shadow(0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1481,7 +1482,7 @@ class _FindSaddlerState extends State<FindSaddler> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF8BC34A).withValues(alpha: 0.1),
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -1493,12 +1494,12 @@ class _FindSaddlerState extends State<FindSaddler> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8BC34A),
+                      color: AppColors.success,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       FontAwesomeIcons.horseHead,
-                      color: Colors.white,
+                      color: AppColors.surface,
                       size: 22,
                     ),
                   ),
@@ -1519,7 +1520,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                             stableLocation,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppColors.textSoft,
                             ),
                           ),
                       ],
@@ -1527,7 +1528,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   ),
                   GestureDetector(
                     onTap: _closePopup,
-                    child: Icon(Icons.close, color: Colors.grey[600]),
+                    child: Icon(Icons.close, color: AppColors.textSoft),
                   ),
                 ],
               ),
@@ -1558,11 +1559,11 @@ class _FindSaddlerState extends State<FindSaddler> {
         width: 280,
         constraints: const BoxConstraints(maxHeight: 400),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: AppColors.shadow(0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1574,7 +1575,7 @@ class _FindSaddlerState extends State<FindSaddler> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -1582,7 +1583,7 @@ class _FindSaddlerState extends State<FindSaddler> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.favorite, color: Colors.red, size: 24),
+                  const Icon(Icons.favorite, color: AppColors.error, size: 24),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
@@ -1595,7 +1596,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   ),
                   GestureDetector(
                     onTap: _closeFavoritesList,
-                    child: Icon(Icons.close, color: Colors.grey[600]),
+                    child: Icon(Icons.close, color: AppColors.textSoft),
                   ),
                 ],
               ),
@@ -1605,12 +1606,12 @@ class _FindSaddlerState extends State<FindSaddler> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.favorite_border, size: 48, color: Colors.grey[300]),
+                    Icon(Icons.favorite_border, size: 48, color: AppColors.border),
                     const SizedBox(height: 12),
                     Text(
                       'Keine Favoriten',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: AppColors.textSoft,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1620,7 +1621,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                       'Tippe auf das Herz bei einem\nSattler, um ihn hinzuzufügen',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.grey[400],
+                        color: AppColors.textMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -1633,7 +1634,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _favoriteSaddlers.length,
-                  separatorBuilder: (_, _) => Divider(height: 1, indent: 72, color: Colors.grey[200]),
+                  separatorBuilder: (_, _) => Divider(height: 1, indent: 72, color: AppColors.borderSoft),
                   itemBuilder: (context, index) {
                     final saddler = _favoriteSaddlers[index];
                     return _buildFavoriteListItem(saddler);
@@ -1673,14 +1674,14 @@ class _FindSaddlerState extends State<FindSaddler> {
                     Text(
                       saddler.city!,
                       style: TextStyle(
-                        color: Colors.grey[500],
+                        color: AppColors.textMuted,
                         fontSize: 13,
                       ),
                     ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
           ],
         ),
       ),
@@ -1698,7 +1699,7 @@ class _FindSaddlerState extends State<FindSaddler> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.brown[100],
+              color: AppColors.purple100,
               borderRadius: BorderRadius.circular(12),
             ),
             child: horse.imagePath != null
@@ -1708,7 +1709,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                   )
                 : Icon(
                     FontAwesomeIcons.horseHead,
-                    color: Colors.brown[400],
+                    color: AppColors.purple400,
                     size: 24,
                   ),
           ),
@@ -1729,7 +1730,7 @@ class _FindSaddlerState extends State<FindSaddler> {
                 Text(
                   '${horse.breed} - ${horse.age}',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: AppColors.textSoft,
                     fontSize: 13,
                   ),
                 ),
@@ -1738,7 +1739,7 @@ class _FindSaddlerState extends State<FindSaddler> {
           ),
           Icon(
             horse.sex == 'male' ? Icons.male : Icons.female,
-            color: horse.sex == 'male' ? Colors.blue : Colors.pink,
+            color: horse.sex == 'male' ? AppColors.primary : AppColors.purple400,
             size: 20,
           ),
         ],
@@ -1757,11 +1758,11 @@ class _FindSaddlerState extends State<FindSaddler> {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Colors.green[50],
+      backgroundColor: AppColors.successLight,
       child: Text(
         _getInitials(saddler.name),
         style: TextStyle(
-          color: Colors.green[700],
+          color: AppColors.success,
           fontWeight: FontWeight.bold,
           fontSize: radius * 0.6,
         ),

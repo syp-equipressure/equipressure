@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:reiterappfrontend/models/device.dart';
@@ -114,18 +115,18 @@ class _DevicesScreenState extends State<DevicesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Meine Satteldruckmessgeräte',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.textStrong,
             fontWeight: FontWeight.w500,
             fontSize: 16,
           ),
@@ -139,14 +140,14 @@ class _DevicesScreenState extends State<DevicesScreen> {
             children: [
               _buildDeviceItem(index: index, device: widget.devices[index]),
               if (index < widget.devices.length - 1)
-                Divider(height: 1, color: Colors.grey[300]),
+                Divider(height: 1, color: AppColors.border),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _scanQRCode,
-        backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),
       ),
     );
@@ -170,7 +171,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 Expanded(
                   child: RichText(
                     text: TextSpan(
-                      style: const TextStyle(fontSize: 15, color: Colors.black),
+                      style: const TextStyle(fontSize: 15, color: AppColors.textStrong),
                       children: [
                         const TextSpan(
                           text: 'Gerät: ',
@@ -186,7 +187,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ),
                 Icon(
                   isExpanded ? Icons.keyboard_arrow_up : Icons.chevron_right,
-                  color: Colors.black54,
+                  color: AppColors.textSoft,
                   size: 24,
                 ),
               ],
@@ -195,7 +196,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
         ),
         if (isExpanded)
           Container(
-            color: Colors.grey[50],
+            color: AppColors.bgPanel,
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +236,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         const Spacer(),
                         Icon(
                           Icons.chevron_right,
-                          color: Colors.black54,
+                          color: AppColors.textSoft,
                           size: 20,
                         ),
                       ],
@@ -248,7 +249,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Gerät entfernen'),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.red[700],
+                    foregroundColor: AppColors.error,
                     padding: EdgeInsets.zero,
                   ),
                 ),
@@ -275,7 +276,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Entfernen'),
           ),
         ],
@@ -321,7 +322,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 15, color: Colors.black87),
+            style: const TextStyle(fontSize: 15, color: AppColors.text),
           ),
         ),
       ],
@@ -361,12 +362,12 @@ class _QRCodeScannerScreenState extends State<_QRCodeScannerScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.surface),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'QR-Code scannen',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.surface),
         ),
       ),
       body: MobileScanner(
@@ -386,11 +387,11 @@ class _QRCodeScannerScreenState extends State<_QRCodeScannerScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.camera_alt, color: Colors.white, size: 48),
+                const Icon(Icons.camera_alt, color: AppColors.surface, size: 48),
                 const SizedBox(height: 16),
                 const Text(
                   'Kamera wird benötigt',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: AppColors.surface, fontSize: 16),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

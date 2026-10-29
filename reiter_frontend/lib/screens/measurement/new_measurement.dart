@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/horse.dart';
@@ -156,14 +157,14 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
           const SizedBox(height: 8),
           Text(
             'Du hast noch kein Satteldruckmessgerät hinterlegt.',
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            style: TextStyle(fontSize: 14, color: AppColors.text),
           ),
           TextButton.icon(
             onPressed: _openDevices,
             icon: const Icon(Icons.add),
             label: const Text('Gerät hinzufügen'),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6B4C9A),
+              foregroundColor: AppColors.primary,
               padding: EdgeInsets.zero,
             ),
           ),
@@ -271,7 +272,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
         : saddles.where((s) => s.horseId == selectedHorse!.id).toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       drawer: const SideNav(),
       appBar: const CustomAppBar(title: 'EquiPressure'),
       body: isLoading
@@ -414,10 +415,10 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4B5F5),
-                        foregroundColor: const Color(0xFF6B4C9A),
-                        disabledBackgroundColor: Colors.grey[300],
-                        disabledForegroundColor: Colors.grey[500],
+                        backgroundColor: AppColors.purple100,
+                        foregroundColor: AppColors.primary,
+                        disabledBackgroundColor: AppColors.border,
+                        disabledForegroundColor: AppColors.textMuted,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

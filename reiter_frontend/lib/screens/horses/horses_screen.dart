@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
@@ -101,7 +102,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.bgPanel,
       drawer: const SideNav(),
       appBar: view == HorsesView.add
           ? null
@@ -113,7 +114,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
           : _listView(),
       floatingActionButton: horses.isNotEmpty && view == HorsesView.list
           ? FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+              backgroundColor: AppColors.primary,
               onPressed: () => setState(() => view = HorsesView.add),
               child: const Icon(Icons.add),
             )
@@ -156,16 +157,16 @@ class _HorsesScreenState extends State<HorsesScreen> {
                   height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[400]!, width: 2),
+                    border: Border.all(color: AppColors.textMuted, width: 2),
                   ),
-                  child: Icon(Icons.add, size: 32, color: Colors.grey[600]),
+                  child: Icon(Icons.add, size: 32, color: AppColors.textSoft),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Füge ein Pferd hinzu um mit\n'
                   'den Messungen starten zu\nkönnen',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600], height: 1.5),
+                  style: TextStyle(color: AppColors.textSoft, height: 1.5),
                 ),
               ],
             ),
@@ -214,13 +215,13 @@ class _HorsesScreenState extends State<HorsesScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               blurRadius: 12,
               offset: const Offset(0, 4),
-              color: Colors.black.withValues(alpha: 0.05),
+              color: AppColors.shadow(0.05),
             ),
           ],
         ),
@@ -238,11 +239,11 @@ class _HorsesScreenState extends State<HorsesScreen> {
                       : horse.assetImage != null
                       ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
                       : Container(
-                          color: Colors.grey[200],
+                          color: AppColors.borderSoft,
                           child: Icon(
                             Icons.image_outlined,
                             size: 48,
-                            color: Colors.grey[400],
+                            color: AppColors.textMuted,
                           ),
                         ),
                 ),
@@ -264,7 +265,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: AppColors.textSoft),
             ),
           ],
         ),
