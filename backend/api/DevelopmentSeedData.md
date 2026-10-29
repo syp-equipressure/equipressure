@@ -11,7 +11,7 @@ the database has no persons yet. Existing data is never changed. The data is def
 ## Test accounts
 
 Sophie and Lena are linked to Keycloak users from `backend/keycloak/realm-equipressure.json`, so you can log in
-as them (with `KC_LOGIN_THEME=keycloak.v2`) and e.g. chat with each other:
+as them (with `KC_LOGIN_THEME=equipressure-dev`) and e.g. chat with each other:
 
 | Person | Username | Password | App |
 |---|---|---|---|

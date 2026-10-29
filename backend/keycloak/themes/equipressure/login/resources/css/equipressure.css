@@ -1,9 +1,184 @@
-/* Benutzername/Passwort-Formular ausblenden, es gibt keine eigenen Logins */
+/*
+ * EquiPressure-Design für die Keycloak-Anmeldeseite, dieselben Farben wie im Sattler-Frontend
+ * (sattler_frontend/src/styles.scss) und in der Reiter-App (lib/theme/app_colors.dart).
+ */
+:root {
+    --ep-purple-50: #f4f2fb;
+    --ep-purple-100: #eae6f7;
+    --ep-purple-400: #8f7bc7;
+    --ep-purple-500: #6955ae;
+    --ep-purple-600: #55438f;
+    --ep-bg-page: #f5f6f8;
+    --ep-bg-card: #ffffff;
+    --ep-border: #dde1e7;
+    --ep-border-soft: #e7e9ee;
+    --ep-text-strong: #18212f;
+    --ep-text: #293342;
+    --ep-text-soft: #5f6b7a;
+    --ep-accent-red: #e53935;
+    --ep-shadow-card: 0 1px 2px rgba(24, 33, 47, 0.05), 0 4px 14px rgba(24, 33, 47, 0.07);
+
+    --pf-v5-global--primary-color--100: var(--ep-purple-500);
+    --pf-v5-global--primary-color--200: var(--ep-purple-600);
+    --pf-v5-global--link--Color: var(--ep-purple-500);
+    --pf-v5-global--link--Color--hover: var(--ep-purple-600);
+    --pf-v5-global--FontFamily--text: Roboto, "Helvetica Neue", Arial, sans-serif;
+    --pf-v5-global--FontFamily--heading: Roboto, "Helvetica Neue", Arial, sans-serif;
+    --pf-v5-global--Color--100: var(--ep-text);
+    --pf-v5-global--danger-color--100: var(--ep-accent-red);
+    --keycloak-card-top-color: transparent;
+}
+
+/* Seite: neutraler Hintergrund statt des Keycloak-Hintergrundbilds */
+.login-pf body,
+#keycloak-bg,
+.pf-v5-c-login {
+    background: var(--ep-bg-page);
+}
+
+.pf-v5-c-login__container {
+    grid-template-columns: minmax(0, 26rem);
+    padding: 0 16px;
+}
+
+/* Kopf: Logo statt des Realm-Namens */
+#kc-header {
+    padding-block: 32px 24px;
+}
+
+#kc-header-wrapper {
+    width: 260px;
+    max-width: 100%;
+    height: 72px;
+    margin: 0 auto;
+    font-size: 0;
+    color: transparent;
+    background: url("../img/equipressure-logo.png") center / contain no-repeat;
+    /* das Logo hat einen weißen Hintergrund, so verschwindet er auf der grauen Seite */
+    mix-blend-mode: multiply;
+}
+
+/* Karte */
+.pf-v5-c-login__main {
+    background: var(--ep-bg-card);
+    border: 1px solid var(--ep-border-soft);
+    border-radius: 14px;
+    box-shadow: var(--ep-shadow-card);
+    overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+    border-top: 0;
+    padding-top: 28px;
+}
+
+#kc-page-title {
+    color: var(--ep-text-strong);
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.pf-v5-c-form__label-text,
+.pf-v5-c-check__label {
+    color: var(--ep-text-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Eingabefelder mit Rahmen, beim Fokus violett */
+.pf-v5-c-form-control {
+    --pf-v5-c-form-control--before--BorderColor: var(--ep-border);
+    --pf-v5-c-form-control--after--BorderBottomColor: transparent;
+    --pf-v5-c-form-control--hover--after--BorderBottomColor: transparent;
+    --pf-v5-c-form-control--focus--after--BorderBottomColor: transparent;
+    border-radius: 8px;
+}
+
+.pf-v5-c-form-control::before {
+    border: 1px solid var(--ep-border);
+    border-radius: 8px;
+}
+
+.pf-v5-c-form-control:focus-within::before {
+    border: 2px solid var(--ep-purple-500);
+}
+
+/* Passwort einblenden: eigener kleiner Button mit Rand neben dem Feld */
+.pf-v5-c-input-group {
+    gap: 6px;
+}
+
+#password-show-password {
+    color: var(--ep-text-soft);
+    border-radius: 8px;
+}
+
+#password-show-password::after {
+    border: 1px solid var(--ep-border);
+    border-radius: 8px;
+}
+
+.pf-v5-c-form-control > input {
+    padding-block: 10px;
+}
+
+/* Hauptbutton violett */
+.pf-v5-c-button.pf-m-primary {
+    --pf-v5-c-button--m-primary--BackgroundColor: var(--ep-purple-500);
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--ep-purple-600);
+    --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--ep-purple-600);
+    --pf-v5-c-button--m-primary--active--BackgroundColor: var(--ep-purple-600);
+    border-radius: 10px;
+    padding-block: 12px;
+    font-weight: 500;
+}
+
+/* Anbieter-Buttons weiß mit Rand, wie in der Reiter-App */
+#kc-social-providers .pf-v5-c-button.pf-m-secondary {
+    --pf-v5-c-button--m-secondary--Color: var(--ep-text-strong);
+    --pf-v5-c-button--m-secondary--hover--Color: var(--ep-text-strong);
+    --pf-v5-c-button--m-secondary--BackgroundColor: var(--ep-bg-card);
+    --pf-v5-c-button--m-secondary--hover--BackgroundColor: var(--ep-purple-50);
+    --pf-v5-c-button--m-secondary--after--BorderColor: var(--ep-border);
+    --pf-v5-c-button--m-secondary--hover--after--BorderColor: var(--ep-purple-400);
+    border-radius: 10px;
+    padding-block: 12px;
+}
+
+#kc-social-providers .pf-v5-c-button.pf-m-secondary::after {
+    border-radius: 10px;
+}
+
+#kc-social-providers ul {
+    display: grid;
+    gap: 10px;
+}
+
+.pf-v5-c-login__main-footer-band {
+    color: var(--ep-text-soft);
+    border-color: var(--ep-border-soft);
+}
+
+.pf-v5-c-login__main-footer-band:first-child {
+    border-top: 1px solid var(--ep-border-soft);
+}
+
+/* Sprachauswahl dezent */
+#login-select-toggle {
+    color: var(--ep-text-soft);
+    font-size: 13px;
+}
+
+.pf-v5-c-alert {
+    border-radius: 8px;
+}
+
+/* Nur Anmeldung über die Anbieter, es gibt keine eigenen Logins (Testkonten: Theme equipressure-dev) */
 #kc-form {
     display: none;
 }
 
-/* "Oder anmelden mit" Überschrift über den Buttons ausblenden */
+/* "Oder anmelden mit" über den Buttons ausblenden */
 .pf-v5-c-login__main-footer-band:has(+ #kc-social-providers) {
     display: none;
 }
