@@ -95,6 +95,17 @@ public interface IChatService
     public ValueTask<OneOf<Success<int>, NotFound>> MarkAsReadAsync(int personId, int otherPersonId);
 
     /// <summary>
+    ///     Marks all messages a person received as delivered, the apps call this as soon as they are online and
+    ///     whenever a new message arrives. Read messages are always delivered as well.
+    /// </summary>
+    /// <param name="personId">The id of the recipient</param>
+    /// <returns>
+    ///     The ids of the senders whose messages were newly delivered (may be empty)
+    ///     or <see cref="NotFound" /> if the person does not exist
+    /// </returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<int>>, NotFound>> MarkAsDeliveredAsync(int personId);
+
+    /// <summary>
     ///     Adds a shared horse or measurement to the recipient of the message: the sender becomes a contact of the
     ///     recipient and the measurement groups are released to the recipient. Accepting a message twice has no effect.
     /// </summary>
@@ -332,11 +343,38 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
         foreach (var message in unread)
         {
             message.ReadAt = now;
+            message.DeliveredAt ??= now;
         }
 
         await uow.SaveChangesAsync();
 
         return new Success<int>(unread.Count);
+    }
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<int>>, NotFound>> MarkAsDeliveredAsync(int personId)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        var undelivered = await uow.ChatRepository.GetUndeliveredMessagesAsync(personId);
+        if (undelivered.Count == 0)
+        {
+            return new Success<IReadOnlyCollection<int>>([]);
+        }
+
+        var now = clock.GetCurrentInstant();
+        foreach (var message in undelivered)
+        {
+            message.DeliveredAt = now;
+        }
+
+        await uow.SaveChangesAsync();
+
+        return new Success<IReadOnlyCollection<int>>(undelivered.Select(m => m.SenderId).Distinct().ToList());
     }
 
     public async ValueTask<OneOf<Success<ChatMessage>, NotFound, IChatService.InvalidMessage>> AcceptShareAsync(

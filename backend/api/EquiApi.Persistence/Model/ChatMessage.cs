@@ -9,6 +9,9 @@ public class ChatMessage
     public string? Text { get; set; }
     public Instant SentAt { get; set; }
 
+    // set as soon as an app of the recipient received the message (it confirms this itself), at the latest when read
+    public Instant? DeliveredAt { get; set; }
+
     // set as soon as the recipient opened the conversation
     public Instant? ReadAt { get; set; }
 

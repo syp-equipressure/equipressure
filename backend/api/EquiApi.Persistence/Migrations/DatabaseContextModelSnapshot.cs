@@ -126,6 +126,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<Instant?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Instant?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FileContentType")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");

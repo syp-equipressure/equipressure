@@ -36,6 +36,7 @@ public sealed record ChatFileDto(string FileName, string ContentType, long Size)
 /// <param name="Type">Whether the message is a text, a shared horse or a shared measurement</param>
 /// <param name="Text">The text, optional for shared horses and measurements</param>
 /// <param name="SentAt">When the message was sent</param>
+/// <param name="DeliveredAt">When an app of the recipient received the message, null if not delivered yet</param>
 /// <param name="ReadAt">When the recipient read the message, null if not read yet</param>
 /// <param name="AcceptedAt">When the recipient added the shared horse or measurement, null if not added yet</param>
 /// <param name="SenderId">The id of the sender</param>
@@ -48,6 +49,7 @@ public sealed record ChatMessageDto(
     ChatMessageType Type,
     string? Text,
     Instant SentAt,
+    Instant? DeliveredAt,
     Instant? ReadAt,
     Instant? AcceptedAt,
     int SenderId,
@@ -61,6 +63,7 @@ public sealed record ChatMessageDto(
             message.Type,
             message.Text,
             message.SentAt,
+            message.DeliveredAt,
             message.ReadAt,
             message.AcceptedAt,
             message.SenderId,
@@ -113,13 +116,17 @@ public sealed record ConversationListResponse(IReadOnlyList<ConversationDto> Con
 /// <summary>
 ///     An event sent over the chat websocket
 /// </summary>
-/// <param name="Type">"message" for a new message, "read" if messages were read, "accepted" if a share was added</param>
+/// <param name="Type">
+///     "message" for a new message, "delivered" if messages reached an app of the recipient, "read" if messages
+///     were read, "accepted" if a share was added
+/// </param>
 /// <param name="Message">The new or accepted message</param>
-/// <param name="ReaderId">The person who read the messages, only for "read"</param>
-/// <param name="ContactId">The other person of the conversation whose messages were read, only for "read"</param>
+/// <param name="ReaderId">The recipient who received or read the messages, only for "delivered" and "read"</param>
+/// <param name="ContactId">The sender of the delivered or read messages, only for "delivered" and "read"</param>
 public sealed record ChatEventDto(string Type, ChatMessageDto? Message, int? ReaderId, int? ContactId)
 {
     public const string MessageType = "message";
+    public const string DeliveredType = "delivered";
     public const string ReadType = "read";
     public const string AcceptedType = "accepted";
 
@@ -128,6 +135,9 @@ public sealed record ChatEventDto(string Type, ChatMessageDto? Message, int? Rea
 
     public static ChatEventDto Accepted(ChatMessage message) =>
         new(AcceptedType, ChatMessageDto.FromMessage(message), null, null);
+
+    public static ChatEventDto Delivered(int recipientId, int senderId) =>
+        new(DeliveredType, null, recipientId, senderId);
 
     public static ChatEventDto Read(int readerId, int contactId) => new(ReadType, null, readerId, contactId);
 }

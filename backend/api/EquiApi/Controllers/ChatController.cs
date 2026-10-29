@@ -202,6 +202,35 @@ public sealed class ChatController(
     }
 
     /// <summary>
+    ///     Marks all messages the person received as delivered (second tick). The apps call this as soon as they are
+    ///     online and whenever a new message arrives, the senders are notified over the chat websocket.
+    /// </summary>
+    [HttpPut("delivered")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> MarkAsDelivered([FromRoute][ValidId] int personId)
+    {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
+        var result = await chatService.MarkAsDeliveredAsync(personId);
+        if (!result.TryPickT0(out var success, out _))
+        {
+            return NotFound();
+        }
+
+        foreach (int senderId in success.Value)
+        {
+            await socketManager.SendAsync([personId, senderId], ChatEventDto.Delivered(personId, senderId));
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
     ///     Adds the horse or measurement shared in a received message: the sender becomes a contact
     ///     and the measurements are released to the person
     /// </summary>

@@ -36,6 +36,13 @@ public interface IChatRepository
     public ValueTask<IReadOnlyCollection<ChatMessage>> GetUnreadMessagesAsync(int recipientId, int senderId);
 
     /// <summary>
+    ///     Gets all messages a person received that are not delivered yet
+    /// </summary>
+    /// <param name="recipientId">The id of the recipient</param>
+    /// <returns>The tracked undelivered messages</returns>
+    public ValueTask<IReadOnlyCollection<ChatMessage>> GetUndeliveredMessagesAsync(int recipientId);
+
+    /// <summary>
     ///     Gets the content of the file of a message
     /// </summary>
     /// <param name="messageId">The id of the message</param>
@@ -78,6 +85,10 @@ internal sealed class ChatRepository(DbSet<ChatMessage> messageSet, DbSet<ChatFi
 
     public async ValueTask<IReadOnlyCollection<ChatMessage>> GetUnreadMessagesAsync(int recipientId, int senderId) =>
         await messageSet.Where(m => m.RecipientId == recipientId && m.SenderId == senderId && m.ReadAt == null)
+                        .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<ChatMessage>> GetUndeliveredMessagesAsync(int recipientId) =>
+        await messageSet.Where(m => m.RecipientId == recipientId && m.DeliveredAt == null)
                         .ToListAsync();
 
     public async ValueTask<ChatFile?> GetFileAsync(int messageId) =>
