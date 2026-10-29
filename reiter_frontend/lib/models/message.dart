@@ -7,6 +7,9 @@ class Message {
   final MessageType type;
   final String? text;
   final DateTime sentAt;
+
+  /// Wann eine App der Empfänger*in die Nachricht erhalten hat
+  final DateTime? deliveredAt;
   final DateTime? readAt;
 
   /// Wann die Sattler*in das geteilte Pferd bzw. die Messung hinzugefügt hat.
@@ -24,6 +27,7 @@ class Message {
     required this.type,
     required this.sentAt,
     this.text,
+    this.deliveredAt,
     this.readAt,
     this.acceptedAt,
     this.horse,
@@ -42,6 +46,7 @@ class Message {
       type: MessageType.fromJson(json['type']),
       text: json['text'] as String?,
       sentAt: _parseDate(json['sentAt']) ?? DateTime.now(),
+      deliveredAt: _parseDate(json['deliveredAt']),
       readAt: _parseDate(json['readAt']),
       acceptedAt: _parseDate(json['acceptedAt']),
       horse: horse is Map<String, dynamic> ? SharedHorse.fromJson(horse) : null,
@@ -52,7 +57,7 @@ class Message {
     );
   }
 
-  Message copyWith({DateTime? readAt}) {
+  Message copyWith({DateTime? deliveredAt, DateTime? readAt}) {
     return Message(
       id: id,
       senderId: senderId,
@@ -60,6 +65,7 @@ class Message {
       type: type,
       text: text,
       sentAt: sentAt,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
       readAt: readAt ?? this.readAt,
       acceptedAt: acceptedAt,
       horse: horse,

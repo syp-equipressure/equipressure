@@ -28,7 +28,11 @@ class ChatService extends ChangeNotifier {
   factory ChatService() => _instance;
   ChatService._internal() {
     _webSocket.events.listen(_onEvent);
-    _webSocket.connectionStream.listen((_) => notifyListeners());
+    _webSocket.connectionStream.listen((state) {
+      // Nachrichten, die offline geschickt wurden, sind jetzt zugestellt
+      if (state == ConnectionState.connected) _markAsDelivered();
+      notifyListeners();
+    });
   }
 
   static const Duration _timeout = Duration(seconds: 10);
@@ -208,6 +212,19 @@ class ChatService extends ChangeNotifier {
     }
   }
 
+  /// Bestätigt, dass alle empfangenen Nachrichten angekommen sind (zweites Häkchen beim Absender).
+  Future<void> _markAsDelivered() async {
+    final personId = _personId;
+    if (personId == null) return;
+    try {
+      await apiHttp
+          .put(Uri.parse('$_baseUrl/persons/$personId/chats/delivered'))
+          .timeout(_timeout);
+    } catch (_) {
+      // beim nächsten Verbinden bzw. der nächsten Nachricht wird es erneut versucht
+    }
+  }
+
   Future<Message> _send(String contactId, Map<String, dynamic> body) async {
     final personId = _personId ?? await _currentPersonId();
     final response = await apiHttp
@@ -236,6 +253,12 @@ class ChatService extends ChangeNotifier {
       if (type == 'message' && isNew && message.recipientId == _personId) {
         _onIncoming(message);
       }
+    } else if (type == 'delivered') {
+      final recipientId = event['readerId'].toString();
+      if (recipientId != _personId) {
+        _markSent(recipientId, read: false);
+        notifyListeners();
+      }
     } else if (type == 'read') {
       final readerId = event['readerId'].toString();
       if (readerId == _personId) {
@@ -243,7 +266,7 @@ class ChatService extends ChangeNotifier {
         final contactId = event['contactId'].toString();
         _updateChat(contactId, (chat) => chat.copyWith(unreadCount: 0));
       } else {
-        _markSentAsRead(readerId);
+        _markSent(readerId, read: true);
       }
       notifyListeners();
     }
@@ -251,6 +274,7 @@ class ChatService extends ChangeNotifier {
 
   void _onIncoming(Message message) {
     final contactId = message.senderId;
+    _markAsDelivered();
     if (activeContactId == contactId) {
       markAsRead(contactId);
       return;
@@ -312,21 +336,27 @@ class ChatService extends ChangeNotifier {
     return isNew;
   }
 
-  void _markSentAsRead(String readerId) {
+  /// Setzt den Status der an [recipientId] geschickten Nachrichten, gelesene sind immer auch zugestellt.
+  void _markSent(String recipientId, {required bool read}) {
     final now = DateTime.now();
-    final loaded = _messages[readerId];
+    Message update(Message message) {
+      if (message.recipientId != recipientId) return message;
+      if (read ? message.readAt != null : message.deliveredAt != null) return message;
+      return message.copyWith(
+        deliveredAt: message.deliveredAt ?? now,
+        readAt: read ? now : null,
+      );
+    }
+
+    final loaded = _messages[recipientId];
     if (loaded != null) {
       for (var i = 0; i < loaded.length; i++) {
-        if (loaded[i].recipientId == readerId && loaded[i].readAt == null) {
-          loaded[i] = loaded[i].copyWith(readAt: now);
-        }
+        loaded[i] = update(loaded[i]);
       }
     }
-    _updateChat(readerId, (chat) {
+    _updateChat(recipientId, (chat) {
       final last = chat.lastMessage;
-      return last != null && last.recipientId == readerId && last.readAt == null
-          ? chat.copyWith(lastMessage: last.copyWith(readAt: now))
-          : chat;
+      return last == null ? chat : chat.copyWith(lastMessage: update(last));
     });
   }
 
