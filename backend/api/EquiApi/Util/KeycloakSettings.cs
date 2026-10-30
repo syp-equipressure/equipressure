@@ -18,4 +18,14 @@ public sealed class KeycloakSettings
     ///     Has to be true in production, may only be disabled for the local Keycloak (plain HTTP)
     /// </summary>
     public bool RequireHttpsMetadata { get; init; } = true;
+
+    /// <summary>
+    ///     The client whose service account creates the users who register in the app
+    /// </summary>
+    public string AdminClientId { get; init; } = "equi-api-admin";
+
+    /// <summary>
+    ///     Secret of the client <see cref="AdminClientId" />, never commit the production value
+    /// </summary>
+    public string? AdminClientSecret { get; init; }
 }

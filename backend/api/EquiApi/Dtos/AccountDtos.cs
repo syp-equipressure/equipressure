@@ -20,6 +20,31 @@ public sealed record IdentityDto(string Subject, string? Email, string? FirstNam
 }
 
 /// <summary>
+///     Request to create a new account
+/// </summary>
+/// <param name="Email">The email, also used to log in</param>
+/// <param name="Password">The password</param>
+/// <param name="FirstName">The first name of the user</param>
+/// <param name="LastName">The last name of the user</param>
+public sealed record RegisterRequest(string Email, string Password, string FirstName, string LastName)
+{
+    public const int MinPasswordLength = 8;
+
+    public NewKeycloakUser ToUser() => new(Email.Trim(), Password, FirstName.Trim(), LastName.Trim());
+
+    public sealed class Validator : AbstractValidator<RegisterRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(255);
+            RuleFor(x => x.Password).NotEmpty().MinimumLength(MinPasswordLength);
+            RuleFor(x => x.FirstName).NotEmpty().MaximumLength(255);
+            RuleFor(x => x.LastName).NotEmpty().MaximumLength(255);
+        }
+    }
+}
+
+/// <summary>
 ///     Request to set up the profile of the logged-in user after the first login.
 ///     The email is taken from the access token, the role is assigned when claiming a device.
 /// </summary>

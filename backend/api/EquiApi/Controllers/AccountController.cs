@@ -1,13 +1,42 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Dtos;
 using EquiApi.Util;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EquiApi.Controllers;
 
 [Route("api/account")]
-public sealed class AccountController(IPersonService personService) : BaseController
+public sealed class AccountController(IPersonService personService, IKeycloakAdminClient keycloakAdminClient)
+    : BaseController
 {
+    /// <summary>
+    ///     Creates a user in Keycloak for the registration in the Reiter app, the client logs in afterwards.
+    ///     This is the only endpoint that works without a login, the attempts are limited per address.
+    /// </summary>
+    [AllowAnonymous]
+    [EnableRateLimiting(Setup.RegisterRateLimitPolicy)]
+    [HttpPost("register")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async ValueTask<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        if (!IsValid<RegisterRequest.Validator, RegisterRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        var result = await keycloakAdminClient.CreateUserAsync(request.ToUser(), HttpContext.RequestAborted);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => Problem(statusCode: StatusCodes.Status409Conflict, title: "The email is already used"),
+            _ => Problem(statusCode: StatusCodes.Status400BadRequest, title: "The password is too weak"));
+    }
+
     /// <summary>
     ///     Gets the identity of the logged-in user from the access token, e.g. to prefill the profile setup
     /// </summary>

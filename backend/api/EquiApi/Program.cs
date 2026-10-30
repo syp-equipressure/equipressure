@@ -39,6 +39,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 if (app.Environment.IsDevelopment())
 {

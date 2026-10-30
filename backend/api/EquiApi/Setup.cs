@@ -1,7 +1,9 @@
-﻿using EquiApi.Core.Util;
+﻿using System.Threading.RateLimiting;
+using EquiApi.Core.Util;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -15,6 +17,8 @@ public static class Setup
     ///     Query parameter with the access token, only accepted for the chat websocket and the content of chat files
     /// </summary>
     public const string AccessTokenQueryKey = "access_token";
+
+    public const string RegisterRateLimitPolicy = "Register";
 
     // browsers cannot send an Authorization header when opening a websocket or loading an image (<img src>)
     private static bool AllowsTokenInQuery(PathString path) =>
@@ -116,6 +120,20 @@ public static class Setup
                         };
                     });
             services.AddAuthorization();
+            services.AddSingleton(keycloakSettings);
+            services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>();
+            // anybody can register, so the number of attempts is limited per address
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy(RegisterRateLimitPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
+                                      context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                                      _ => new FixedWindowRateLimiterOptions
+                                      {
+                                          PermitLimit = 10,
+                                          Window = TimeSpan.FromMinutes(1)
+                                      }));
+            });
 
             Log.Logger.Debug("Added Keycloak authentication with authority {Authority}", keycloakSettings.Authority);
         }
