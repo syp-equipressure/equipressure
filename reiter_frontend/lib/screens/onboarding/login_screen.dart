@@ -1,14 +1,19 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/account_service.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/common/app_button.dart';
+import 'register_screen.dart';
+import 'widgets/auth_form.dart';
 import 'widgets/page_indicator.dart';
 
-/// Login über Keycloak, die Buttons gehen direkt zum jeweiligen Anbieter
+/// Anmelden mit E-Mail und Passwort direkt in der App. "Passwort vergessen" und die Anbieter
+/// laufen über Keycloak im Browser der App (backend/keycloak/themes/equipressure).
 class LoginScreen extends StatefulWidget {
   final ValueChanged<AccountState> onLoggedIn;
 
@@ -19,142 +24,236 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _loading = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  /// Ohne [identityProvider] öffnet sich die Keycloak-Seite selbst (für die Testkonten)
-  Future<void> _login(String? identityProvider) async {
-    setState(() => _loading = true);
+  bool _loading = false;
+  bool _remember = true;
+  bool _passwordVisible = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loginWithPassword() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Bitte E-Mail und Passwort eingeben.');
+      return;
+    }
+
+    await _run(() async {
+      await AuthService().loginWithPassword(email, password, remember: _remember);
+      TextInput.finishAutofillContext();
+    });
+  }
+
+  /// Führt eine Anmeldung aus und geht danach im Onboarding weiter
+  Future<void> _run(Future<void> Function() login) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      await AuthService().login(identityProvider: identityProvider);
+      await login();
       final state = await AccountService.loadState();
       widget.onLoggedIn(state);
+    } on WrongCredentialsException {
+      _showError('E-Mail oder Passwort ist falsch.');
+    } on FlutterAppAuthUserCancelledException {
+      // Seite im Browser geschlossen
     } on PlatformException {
-      // Login im Browser abgebrochen
+      _showError('Die Anmeldeseite ist gerade nicht erreichbar.');
+    } on TimeoutException {
+      _showError('Der Server ist gerade nicht erreichbar.');
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Anmelden hat nicht funktioniert. Bitte versuche es noch einmal.'),
-          ),
-        );
-      }
+      _showError('Anmelden hat nicht funktioniert. Bitte versuche es noch einmal.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  void _showError(String message) {
+    if (mounted) setState(() => _error = message);
+  }
+
+  Future<void> _openRegister() async {
+    final registered = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
+    // angemeldet ist man dann schon, es geht direkt im Onboarding weiter
+    if (registered == true) await _run(() async {});
+  }
+
+  Future<void> _openResetPassword() async {
+    final opened = await launchUrl(
+      AuthService().resetPasswordUrl,
+      mode: LaunchMode.inAppBrowserView,
+    );
+    if (!opened) _showError('Die Seite konnte nicht geöffnet werden.');
+  }
+
   @override
   Widget build(BuildContext context) {
-    // gleicher Aufbau wie die Keycloak-Anmeldeseite (backend/keycloak/themes/equipressure):
-    // Logo auf grauem Grund, darunter eine weiße Karte mit den Anbieter-Buttons
     return Container(
-      color: AppColors.background,
+      color: AppColors.surface,
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const Spacer(),
-              // das Logo hat einen weißen Hintergrund, multipliziert verschwindet er auf dem Grau
-              Image.asset(
-                'assets/images/equipressure-logo.png',
-                height: 64,
-                color: AppColors.background,
-                colorBlendMode: BlendMode.multiply,
-                semanticLabel: 'EquiPressure',
-              ),
-              const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderSoft),
-                  boxShadow: [
-                    BoxShadow(color: AppColors.shadow(0.05), blurRadius: 2, offset: const Offset(0, 1)),
-                    BoxShadow(color: AppColors.shadow(0.07), blurRadius: 14, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Anmelden',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textStrong,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Melde dich mit einem bestehenden Konto an, eine Registrierung ist nicht nötig.',
-                      style: TextStyle(fontSize: 14, height: 1.4, color: AppColors.textSoft),
-                    ),
-                    const SizedBox(height: 24),
-                    if (_loading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else ...[
-                      AppSocialButton(
-                        icon: FontAwesomeIcons.google,
-                        label: 'Mit Google anmelden',
-                        onPressed: () => _login('google'),
-                      ),
-                      const SizedBox(height: 12),
-                      AppSocialButton(
-                        icon: FontAwesomeIcons.microsoft,
-                        label: 'Mit Microsoft anmelden',
-                        onPressed: () => _login('microsoft'),
-                      ),
-                      const SizedBox(height: 12),
-                      AppSocialButton(
-                        icon: FontAwesomeIcons.github,
-                        label: 'Mit GitHub anmelden',
-                        onPressed: () => _login('github'),
-                      ),
-                      // nur beim Entwickeln: Anmelden mit den Testkonten aus backend/keycloak
-                      // (z.B. lena.grassauer / lena), dafür KC_LOGIN_THEME=equipressure-dev in der .env
-                      if (kDebugMode) ...[
-                        const SizedBox(height: 20),
-                        const Row(
-                          children: [
-                            Expanded(child: Divider()),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'Entwicklung',
-                                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                              ),
-                            ),
-                            Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: TextButton.icon(
-                            onPressed: () => _login(null),
-                            icon: const Icon(Icons.person_outline, size: 20),
-                            label: const Text('Mit Testkonto anmelden'),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ],
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: AutofillGroup(child: _buildForm()),
                 ),
               ),
-              const Spacer(),
-              const PageIndicator(currentPage: 1, totalPages: 5),
-              const SizedBox(height: 32),
-            ],
+            ),
+            const PageIndicator(currentPage: 1, totalPages: 5),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const AuthHeading(
+          title: 'Willkommen zurück',
+          subtitle: 'Schön, dass du wieder da bist.',
+        ),
+        const SizedBox(height: 24),
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          autocorrect: false,
+          autofillHints: const [AutofillHints.email, AutofillHints.username],
+          decoration: authInputDecoration('E-Mail'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _passwordController,
+          obscureText: !_passwordVisible,
+          textInputAction: TextInputAction.done,
+          autofillHints: const [AutofillHints.password],
+          onSubmitted: (_) => _loginWithPassword(),
+          decoration: authInputDecoration('Passwort').copyWith(
+            suffixIcon: PasswordVisibilityButton(
+              visible: _passwordVisible,
+              onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
+            ),
           ),
         ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _remember,
+                onChanged: (value) => setState(() => _remember = value ?? true),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Angemeldet bleiben',
+                style: TextStyle(fontSize: 13, color: AppColors.textSoft),
+              ),
+            ),
+            TextButton(
+              onPressed: _loading ? null : _openResetPassword,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              child: const Text('Passwort vergessen?'),
+            ),
+          ],
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: AppColors.error),
+          ),
+        ],
+        const SizedBox(height: 12),
+        AuthGradientButton(
+          label: 'Anmelden',
+          loading: _loading,
+          onPressed: _loginWithPassword,
+        ),
+        const SizedBox(height: 22),
+        const Row(
+          children: [
+            Expanded(child: Divider()),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                'Oder anmelden mit',
+                style: TextStyle(fontSize: 13, color: AppColors.textSoft),
+              ),
+            ),
+            Expanded(child: Divider()),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildProviderButton(FontAwesomeIcons.google, 'Google', 'google'),
+            const SizedBox(width: 18),
+            _buildProviderButton(FontAwesomeIcons.microsoft, 'Microsoft', 'microsoft'),
+            const SizedBox(width: 18),
+            _buildProviderButton(FontAwesomeIcons.github, 'GitHub', 'github'),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Noch kein Konto?',
+              style: TextStyle(fontSize: 14, color: AppColors.textSoft),
+            ),
+            TextButton(
+              onPressed: _loading ? null : _openRegister,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              child: const Text('Registrieren'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProviderButton(IconData icon, String name, String provider) {
+    return Tooltip(
+      message: 'Mit $name anmelden',
+      child: OutlinedButton(
+        onPressed: _loading ? null : () => _run(() => AuthService().loginWithProvider(provider)),
+        style: OutlinedButton.styleFrom(
+          fixedSize: const Size.square(50),
+          minimumSize: const Size.square(50),
+          padding: EdgeInsets.zero,
+          shape: const CircleBorder(),
+        ),
+        child: Icon(icon, size: 20, semanticLabel: 'Mit $name anmelden'),
       ),
     );
   }

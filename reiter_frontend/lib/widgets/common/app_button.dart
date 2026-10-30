@@ -33,48 +33,6 @@ class AppButton extends StatelessWidget {
   }
 }
 
-class AppSocialButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const AppSocialButton({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // weiß mit Rand, wie die Anmelde-Buttons der Anbieter üblich aussehen
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.textStrong,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 16),
-            Flexible(
-              child: Text(
-                label,
-                style: AppTextStyles.button,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class AppTextButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
