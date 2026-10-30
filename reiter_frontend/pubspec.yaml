@@ -58,6 +58,7 @@ dependencies:
   http: ^1.1.0
   flutter_appauth: ^12.1.0
   flutter_secure_storage: ^10.0.0
+  flutter_blue_plus: ^2.3.14
 
 dev_dependencies:
   flutter_test:
