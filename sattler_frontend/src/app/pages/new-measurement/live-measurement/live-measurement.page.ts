@@ -5,6 +5,7 @@ import { PageHeaderComponent } from '../../../shared/page-header/page-header';
 import { PressureHeatmapComponent } from '../../../shared/pressure-heatmap/pressure-heatmap';
 import { MeasurementSessionService } from '../../../services/measurement-session.service';
 import { DataService } from '../../../services/data.service';
+import { DeviceConnectionService } from '../../../services/device-connection.service';
 import { Gait, Side } from '../../../models/measurement.model';
 import { formatDuration } from '../../../utils/time-format';
 
@@ -20,6 +21,7 @@ export class LiveMeasurementPage implements OnDestroy {
   private readonly router = inject(Router);
   private readonly sessionService = inject(MeasurementSessionService);
   private readonly data = inject(DataService);
+  private readonly connection = inject(DeviceConnectionService);
   private readonly queryParams = toSignal(this.route.queryParamMap, {
     initialValue: this.route.snapshot.queryParamMap,
   });
@@ -36,9 +38,12 @@ export class LiveMeasurementPage implements OnDestroy {
   readonly elapsedSeconds = computed(() => Math.floor(this.phase()));
   readonly gait = signal<Gait>('Schritt');
   readonly side = signal<Side>('Links');
-  readonly pressureGrid = computed(() =>
-    animatePressureGrid(this.data.getSamplePressureGrid(), this.phase()),
-  );
+  /** True if the values come from the device, otherwise a clearly marked simulation runs. */
+  readonly isLive = this.connection.status() === 'connected';
+  readonly connectionLost = computed(() => this.isLive && this.connection.status() !== 'connected');
+  readonly pressureGrid = computed(() => this.isLive
+    ? this.connection.frame() ?? EMPTY_GRID
+    : animatePressureGrid(this.data.getSamplePressureGrid(), this.phase()));
 
   constructor() {
     if (!this.session() || !this.segment() || this.segment()?.completed) {
@@ -50,7 +55,9 @@ export class LiveMeasurementPage implements OnDestroy {
     this.timer = window.setInterval(() => {
       this.phase.set((Date.now() - this.startedAt) / 1000);
       // eine Aufnahme pro Sekunde wird mit der Teilmessung gespeichert
-      if (this.frames.length < this.elapsedSeconds()) this.frames.push(this.pressureGrid());
+      if (this.frames.length < this.elapsedSeconds() && (!this.isLive || this.connection.frame())) {
+        this.frames.push(this.pressureGrid());
+      }
     }, 250);
   }
 
@@ -73,6 +80,8 @@ export class LiveMeasurementPage implements OnDestroy {
 
   readonly formatDuration = formatDuration;
 }
+
+const EMPTY_GRID: number[][] = Array.from({ length: 20 }, () => new Array<number>(20).fill(0));
 
 function animatePressureGrid(grid: number[][], phase: number): number[][] {
   const rows = grid.length;
