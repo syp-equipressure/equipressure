@@ -5,14 +5,20 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/services/device_connection_service.dart';
+import 'package:reiterappfrontend/services/measurement_service.dart';
 
 class LiveMeasurementResult {
   final Duration duration;
   final List<double> pressureData;
 
+  /// Die Aufnahmen des Messgeräts, leer bei einer Simulation
+  final List<List<double>> frames;
+
   LiveMeasurementResult({
     required this.duration,
     required this.pressureData,
+    this.frames = const [],
   });
 }
 
@@ -46,11 +52,29 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   ui.Image? _currentFrame;
   final Random _rng = Random();
 
+  final DeviceConnectionService _connection = DeviceConnectionService();
+
+  /// True wenn die Werte vom Messgerät kommen, sonst läuft eine sichtbar markierte Simulation
+  late final bool _isLive = _connection.status == DeviceConnectionStatus.connected &&
+      !_connection.isSimulated;
+  StreamSubscription<List<double>>? _deviceFrames;
+  bool _hasNewFrame = false;
+
+  /// Alle 300 ms die neueste Aufnahme, wird mit der Teilmessung gespeichert
+  final List<List<double>> _recordedFrames = [];
+
   @override
   void initState() {
     super.initState();
     _basePattern = _generateBasePattern();
-    _currentData = List.from(_basePattern);
+    if (_isLive) {
+      _deviceFrames = _connection.frames.listen((frame) {
+        _currentData = frame;
+        _hasNewFrame = true;
+      });
+    } else {
+      _currentData = List.from(_basePattern);
+    }
     _stopwatch = Stopwatch()..start();
 
     _uiTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
@@ -69,6 +93,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     _stopwatch.stop();
     _uiTimer?.cancel();
     _frameTimer?.cancel();
+    _deviceFrames?.cancel();
     _currentFrame?.dispose();
     super.dispose();
   }
@@ -125,15 +150,23 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   }
 
   void _updateFrame() async {
-    final noisy = List<double>.generate(400, (i) {
-      final base = _basePattern[i];
-      final noise = (_rng.nextDouble() - 0.5) * base * 0.3;
-      return max(0, base + noise);
-    });
+    final List<double> data;
+    if (_isLive) {
+      // bis zur ersten Aufnahme bleibt die Ladeanzeige stehen
+      if (!_hasNewFrame) return;
+      _hasNewFrame = false;
+      data = _currentData;
+      _recordedFrames.add(data);
+    } else {
+      data = List<double>.generate(400, (i) {
+        final base = _basePattern[i];
+        final noise = (_rng.nextDouble() - 0.5) * base * 0.3;
+        return max(0, base + noise);
+      });
+      _currentData = data;
+    }
 
-    _currentData = noisy;
-
-    final pixels = _renderPixels(noisy);
+    final pixels = _renderPixels(data);
     final image = await _pixelsToImage(pixels);
 
     if (mounted) {
@@ -239,11 +272,42 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     return '$minutes:$seconds';
   }
 
+  /// Woher die Werte kommen, eine Simulation darf nicht wie eine echte Messung aussehen
+  Widget _buildSourceHint() {
+    return ListenableBuilder(
+      listenable: _connection,
+      builder: (context, _) {
+        final lost = _isLive && _connection.status != DeviceConnectionStatus.connected;
+        final String text;
+        final Color color;
+        if (!_isLive) {
+          text = 'Simulation, es ist kein Messgerät verbunden';
+          color = AppColors.warning;
+        } else if (lost) {
+          text = 'Verbindung zum Messgerät verloren';
+          color = AppColors.error;
+        } else {
+          text = 'Live vom Messgerät';
+          color = AppColors.success;
+        }
+
+        return Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: color),
+        );
+      },
+    );
+  }
+
   void _stopMeasurement() {
     _stopwatch.stop();
     final result = LiveMeasurementResult(
       duration: _stopwatch.elapsed,
-      pressureData: List.from(_currentData),
+      pressureData: _recordedFrames.isEmpty
+          ? List.from(_currentData)
+          : MeasurementService.averageFrames(_recordedFrames),
+      frames: _recordedFrames,
     );
     Navigator.pop(context, result);
   }
@@ -273,7 +337,9 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                         color: AppColors.textStrong,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    _buildSourceHint(),
+                    const SizedBox(height: 16),
 
                     // Heatmap
                     Container(
