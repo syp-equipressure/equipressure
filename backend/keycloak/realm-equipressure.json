@@ -2,16 +2,25 @@
   "realm": "equipressure",
   "displayName": "EquiPressure",
   "enabled": true,
-  "loginTheme": "${KC_LOGIN_THEME}",
+  "loginTheme": "equipressure",
   "sslRequired": "external",
-  "registrationAllowed": false,
-  "resetPasswordAllowed": false,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "resetPasswordAllowed": true,
   "rememberMe": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "passwordPolicy": "length(8)",
   "internationalizationEnabled": true,
-  "supportedLocales": ["de", "en"],
+  "supportedLocales": ["de"],
   "defaultLocale": "de",
+  "smtpServer": {
+    "host": "${SMTP_HOST}",
+    "port": "${SMTP_PORT}",
+    "from": "${SMTP_FROM}",
+    "fromDisplayName": "EquiPressure"
+  },
   "components": {
     "org.keycloak.userprofile.UserProfileProvider": [
       {
@@ -83,7 +92,7 @@
       "publicClient": true,
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "implicitFlowEnabled": false,
       "redirectUris": ["at.equipressure.reiter:/oauthredirect"],
       "attributes": {
@@ -115,6 +124,17 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "equi-api-admin",
+      "name": "Backend: legt beim Registrieren in der Reiter-App Benutzer an",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${EQUI_API_ADMIN_SECRET}",
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     },
     {
       "clientId": "dev-tools",
@@ -195,6 +215,12 @@
     }
   ],
   "users": [
+    {
+      "username": "service-account-equi-api-admin",
+      "enabled": true,
+      "serviceAccountClientId": "equi-api-admin",
+      "clientRoles": { "realm-management": ["manage-users"] }
+    },
     {
       "username": "reiter.dev",
       "enabled": true,

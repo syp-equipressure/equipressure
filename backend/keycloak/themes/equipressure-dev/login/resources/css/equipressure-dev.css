@@ -1,8 +1,0 @@
-/* Formular für die Testkonten wieder einblenden, mit "Oder anmelden mit" vor den Anbieter-Buttons */
-#kc-form {
-    display: block;
-}
-
-.pf-v5-c-login__main-footer-band:has(+ #kc-social-providers) {
-    display: block;
-}

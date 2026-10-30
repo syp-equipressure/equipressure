@@ -11,12 +11,12 @@ the database has no persons yet. Existing data is never changed. The data is def
 ## Test accounts
 
 Sophie and Lena are linked to Keycloak users from `backend/keycloak/realm-equipressure.json`, so you can log in
-as them (with `KC_LOGIN_THEME=equipressure-dev`) and e.g. chat with each other:
+as them and e.g. chat with each other. The field on the login page asks for the email address:
 
-| Person | Username | Password | App |
+| Person | Email | Password | App |
 |---|---|---|---|
-| 1 Sophie Grüneis | `sophie.grueneis` | `sophie` | Sattler frontend |
-| 6 Lena Grassauer | `lena.grassauer` | `lena` | Reiter app |
+| 1 Sophie Grüneis | `sophie.grueneis@example.com` | `sophie` | Sattler frontend |
+| 6 Lena Grassauer | `lena.grassauer@example.com` | `lena` | Reiter app |
 
 ## Persons
 

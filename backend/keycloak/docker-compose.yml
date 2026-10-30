@@ -1,6 +1,7 @@
 # Keycloak für die lokale Entwicklung
 # Start: docker compose up -d   (im Ordner backend/keycloak)
 # Admin-Konsole: http://localhost:8180/admin  (admin / admin)
+# Test-Postfach für E-Mails (Passwort vergessen): http://localhost:8025
 #
 # Der Realm "equipressure" wird beim ersten Start aus realm-equipressure.json importiert.
 # Die Keycloak-Daten (User, Sessions) liegen im Volume keycloak-data und bleiben bei Neustarts erhalten,
@@ -26,15 +27,25 @@ services:
       MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-not-configured}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-not-configured}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-not-configured}
-      # equipressure = nur Anbieter-Buttons, equipressure-dev = zusätzlich mit Passwort-Formular (für die Testkonten)
-      KC_LOGIN_THEME: ${KC_LOGIN_THEME:-equipressure}
+      # Secret des Clients equi-api-admin, muss zu Keycloak:AdminClientSecret im Backend passen
+      EQUI_API_ADMIN_SECRET: ${EQUI_API_ADMIN_SECRET:-dev-admin-secret}
+      # E-Mails (Passwort vergessen): lokal landen sie in Mailpit, http://localhost:8025
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-noreply@equipressure.local}
     ports:
       - "127.0.0.1:8180:8180"
     volumes:
       - ./realm-equipressure.json:/opt/keycloak/data/import/realm-equipressure.json:ro
       - ./themes/equipressure:/opt/keycloak/themes/equipressure:ro
-      - ./themes/equipressure-dev:/opt/keycloak/themes/equipressure-dev:ro
       - keycloak-data:/opt/keycloak/data
+
+  # fängt lokal alle E-Mails ab, verschickt nichts nach außen
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: equipressure-mailpit
+    ports:
+      - "127.0.0.1:8025:8025"
 
 volumes:
   keycloak-data:
