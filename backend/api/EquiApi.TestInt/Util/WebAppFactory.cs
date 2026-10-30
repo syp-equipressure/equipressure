@@ -1,5 +1,6 @@
 ﻿using EquiApi.Persistence.Util;
 using EquiApi.Shared;
+using EquiApi.Util;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -13,6 +14,8 @@ internal sealed class WebAppFactory(string connectionString) : WebApplicationFac
     public static readonly LocalDateTime CurrentDateTimeForTests = new(2026, 01, 01, 14, 30, 00);
 
     public static LocalDate CurrentDate => CurrentDateTimeForTests.Date;
+
+    public IKeycloakAdminClient KeycloakAdminClient { get; } = Substitute.For<IKeycloakAdminClient>();
 
     public IClock TestClock =>
         Services.GetService<IClock>() ??
@@ -28,6 +31,8 @@ internal sealed class WebAppFactory(string connectionString) : WebApplicationFac
             SetTestDbContext(services);
             SetTestClock(services);
             SetTestAuthentication(services);
+            // there is no Keycloak in tests
+            services.AddSingleton(KeycloakAdminClient);
         });
     }
 

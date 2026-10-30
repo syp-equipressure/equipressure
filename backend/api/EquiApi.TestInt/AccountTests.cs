@@ -2,6 +2,9 @@
 using EquiApi.Dtos;
 using EquiApi.Persistence.Model;
 using EquiApi.TestInt.Util;
+using EquiApi.Util;
+using NSubstitute;
+using OneOf.Types;
 
 namespace EquiApi.TestInt;
 
@@ -9,6 +12,7 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
 {
     private const string ExternalId = "0e6982b9-0a93-4fdd-8af5-65b85d73b52f";
     private const string Email = "anna@reiter.at";
+    private const string Password = "Testpasswort1";
 
     [Fact]
     public async ValueTask GetIdentity_LoggedIn_ReturnsClaimsOfToken()
@@ -114,6 +118,62 @@ public sealed class AccountTests(WebApiTestFixture webApiFixture) : WebApiTestBa
                                                              JsonOptions, TestCancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async ValueTask Register_ValidData_CreatesTrimmedUserWithoutLogin()
+    {
+        KeycloakAdminClient.CreateUserAsync(Arg.Any<NewKeycloakUser>(), Arg.Any<CancellationToken>())
+                           .Returns(new Success());
+        var request = new RegisterRequest(" neu@reiter.at ", Password, " Nora ", "Neu");
+
+        var response = await AnonymousClient.PostAsJsonAsync("api/account/register", request, JsonOptions,
+                                                             TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await KeycloakAdminClient.Received().CreateUserAsync(
+            new NewKeycloakUser("neu@reiter.at", Password, "Nora", "Neu"), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async ValueTask Register_EmailAlreadyUsed_ReturnsConflict()
+    {
+        KeycloakAdminClient.CreateUserAsync(Arg.Any<NewKeycloakUser>(), Arg.Any<CancellationToken>())
+                           .Returns(new IKeycloakAdminClient.EmailAlreadyUsed());
+
+        var response = await AnonymousClient.PostAsJsonAsync(
+            "api/account/register", new RegisterRequest(Email, Password, "Nora", "Neu"), JsonOptions,
+            TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async ValueTask Register_PasswordRejectedByKeycloak_ReturnsBadRequest()
+    {
+        KeycloakAdminClient.CreateUserAsync(Arg.Any<NewKeycloakUser>(), Arg.Any<CancellationToken>())
+                           .Returns(new IKeycloakAdminClient.PasswordRejected());
+
+        var response = await AnonymousClient.PostAsJsonAsync(
+            "api/account/register", new RegisterRequest(Email, Password, "Nora", "Neu"), JsonOptions,
+            TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("keine-email", Password, "Nora", "Neu")]
+    [InlineData("neu@reiter.at", "kurz", "Nora", "Neu")]
+    [InlineData("neu@reiter.at", Password, "", "Neu")]
+    [InlineData("neu@reiter.at", Password, "Nora", "")]
+    public async ValueTask Register_InvalidData_ReturnsBadRequest(string email, string password, string firstName,
+                                                                  string lastName)
+    {
+        var response = await AnonymousClient.PostAsJsonAsync(
+            "api/account/register", new RegisterRequest(email, password, firstName, lastName), JsonOptions,
+            TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
     }
 
     private async ValueTask<HttpResponseMessage> SendAsUserAsync(HttpMethod method, string url,

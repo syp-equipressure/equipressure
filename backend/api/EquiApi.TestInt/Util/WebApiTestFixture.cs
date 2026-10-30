@@ -41,6 +41,8 @@ public sealed class WebApiTestFixture : IAsyncLifetime
         private set;
     }
 
+    public EquiApi.Util.IKeycloakAdminClient KeycloakAdminClient => Factory.KeycloakAdminClient;
+
     private WebAppFactory Factory
     {
         get => field ?? throw new InvalidOperationException("Factory not created");
