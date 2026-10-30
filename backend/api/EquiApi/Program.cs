@@ -23,7 +23,11 @@ builder.Services.ConfigureAdditionalRouteConstraints();
 builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
 // only one handler is used, register LoggingBluetoothDataHandler instead to inspect the raw data
 builder.Services.AddSingleton<IBluetoothDataHandler, MeasurementDataBluetoothHandler>();
-builder.Services.AddHostedService<BluetoothConnectionService>();
+// with the plain net10.0 target InTheHand.BluetoothLE only supports BlueZ, on other systems every scan would fail
+if (OperatingSystem.IsLinux())
+{
+    builder.Services.AddHostedService<BluetoothConnectionService>();
+}
 
 var app = builder.Build();
 
