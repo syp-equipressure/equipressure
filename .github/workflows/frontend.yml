@@ -1,0 +1,31 @@
+name: Frontend
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths: [ 'sattler_frontend/**', '.github/workflows/frontend.yml' ]
+  pull_request:
+    branches: [ main, dev ]
+    paths: [ 'sattler_frontend/**', '.github/workflows/frontend.yml' ]
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: sattler_frontend
+          push: false
+          tags: sattler-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
+import { API_BASE_URL } from '../auth/auth.config';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { PressureDevice } from '../models/device.model';
@@ -13,7 +14,7 @@ import {
   toMeasurement,
 } from './measurement-mapper';
 
-export const BACKEND_BASE_URL = 'http://localhost:5200/api';
+export const BACKEND_BASE_URL = API_BASE_URL;
 
 export interface SaddleCategory {
   id: number;
