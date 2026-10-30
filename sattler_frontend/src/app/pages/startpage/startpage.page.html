@@ -23,10 +23,17 @@
             <span class="action-icon material-icons" aria-hidden="true">sensors</span>
             <span class="dashboard-device-info">
               <strong>{{ device.name }}</strong>
-              <small>Nr. {{ device.number }}</small>
+              <small>Nr. {{ device.number }}@if (connection.isConnectedTo(device)) { · Verbunden }</small>
             </span>
-            <button type="button" class="connect-button" (click)="connectDevice(device)">
-              Verbinden
+            <button type="button" class="connect-button" [disabled]="connection.isConnectingTo(device)"
+              (click)="toggleConnection(device)">
+              @if (connection.isConnectedTo(device)) {
+                Trennen
+              } @else if (connection.isConnectingTo(device)) {
+                Verbinde …
+              } @else {
+                Verbinden
+              }
             </button>
           </div>
         } @empty {
@@ -38,8 +45,8 @@
         @if (backendProfileError()) {
           <p class="bluetooth-notice" role="alert">{{ backendProfileError() }}</p>
         }
-        @if (bluetoothNotice()) {
-          <p class="bluetooth-notice" role="status">{{ bluetoothNotice() }}</p>
+        @if (connection.error()) {
+          <p class="bluetooth-notice" role="alert">{{ connection.error() }}</p>
         }
       </section>
 

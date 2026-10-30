@@ -8,6 +8,7 @@ import { PressureDevice } from '../../models/device.model';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { BackendApiService } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
+import { DeviceConnectionService } from '../../services/device-connection.service';
 import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 interface RecentMeasurement {
@@ -39,6 +40,7 @@ export class StartPage {
   private readonly data = inject(DataService);
   private readonly api = inject(BackendApiService);
   private readonly personContext = inject(BackendPersonContextService);
+  readonly connection = inject(DeviceConnectionService);
 
   private readonly backendCustomer = signal<Customer | null>(null);
   readonly customer = computed(() => this.backendCustomer() ?? this.data.getMe());
@@ -47,7 +49,6 @@ export class StartPage {
   readonly devices = computed(() => this.backendDevices() ?? this.data.devices());
   readonly backendDeviceError = signal('');
   readonly backendProfileError = signal('');
-  readonly bluetoothNotice = signal('');
 
   /** Die neuesten Messungen aus dem Backend, null solange keine Backend-Person eingestellt ist. */
   private readonly backendRecent = signal<RecentMeasurement[] | null>(null);
@@ -144,10 +145,12 @@ export class StartPage {
     });
   }
 
-  connectDevice(device: PressureDevice): void {
-    this.bluetoothNotice.set(
-      device.name
-    );
+  toggleConnection(device: PressureDevice): void {
+    if (this.connection.isConnectedTo(device)) {
+      this.connection.disconnect();
+    } else {
+      void this.connection.connect(device);
+    }
   }
 
   /** Ohne Backend: die in dieser Sitzung aufgenommenen Messungen. */
