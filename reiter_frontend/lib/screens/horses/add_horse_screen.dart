@@ -1,4 +1,5 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -57,6 +58,10 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   String selectedSex = 'female';
   /// Fehlende Felder werden erst nach dem ersten Speichern markiert
   bool _showErrors = false;
+
+  /// Geprüft wird erst, wenn nicht mehr getippt wird
+  Timer? _typingTimer;
+  String? _breedError;
   bool _saving = false;
   String? dateErrorMessage;
   String? heightWeightErrorMessage; // ← NEU: Für Größe/Gewicht Validierung
@@ -94,6 +99,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       stableHouseNumberController.text = horse.stableHouseNumber ?? '';
     }
     _loadBreeds();
+    breedController.addListener(() => _afterTyping(_checkBreed));
     for (final controller in [nameController, breedController, stableCityController, stablePostalCodeController]) {
       controller.addListener(_refreshErrors);
     }
@@ -133,6 +139,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
     _breedFocusNode.dispose();
     super.dispose();
   }
@@ -143,6 +150,20 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   String? _missing(TextEditingController controller) =>
       _showErrors && controller.text.trim().isEmpty ? 'Pflichtfeld' : null;
+
+  void _afterTyping(VoidCallback check) {
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(milliseconds: 700), () {
+      if (mounted) setState(check);
+    });
+  }
+
+  void _checkBreed() {
+    final known = _breeds.map((breed) => breed.name.toLowerCase()).toSet();
+    final names = breedController.text.split(',').map((name) => name.trim().toLowerCase());
+    final unknown = names.any((name) => name.isNotEmpty && !known.contains(name));
+    _breedError = known.isNotEmpty && unknown ? 'Bitte nur Rassen aus der Liste verwenden' : null;
+  }
 
   void _refreshErrors() {
     if (_showErrors) setState(() {});
@@ -451,7 +472,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
             // Name
             const Text(
-              'Name',
+              'Name *',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -494,7 +515,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Rasse',
+                      'Rasse *',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -532,7 +553,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
-                          errorText: _missing(controller),
+                          errorText: _breedError ?? _missing(controller),
                           hintText: 'z. B. Haflinger',
                           filled: true,
                           fillColor: AppColors.surface,
@@ -589,7 +610,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Geburtsdatum',
+                  'Geburtsdatum *',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -611,7 +632,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           if (value.length == 2) {
                             FocusScope.of(context).nextFocus();
                           }
-                          _validateDate();
+                          _afterTyping(_validateDate);
                         },
                         decoration: InputDecoration(
                           hintText: 'DD',
@@ -661,7 +682,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           if (value.length == 2) {
                             FocusScope.of(context).nextFocus();
                           }
-                          _validateDate();
+                          _afterTyping(_validateDate);
                         },
                         decoration: InputDecoration(
                           hintText: 'MM',
@@ -709,7 +730,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         onChanged: (value) {
-                          _validateDate();
+                          _afterTyping(_validateDate);
                           setState(() {});
                         },
                         decoration: InputDecoration(
@@ -776,7 +797,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Stockmaß',
+                            'Stockmaß *',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -792,7 +813,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
-                                  onChanged: (value) => _validateHeightWeight(), // ← NEU
+                                  onChanged: (value) => _afterTyping(_validateHeightWeight), // ← NEU
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: AppColors.surface,
@@ -849,7 +870,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Gewicht',
+                            'Gewicht *',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -865,7 +886,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
-                                  onChanged: (value) => _validateHeightWeight(), // ← NEU
+                                  onChanged: (value) => _afterTyping(_validateHeightWeight), // ← NEU
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: AppColors.surface,
@@ -962,7 +983,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Ort',
+                        'Ort *',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -1002,7 +1023,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'PLZ',
+                        'PLZ *',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -1154,6 +1175,14 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                       heightWeightErrorMessage = 'Bitte Stockmaß und Gewicht ausfüllen';
                     }
                   });
+
+                  _checkBreed();
+                  if (_breedError != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(_breedError!), duration: const Duration(seconds: 2)),
+                    );
+                    return;
+                  }
 
                   if (nameController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1320,7 +1349,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         ),
         child: Icon(
           icon,
-          color: AppColors.text,
+          color: sex == 'male' ? AppColors.male : AppColors.female,
           size: 20,
         ),
       ),

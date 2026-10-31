@@ -235,7 +235,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                   ? Icons.male
                                   : Icons.female,
                               size: 28,
-                              color: AppColors.textSoft,
+                              color: currentHorse.sex == 'male' ? AppColors.male : AppColors.female,
                             ),
                           ],
                         ),
