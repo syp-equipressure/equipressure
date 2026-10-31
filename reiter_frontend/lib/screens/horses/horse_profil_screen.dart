@@ -106,6 +106,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           height: 350,
                           fit: BoxFit.cover,
                         )
+                      : _horseService.imageUrl(currentHorse) != null
+                          ? Image.network(
+                              _horseService.imageUrl(currentHorse)!,
+                              width: double.infinity,
+                              height: 350,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                width: double.infinity,
+                                height: 350,
+                                color: AppColors.border,
+                              ),
+                            )
                       : currentHorse.assetImage != null
                           ? Image.asset(
                               currentHorse.assetImage!,

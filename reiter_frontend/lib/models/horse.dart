@@ -6,6 +6,9 @@ class Horse {
   final File? image;
   final String? imagePath;
   final String? assetImage;
+
+  /// Wann das Bild im Backend gesetzt wurde, null ohne Bild
+  final String? imageUpdatedAt;
   final String breed;
   final String birthDate; // Format: DD.MM.YYYY
   final String weight;
@@ -26,6 +29,7 @@ class Horse {
     this.image,
     this.imagePath,
     this.assetImage,
+    this.imageUpdatedAt,
     required this.breed,
     required this.birthDate,
     required this.weight,
@@ -39,7 +43,7 @@ class Horse {
     this.stableLongitude,
   });
 
-  bool get hasImage => image != null || assetImage != null;
+  bool get hasImage => image != null || assetImage != null || imageUpdatedAt != null;
 
   bool get hasStableLocation => stableLatitude != null && stableLongitude != null;
 
@@ -145,6 +149,7 @@ class Horse {
     File? image,
     String? imagePath,
     String? assetImage,
+    String? imageUpdatedAt,
     String? breed,
     String? birthDate,
     String? weight,
@@ -163,6 +168,7 @@ class Horse {
       image: image ?? this.image,
       imagePath: imagePath ?? this.imagePath,
       assetImage: assetImage ?? this.assetImage,
+      imageUpdatedAt: imageUpdatedAt ?? this.imageUpdatedAt,
       breed: breed ?? this.breed,
       birthDate: birthDate ?? this.birthDate,
       weight: weight ?? this.weight,

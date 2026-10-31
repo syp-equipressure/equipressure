@@ -82,7 +82,19 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
 
     try {
-      final savedHorse = await _horseService.addHorse(newHorse);
+      var savedHorse = await _horseService.addHorse(newHorse);
+      if (image != null) {
+        // das Pferd ist schon gespeichert, ein Fehler beim Bild darf es nicht verwerfen
+        try {
+          savedHorse = await _horseService.uploadImage(savedHorse, image);
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Das Pferd ist gespeichert, das Bild aber nicht: $error')),
+            );
+          }
+        }
+      }
       if (!mounted) return;
       setState(() {
         horses = [...horses, savedHorse];
@@ -236,6 +248,12 @@ class _HorsesScreenState extends State<HorsesScreen> {
                   width: double.infinity,
                   child: horse.image != null
                       ? Image.file(horse.image!, fit: BoxFit.cover)
+                      : _horseService.imageUrl(horse) != null
+                      ? Image.network(
+                          _horseService.imageUrl(horse)!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(color: AppColors.borderSoft),
+                        )
                       : horse.assetImage != null
                       ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
                       : Container(

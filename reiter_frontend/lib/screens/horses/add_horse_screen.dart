@@ -131,6 +131,10 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     super.dispose();
   }
 
+  /// Das im Backend gespeicherte Bild des Pferdes, das bearbeitet wird
+  String? get _savedImageUrl =>
+      widget.horse == null ? null : HorseService().imageUrl(widget.horse!);
+
   Future<void> _pickImage() async {
     if (_isPickingImage) return;
     
@@ -392,7 +396,17 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     borderRadius: BorderRadius.circular(12),
                     color: AppColors.bgPanel,
                   ),
-                  child: selectedImage == null
+                  child: selectedImage == null && _savedImageUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            _savedImageUrl!,
+                            width: double.infinity,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : selectedImage == null
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
