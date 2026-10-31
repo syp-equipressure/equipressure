@@ -14,7 +14,8 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}
     restart: unless-stopped
-    command: start
+    # Importiert den Realm nur, solange er noch nicht existiert.
+    command: start --import-realm
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
@@ -26,6 +27,11 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      # Muss zu Keycloak__AdminClientSecret der API passen.
+      EQUI_API_ADMIN_SECRET: ${EQUI_API_ADMIN_SECRET}
+    volumes:
+      - ./keycloak/realm-equipressure.json:/opt/keycloak/data/import/realm-equipressure.json:ro
+      - ./keycloak/themes/equipressure:/opt/keycloak/themes/equipressure:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,10 +46,15 @@ services:
     image: ${API_IMAGE}
     restart: unless-stopped
     environment:
-      # Namen an die eigene API anpassen.
-      DATABASE_URL: postgres://app:${APP_DB_PASSWORD}@postgres:5432/app
-      OIDC_ISSUER: https://${AUTH_DOMAIN}/realms/${KC_REALM}
-      PORT: ${API_PORT}
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=postgres;Database=app;Username=app;Password=${APP_DB_PASSWORD}
+      Keycloak__Authority: https://${AUTH_DOMAIN}/realms/${KC_REALM}
+      Keycloak__Audience: equi-api
+      Keycloak__AdminClientSecret: ${EQUI_API_ADMIN_SECRET}
+      General__ClientOrigin: https://${APP_DOMAIN}
+    # Das Image prüft /health mit curl, beides gibt es dort nicht.
+    healthcheck:
+      disable: true
     depends_on:
       postgres:
         condition: service_healthy
