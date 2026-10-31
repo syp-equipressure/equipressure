@@ -31,10 +31,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String _email = '';
   bool _saving = false;
 
+  /// Fehlende Felder werden erst nach dem ersten Speichern markiert
+  bool _showErrors = false;
+
+  String? _missing(TextEditingController controller) =>
+      _showErrors && controller.text.trim().isEmpty ? 'Pflichtfeld' : null;
+
+  String? _invalidNumber(TextEditingController controller) {
+    final value = double.tryParse(controller.text.replaceAll(',', '.'));
+    return _showErrors && (value == null || value <= 0) ? 'Ungültig' : null;
+  }
+
   @override
   void initState() {
     super.initState();
     _prefillFromAccount();
+    for (final controller in [
+      _firstName, _lastName, _day, _month, _year, _city, _plz, _street, _height, _weight,
+    ]) {
+      controller.addListener(() {
+        if (_showErrors) setState(() {});
+      });
+    }
   }
 
   /// Name und E-Mail vom Google/Microsoft/GitHub-Konto übernehmen
@@ -53,6 +71,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   Future<void> _save() async {
+    setState(() => _showErrors = true);
     final dateOfBirth = _parseDate();
     final height = double.tryParse(_height.text.replaceAll(',', '.'));
     final weight = double.tryParse(_weight.text.replaceAll(',', '.'));
@@ -63,7 +82,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         weight == null ||
         height <= 0 ||
         weight <= 0) {
-      _showError('Bitte fülle alle Felder richtig aus.');
+      _showError('Bitte fülle die rot markierten Felder aus.');
       return;
     }
 
@@ -90,6 +109,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  bool get _dateMissing => _showErrors && _parseDate() == null;
 
   DateTime? _parseDate() {
     final day = int.tryParse(_day.text);
@@ -144,9 +165,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
               ],
               const SizedBox(height: 32),
-              AppTextField(label: 'Vorname', controller: _firstName),
+              AppTextField(label: 'Vorname', controller: _firstName, errorText: _missing(_firstName)),
               const SizedBox(height: 16),
-              AppTextField(label: 'Nachname', controller: _lastName),
+              AppTextField(label: 'Nachname', controller: _lastName, errorText: _missing(_lastName)),
               const SizedBox(height: 16),
               Text('Geburtsdatum', style: AppTextStyles.label),
               const SizedBox(height: 8),
@@ -156,6 +177,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: AppTextFieldSmall(
                       hint: 'DD',
                       controller: _day,
+                      hasError: _dateMissing,
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -164,6 +186,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: AppTextFieldSmall(
                       hint: 'MM',
                       controller: _month,
+                      hasError: _dateMissing,
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -172,6 +195,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: AppTextFieldSmall(
                       hint: 'YYYY',
                       controller: _year,
+                      hasError: _dateMissing,
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -180,13 +204,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(flex: 2, child: AppTextField(label: 'Ort', controller: _city)),
+                  Expanded(flex: 2, child: AppTextField(label: 'Ort', controller: _city, errorText: _missing(_city))),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 1,
                     child: AppTextField(
                       label: 'PLZ',
                       controller: _plz,
+                      errorText: _missing(_plz),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -195,7 +220,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(flex: 2, child: AppTextField(label: 'Straße', controller: _street)),
+                  Expanded(flex: 2, child: AppTextField(label: 'Straße', controller: _street, errorText: _missing(_street))),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 1,
@@ -211,6 +236,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       label: 'Größe',
                       suffix: 'cm',
                       controller: _height,
+                      errorText: _invalidNumber(_height),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -219,6 +245,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       label: 'Gewicht',
                       suffix: 'kg',
                       controller: _weight,
+                      errorText: _invalidNumber(_weight),
                     ),
                   ),
                 ],
