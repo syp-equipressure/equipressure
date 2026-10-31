@@ -186,14 +186,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   _buildMenuTile(
                     context,
                     title: 'Persönliche Daten',
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                               PersonalDataScreen(userData: userData),
                         ),
                       );
+                      // Name und Profilbild können sich geändert haben
+                      if (mounted) await _loadPerson(_personId!);
                     },
                   ),
                   Divider(
