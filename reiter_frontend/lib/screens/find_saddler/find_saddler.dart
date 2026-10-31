@@ -8,6 +8,7 @@ import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_ti
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/app_bar.dart' show CustomAppBar;
 import '../../widgets/sidenav.dart';
 import '../../models/saddler.dart';
 import '../../models/horse.dart';
@@ -444,26 +445,7 @@ class _FindSaddlerState extends State<FindSaddler> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const SideNav(),
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 3,
-        shadowColor: AppColors.shadow(0.3),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textStrong),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: const Text(
-          'EquiPressure',
-          style: TextStyle(
-            color: AppColors.textStrong,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: const CustomAppBar(title: 'EquiPressure'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -1182,6 +1164,7 @@ class _FindSaddlerState extends State<FindSaddler> {
       point: _userHomeLocation,
       width: 44,
       height: 54,
+      rotate: true,
       child: GestureDetector(
         onTap: _goToUserHome,
         child: Column(
@@ -1227,6 +1210,7 @@ class _FindSaddlerState extends State<FindSaddler> {
           point: LatLng(first.stableLatitude!, first.stableLongitude!),
           width: 44,
           height: 54,
+          rotate: true,
           child: GestureDetector(
             onTap: () => _selectHorses(horses),
             child: Column(
@@ -1299,6 +1283,7 @@ class _FindSaddlerState extends State<FindSaddler> {
       point: LatLng(saddler.latitude!, saddler.longitude!),
       width: 44,
       height: 54,
+      rotate: true,
       child: GestureDetector(
         onTap: () => _selectSaddler(saddler),
         child: Column(
@@ -1740,7 +1725,7 @@ class _FindSaddlerState extends State<FindSaddler> {
           ),
           Icon(
             horse.sex == 'male' ? Icons.male : Icons.female,
-            color: horse.sex == 'male' ? AppColors.primary : AppColors.purple400,
+            color: horse.sex == 'male' ? AppColors.male : AppColors.female,
             size: 20,
           ),
         ],

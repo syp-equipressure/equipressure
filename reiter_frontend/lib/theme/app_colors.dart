@@ -50,6 +50,11 @@ class AppColors {
   static const divider = borderSoft;
   static const inactive = textMuted;
   static const error = accentRed;
+
+  // Geschlecht der Pferde
+  static const female = Color(0xFFE75480);
+  static const male = Color(0xFF3B82F6);
+
   static const errorLight = Color(0xFFFDECEA);
   static const warning = accentOrange;
   static const warningLight = Color(0xFFFEF4E6);
