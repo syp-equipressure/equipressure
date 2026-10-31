@@ -14,7 +14,8 @@ public static class Setup
     public const string CorsPolicyName = "DefaultCorsPolicy";
 
     /// <summary>
-    ///     Query parameter with the access token, only accepted for the chat websocket and the content of chat files
+    ///     Query parameter with the access token, only accepted for the chat websocket, the content of chat files
+    ///     and images
     /// </summary>
     public const string AccessTokenQueryKey = "access_token";
 
@@ -23,10 +24,16 @@ public static class Setup
     // browsers cannot send an Authorization header when opening a websocket or loading an image (<img src>)
     private static bool AllowsTokenInQuery(PathString path) =>
         path.Value is { } value
-        && value.StartsWith("/api/persons/", StringComparison.Ordinal)
-        && (value.EndsWith("/chats/ws", StringComparison.Ordinal)
-            || (value.Contains("/chats/messages/", StringComparison.Ordinal)
-                && value.EndsWith("/file", StringComparison.Ordinal)));
+        && (IsImagePath(value)
+            || (value.StartsWith("/api/persons/", StringComparison.Ordinal)
+                && (value.EndsWith("/chats/ws", StringComparison.Ordinal)
+                    || (value.Contains("/chats/messages/", StringComparison.Ordinal)
+                        && value.EndsWith("/file", StringComparison.Ordinal)))));
+
+    private static bool IsImagePath(string path) =>
+        path.EndsWith("/image", StringComparison.Ordinal)
+        && (path.StartsWith("/api/horses/", StringComparison.Ordinal)
+            || path.StartsWith("/api/persons/", StringComparison.Ordinal));
 
     extension(IServiceCollection services)
     {

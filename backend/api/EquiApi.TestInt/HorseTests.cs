@@ -605,4 +605,98 @@ public sealed class HorseTests(WebApiTestFixture webApiFixture) : WebApiTestBase
 
         ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async ValueTask SetHorseImage_ValidImage_CanBeDownloaded()
+    {
+        var horse = TestData.CreateHorse("Amigo");
+        await SeedAsync(horse);
+        byte[] image = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
+
+        var response = await ApiClient.PutAsync($"api/horses/{horse.Id}/image", CreateImageForm(image, "foto.png"),
+                                                TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/horses/{horse.Id}/image", TestCancellationToken);
+        download.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+        download.Headers.GetValues("X-Content-Type-Options").Should().ContainSingle("nosniff");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+    }
+
+    [Fact]
+    public async ValueTask SetHorseImage_ExistingImage_ReplacesImage()
+    {
+        var horse = TestData.CreateHorse("Amigo");
+        await SeedAsync(horse);
+        await ApiClient.PutAsync($"api/horses/{horse.Id}/image", CreateImageForm([1, 2, 3], "alt.png"), TestCancellationToken);
+        byte[] image = [4, 5, 6];
+
+        var response = await ApiClient.PutAsync($"api/horses/{horse.Id}/image", CreateImageForm(image, "neu.webp"), TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/horses/{horse.Id}/image", TestCancellationToken);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/webp");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+    }
+
+    [Fact]
+    public async ValueTask SetHorseImage_Svg_ReturnsBadRequest()
+    {
+        var horse = TestData.CreateHorse("Amigo");
+        await SeedAsync(horse);
+
+        var response = await ApiClient.PutAsync($"api/horses/{horse.Id}/image", CreateImageForm([1, 2, 3], "bild.svg"),
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask GetHorseImage_NoImage_ReturnsNotFound()
+    {
+        var horse = TestData.CreateHorse("Amigo");
+        await SeedAsync(horse);
+
+        var response = await ApiClient.GetAsync($"api/horses/{horse.Id}/image", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask RemoveHorseImage_ExistingImage_RemovesImage()
+    {
+        var horse = TestData.CreateHorse("Amigo");
+        await SeedAsync(horse);
+        await ApiClient.PutAsync($"api/horses/{horse.Id}/image", CreateImageForm([1, 2, 3], "foto.png"), TestCancellationToken);
+
+        var response = await ApiClient.DeleteAsync($"api/horses/{horse.Id}/image", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/horses/{horse.Id}/image", TestCancellationToken);
+        ShouldBeProblem(download, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask GetHorseById_WithImage_ReturnsImageTimestamp()
+    {
+        var horse = TestData.CreateHorse("Amigo");
+        await SeedAsync(horse);
+        await ApiClient.PutAsync($"api/horses/{horse.Id}/image", CreateImageForm([1, 2, 3], "foto.png"),
+                                 TestCancellationToken);
+
+        var response = await ApiClient.GetAsync($"api/horses/{horse.Id}", TestCancellationToken);
+
+        var content = await ReadContentAsync<HorseDto>(response);
+        content.ImageUpdatedAt.Should().Be(TestClock.GetCurrentInstant());
+    }
+
+    private static MultipartFormDataContent CreateImageForm(byte[] image, string fileName)
+    {
+        var form = new MultipartFormDataContent();
+        // no media type, it is derived from the file name
+        form.Add(new ByteArrayContent(image), "file", fileName);
+
+        return form;
+    }
 }

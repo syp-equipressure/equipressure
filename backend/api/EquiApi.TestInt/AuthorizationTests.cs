@@ -103,6 +103,9 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
                 HttpStatusCode.Forbidden)]
     [InlineData("anna", "DELETE", "api/measurementgroups/{group}/measurements/{measurement}",
                 HttpStatusCode.NoContent)]
+    [InlineData("carla", "GET", "api/horses/{storm}/image", HttpStatusCode.Forbidden)]
+    [InlineData("carla", "DELETE", "api/horses/{storm}/image", HttpStatusCode.Forbidden)]
+    [InlineData("carla", "DELETE", "api/persons/{anna}/image", HttpStatusCode.Forbidden)]
     [InlineData("carla", "DELETE", "api/measurementgroups/{group}", HttpStatusCode.Forbidden)]
     [InlineData("anna", "DELETE", "api/measurementgroups/{group}", HttpStatusCode.NoContent)]
     public async ValueTask Request_DependingOnUser_ChecksAccess(string user, string method, string url,

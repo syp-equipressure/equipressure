@@ -16,6 +16,7 @@ namespace EquiApi.Dtos;
 /// <param name="Gender">The gender of the horse</param>
 /// <param name="BreedNames">The names of the breeds of the horse</param>
 /// <param name="Address">The address where the horse is kept</param>
+/// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
 public sealed record HorseDto(
     int Id,
     string Name,
@@ -24,11 +25,13 @@ public sealed record HorseDto(
     decimal Height,
     HorseGender Gender,
     IReadOnlyList<string> BreedNames,
-    AddressDto Address)
+    AddressDto Address,
+    Instant? ImageUpdatedAt)
 {
     public static HorseDto FromHorse(Horse horse) =>
         new(horse.Id, horse.Name, horse.DateOfBirth, horse.Weight, horse.Height, horse.Gender,
-            horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(), AddressDto.FromAddress(horse.Address));
+            horse.HorseBreeds.Select(hb => hb.Breed.Name).ToList(), AddressDto.FromAddress(horse.Address),
+            horse.ImageUpdatedAt);
 }
 
 /// <summary>

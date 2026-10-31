@@ -762,4 +762,84 @@ public sealed class PersonTests(WebApiTestFixture webApiFixture) : WebApiTestBas
 
         ShouldBeProblem(response, HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async ValueTask SetPersonImage_ValidImage_CanBeDownloaded()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        byte[] image = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
+
+        var response = await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm(image, "foto.png"),
+                                                TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+        download.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+        download.Headers.GetValues("X-Content-Type-Options").Should().ContainSingle("nosniff");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+    }
+
+    [Fact]
+    public async ValueTask SetPersonImage_ExistingImage_ReplacesImage()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm([1, 2, 3], "alt.png"), TestCancellationToken);
+        byte[] image = [4, 5, 6];
+
+        var response = await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm(image, "neu.webp"), TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/webp");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+    }
+
+    [Fact]
+    public async ValueTask SetPersonImage_Svg_ReturnsBadRequest()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+
+        var response = await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm([1, 2, 3], "bild.svg"),
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask GetPersonImage_NoImage_ReturnsNotFound()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+
+        var response = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask RemovePersonImage_ExistingImage_RemovesImage()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm([1, 2, 3], "foto.png"), TestCancellationToken);
+
+        var response = await ApiClient.DeleteAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+        ShouldBeProblem(download, HttpStatusCode.NotFound);
+    }
+
+    private static MultipartFormDataContent CreateImageForm(byte[] image, string fileName)
+    {
+        var form = new MultipartFormDataContent();
+        // no media type, it is derived from the file name
+        form.Add(new ByteArrayContent(image), "file", fileName);
+
+        return form;
+    }
 }

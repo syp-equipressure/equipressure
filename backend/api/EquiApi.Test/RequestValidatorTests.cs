@@ -2,6 +2,7 @@
 using EquiApi.Persistence.Model;
 using EquiApi.Test.Util;
 using FluentValidation.TestHelper;
+using Microsoft.AspNetCore.Http;
 
 namespace EquiApi.Test;
 
@@ -334,4 +335,57 @@ public sealed class RequestValidatorTests
 
     private static AddHorseRequest CreateAddHorseRequest() =>
         new("Hugo", new LocalDate(2015, 1, 1), 500M, 170M, HorseGender.Male, validAddress, [1], 1);
+
+    [Theory]
+    [InlineData("foto.jpg", "image/jpeg")]
+    [InlineData("foto.png", "image/png")]
+    [InlineData("foto.webp", "image/webp")]
+    [InlineData("foto.gif", "image/gif")]
+    public void UploadImageRequest_AllowedType_HasNoErrors(string fileName, string contentType)
+    {
+        var request = new UploadImageRequest(CreateFormFile(fileName, contentType, 10));
+
+        var result = new UploadImageRequest.Validator().TestValidate(request);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineData("bild.svg", "image/svg+xml")]
+    [InlineData("notizen.pdf", "application/pdf")]
+    public void UploadImageRequest_OtherType_HasError(string fileName, string contentType)
+    {
+        var request = new UploadImageRequest(CreateFormFile(fileName, contentType, 10));
+
+        var result = new UploadImageRequest.Validator().TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.File);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(UploadImageRequest.MaxFileSize + 1)]
+    public void UploadImageRequest_InvalidSize_HasError(int size)
+    {
+        var request = new UploadImageRequest(CreateFormFile("foto.png", "image/png", size));
+
+        var result = new UploadImageRequest.Validator().TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.File);
+    }
+
+    [Fact]
+    public void UploadImageRequest_NoFile_HasError()
+    {
+        var result = new UploadImageRequest.Validator().TestValidate(new UploadImageRequest(null));
+
+        result.ShouldHaveValidationErrorFor(x => x.File);
+    }
+
+    private static FormFile CreateFormFile(string fileName, string contentType, int size) =>
+        new(Stream.Null, 0, size, "file", fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = contentType
+        };
 }

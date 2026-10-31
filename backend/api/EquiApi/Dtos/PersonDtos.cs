@@ -42,6 +42,8 @@ public sealed record PersonListResponse(IReadOnlyList<PersonDto> Persons)
 /// <param name="Description">The optional description of a saddler</param>
 /// <param name="Address">The address of the person</param>
 /// <param name="Roles">The roles of the person</param>
+/// <param name="CreatedAt">When the person was added</param>
+/// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
 public sealed record PersonDetailDto(
     int Id,
     string FirstName,
@@ -54,7 +56,8 @@ public sealed record PersonDetailDto(
     string? Description,
     AddressDto Address,
     IReadOnlyList<RoleName> Roles,
-    Instant CreatedAt)
+    Instant CreatedAt,
+    Instant? ImageUpdatedAt)
 {
     public static PersonDetailDto FromPerson(Person person) =>
         new(person.Id,
@@ -68,7 +71,8 @@ public sealed record PersonDetailDto(
             person.Description,
             AddressDto.FromAddress(person.Address),
             person.Roles.Select(assignment => assignment.Role.Name).ToList(),
-            person.CreatedAt);
+            person.CreatedAt,
+            person.ImageUpdatedAt);
 }
 
 
