@@ -9,7 +9,7 @@ import { BackendPersonContextService } from '../../services/backend-person-conte
 import { addressError, composeAddress, splitAddress } from '../../utils/address';
 import { imageFileError } from '../../utils/image';
 
-type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website' | 'address';
+type EditableField = 'firstName' | 'lastName' | 'email' | 'website' | 'address';
 
 @Component({
   selector: 'app-profile-page',
@@ -45,7 +45,6 @@ export class ProfilePage {
   readonly firstName = signal('');
   readonly lastName = signal('');
   readonly email = signal('');
-  readonly phoneNumber = signal('');
   readonly companyName = signal('');
   readonly street = signal('');
   readonly postalCode = signal('');
@@ -101,7 +100,6 @@ export class ProfilePage {
     this.firstName.set(s.firstName);
     this.lastName.set(s.lastName);
     this.email.set(s.email);
-    this.phoneNumber.set(s.phoneNumber ?? '');
     this.companyName.set(s.companyName ?? '');
     const address = splitAddress(s.address);
     this.street.set(address.street);
@@ -125,7 +123,6 @@ export class ProfilePage {
       firstName: this.firstName().trim(),
       lastName: this.lastName().trim(),
       email: this.email().trim(),
-      phoneNumber: this.phoneNumber().trim() || undefined,
       companyName: this.companyName().trim() || undefined,
       address: this.address().trim() || undefined,
       website: normalizeWebsite(this.website()) || undefined,
@@ -193,15 +190,6 @@ export class ProfilePage {
       e.email = 'E-Mail ist erforderlich.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = 'Bitte eine gültige E-Mail-Adresse eingeben.';
-    }
-    const phoneNumber = this.phoneNumber().trim();
-    if (
-      phoneNumber &&
-      (!/^\+?[0-9\s()./-]+$/.test(phoneNumber) ||
-        phoneNumber.replace(/\D/g, '').length < 7 ||
-        phoneNumber.replace(/\D/g, '').length > 15)
-    ) {
-      e.phoneNumber = 'Bitte eine gültige Telefonnummer eingeben.';
     }
     const website = this.website().trim();
     if (website && !isValidWebsite(website)) {

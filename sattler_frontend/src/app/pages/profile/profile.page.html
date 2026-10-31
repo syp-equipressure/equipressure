@@ -78,13 +78,6 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Telefon</span>
-            <input class="field-input" type="tel" [ngModel]="phoneNumber()"
-              (ngModelChange)="phoneNumber.set($event)" name="phoneNumber" [disabled]="!!backendPersonId()" />
-            @if (errors().phoneNumber) { <span class="field-error">{{ errors().phoneNumber }}</span> }
-          </label>
-
-          <label class="field">
             <span class="field-label">Betrieb</span>
             <input class="field-input" type="text" [ngModel]="companyName()"
               (ngModelChange)="companyName.set($event)" name="companyName" [disabled]="!!backendPersonId()" />
@@ -137,11 +130,6 @@
         <div class="info-row">
           <span class="material-icons info-icon">mail_outline</span>
           <span class="info-text">{{ sattler().email }}</span>
-        </div>
-
-        <div class="info-row">
-          <span class="material-icons info-icon">phone</span>
-          <span class="info-text">{{ sattler().phoneNumber || '—' }}</span>
         </div>
 
         <div class="info-row">
