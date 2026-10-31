@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../theme/app_colors.dart';
 
 /// Eingabefeld von Login und Registrierung: groß und rund, der Name steht als Platzhalter im Feld
@@ -75,6 +76,89 @@ class AuthHeading extends StatelessWidget {
           style: const TextStyle(fontSize: 14, color: AppColors.textSoft),
         ),
       ],
+    );
+  }
+}
+
+/// Trennlinie mit Text in der Mitte
+class AuthDivider extends StatelessWidget {
+  final String label;
+
+  const AuthDivider({super.key, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: AppColors.textSoft),
+          ),
+        ),
+        const Expanded(child: Divider()),
+      ],
+    );
+  }
+}
+
+/// Google, Microsoft und GitHub nebeneinander. Neue Benutzer legt Keycloak beim ersten Mal selbst an,
+/// [action] ist nur der Text für die Beschreibung ("anmelden" oder "registrieren").
+class AuthProviderButtons extends StatelessWidget {
+  final String action;
+  final bool enabled;
+  final ValueChanged<String> onSelected;
+
+  const AuthProviderButtons({
+    super.key,
+    required this.action,
+    required this.enabled,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _buildButton(FontAwesomeIcons.google, 'Google', 'google')),
+        const SizedBox(width: 10),
+        Expanded(child: _buildButton(FontAwesomeIcons.microsoft, 'Microsoft', 'microsoft')),
+        const SizedBox(width: 10),
+        Expanded(child: _buildButton(FontAwesomeIcons.github, 'GitHub', 'github')),
+      ],
+    );
+  }
+
+  Widget _buildButton(IconData icon, String name, String provider) {
+    return Tooltip(
+      message: 'Mit $name $action',
+      child: OutlinedButton(
+        onPressed: enabled ? () => onSelected(provider) : null,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.surfaceVariant,
+          foregroundColor: AppColors.textStrong,
+          side: const BorderSide(color: AppColors.border),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: AppColors.purple600),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                name,
+                maxLines: 1,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

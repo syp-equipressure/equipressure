@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/account_service.dart';
 import '../../services/auth_service.dart';
@@ -196,29 +195,12 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: _loginWithPassword,
         ),
         const SizedBox(height: 22),
-        const Row(
-          children: [
-            Expanded(child: Divider()),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                'Oder anmelden mit',
-                style: TextStyle(fontSize: 13, color: AppColors.textSoft),
-              ),
-            ),
-            Expanded(child: Divider()),
-          ],
-        ),
+        const AuthDivider(label: 'Oder anmelden mit'),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildProviderButton(FontAwesomeIcons.google, 'Google', 'google'),
-            const SizedBox(width: 18),
-            _buildProviderButton(FontAwesomeIcons.microsoft, 'Microsoft', 'microsoft'),
-            const SizedBox(width: 18),
-            _buildProviderButton(FontAwesomeIcons.github, 'GitHub', 'github'),
-          ],
+        AuthProviderButtons(
+          action: 'anmelden',
+          enabled: !_loading,
+          onSelected: (provider) => _run(() => AuthService().loginWithProvider(provider)),
         ),
         const SizedBox(height: 16),
         Row(
@@ -239,22 +221,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildProviderButton(IconData icon, String name, String provider) {
-    return Tooltip(
-      message: 'Mit $name anmelden',
-      child: OutlinedButton(
-        onPressed: _loading ? null : () => _run(() => AuthService().loginWithProvider(provider)),
-        style: OutlinedButton.styleFrom(
-          fixedSize: const Size.square(50),
-          minimumSize: const Size.square(50),
-          padding: EdgeInsets.zero,
-          shape: const CircleBorder(),
-        ),
-        child: Icon(icon, size: 20, semanticLabel: 'Mit $name anmelden'),
-      ),
     );
   }
 }
