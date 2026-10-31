@@ -25,6 +25,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   late final PageController _pageController =
       PageController(initialPage: widget.initialPage);
   String? _claimedSerialNumber;
+  late int _page = widget.initialPage;
+
+  /// Zurück bis zur Anmeldung. Das Profil lässt sich danach nicht neu anlegen, daher führt der
+  /// Schritt vom Gerät nicht zum Profil, sondern zur Anmeldung.
+  void _goBack() {
+    goToPage(_page == 1 ? 0 : 1);
+  }
 
   void nextPage() {
     _pageController.nextPage(
@@ -67,18 +74,38 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        // die Schritte dürfen nicht übersprungen werden
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          WelcomeScreen(onNext: nextPage),
-          LoginScreen(onLoggedIn: _onLoggedIn),
-          ProfileSetupScreen(onNext: nextPage),
-          QRScannerScreen(onClaimed: _onDeviceClaimed),
-          ConnectionSuccessScreen(serialNumber: _claimedSerialNumber ?? ''),
-        ],
+    final canGoBack = _page > 0 && _page < OnboardingFlow.successPage;
+    return PopScope(
+      canPop: !canGoBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _goBack();
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              // die Schritte dürfen nicht übersprungen werden
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (page) => setState(() => _page = page),
+              children: [
+                WelcomeScreen(onNext: nextPage),
+                LoginScreen(onLoggedIn: _onLoggedIn),
+                ProfileSetupScreen(onNext: nextPage),
+                QRScannerScreen(onClaimed: _onDeviceClaimed),
+                ConnectionSuccessScreen(serialNumber: _claimedSerialNumber ?? ''),
+              ],
+            ),
+            if (canGoBack)
+              SafeArea(
+                child: IconButton(
+                  tooltip: 'Zurück',
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _goBack,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
