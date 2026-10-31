@@ -24,10 +24,10 @@ builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptio
 // only one handler is used, register LoggingBluetoothDataHandler instead to inspect the raw data
 builder.Services.AddSingleton<IBluetoothDataHandler, MeasurementDataBluetoothHandler>();
 // with the plain net10.0 target InTheHand.BluetoothLE only supports BlueZ, on other systems every scan would fail
-if (OperatingSystem.IsLinux())
-{
-    builder.Services.AddHostedService<BluetoothConnectionService>();
-}
+builder.Services.AddSingleton<BluetoothConnectionService>();
+builder.Services.AddSingleton<IBluetoothConnectionManager>(sp => sp.GetRequiredService<BluetoothConnectionService>());
+// only for a clean disconnect on shutdown, it does NOT start the connection
+builder.Services.AddHostedService(sp => sp.GetRequiredService<BluetoothConnectionService>());
 
 var app = builder.Build();
 
