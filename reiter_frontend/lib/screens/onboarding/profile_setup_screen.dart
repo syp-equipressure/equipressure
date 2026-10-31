@@ -165,11 +165,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
               ],
               const SizedBox(height: 32),
-              AppTextField(label: 'Vorname', controller: _firstName, errorText: _missing(_firstName)),
+              AppTextField(label: 'Vorname *', controller: _firstName, errorText: _missing(_firstName)),
               const SizedBox(height: 16),
-              AppTextField(label: 'Nachname', controller: _lastName, errorText: _missing(_lastName)),
+              AppTextField(label: 'Nachname *', controller: _lastName, errorText: _missing(_lastName)),
               const SizedBox(height: 16),
-              Text('Geburtsdatum', style: AppTextStyles.label),
+              Text('Geburtsdatum *', style: AppTextStyles.label),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -204,12 +204,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(flex: 2, child: AppTextField(label: 'Ort', controller: _city, errorText: _missing(_city))),
+                  Expanded(flex: 2, child: AppTextField(label: 'Ort *', controller: _city, errorText: _missing(_city))),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 1,
                     child: AppTextField(
-                      label: 'PLZ',
+                      label: 'PLZ *',
                       controller: _plz,
                       errorText: _missing(_plz),
                       keyboardType: TextInputType.number,
@@ -220,7 +220,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(flex: 2, child: AppTextField(label: 'Straße', controller: _street, errorText: _missing(_street))),
+                  Expanded(flex: 2, child: AppTextField(label: 'Straße *', controller: _street, errorText: _missing(_street))),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 1,
@@ -233,7 +233,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 children: [
                   Expanded(
                     child: AppTextFieldWithSuffix(
-                      label: 'Größe',
+                      label: 'Größe *',
                       suffix: 'cm',
                       controller: _height,
                       errorText: _invalidNumber(_height),
@@ -242,7 +242,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: AppTextFieldWithSuffix(
-                      label: 'Gewicht',
+                      label: 'Gewicht *',
                       suffix: 'kg',
                       controller: _weight,
                       errorText: _invalidNumber(_weight),

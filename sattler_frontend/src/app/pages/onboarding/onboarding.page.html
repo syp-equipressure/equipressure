@@ -24,44 +24,44 @@
     @if (step() === 'profile') {
       <form class="field-grid" (ngSubmit)="saveProfile()">
         <label class="field">
-          <span class="field-label">Vorname</span>
+          <span class="field-label">Vorname *</span>
           <input class="field-input" [class.missing]="isMissing('firstName')" name="firstName" [(ngModel)]="profile.firstName" autocomplete="given-name" />
           @if (isMissing('firstName')) { <span class="field-error">Pflichtfeld</span> }
         </label>
         <label class="field">
-          <span class="field-label">Nachname</span>
+          <span class="field-label">Nachname *</span>
           <input class="field-input" [class.missing]="isMissing('lastName')" name="lastName" [(ngModel)]="profile.lastName" autocomplete="family-name" />
           @if (isMissing('lastName')) { <span class="field-error">Pflichtfeld</span> }
         </label>
         <label class="field">
-          <span class="field-label">Geburtsdatum</span>
+          <span class="field-label">Geburtsdatum *</span>
           <input class="field-input" [class.missing]="isMissing('dateOfBirth')" type="date" name="dateOfBirth" [(ngModel)]="profile.dateOfBirth" />
           @if (isMissing('dateOfBirth')) { <span class="field-error">Pflichtfeld</span> }
         </label>
         <div class="field-pair">
           <label class="field">
-            <span class="field-label">Größe (cm)</span>
+            <span class="field-label">Größe (cm) *</span>
             <input class="field-input" [class.missing]="isMissing('height')" type="number" min="1" name="height" [(ngModel)]="profile.height" />
           @if (isMissing('height')) { <span class="field-error">Pflichtfeld</span> }
           </label>
           <label class="field">
-            <span class="field-label">Gewicht (kg)</span>
+            <span class="field-label">Gewicht (kg) *</span>
             <input class="field-input" [class.missing]="isMissing('weight')" type="number" min="1" name="weight" [(ngModel)]="profile.weight" />
           @if (isMissing('weight')) { <span class="field-error">Pflichtfeld</span> }
           </label>
         </div>
         <label class="field full">
-          <span class="field-label">Straße und Hausnummer deiner Werkstatt</span>
+          <span class="field-label">Straße und Hausnummer deiner Werkstatt *</span>
           <input class="field-input" [class.missing]="isMissing('street')" name="street" [(ngModel)]="profile.street" autocomplete="street-address" />
           @if (isMissing('street')) { <span class="field-error">Pflichtfeld</span> }
         </label>
         <label class="field">
-          <span class="field-label">PLZ</span>
+          <span class="field-label">PLZ *</span>
           <input class="field-input" [class.missing]="isMissing('plz')" name="plz" [(ngModel)]="profile.plz" autocomplete="postal-code" />
           @if (isMissing('plz')) { <span class="field-error">Pflichtfeld</span> }
         </label>
         <label class="field">
-          <span class="field-label">Ort</span>
+          <span class="field-label">Ort *</span>
           <input class="field-input" [class.missing]="isMissing('city')" name="city" [(ngModel)]="profile.city" autocomplete="address-level2" />
           @if (isMissing('city')) { <span class="field-error">Pflichtfeld</span> }
         </label>
