@@ -20,6 +20,7 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
     private Horse _luna = null!;
     private Breed _breed = null!;
     private MeasurementGroup _group = null!;
+    private MeasurementGroup _saddlerGroup = null!;
     private Measurement _measurement = null!;
 
     protected override async ValueTask ImportSeedDataAsync(DatabaseContext context)
@@ -35,8 +36,11 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
         var device = TestData.CreateDevice(DeviceId, anna, TestData.CreateDeviceCategory(), ben);
         _group = TestData.CreateMeasurementGroup(anna, _storm, TestData.CreateSaddle(_storm), device);
         _measurement = TestData.CreateMeasurement(_group, data: "10");
+        var saddlerDevice = TestData.CreateDevice("EP2000", sam, TestData.CreateDeviceCategory());
+        _saddlerGroup = TestData.CreateMeasurementGroup(anna, _storm, _group.Saddle, saddlerDevice);
 
-        context.AddRange(anna, ben, carla, sam, kurt, _breed, device, _group, _measurement,
+        context.AddRange(anna, ben, carla, sam, kurt, _breed, device, saddlerDevice, _group, _saddlerGroup,
+                         _measurement,
                          TestData.CreatePersonHorse(anna, _storm, true),
                          TestData.CreatePersonHorse(carla, _luna, true),
                          TestData.CreateRelationship(anna, sam, true),
@@ -213,6 +217,19 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
                                                                 DeviceId);
 
         var response = await SendAsUserAsync(HttpMethod.Post, "api/measurementgroups", user, body: request);
+
+        response.StatusCode.Should().Be(expectedStatusCode);
+    }
+
+    [Theory]
+    [InlineData("anna", HttpStatusCode.Created)]
+    [InlineData("sam", HttpStatusCode.Created)]
+    [InlineData("carla", HttpStatusCode.Forbidden)]
+    public async ValueTask CreateMeasurement_GroupOfCustomerWithDeviceOfSaddler_ChecksAccess(
+        string user, HttpStatusCode expectedStatusCode)
+    {
+        var response = await SendAsUserAsync(HttpMethod.Post, $"api/measurementgroups/{_saddlerGroup.Id}/measurements",
+                                             user, body: TestData.CreateAddMeasurementRequest());
 
         response.StatusCode.Should().Be(expectedStatusCode);
     }

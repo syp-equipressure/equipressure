@@ -40,6 +40,7 @@ public interface IAccessService
 
     public ValueTask<bool> CanViewMeasurementGroupAsync(int personId, int groupId);
     public ValueTask<bool> CanManageMeasurementGroupAsync(int personId, int groupId);
+    public ValueTask<bool> CanAddMeasurementToGroupAsync(int personId, int groupId);
 
     /// <summary>
     ///     A person may add measurements of a rider and a horse they may see, with a device they use
@@ -88,6 +89,9 @@ internal sealed class AccessService(IUnitOfWork uow) : IAccessService
 
     public async ValueTask<bool> CanManageMeasurementGroupAsync(int personId, int groupId) =>
         await Repository.CanManageMeasurementGroupAsync(personId, groupId) ?? true;
+
+    public async ValueTask<bool> CanAddMeasurementToGroupAsync(int personId, int groupId) =>
+        await Repository.CanAddMeasurementToGroupAsync(personId, groupId) ?? true;
 
     public async ValueTask<bool> CanAddMeasurementGroupAsync(int personId, NewMeasurementGroupData data) =>
         await CanViewPersonAsync(personId, data.PersonId)

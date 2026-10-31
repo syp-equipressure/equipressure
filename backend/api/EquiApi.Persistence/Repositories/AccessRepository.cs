@@ -66,6 +66,12 @@ public interface IAccessRepository
     ///     The person who took the measurements and the owner of the horse may change them
     /// </summary>
     public ValueTask<bool?> CanManageMeasurementGroupAsync(int personId, int groupId);
+
+    /// <summary>
+    ///     Besides the persons who may change a measurement group, a saddler may add measurements to the group of a
+    ///     customer if they use its device
+    /// </summary>
+    public ValueTask<bool?> CanAddMeasurementToGroupAsync(int personId, int groupId);
 }
 
 internal sealed class AccessRepository(
@@ -159,5 +165,19 @@ internal sealed class AccessRepository(
         await groupSet.Where(g => g.Id == groupId)
                       .Select(g => (bool?) (g.PersonId == personId
                                            || g.Horse.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId)))
+                      .FirstOrDefaultAsync();
+
+    public async ValueTask<bool?> CanAddMeasurementToGroupAsync(int personId, int groupId) =>
+        await groupSet.Where(g => g.Id == groupId)
+                      .Select(g => (bool?) (g.PersonId == personId
+                                           || g.Horse.Persons.Any(ph => ph.IsOwner
+                                                                        && (ph.PersonId == personId
+                                                                            || relationshipSet.Any(r =>
+                                                                                r.SaddlerId == personId
+                                                                                && r.EquestrianId == ph.PersonId
+                                                                                && r.IsContact
+                                                                                && (g.Device.OwnerId == personId
+                                                                                    || g.Device.Users.Any(u =>
+                                                                                        u.UserId == personId)))))))
                       .FirstOrDefaultAsync();
 }

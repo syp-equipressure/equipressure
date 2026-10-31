@@ -276,7 +276,7 @@ public sealed class MeasurementController(IMeasurementService measurementService
             return ValidationProblem();
         }
 
-        if (!await HasAccessAsync((access, me) => access.CanManageMeasurementGroupAsync(me, groupId)))
+        if (!await HasAccessAsync((access, me) => access.CanAddMeasurementToGroupAsync(me, groupId)))
         {
             return AccessDenied();
         }
