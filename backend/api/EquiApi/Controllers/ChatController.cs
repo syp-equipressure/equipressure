@@ -2,7 +2,6 @@
 using EquiApi.Dtos;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
 
 namespace EquiApi.Controllers;
 
@@ -12,20 +11,6 @@ public sealed class ChatController(
     IPersonService personService,
     IChatSocketManager socketManager) : BaseController
 {
-    private const string UnknownContentType = "application/octet-stream";
-    private static readonly FileExtensionContentTypeProvider contentTypes = new();
-
-    // some clients (e.g. the app) do not send a media type, then it is derived from the file extension
-    private static string ContentTypeOf(IFormFile file)
-    {
-        if (!string.IsNullOrWhiteSpace(file.ContentType) && file.ContentType != UnknownContentType)
-        {
-            return file.ContentType;
-        }
-
-        return contentTypes.TryGetContentType(file.FileName, out string? contentType) ? contentType : UnknownContentType;
-    }
-
     /// <summary>
     ///     Gets all conversations of a person, the newest first
     /// </summary>
@@ -133,7 +118,7 @@ public sealed class ChatController(
 
         using var content = new MemoryStream();
         await file.CopyToAsync(content, HttpContext.RequestAborted);
-        var data = new ChatFileData(file.FileName, ContentTypeOf(file), content.ToArray());
+        var data = new ChatFileData(file.FileName, file.ResolvedContentType, content.ToArray());
 
         var result = await chatService.SendFileAsync(personId, contactId, request.Text, data);
         if (result.TryPickT0(out var success, out var failure))
