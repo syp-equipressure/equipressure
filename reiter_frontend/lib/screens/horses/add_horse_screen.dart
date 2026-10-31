@@ -9,7 +9,7 @@ import 'package:reiterappfrontend/services/horse_service.dart';
 import 'package:reiterappfrontend/widgets/info_button.dart';
 
 class AddHorseScreen extends StatefulWidget {
-  final void Function(
+  final Future<void> Function(
     String name,
     File? image,
     String age,
@@ -55,6 +55,9 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   File? selectedImage;
   String selectedSex = 'female';
+  /// Fehlende Felder werden erst nach dem ersten Speichern markiert
+  bool _showErrors = false;
+  bool _saving = false;
   String? dateErrorMessage;
   String? heightWeightErrorMessage; // ← NEU: Für Größe/Gewicht Validierung
   bool _isPickingImage = false;
@@ -91,6 +94,9 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       stableHouseNumberController.text = horse.stableHouseNumber ?? '';
     }
     _loadBreeds();
+    for (final controller in [nameController, breedController, stableCityController, stablePostalCodeController]) {
+      controller.addListener(_refreshErrors);
+    }
   }
 
   /// Die Rassen aus dem Backend für die Vorschläge beim Tippen, leer solange sie nicht geladen sind
@@ -135,6 +141,13 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
   String? get _savedImageUrl =>
       widget.horse == null ? null : HorseService().imageUrl(widget.horse!);
 
+  String? _missing(TextEditingController controller) =>
+      _showErrors && controller.text.trim().isEmpty ? 'Pflichtfeld' : null;
+
+  void _refreshErrors() {
+    if (_showErrors) setState(() {});
+  }
+
   Future<void> _pickImage() async {
     if (_isPickingImage) return;
     
@@ -145,7 +158,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 600,
+        maxWidth: 1600,
+        imageQuality: 85,
       );
       if (image != null) {
         setState(() {
@@ -447,6 +461,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
+                errorText: _missing(nameController),
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
@@ -517,6 +532,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
+                          errorText: _missing(controller),
                           hintText: 'z. B. Haflinger',
                           filled: true,
                           fillColor: AppColors.surface,
@@ -956,6 +972,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                       TextField(
                         controller: stableCityController,
                         decoration: InputDecoration(
+                          errorText: _missing(stableCityController),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -999,6 +1016,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         decoration: InputDecoration(
+                          errorText: _missing(stablePostalCodeController),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -1126,7 +1144,17 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {
+                onPressed: _saving ? null : () async {
+                  setState(() {
+                    _showErrors = true;
+                    if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
+                      dateErrorMessage = 'Bitte Geburtsdatum ausfüllen';
+                    }
+                    if (heightController.text.trim().isEmpty || weightController.text.trim().isEmpty) {
+                      heightWeightErrorMessage = 'Bitte Stockmaß und Gewicht ausfüllen';
+                    }
+                  });
+
                   if (nameController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -1211,7 +1239,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   String height = heightController.text;
                   String weight = weightController.text;
                   
-                  widget.onSave(
+                  setState(() => _saving = true);
+                  await widget.onSave(
                     nameController.text,
                     selectedImage,
                     age,
@@ -1225,11 +1254,19 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     stableStreetController.text,
                     stableHouseNumberController.text,
                   );
+                  if (mounted) setState(() => _saving = false);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.save_outlined, size: 18, color: AppColors.text),
+                    if (_saving)
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Icon(Icons.save_outlined, size: 18, color: AppColors.text),
                     const SizedBox(width: 8),
                     const Text(
                       'Speichern',
