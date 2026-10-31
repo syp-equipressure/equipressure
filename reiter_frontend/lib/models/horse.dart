@@ -45,6 +45,13 @@ class Horse {
 
   bool get hasImage => image != null || assetImage != null || imageUpdatedAt != null;
 
+  /// Das Backend speichert Straße und Hausnummer in einem Feld, das Formular hat zwei.
+  static ({String street, String? houseNumber}) splitStreet(String address) {
+    final match = RegExp(r'^(.*\S)\s+(\d+\s?[a-zA-Z]?(?:[/-]\d+[a-zA-Z]?)*)$').firstMatch(address.trim());
+    if (match == null) return (street: address.trim(), houseNumber: null);
+    return (street: match.group(1)!, houseNumber: match.group(2));
+  }
+
   bool get hasStableLocation => stableLatitude != null && stableLongitude != null;
 
   /// Berechnet das Alter aus dem Geburtsdatum

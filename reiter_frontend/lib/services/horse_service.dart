@@ -51,7 +51,7 @@ class HorseService {
   static Future<Horse> _withStableLocation(Horse horse) async {
     if (horse.hasStableLocation) return horse;
     final location = await GeocodingService().geocode(
-      street: horse.stableStreet,
+      street: [horse.stableStreet, horse.stableHouseNumber].whereType<String>().join(' '),
       postalCode: horse.stablePostalCode,
       city: horse.stableCity,
     );
@@ -311,6 +311,7 @@ class HorseService {
 
   static Horse _horseFromBackend(Map<String, dynamic> json) {
     final address = json['address'] as Map<String, dynamic>?;
+    final street = Horse.splitStreet(address?['addressName']?.toString() ?? '');
     return Horse(
       id: json['id']?.toString() ?? '',
       name: (json['name'] ?? '') as String,
@@ -322,7 +323,8 @@ class HorseService {
       imageUpdatedAt: json['imageUpdatedAt']?.toString(),
       stableCity: address?['cityName']?.toString(),
       stablePostalCode: address?['plz']?.toString(),
-      stableStreet: address?['addressName']?.toString(),
+      stableStreet: street.street.isEmpty ? null : street.street,
+      stableHouseNumber: street.houseNumber,
     );
   }
 
