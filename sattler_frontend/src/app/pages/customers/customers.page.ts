@@ -154,6 +154,10 @@ export class CustomersPage {
 
   fullName = fullName;
 
+  avatarUrl(customer: Customer): string | undefined {
+    return this.api.personImageUrl(customer.id, customer.imageUpdatedAt);
+  }
+
   /** Die Tage aller Messungen eines Kunden (über alle seine Pferde). */
   private measurementTimestamps(customerId: string): number[] {
     if (this.backendCustomers()) return this.backendMeasurementDates().get(customerId) ?? [];

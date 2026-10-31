@@ -83,7 +83,13 @@
       @for (c of filtered(); track c.id) {
         <div class="customer-row">
           <span class="customer-identity">
-            <span class="avatar">{{ c.firstName.charAt(0) }}{{ c.lastName.charAt(0) }}</span>
+            <span class="avatar">
+              @if (avatarUrl(c); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ c.firstName.charAt(0) }}{{ c.lastName.charAt(0) }}
+              }
+            </span>
             <strong class="customer-name">{{ fullName(c) }}</strong>
           </span>
           <span class="customer-contact">{{ c.email || c.phoneNumber || 'Keine Kontaktdaten' }}</span>

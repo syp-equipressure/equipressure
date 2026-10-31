@@ -41,6 +41,8 @@ export interface ChatContact {
   id: string;
   firstName: string;
   lastName: string;
+  /** ISO timestamp when the image was set in the backend, missing without an image */
+  imageUpdatedAt?: string;
 }
 
 export interface ChatConversation {

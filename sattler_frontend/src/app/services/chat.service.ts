@@ -361,6 +361,7 @@ function mapConversation(value: unknown): ChatConversation {
       id: String(contact['id'] ?? ''),
       firstName: String(contact['firstName'] ?? ''),
       lastName: String(contact['lastName'] ?? ''),
+      imageUpdatedAt: typeof contact['imageUpdatedAt'] === 'string' ? contact['imageUpdatedAt'] : undefined,
     },
     lastMessage: mapMessage(record['lastMessage']),
     unreadCount: Number(record['unreadCount'] ?? 0),

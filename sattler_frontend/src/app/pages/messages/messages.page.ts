@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { concat, map } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { BackendApiService } from '../../services/backend-api.service';
 import { ChatService } from '../../services/chat.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { ChatContact, ChatMessage, messagePreview } from '../../models/chat.model';
@@ -34,6 +35,7 @@ interface MessageDay {
 export class MessagesPage implements OnDestroy {
   readonly chat = inject(ChatService);
   private readonly personContext = inject(BackendPersonContextService);
+  private readonly api = inject(BackendApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -238,6 +240,10 @@ export class MessagesPage implements OnDestroy {
 
   shareQueryParams(message: ChatMessage): Record<string, string> | null {
     return message.measurement ? { measurementId: message.measurement.id } : null;
+  }
+
+  avatarUrl(contact: ChatContact): string | undefined {
+    return this.api.personImageUrl(contact.id, contact.imageUpdatedAt);
   }
 
   initials(contact: ChatContact): string {

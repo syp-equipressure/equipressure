@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { API_BASE_URL } from '../auth/auth.config';
+import { AuthService } from './auth.service';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { PressureDevice } from '../models/device.model';
@@ -61,6 +62,7 @@ export interface NewMeasurementGroup {
 @Injectable({ providedIn: 'root' })
 export class BackendApiService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly baseUrl = BACKEND_BASE_URL;
 
   getContacts(personId: string): Observable<Customer[]> {
@@ -120,6 +122,17 @@ export class BackendApiService {
   /** Saves the image of a person and returns an address to show it. */
   uploadPersonImage(personId: string, file: File): Observable<string> {
     return this.uploadImage(`${this.baseUrl}/persons/${personId}/image`, file);
+  }
+
+  /**
+   * Address of the image of a person, usable as image source, undefined without an image.
+   * Contains the access token, because images cannot send the Authorization header.
+   */
+  personImageUrl(personId: string, imageUpdatedAt?: string): string | undefined {
+    if (!imageUpdatedAt) return undefined;
+    const version = encodeURIComponent(imageUpdatedAt);
+    const token = encodeURIComponent(this.auth.accessToken);
+    return `${this.baseUrl}/persons/${personId}/image?v=${version}&access_token=${token}`;
   }
 
   /** Loads the image of a person and returns an address to show it. */
@@ -444,6 +457,7 @@ function mapContact(value: unknown): Customer {
     firstName: required(value, 'firstName', 'first_name'),
     lastName: required(value, 'lastName', 'last_name'),
     email: optional(value, 'email'),
+    imageUpdatedAt: optional(value, 'imageUpdatedAt', 'image_updated_at'),
     address: address || undefined,
     heightCm: 0,
     weightKg: 0,

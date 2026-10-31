@@ -29,7 +29,13 @@
             [attr.aria-pressed]="item.contact.id === selectedContactId()"
             (click)="selectContact(item.contact.id)"
           >
-            <span class="customer-avatar">{{ initials(item.contact) }}</span>
+            <span class="customer-avatar">
+              @if (avatarUrl(item.contact); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ initials(item.contact) }}
+              }
+            </span>
             <span class="customer-meta">
               <span class="customer-name">{{ item.contact.firstName }} {{ item.contact.lastName }}</span>
               <span class="customer-preview" [class.unread]="item.unread">{{ item.preview }}</span>
@@ -55,7 +61,13 @@
       @if (selectedContact(); as contact) {
         <header class="chat-header">
           <a class="chat-contact-link" [routerLink]="['/customers', contact.id]" title="Profil öffnen">
-            <span class="customer-avatar">{{ initials(contact) }}</span>
+            <span class="customer-avatar">
+              @if (avatarUrl(contact); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ initials(contact) }}
+              }
+            </span>
             <div class="chat-contact">
               <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
             </div>

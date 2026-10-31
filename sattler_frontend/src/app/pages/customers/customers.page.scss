@@ -192,11 +192,18 @@
   }
 }
 
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .avatar {
   display: grid;
   width: 42px;
   height: 42px;
   place-items: center;
+  overflow: hidden;
   border-radius: 50%;
   background: t.$purple-50;
   color: t.$purple-600;
