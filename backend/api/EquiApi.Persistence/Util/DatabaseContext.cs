@@ -15,11 +15,13 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     public DbSet<AccountRole> AccountRoles { get; set; }
     public DbSet<PersonRoleAssignment> PersonRoleAssignments { get; set; }
     public DbSet<PersonHorse> PersonHorses { get; set; }
+    public DbSet<PersonImage> PersonImages { get; set; }
 
     // Horse DbSets
     public DbSet<Horse> Horses { get; set; }
     public DbSet<HorseBreed> HorseBreeds { get; set; }
     public DbSet<Breed> Breeds { get; set; }
+    public DbSet<HorseImage> HorseImages { get; set; }
 
     // Device DbSets
     public DbSet<MeasurementDevice> Devices { get; set; }
@@ -89,6 +91,12 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         person.HasIndex(p => p.ExternalId).IsUnique();
         person.HasIndex(p => p.DateOfBirth);
         person.Property(p => p.CreatedAt).HasDefaultValueSql("now()");
+        person.Property(p => p.ImageContentType).HasMaxLength(255);
+
+        person.HasOne(p => p.Image)
+              .WithOne(i => i.Person)
+              .HasForeignKey<PersonImage>(i => i.PersonId)
+              .OnDelete(DeleteBehavior.Cascade);
 
         person.HasMany(p => p.Roles)
               .WithOne(pra => pra.Person)
@@ -171,6 +179,12 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         horse.Property(h => h.Gender)
              .HasConversion(new EnumToStringConverter<HorseGender>());
         horse.HasIndex(h => h.Name);
+        horse.Property(h => h.ImageContentType).HasMaxLength(255);
+
+        horse.HasOne(h => h.Image)
+             .WithOne(i => i.Horse)
+             .HasForeignKey<HorseImage>(i => i.HorseId)
+             .OnDelete(DeleteBehavior.Cascade);
 
         horse.HasMany(h => h.Persons)
              .WithOne(ph => ph.Horse)
@@ -469,5 +483,8 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
         var file = mb.Entity<ChatFile>();
         file.HasKey(f => f.MessageId);
+
+        mb.Entity<HorseImage>().HasKey(i => i.HorseId);
+        mb.Entity<PersonImage>().HasKey(i => i.PersonId);
     }
 }

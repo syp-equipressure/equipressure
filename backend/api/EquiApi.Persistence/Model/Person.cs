@@ -24,6 +24,11 @@ public class Person
     /// </summary>
     public Instant CreatedAt { get; set; }
 
+    // only with an image, the content is stored separately so that lists of persons stay small
+    public string? ImageContentType { get; set; }
+    public Instant? ImageUpdatedAt { get; set; }
+    public PersonImage? Image { get; set; }
+
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
 
@@ -34,6 +39,17 @@ public class Person
     public List<DeviceUser> UserDevices { get; set; } = [];
     public List<MeasurementDevice> OwnerDevices { get; set; } = [];
     public List<Release> Releases { get; set; } = [];
+}
+
+/// <summary>
+///     The content of the image of a person
+/// </summary>
+public class PersonImage
+{
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
+
+    public required byte[] Data { get; set; }
 }
 
 // m:n relationship between an equestrian and a saddler
