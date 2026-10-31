@@ -211,8 +211,8 @@ public sealed class PersonServiceTests
     {
         var contacts = new List<ContactData>
         {
-            new(2, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles"),
-            new(3, "Anna", "Huber", null, "Linz", "4020", null, null)
+            new(2, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles", null),
+            new(3, "Anna", "Huber", null, "Linz", "4020", null, null, null)
         };
         _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
         _uowMock.PersonRepository.GetContactsAsync(PersonId).Returns(contacts);
@@ -783,7 +783,7 @@ public sealed class PersonServiceTests
     }
 
     private static SaddlerData CreateSaddler(int id) =>
-        new(id, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles");
+        new(id, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles", null);
 
     [Fact]
     public async Task SetPersonImageAsync_PersonNotFound_ReturnsNotFound()

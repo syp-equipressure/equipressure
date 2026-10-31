@@ -12,10 +12,11 @@ namespace EquiApi.Dtos;
 /// <param name="FirstName">The first name of the person</param>
 /// <param name="LastName">The last name of the person</param>
 /// <param name="Email">The optional email of the person</param>
-public sealed record PersonDto(int Id, string FirstName, string LastName, string? Email)
+/// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
+public sealed record PersonDto(int Id, string FirstName, string LastName, string? Email, Instant? ImageUpdatedAt)
 {
     public static PersonDto FromPerson(Person person) =>
-        new(person.Id, person.FirstName, person.LastName, person.Email);
+        new(person.Id, person.FirstName, person.LastName, person.Email, person.ImageUpdatedAt);
 }
 
 /// <summary>
@@ -107,6 +108,7 @@ public sealed record PersonNameDto(string FirstName, string LastName)
 /// <param name="PLZ">The postal code</param>
 /// <param name="WebsiteLink">The optional website of the saddler</param>
 /// <param name="Description">The optional description of the saddler</param>
+/// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
 public sealed record SaddlerDto(
     int Id,
     string FirstName,
@@ -115,11 +117,12 @@ public sealed record SaddlerDto(
     string CityName,
     string PLZ,
     string? WebsiteLink,
-    string? Description)
+    string? Description,
+    Instant? ImageUpdatedAt)
 {
     public static SaddlerDto FromSaddlerData(SaddlerData saddler) =>
         new(saddler.Id, saddler.FirstName, saddler.LastName, saddler.AddressName, saddler.CityName, saddler.PLZ,
-            saddler.WebsiteLink, saddler.Description);
+            saddler.WebsiteLink, saddler.Description, saddler.ImageUpdatedAt);
 }
 
 /// <summary>
@@ -143,6 +146,7 @@ public sealed record SaddlerListResponse(IReadOnlyList<SaddlerDto> Saddlers)
 /// <param name="PLZ">The postal code</param>
 /// <param name="WebsiteLink">The optional website, only set for saddlers</param>
 /// <param name="Description">The optional description, only set for saddlers</param>
+/// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
 public sealed record ContactDto(
     int Id,
     string FirstName,
@@ -151,11 +155,12 @@ public sealed record ContactDto(
     string CityName,
     string PLZ,
     string? WebsiteLink,
-    string? Description)
+    string? Description,
+    Instant? ImageUpdatedAt)
 {
     public static ContactDto FromContactData(ContactData contact) =>
         new(contact.Id, contact.FirstName, contact.LastName, contact.AddressName, contact.CityName, contact.PLZ,
-            contact.WebsiteLink, contact.Description);
+            contact.WebsiteLink, contact.Description, contact.ImageUpdatedAt);
 }
 
 /// <summary>

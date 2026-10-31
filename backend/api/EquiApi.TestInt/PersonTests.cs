@@ -834,6 +834,21 @@ public sealed class PersonTests(WebApiTestFixture webApiFixture) : WebApiTestBas
         ShouldBeProblem(download, HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async ValueTask GetContacts_ContactWithImage_ReturnsImageTimestamp()
+    {
+        var equestrian = TestData.CreatePerson("Anna", "Reiter");
+        var contact = TestData.CreatePerson("Sam", "Sattler");
+        await SeedAsync(TestData.CreateRelationship(equestrian, contact, isContact: true));
+        await ApiClient.PutAsync($"api/persons/{contact.Id}/image", CreateImageForm([1, 2, 3], "foto.png"),
+                                 TestCancellationToken);
+
+        var response = await ApiClient.GetAsync($"api/persons/{equestrian.Id}/contacts", TestCancellationToken);
+
+        var content = await ReadContentAsync<ContactListResponse>(response);
+        content.Contacts.Should().ContainSingle().Which.ImageUpdatedAt.Should().Be(TestClock.GetCurrentInstant());
+    }
+
     private static MultipartFormDataContent CreateImageForm(byte[] image, string fileName)
     {
         var form = new MultipartFormDataContent();

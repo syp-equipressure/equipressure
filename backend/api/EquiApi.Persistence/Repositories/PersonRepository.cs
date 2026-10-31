@@ -206,7 +206,8 @@ internal sealed class PersonRepository(
                                                     p.Address.CityName,
                                                     p.Address.PLZ,
                                                     p.WebsiteLink,
-                                                    p.Description))
+                                                    p.Description,
+                                                    p.ImageUpdatedAt))
                        .ToListAsync();
 
     public async ValueTask<PersonRelationship?> GetRelationshipAsync(int equestrianId, int saddlerId) =>
@@ -267,5 +268,6 @@ internal sealed class PersonRepository(
                                               p.Address.CityName,
                                               p.Address.PLZ,
                                               p.WebsiteLink,
-                                              p.Description));
+                                              p.Description,
+                                              p.ImageUpdatedAt));
 }
