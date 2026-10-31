@@ -22,9 +22,15 @@
         id="imageFile"
         class="file-input-hidden"
         type="file"
-        accept="image/*"
+        [accept]="imageFileTypes"
         (change)="onFileSelected($event)"
       />
+      @if (selectedImage(); as image) {
+        <p class="form-hint">{{ image.name }}</p>
+      }
+      @if (imageError()) {
+        <p class="form-error" role="alert">{{ imageError() }}</p>
+      }
     </div>
 
     <div class="form-field" [class.has-error]="errors()['name']">

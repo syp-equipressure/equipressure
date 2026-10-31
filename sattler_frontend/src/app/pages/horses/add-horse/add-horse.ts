@@ -1,10 +1,11 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import { Horse } from '../../../models/horse.model';
 import { BackendApiService } from '../../../services/backend-api.service';
 import { addressError, composeAddress, splitAddress } from '../../../utils/address';
+import { IMAGE_FILE_TYPES, imageFileError } from '../../../utils/image';
 
 @Component({
   selector: 'add-horse',
@@ -36,6 +37,11 @@ export class AddHorse {
   readonly address = computed(() => composeAddress(this.street(), this.postalCode(), this.city()));
   readonly saving = signal(false);
   readonly saveError = signal('');
+  readonly imageFileTypes = IMAGE_FILE_TYPES;
+  readonly selectedImage = signal<File | null>(null);
+  readonly imageError = signal('');
+  /** Ein neues Pferd, dessen Bild nicht hochgeladen werden konnte: ein weiterer Versuch darf es nicht doppelt anlegen */
+  private createdHorse: Horse | null = null;
   private readonly api = inject(BackendApiService);
   /** Die Rassen aus dem Backend, leer solange sie nicht geladen sind (das Backend prüft beim Speichern) */
   readonly supportedBreeds = toSignal(
@@ -48,7 +54,10 @@ export class AddHorse {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    input.value = '';
     if (!file) return;
+    this.imageError.set(imageFileError(file));
+    this.selectedImage.set(this.imageError() ? null : file);
   }
   errors = signal<Partial<Record<keyof Horse, string>>>({});
 
@@ -100,7 +109,7 @@ export class AddHorse {
   submit(): void {
     if (!this.validate()) return;
 
-    const existing = this.horse();
+    const existing = this.horse() ?? this.createdHorse;
     const horse: Horse = {
       ...existing,
       id: existing?.id ?? crypto.randomUUID(),
@@ -122,7 +131,10 @@ export class AddHorse {
       this.saveError.set('');
       // an existing horse is changed, a new one is added
       const request = existing ? this.api.updateHorse(horse) : this.api.createHorse(this.ownerId(), horse);
-      request.subscribe({
+      request.pipe(
+        tap(savedHorse => { this.createdHorse = this.horse() ? null : savedHorse; }),
+        switchMap(savedHorse => this.saveImage(savedHorse)),
+      ).subscribe({
         next: savedHorse => {
           this.saving.set(false);
           this.saved.emit(savedHorse);
@@ -134,15 +146,24 @@ export class AddHorse {
         },
       });
     } else {
-      this.saved.emit(horse);
+      const image = this.selectedImage();
+      this.saved.emit(image ? { ...horse, imageUrl: URL.createObjectURL(image) } : horse);
       this.reset();
     }
   }
 
+  private saveImage(horse: Horse): Observable<Horse> {
+    const image = this.selectedImage();
+    if (!image) return of(horse);
+    return this.api.uploadHorseImage(horse.id, image).pipe(map(imageUrl => ({ ...horse, imageUrl })));
+  }
+
   cancel(): void {
     if (this.saving()) return;
+    const createdHorse = this.createdHorse;
     this.reset();
-    this.cancelled.emit();
+    if (createdHorse) this.saved.emit(createdHorse);
+    else this.cancelled.emit();
   }
 
   private reset(): void {
@@ -157,6 +178,9 @@ export class AddHorse {
     this.city.set('');
     this.errors.set({});
     this.saveError.set('');
+    this.selectedImage.set(null);
+    this.imageError.set('');
+    this.createdHorse = null;
   }
 
 }

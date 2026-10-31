@@ -22,7 +22,7 @@
             <span class="initials">{{ initials() }}</span>
           }
         </div>
-        <input #avatarInput class="avatar-input" type="file" accept="image/*"
+        <input #avatarInput class="avatar-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
           aria-label="Profilbild auswählen" (change)="uploadAvatar($event)" />
         <button class="avatar-upload-btn" type="button" (click)="avatarInput.click()">
           <span class="material-icons">photo_camera</span>

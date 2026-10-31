@@ -7,6 +7,7 @@ import { Sattler, sattlerFullName } from '../../models/sattler.model';
 import { BackendApiService } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { addressError, composeAddress, splitAddress } from '../../utils/address';
+import { imageFileError } from '../../utils/image';
 
 type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website' | 'address';
 
@@ -81,6 +82,7 @@ export class ProfilePage {
             companyName: undefined,
             memberSince: formatMemberSince(customer.createdAt),
           });
+          if (customer.imageUpdatedAt) this.loadAvatar(personId);
           this.backendProfileLoading.set(false);
         },
         error: error => {
@@ -221,12 +223,20 @@ export class ProfilePage {
     this.avatarError.set('');
 
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      this.avatarError.set('Bitte eine Bilddatei auswählen.');
+    const fileError = imageFileError(file);
+    if (fileError) {
+      this.avatarError.set(fileError);
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      this.avatarError.set('Das Bild darf höchstens 5 MB groß sein.');
+
+    const personId = this.backendPersonId();
+    if (personId) {
+      this.api.uploadPersonImage(personId, file).subscribe({
+        next: avatarUrl => this.data.updateSattler({ avatarUrl }),
+        error: error => this.avatarError.set(
+          error instanceof Error ? error.message : 'Das Bild konnte nicht gespeichert werden.',
+        ),
+      });
       return;
     }
 
@@ -240,6 +250,13 @@ export class ProfilePage {
     };
     reader.onerror = () => this.avatarError.set('Das Bild konnte nicht geladen werden.');
     reader.readAsDataURL(file);
+  }
+
+  private loadAvatar(personId: string): void {
+    this.api.getPersonImage(personId).subscribe({
+      next: avatarUrl => this.data.updateSattler({ avatarUrl }),
+      error: () => this.avatarError.set('Das Bild konnte nicht geladen werden.'),
+    });
   }
 }
 
