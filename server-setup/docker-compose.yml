@@ -1,0 +1,91 @@
+# Kein Dienst veröffentlicht Ports. Anfragen aus dem Internet kommen über den
+# Cloudflare Tunnel, den der Server selbst nach außen aufbaut.
+services:
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    mem_limit: 128m
+    networks:
+      - edge
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}
+    restart: unless-stopped
+    # Importiert den Realm nur, solange er noch nicht existiert.
+    command: start --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: https://${AUTH_DOMAIN}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      # Muss zu Keycloak__AdminClientSecret der API passen.
+      EQUI_API_ADMIN_SECRET: ${EQUI_API_ADMIN_SECRET}
+    volumes:
+      - ./keycloak/realm-equipressure.json:/opt/keycloak/data/import/realm-equipressure.json:ro
+      - ./keycloak/themes/equipressure:/opt/keycloak/themes/equipressure:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 1536m
+    networks:
+      - edge
+      - db
+
+  # Startet erst mit "--profile api", sobald das Image gebaut ist.
+  api:
+    profiles: ["api"]
+    image: ${API_IMAGE}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=postgres;Database=app;Username=app;Password=${APP_DB_PASSWORD}
+      Keycloak__Authority: https://${AUTH_DOMAIN}/realms/${KC_REALM}
+      Keycloak__Audience: equi-api
+      Keycloak__AdminClientSecret: ${EQUI_API_ADMIN_SECRET}
+      General__ClientOrigin: https://${APP_DOMAIN}
+    # Das Image prüft /health mit curl, beides gibt es dort nicht.
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 768m
+    networks:
+      - edge
+      - db
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 768m
+    networks:
+      - db
+
+networks:
+  edge:
+  db:
+    internal: true
+
+volumes:
+  postgres_data:

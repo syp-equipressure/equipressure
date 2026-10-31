@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import 'widgets/auth_form.dart';
 
-/// Neues Konto erstellen. Das Backend legt den Benutzer in Keycloak an, danach ist man angemeldet
-/// und der Screen gibt true zurück.
+/// Neues Konto erstellen, entweder über einen Anbieter (Keycloak im Browser der App) oder mit E-Mail
+/// und Passwort (das Backend legt den Benutzer in Keycloak an). Danach ist man angemeldet und der
+/// Screen gibt true zurück.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -63,11 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
+    await _run(() async {
       await AuthService().register(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -75,11 +73,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         lastName: _lastNameController.text.trim(),
       );
       TextInput.finishAutofillContext();
+    });
+  }
+
+  /// Führt die Registrierung aus und schließt danach den Screen
+  Future<void> _run(Future<void> Function() register) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await register();
       if (mounted) Navigator.pop(context, true);
     } on EmailAlreadyUsedException {
       _showError('Zu dieser E-Mail gibt es schon ein Konto.');
     } on TooManyAttemptsException {
       _showError('Zu viele Versuche. Bitte warte kurz und probiere es noch einmal.');
+    } on FlutterAppAuthUserCancelledException {
+      // Seite im Browser geschlossen
+    } on PlatformException {
+      _showError('Die Anmeldeseite ist gerade nicht erreichbar.');
     } on TimeoutException {
       _showError('Der Server ist gerade nicht erreichbar.');
     } catch (_) {
@@ -110,6 +123,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     subtitle: 'In einer Minute bist du startklar.',
                   ),
                   const SizedBox(height: 24),
+                  AuthProviderButtons(
+                    action: 'registrieren',
+                    enabled: !_loading,
+                    onSelected: (provider) => _run(() => AuthService().loginWithProvider(provider)),
+                  ),
+                  const SizedBox(height: 18),
+                  const AuthDivider(label: 'Oder mit E-Mail'),
+                  const SizedBox(height: 18),
                   Row(
                     children: [
                       Expanded(

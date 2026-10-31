@@ -95,8 +95,7 @@ class AuthService {
         issuer: ApiConfig.keycloakIssuer,
         scopes: _scopes,
         additionalParameters: {'kc_idp_hint': identityProvider},
-        // lokales Keycloak läuft ohne HTTPS
-        allowInsecureConnections: true,
+        allowInsecureConnections: ApiConfig.allowInsecureConnections,
       ),
     );
     await _save(result);
@@ -149,7 +148,7 @@ class AuthService {
           idTokenHint: idToken,
           postLogoutRedirectUrl: ApiConfig.keycloakRedirectUrl,
           issuer: ApiConfig.keycloakIssuer,
-          allowInsecureConnections: true,
+          allowInsecureConnections: ApiConfig.allowInsecureConnections,
         ),
       );
     } catch (_) {
@@ -197,7 +196,7 @@ class AuthService {
         ApiConfig.keycloakRedirectUrl,
         issuer: ApiConfig.keycloakIssuer,
         refreshToken: _refreshToken,
-        allowInsecureConnections: true,
+        allowInsecureConnections: ApiConfig.allowInsecureConnections,
       ),
     );
     await _save(result);

@@ -28,7 +28,7 @@
         "subComponents": {},
         "config": {
           "kc.user.profile.config": [
-            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
           ]
         }
       }
@@ -228,7 +228,7 @@
       "emailVerified": true,
       "firstName": "Reiter",
       "lastName": "Dev",
-      "credentials": [{ "type": "password", "value": "reiter", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "reiter1234", "temporary": false }],
       "realmRoles": ["default-roles-equipressure"]
     },
     {
@@ -238,7 +238,7 @@
       "emailVerified": true,
       "firstName": "Sattler",
       "lastName": "Dev",
-      "credentials": [{ "type": "password", "value": "sattler", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "sattler1234", "temporary": false }],
       "realmRoles": ["default-roles-equipressure"]
     },
     {
@@ -249,7 +249,7 @@
       "emailVerified": true,
       "firstName": "Sophie",
       "lastName": "Grüneis",
-      "credentials": [{ "type": "password", "value": "sophie", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "sophie1234", "temporary": false }],
       "realmRoles": ["default-roles-equipressure"]
     },
     {
@@ -260,7 +260,7 @@
       "emailVerified": true,
       "firstName": "Lena",
       "lastName": "Grassauer",
-      "credentials": [{ "type": "password", "value": "lena", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "lena1234", "temporary": false }],
       "realmRoles": ["default-roles-equipressure"]
     }
   ]

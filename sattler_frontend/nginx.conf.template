@@ -1,0 +1,26 @@
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Konfiguration der App, ersetzt public/env.js
+    location = /env.js {
+        default_type application/javascript;
+        add_header Cache-Control "no-store";
+        return 200 'window.__env = { apiUrl: "${API_URL}", keycloakIssuer: "${KEYCLOAK_ISSUER}" };';
+    }
+
+    # Dateinamen enthalten einen Hash, dürfen also lange gecacht werden
+    location ~* \.(js|css)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    # Routen der Angular-App, index.html nie cachen, sonst bleibt nach einem Deployment die alte Version
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+}
