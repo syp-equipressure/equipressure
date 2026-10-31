@@ -6,6 +6,7 @@ import { DataService } from '../../services/data.service';
 import { fullName } from '../../models/customer.model';
 import { AuthService } from '../../services/auth.service';
 import { AccountService } from '../../services/account.service';
+import { BackendApiService } from '../../services/backend-api.service';
 
 @Component({
   selector: 'app-page-header',
@@ -26,10 +27,18 @@ export class PageHeaderComponent {
   private readonly data = inject(DataService);
   private readonly auth = inject(AuthService);
   private readonly account = inject(AccountService);
+  private readonly api = inject(BackendApiService);
 
   get accountName(): string {
     const me = this.account.me();
     return me ? `${me.firstName} ${me.lastName}` : fullName(this.data.getMe());
+  }
+
+  /** A freshly uploaded image comes first, it is newer than the data of the login. */
+  get avatarUrl(): string | undefined {
+    const me = this.account.me();
+    return this.data.sattler().avatarUrl
+      ?? (me ? this.api.personImageUrl(String(me.id), me.imageUpdatedAt ?? undefined) : undefined);
   }
 
   get accountEmail(): string {

@@ -25,7 +25,11 @@
       <span>{{ accountEmail }}</span>
     </div>
     <a class="profile-circle" routerLink="/profile" aria-label="Sattler-Profil" [attr.aria-current]="profileActive ? 'page' : null">
-      <span class="material-icons">person</span>
+      @if (avatarUrl; as url) {
+        <img [src]="url" alt="" />
+      } @else {
+        <span class="material-icons">person</span>
+      }
     </a>
     <button class="icon-btn" type="button" (click)="logout()" aria-label="Abmelden" title="Abmelden">
       <span class="material-icons">logout</span>

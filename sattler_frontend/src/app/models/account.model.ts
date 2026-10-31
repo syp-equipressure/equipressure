@@ -7,6 +7,8 @@ export interface AccountPerson {
   lastName: string;
   email: string | null;
   roles: RoleName[];
+  /** ISO timestamp when the image was set, missing without an image */
+  imageUpdatedAt?: string | null;
 }
 
 /** Profile setup after the first login, see POST /api/account */
