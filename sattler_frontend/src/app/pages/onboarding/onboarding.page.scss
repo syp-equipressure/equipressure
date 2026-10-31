@@ -126,6 +126,15 @@
   font-size: 12px;
 }
 
+.field-input.missing {
+  border-color: #a12622;
+}
+
+.field-error {
+  color: #a12622;
+  font-size: 12px;
+}
+
 .feedback {
   margin: 0;
   padding: 10px 12px;
