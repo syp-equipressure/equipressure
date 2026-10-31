@@ -6,6 +6,13 @@ using OneOf.Types;
 namespace EquiApi.Core.Services;
 
 /// <summary>
+///     The image of a horse or a person
+/// </summary>
+/// <param name="ContentType">The media type of the image, e.g. image/png</param>
+/// <param name="Data">The content of the image</param>
+public sealed record ImageData(string ContentType, byte[] Data);
+
+/// <summary>
 ///     The values of a new horse
 /// </summary>
 public sealed record NewHorseData(
@@ -173,12 +180,34 @@ public interface IHorseService
     public ValueTask<OneOf<Success, NotFound, SaddleInUse>> RemoveSaddleAsync(int horseId, int saddleId);
 
     /// <summary>
+    ///     Sets the image of a horse, an existing image is replaced
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <param name="image">The image</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the horse does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> SetHorseImageAsync(int horseId, ImageData image);
+
+    /// <summary>
+    ///     Gets the image of a horse
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The image or <see cref="NotFound" /> if the horse does not exist or has no image</returns>
+    public ValueTask<OneOf<Success<ImageData>, NotFound>> GetHorseImageAsync(int horseId);
+
+    /// <summary>
+    ///     Removes the image of a horse
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the horse does not exist or has no image</returns>
+    public ValueTask<OneOf<Success, NotFound>> RemoveHorseImageAsync(int horseId);
+
+    /// <summary>
     ///     Returned if a saddle cannot be removed because measurement groups were recorded with it
     /// </summary>
     public readonly record struct SaddleInUse;
 }
 
-internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger) : IHorseService
+internal sealed class HorseService(IUnitOfWork uow, IClock clock, ILogger<HorseService> logger) : IHorseService
 {
     public async ValueTask<OneOf<Success<Horse>, NotFound>> GetHorseByIdAsync(int horseId)
     {
@@ -558,5 +587,64 @@ internal sealed class HorseService(IUnitOfWork uow, ILogger<HorseService> logger
         logger.LogInformation("Horse {HorseId} was patched", horseId);
 
         return new Success<Horse>(horse);
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> SetHorseImageAsync(int horseId, ImageData image)
+    {
+        var horse = await uow.HorseRepository.GetHorseWithImageAsync(horseId);
+        if (horse is null)
+        {
+            LogHorseNotFound(horseId);
+
+            return new NotFound();
+        }
+
+        if (horse.Image is null)
+        {
+            horse.Image = new HorseImage { Data = image.Data };
+        }
+        else
+        {
+            horse.Image.Data = image.Data;
+        }
+
+        horse.ImageContentType = image.ContentType;
+        horse.ImageUpdatedAt = clock.GetCurrentInstant();
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Image of horse {HorseId} was set", horseId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success<ImageData>, NotFound>> GetHorseImageAsync(int horseId)
+    {
+        var image = await uow.HorseRepository.GetHorseImageAsync(horseId);
+        if (image?.Horse.ImageContentType is not { } contentType)
+        {
+            logger.LogInformation("Horse {HorseId} has no image", horseId);
+
+            return new NotFound();
+        }
+
+        return new Success<ImageData>(new ImageData(contentType, image.Data));
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RemoveHorseImageAsync(int horseId)
+    {
+        var horse = await uow.HorseRepository.GetHorseWithImageAsync(horseId);
+        if (horse?.Image is null)
+        {
+            logger.LogInformation("Horse {HorseId} has no image", horseId);
+
+            return new NotFound();
+        }
+
+        horse.Image = null;
+        horse.ImageContentType = null;
+        horse.ImageUpdatedAt = null;
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Image of horse {HorseId} was removed", horseId);
+
+        return new Success();
     }
 }

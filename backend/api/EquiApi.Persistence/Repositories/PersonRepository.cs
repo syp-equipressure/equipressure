@@ -14,6 +14,20 @@ public interface IPersonRepository
     public ValueTask<Person?> GetPersonByIdAsync(int personId);
 
     /// <summary>
+    ///     Gets a person including the content of their image, to change the image
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The tracked person or null if it does not exist</returns>
+    public ValueTask<Person?> GetPersonWithImageAsync(int personId);
+
+    /// <summary>
+    ///     Gets the image of a person including the person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The image or null if the person has no image</returns>
+    public ValueTask<PersonImage?> GetPersonImageAsync(int personId);
+
+    /// <summary>
     ///     Gets the person linked to a Keycloak account, including their address and roles
     /// </summary>
     /// <param name="externalId">The id of the user in Keycloak</param>
@@ -128,13 +142,20 @@ public interface IPersonRepository
 internal sealed class PersonRepository(
     DbSet<Person> personSet,
     DbSet<PersonRelationship> relationshipSet,
-    DbSet<AccountRole> roleSet) : IPersonRepository
+    DbSet<AccountRole> roleSet,
+    DbSet<PersonImage> imageSet) : IPersonRepository
 {
     public async ValueTask<Person?> GetPersonByIdAsync(int personId) =>
         await personSet.Include(p => p.Address)
                        .Include(p => p.Roles)
                        .ThenInclude(pra => pra.Role)
                        .FirstOrDefaultAsync(p => p.Id == personId);
+
+    public async ValueTask<Person?> GetPersonWithImageAsync(int personId) =>
+        await personSet.Include(p => p.Image).FirstOrDefaultAsync(p => p.Id == personId);
+
+    public async ValueTask<PersonImage?> GetPersonImageAsync(int personId) =>
+        await imageSet.AsNoTracking().Include(i => i.Person).FirstOrDefaultAsync(i => i.PersonId == personId);
 
     public async ValueTask<Person?> GetPersonByExternalIdAsync(string externalId) =>
         await personSet.Include(p => p.Address)

@@ -22,7 +22,8 @@ public interface IUnitOfWork
 internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 {
     public IPersonRepository PersonRepository =>
-        field ??= new PersonRepository(context.Persons, context.PersonRelationships, context.AccountRoles);
+        field ??= new PersonRepository(context.Persons, context.PersonRelationships, context.AccountRoles,
+                                     context.PersonImages);
 
     public ILocationRepository LocationRepository =>
         field ??= new LocationRepository(context.Addresses);
@@ -31,7 +32,7 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
         field ??= new DeviceRepository(context.Devices, context.DeviceCategories, context.MeasurementGroups);
 
     public IHorseRepository HorseRepository =>
-        field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds);
+        field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds, context.HorseImages);
 
     public ISaddleRepository SaddleRepository =>
         field ??= new SaddleRepository(context.Saddles, context.SaddleCategories, context.MeasurementGroups);

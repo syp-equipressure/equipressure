@@ -13,12 +13,13 @@ public sealed class PersonServiceTests
     private const int PersonId = 1;
     private const string ExternalId = "0e6982b9-0a93-4fdd-8af5-65b85d73b52f";
 
+    private readonly IClock _clock = TestData.CreateClock();
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
     private readonly PersonService _sut;
 
     public PersonServiceTests()
     {
-        _sut = new PersonService(_uowMock, NullLogger<PersonService>.Instance);
+        _sut = new PersonService(_uowMock, _clock, NullLogger<PersonService>.Instance);
 
         _uowMock.PersonRepository.GetRolesByNameAsync(Arg.Any<IReadOnlyCollection<RoleName>>())
                 .Returns(call => call.Arg<IReadOnlyCollection<RoleName>>().Select(TestData.CreateRole).ToList());
@@ -783,4 +784,72 @@ public sealed class PersonServiceTests
 
     private static SaddlerData CreateSaddler(int id) =>
         new(id, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles");
+
+    [Fact]
+    public async Task SetPersonImageAsync_PersonNotFound_ReturnsNotFound()
+    {
+        _uowMock.PersonRepository.GetPersonWithImageAsync(PersonId).Returns((Person?) null);
+
+        var result = await _sut.SetPersonImageAsync(PersonId, new ImageData("image/png", [1]));
+
+        result.Value.Should().BeOfType<NotFound>();
+    }
+
+    [Fact]
+    public async Task SetPersonImageAsync_NoImageYet_AddsImage()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonWithImageAsync(PersonId).Returns(person);
+
+        var result = await _sut.SetPersonImageAsync(PersonId, new ImageData("image/png", [1, 2]));
+
+        result.Value.Should().BeOfType<Success>();
+        person.Image!.Data.Should().Equal(1, 2);
+        person.ImageContentType.Should().Be("image/png");
+        person.ImageUpdatedAt.Should().Be(_clock.GetCurrentInstant());
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task SetPersonImageAsync_ExistingImage_KeepsRowAndReplacesContent()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        var existing = new PersonImage { Data = [9] };
+        person.Image = existing;
+        _uowMock.PersonRepository.GetPersonWithImageAsync(PersonId).Returns(person);
+
+        await _sut.SetPersonImageAsync(PersonId, new ImageData("image/jpeg", [1, 2]));
+
+        person.Image.Should().BeSameAs(existing);
+        existing.Data.Should().Equal(1, 2);
+        person.ImageContentType.Should().Be("image/jpeg");
+    }
+
+    [Fact]
+    public async Task RemovePersonImageAsync_NoImage_ReturnsNotFound()
+    {
+        _uowMock.PersonRepository.GetPersonWithImageAsync(PersonId).Returns(TestData.CreatePerson(PersonId));
+
+        var result = await _sut.RemovePersonImageAsync(PersonId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemovePersonImageAsync_ExistingImage_ClearsImageData()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        person.Image = new PersonImage { Data = [1] };
+        person.ImageContentType = "image/png";
+        person.ImageUpdatedAt = _clock.GetCurrentInstant();
+        _uowMock.PersonRepository.GetPersonWithImageAsync(PersonId).Returns(person);
+
+        var result = await _sut.RemovePersonImageAsync(PersonId);
+
+        result.Value.Should().BeOfType<Success>();
+        person.Image.Should().BeNull();
+        person.ImageContentType.Should().BeNull();
+        person.ImageUpdatedAt.Should().BeNull();
+    }
 }

@@ -192,6 +192,28 @@ public interface IPersonService
     public ValueTask<OneOf<Success, NotFound>> RemoveContactAsync(int personId, int contactId);
 
     /// <summary>
+    ///     Sets the image of a person, an existing image is replaced
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="image">The image</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> SetPersonImageAsync(int personId, ImageData image);
+
+    /// <summary>
+    ///     Gets the image of a person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The image or <see cref="NotFound" /> if the person does not exist or has no image</returns>
+    public ValueTask<OneOf<Success<ImageData>, NotFound>> GetPersonImageAsync(int personId);
+
+    /// <summary>
+    ///     Removes the image of a person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the person does not exist or has no image</returns>
+    public ValueTask<OneOf<Success, NotFound>> RemovePersonImageAsync(int personId);
+
+    /// <summary>
     ///     Returned if another person already uses an email
     /// </summary>
     public readonly record struct EmailAlreadyTaken;
@@ -213,7 +235,7 @@ public interface IPersonService
     public readonly record struct InvalidRelationship(string Reason);
 }
 
-internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logger) : IPersonService
+internal sealed class PersonService(IUnitOfWork uow, IClock clock, ILogger<PersonService> logger) : IPersonService
 {
     public async ValueTask<OneOf<Success<Person>, NotFound>> GetPersonByIdAsync(int personId)
     {
@@ -629,6 +651,65 @@ internal sealed class PersonService(IUnitOfWork uow, ILogger<PersonService> logg
         }
 
         return roles;
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> SetPersonImageAsync(int personId, ImageData image)
+    {
+        var person = await uow.PersonRepository.GetPersonWithImageAsync(personId);
+        if (person is null)
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        if (person.Image is null)
+        {
+            person.Image = new PersonImage { Data = image.Data };
+        }
+        else
+        {
+            person.Image.Data = image.Data;
+        }
+
+        person.ImageContentType = image.ContentType;
+        person.ImageUpdatedAt = clock.GetCurrentInstant();
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Image of person {PersonId} was set", personId);
+
+        return new Success();
+    }
+
+    public async ValueTask<OneOf<Success<ImageData>, NotFound>> GetPersonImageAsync(int personId)
+    {
+        var image = await uow.PersonRepository.GetPersonImageAsync(personId);
+        if (image?.Person.ImageContentType is not { } contentType)
+        {
+            logger.LogInformation("Person {PersonId} has no image", personId);
+
+            return new NotFound();
+        }
+
+        return new Success<ImageData>(new ImageData(contentType, image.Data));
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RemovePersonImageAsync(int personId)
+    {
+        var person = await uow.PersonRepository.GetPersonWithImageAsync(personId);
+        if (person?.Image is null)
+        {
+            logger.LogInformation("Person {PersonId} has no image", personId);
+
+            return new NotFound();
+        }
+
+        person.Image = null;
+        person.ImageContentType = null;
+        person.ImageUpdatedAt = null;
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Image of person {PersonId} was removed", personId);
+
+        return new Success();
     }
 
     private void LogPersonNotFound(int personId)

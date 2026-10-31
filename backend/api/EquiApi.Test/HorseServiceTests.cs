@@ -12,12 +12,13 @@ public sealed class HorseServiceTests
 {
     private const int HorseId = 1;
 
+    private readonly IClock _clock = TestData.CreateClock();
     private readonly IUnitOfWork _uowMock = Substitute.For<IUnitOfWork>();
     private readonly HorseService _sut;
 
     public HorseServiceTests()
     {
-        _sut = new HorseService(_uowMock, NullLogger<HorseService>.Instance);
+        _sut = new HorseService(_uowMock, _clock, NullLogger<HorseService>.Instance);
     }
 
     [Fact]
@@ -490,5 +491,73 @@ public sealed class HorseServiceTests
         result.Value.Should().BeOfType<Success>();
         _uowMock.SaddleRepository.Received(1).RemoveSaddle(saddle);
         await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task SetHorseImageAsync_HorseNotFound_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.GetHorseWithImageAsync(HorseId).Returns((Horse?) null);
+
+        var result = await _sut.SetHorseImageAsync(HorseId, new ImageData("image/png", [1]));
+
+        result.Value.Should().BeOfType<NotFound>();
+    }
+
+    [Fact]
+    public async Task SetHorseImageAsync_NoImageYet_AddsImage()
+    {
+        var horse = TestData.CreateHorse(HorseId);
+        _uowMock.HorseRepository.GetHorseWithImageAsync(HorseId).Returns(horse);
+
+        var result = await _sut.SetHorseImageAsync(HorseId, new ImageData("image/png", [1, 2]));
+
+        result.Value.Should().BeOfType<Success>();
+        horse.Image!.Data.Should().Equal(1, 2);
+        horse.ImageContentType.Should().Be("image/png");
+        horse.ImageUpdatedAt.Should().Be(_clock.GetCurrentInstant());
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task SetHorseImageAsync_ExistingImage_KeepsRowAndReplacesContent()
+    {
+        var horse = TestData.CreateHorse(HorseId);
+        var existing = new HorseImage { Data = [9] };
+        horse.Image = existing;
+        _uowMock.HorseRepository.GetHorseWithImageAsync(HorseId).Returns(horse);
+
+        await _sut.SetHorseImageAsync(HorseId, new ImageData("image/jpeg", [1, 2]));
+
+        horse.Image.Should().BeSameAs(existing);
+        existing.Data.Should().Equal(1, 2);
+        horse.ImageContentType.Should().Be("image/jpeg");
+    }
+
+    [Fact]
+    public async Task RemoveHorseImageAsync_NoImage_ReturnsNotFound()
+    {
+        _uowMock.HorseRepository.GetHorseWithImageAsync(HorseId).Returns(TestData.CreateHorse(HorseId));
+
+        var result = await _sut.RemoveHorseImageAsync(HorseId);
+
+        result.Value.Should().BeOfType<NotFound>();
+        await _uowMock.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RemoveHorseImageAsync_ExistingImage_ClearsImageData()
+    {
+        var horse = TestData.CreateHorse(HorseId);
+        horse.Image = new HorseImage { Data = [1] };
+        horse.ImageContentType = "image/png";
+        horse.ImageUpdatedAt = _clock.GetCurrentInstant();
+        _uowMock.HorseRepository.GetHorseWithImageAsync(HorseId).Returns(horse);
+
+        var result = await _sut.RemoveHorseImageAsync(HorseId);
+
+        result.Value.Should().BeOfType<Success>();
+        horse.Image.Should().BeNull();
+        horse.ImageContentType.Should().BeNull();
+        horse.ImageUpdatedAt.Should().BeNull();
     }
 }

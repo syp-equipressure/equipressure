@@ -13,6 +13,20 @@ public interface IHorseRepository
     public ValueTask<Horse?> GetHorseByIdAsync(int horseId);
 
     /// <summary>
+    ///     Gets a horse including the content of its image, to change the image
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The tracked horse or null if it does not exist</returns>
+    public ValueTask<Horse?> GetHorseWithImageAsync(int horseId);
+
+    /// <summary>
+    ///     Gets the image of a horse including the horse
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The image or null if the horse has no image</returns>
+    public ValueTask<HorseImage?> GetHorseImageAsync(int horseId);
+
+    /// <summary>
     ///     Checks if a horse exists
     /// </summary>
     /// <param name="horseId">The id of the horse</param>
@@ -112,14 +126,23 @@ public interface IHorseRepository
     public void AddPersonToHorse(PersonHorse personHorse);
 }
 
-internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> personHorseSet, DbSet<Breed> breedSet)
-    : IHorseRepository
+internal sealed class HorseRepository(
+    DbSet<Horse> horseSet,
+    DbSet<PersonHorse> personHorseSet,
+    DbSet<Breed> breedSet,
+    DbSet<HorseImage> imageSet) : IHorseRepository
 {
     public async ValueTask<Horse?> GetHorseByIdAsync(int horseId) =>
         await horseSet.Include(h => h.Address)
                       .Include(h => h.HorseBreeds)
                       .ThenInclude(hb => hb.Breed)
                       .FirstOrDefaultAsync(h => h.Id == horseId);
+
+    public async ValueTask<Horse?> GetHorseWithImageAsync(int horseId) =>
+        await horseSet.Include(h => h.Image).FirstOrDefaultAsync(h => h.Id == horseId);
+
+    public async ValueTask<HorseImage?> GetHorseImageAsync(int horseId) =>
+        await imageSet.AsNoTracking().Include(i => i.Horse).FirstOrDefaultAsync(i => i.HorseId == horseId);
 
     public async ValueTask<bool> HorseExistsAsync(int horseId) =>
         await horseSet.AnyAsync(h => h.Id == horseId);
