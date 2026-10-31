@@ -57,13 +57,16 @@
         placeholder="z. B. Hannoveraner"
         list="supported-horse-breeds"
         [ngModel]="breed()"
-        (ngModelChange)="breed.set($event)"
+        (ngModelChange)="onBreedChange($event)"
       />
       <datalist id="supported-horse-breeds">
         @for (supportedBreed of supportedBreeds(); track supportedBreed) {
           <option [value]="supportedBreed"></option>
         }
       </datalist>
+      @if (breedHint()) {
+        <p class="form-error" role="alert">{{ breedHint() }}</p>
+      }
       @if (errors()['breed']) {
         <span class="form-error">{{ errors()['breed'] }}</span>
       }

@@ -40,6 +40,9 @@ export class AddHorse {
   readonly imageFileTypes = IMAGE_FILE_TYPES;
   readonly selectedImage = signal<File | null>(null);
   readonly imageError = signal('');
+  /** Hinweis auf eine unbekannte Rasse, erst wenn nicht mehr getippt wird */
+  readonly breedHint = signal('');
+  private breedTimer?: ReturnType<typeof setTimeout>;
   /** Ein neues Pferd, dessen Bild nicht hochgeladen werden konnte: ein weiterer Versuch darf es nicht doppelt anlegen */
   private createdHorse: Horse | null = null;
   private readonly api = inject(BackendApiService);
@@ -51,6 +54,17 @@ export class AddHorse {
     ),
     { initialValue: [] as string[] },
   );
+  onBreedChange(value: string): void {
+    this.breed.set(value);
+    this.breedHint.set('');
+    clearTimeout(this.breedTimer);
+    this.breedTimer = setTimeout(() => {
+      const breeds = this.supportedBreeds();
+      const invalid = value.trim() && breeds.length && !isSupportedBreedList(value, breeds);
+      this.breedHint.set(invalid ? 'Bitte nur Rassen aus der Liste verwenden.' : '');
+    }, 700);
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
