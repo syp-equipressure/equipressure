@@ -1,6 +1,7 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/widgets/person_avatar.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
@@ -123,7 +124,14 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
                 width: 2,
               ),
             ),
-            child: _saddler.logoPath != null
+            child: _saddler.imageUpdatedAt != null
+                ? PersonAvatar(
+                    personId: _saddler.id,
+                    imageUpdatedAt: _saddler.imageUpdatedAt,
+                    name: _saddler.name,
+                    radius: 50,
+                  )
+                : _saddler.logoPath != null
                 ? ClipOval(
                     child: Image.asset(
                       _saddler.logoPath!,

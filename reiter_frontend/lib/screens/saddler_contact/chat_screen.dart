@@ -12,6 +12,7 @@ import '../../models/measurement.dart';
 import '../../models/message.dart';
 import '../../models/saddler.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/person_avatar.dart';
 import '../../services/horse_service.dart';
 import '../../services/measurement_service.dart';
 import '../../services/saddler_service.dart';
@@ -416,17 +417,11 @@ class _ChatScreenState extends State<ChatScreen> {
         onTap: _openProfile,
         child: Row(
           children: [
-            CircleAvatar(
+            PersonAvatar(
+              personId: widget.chat.contactId,
+              imageUpdatedAt: widget.chat.contactImageUpdatedAt,
+              name: widget.chat.contactName,
               radius: 18,
-              backgroundColor: AppColors.successLight,
-              child: Text(
-                _getInitials(widget.chat.contactName),
-                style: TextStyle(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -468,14 +463,6 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (_) => SaddlerProfileScreen(saddler: saddler!, openedFromChat: true),
       ),
     );
-  }
-
-  String _getInitials(String name) {
-    final parts = name.split(' ').where((part) => part.isNotEmpty).toList();
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return parts.isNotEmpty ? parts[0][0].toUpperCase() : '?';
   }
 
   Widget _buildMessage(Message message, Message? previous) {

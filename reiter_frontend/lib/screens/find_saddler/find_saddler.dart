@@ -2,6 +2,7 @@ import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/widgets/person_avatar.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
@@ -1749,6 +1750,15 @@ class _FindSaddlerState extends State<FindSaddler> {
   }
 
   Widget _buildAvatar(Saddler saddler, {double radius = 28}) {
+    if (saddler.imageUpdatedAt != null) {
+      return PersonAvatar(
+        personId: saddler.id,
+        imageUpdatedAt: saddler.imageUpdatedAt,
+        name: saddler.name,
+        radius: radius,
+      );
+    }
+
     if (saddler.imagePath != null) {
       return CircleAvatar(
         radius: radius,

@@ -8,6 +8,18 @@ class UserData {
   final String height;
   final String weight;
 
+  // die einzelnen Werte zum Bearbeiten
+  final String firstName;
+  final String lastName;
+  final String street;
+  final String postalCode;
+  final String city;
+  final String heightCm;
+  final String weightKg;
+
+  /// Wann das Profilbild im Backend gesetzt wurde, null ohne Bild
+  final String? imageUpdatedAt;
+
   UserData({
     required this.id,
     required this.name,
@@ -17,6 +29,14 @@ class UserData {
     required this.email,
     required this.height,
     required this.weight,
+    this.firstName = '',
+    this.lastName = '',
+    this.street = '',
+    this.postalCode = '',
+    this.city = '',
+    this.heightCm = '',
+    this.weightKg = '',
+    this.imageUpdatedAt,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {

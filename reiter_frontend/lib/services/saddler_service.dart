@@ -156,6 +156,7 @@ class SaddlerService {
       id: id,
       name: name.isNotEmpty ? name : 'Sattler',
       imagePath: null,
+      imageUpdatedAt: json['imageUpdatedAt']?.toString(),
       street: street?.isNotEmpty == true ? street : null,
       postalCode: postalCode.isNotEmpty ? postalCode : null,
       city: city.isNotEmpty ? city : null,

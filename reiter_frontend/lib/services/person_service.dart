@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/device.dart';
@@ -324,7 +325,7 @@ class PersonService {
     return UserData(
       id: (details['id'] ?? personId).toString(),
       name: '$firstName $lastName',
-      imageUrl: '',
+      imageUrl: imageUrl(personId, details['imageUpdatedAt']?.toString()) ?? '',
       birthDate: 'Nicht verfügbar',
       address: [
         addressName,
@@ -333,7 +334,39 @@ class PersonService {
       email: details['email']?.toString() ?? 'Nicht hinterlegt',
       height: '${details['height'] ?? '–'} cm',
       weight: '${details['weight'] ?? '–'} kg',
+      firstName: firstName.toString(),
+      lastName: lastName.toString(),
+      street: addressName ?? '',
+      postalCode: postalCode,
+      city: city,
+      heightCm: details['height']?.toString() ?? '',
+      weightKg: details['weight']?.toString() ?? '',
+      imageUpdatedAt: details['imageUpdatedAt']?.toString(),
     );
+  }
+
+  /// Speichert das Profilbild einer Person (PUT /api/persons/{id}/image).
+  static Future<void> uploadImage(String personId, File image) async {
+    final request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/persons/$personId/image'))
+      ..files.add(await http.MultipartFile.fromPath('file', image.path));
+
+    final response = await http.Response.fromStream(
+      await apiHttp.send(request).timeout(const Duration(seconds: 60)),
+    );
+    if (response.statusCode != 204) {
+      _throwForStatus(response, 'upload person image');
+    }
+  }
+
+  /// Adresse des Profilbildes einer Person, null ohne Bild im Backend.
+  /// Das Token steht in der Adresse, weil Bilder keinen Header mitschicken.
+  static String? imageUrl(String personId, String? imageUpdatedAt) {
+    if (imageUpdatedAt == null) return null;
+    final token = AuthService().accessToken;
+    return Uri.parse('$baseUrl/persons/$personId/image').replace(queryParameters: {
+      'v': imageUpdatedAt,
+      if (token != null) 'access_token': token,
+    }).toString();
   }
 
   static Future<List<Device>> loadDevices(String personId) async {

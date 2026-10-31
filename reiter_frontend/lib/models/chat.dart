@@ -5,12 +5,16 @@ class Chat {
   /// Person-Id der Sattler*in im Backend
   final String contactId;
   final String contactName;
+
+  /// Wann das Profilbild im Backend gesetzt wurde, null ohne Bild
+  final String? contactImageUpdatedAt;
   final Message? lastMessage;
   final int unreadCount;
 
   Chat({
     required this.contactId,
     required this.contactName,
+    this.contactImageUpdatedAt,
     this.lastMessage,
     this.unreadCount = 0,
   });
@@ -21,6 +25,7 @@ class Chat {
       contactId: contact['id'].toString(),
       contactName:
           '${contact['firstName'] ?? ''} ${contact['lastName'] ?? ''}'.trim(),
+      contactImageUpdatedAt: contact['imageUpdatedAt']?.toString(),
       lastMessage: json['lastMessage'] is Map<String, dynamic>
           ? Message.fromJson(json['lastMessage'])
           : null,
@@ -32,6 +37,7 @@ class Chat {
     return Chat(
       contactId: contactId,
       contactName: contactName,
+      contactImageUpdatedAt: contactImageUpdatedAt,
       lastMessage: lastMessage ?? this.lastMessage,
       unreadCount: unreadCount ?? this.unreadCount,
     );
