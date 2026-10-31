@@ -95,7 +95,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         body: SafeArea(
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             children: [
               Stack(
                 children: [
@@ -201,8 +202,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                   ),
                 ],
               ),
-              Expanded(
-                child: Container(
+              Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     color: AppColors.surface,
@@ -211,7 +211,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       topRight: Radius.circular(24),
                     ),
                   ),
-                  child: SingleChildScrollView(
+                  child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,8 +346,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                     ),
                   ),
                 ),
-              ),
             ],
+            ),
           ),
         ),
       ),
@@ -403,4 +403,4 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       ),
     );
   }
-}
+}
