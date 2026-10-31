@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/device.dart';
@@ -355,6 +356,36 @@ class PersonService {
     );
     if (response.statusCode != 204) {
       _throwForStatus(response, 'upload person image');
+    }
+    if (personId == ownPersonId) {
+      ownPersonId = null;
+      await loadOwnImage();
+    }
+  }
+
+  /// Die Person, zu der [ownImageUpdatedAt] gehört
+  static String? ownPersonId;
+
+  /// Wann das eigene Profilbild gesetzt wurde, die App-Leiste zeigt es an jedem Screen
+  static final ValueNotifier<String?> ownImageUpdatedAt = ValueNotifier(null);
+
+  /// Lädt das eigene Profilbild einmal pro Person. Ohne Bild bleibt das Personen-Symbol,
+  /// ein Fehler beim Laden soll keinen Screen stören.
+  static Future<void> loadOwnImage() async {
+    try {
+      final personId = await BackendPersonContextService.loadPersonId();
+      if (personId == ownPersonId) return;
+
+      ownImageUpdatedAt.value = null;
+      ownPersonId = personId;
+      if (personId == null) return;
+
+      final details = await _fetchPersonDetails(personId);
+      if (personId == ownPersonId) {
+        ownImageUpdatedAt.value = details['imageUpdatedAt']?.toString();
+      }
+    } catch (_) {
+      ownPersonId = null;
     }
   }
 
