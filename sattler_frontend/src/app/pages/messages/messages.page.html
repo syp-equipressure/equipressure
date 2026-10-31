@@ -99,7 +99,7 @@
                     </span>
                   </div>
                   @if (!isOutgoing(message)) {
-                    @if (message.acceptedAt) {
+                    @if (isAccepted(message)) {
                       <a class="share-action done" [routerLink]="shareLink(message)" [queryParams]="shareQueryParams(message)">
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         Hinzugefügt · Öffnen

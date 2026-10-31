@@ -207,6 +207,13 @@ export class MessagesPage implements OnDestroy {
     });
   }
 
+  /** A horse can be shared several times, it counts as added as soon as one of the messages is accepted. */
+  isAccepted(message: ChatMessage): boolean {
+    if (message.acceptedAt) return true;
+    const messages = this.chat.messagesWith(this.selectedContactId()) ?? [];
+    return !!message.horse && messages.some(other => other.horse?.id === message.horse?.id && other.acceptedAt);
+  }
+
   accept(message: ChatMessage): void {
     this.acceptingId.set(message.id);
     this.sendError.set('');
