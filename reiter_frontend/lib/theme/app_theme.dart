@@ -48,7 +48,9 @@ class AppTheme {
         foregroundColor: AppColors.onPrimary,
         disabledBackgroundColor: AppColors.purple100,
         disabledForegroundColor: AppColors.textMuted,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        // viele Buttons stecken in einer Box mit 48 px Höhe, mehr Abstand schneidet die Schrift ab
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+        minimumSize: const Size(64, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 0,
       ),
