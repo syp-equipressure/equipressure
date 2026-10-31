@@ -36,6 +36,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
       backgroundColor: AppColors.purple300,
       appBar: AppBar(
         backgroundColor: AppColors.purple300,
+        shape: const Border(),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),

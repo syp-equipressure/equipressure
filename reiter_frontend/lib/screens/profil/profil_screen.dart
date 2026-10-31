@@ -103,6 +103,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
         backgroundColor: AppColors.purple300,
         appBar: AppBar(
           backgroundColor: AppColors.purple300,
+          shape: const Border(),
           actions: [
             if (_personId != null)
               IconButton(
@@ -133,6 +134,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
       drawer: const SideNav(),
       appBar: AppBar(
         backgroundColor: AppColors.purple300,
+        shape: const Border(),
         elevation: 0,
         leading: Builder(
           builder: (context) {
