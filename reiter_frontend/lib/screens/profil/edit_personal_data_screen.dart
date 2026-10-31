@@ -28,6 +28,10 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
   late final TextEditingController _city;
   late final TextEditingController _height;
   late final TextEditingController _weight;
+  late final TextEditingController _birthDate;
+
+  /// Geburtsdatum im Format YYYY-MM-DD
+  late String _dateOfBirth;
 
   File? _selectedImage;
   bool _saving = false;
@@ -43,6 +47,8 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
     _city = TextEditingController(text: data.city);
     _height = TextEditingController(text: data.heightCm);
     _weight = TextEditingController(text: data.weightKg);
+    _dateOfBirth = data.dateOfBirth.split('T').first;
+    _birthDate = TextEditingController(text: _formatDate(_dateOfBirth));
   }
 
   @override
@@ -54,12 +60,36 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
     _city.dispose();
     _height.dispose();
     _weight.dispose();
+    _birthDate.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage() async {
-    final image = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 600);
+    final image = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
     if (image != null) setState(() => _selectedImage = File(image.path));
+  }
+
+  static String _formatDate(String isoDate) {
+    final parts = isoDate.split('-');
+    return parts.length == 3 ? '${parts[2]}.${parts[1]}.${parts[0]}' : '';
+  }
+
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.tryParse(_dateOfBirth) ?? DateTime(now.year - 20),
+      firstDate: DateTime(1900),
+      lastDate: now.subtract(const Duration(days: 1)),
+    );
+    if (date == null) return;
+
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    setState(() {
+      _dateOfBirth = '${date.year}-$month-$day';
+      _birthDate.text = _formatDate(_dateOfBirth);
+    });
   }
 
   static double? _parseNumber(String text) => double.tryParse(text.trim().replaceAll(',', '.'));
@@ -83,6 +113,7 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
         'lastName': _lastName.text.trim(),
         'height': _parseNumber(_height.text),
         'weight': _parseNumber(_weight.text),
+        'dateOfBirth': _dateOfBirth,
         'address': {
           'addressName': _street.text.trim().isEmpty ? null : _street.text.trim(),
           'cityName': _city.text.trim(),
@@ -108,6 +139,7 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
       backgroundColor: AppColors.purple300,
       appBar: AppBar(
         backgroundColor: AppColors.purple300,
+        shape: const Border(),
         elevation: 0,
         title: const Text('Daten bearbeiten'),
       ),
@@ -129,6 +161,19 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
               const SizedBox(height: 24),
               _buildField(_firstName, 'Vorname', validator: _required),
               _buildField(_lastName, 'Nachname', validator: _required),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: TextFormField(
+                  controller: _birthDate,
+                  readOnly: true,
+                  validator: _required,
+                  onTap: _pickBirthDate,
+                  decoration: const InputDecoration(
+                    labelText: 'Geburtsdatum',
+                    suffixIcon: Icon(Icons.calendar_today_outlined),
+                  ),
+                ),
+              ),
               _buildField(_street, 'Straße und Hausnummer'),
               _buildField(_postalCode, 'PLZ', validator: _required, number: true),
               _buildField(_city, 'Ort', validator: _required),
@@ -137,7 +182,13 @@ class _EditPersonalDataScreenState extends State<EditPersonalDataScreen> {
               const SizedBox(height: 8),
               FilledButton(
                 onPressed: _saving ? null : _save,
-                child: Text(_saving ? 'Wird gespeichert…' : 'Speichern'),
+                child: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Speichern'),
               ),
             ],
           ),

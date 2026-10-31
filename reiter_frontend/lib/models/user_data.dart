@@ -17,6 +17,9 @@ class UserData {
   final String heightCm;
   final String weightKg;
 
+  /// Geburtsdatum im Format YYYY-MM-DD
+  final String dateOfBirth;
+
   /// Wann das Profilbild im Backend gesetzt wurde, null ohne Bild
   final String? imageUpdatedAt;
 
@@ -36,6 +39,7 @@ class UserData {
     this.city = '',
     this.heightCm = '',
     this.weightKg = '',
+    this.dateOfBirth = '',
     this.imageUpdatedAt,
   });
 

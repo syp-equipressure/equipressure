@@ -327,7 +327,7 @@ class PersonService {
       id: (details['id'] ?? personId).toString(),
       name: '$firstName $lastName',
       imageUrl: imageUrl(personId, details['imageUpdatedAt']?.toString()) ?? '',
-      birthDate: 'Nicht verfügbar',
+      birthDate: _formatDate(details['dateOfBirth']?.toString()),
       address: [
         addressName,
         '$postalCode $city',
@@ -342,8 +342,15 @@ class PersonService {
       city: city,
       heightCm: details['height']?.toString() ?? '',
       weightKg: details['weight']?.toString() ?? '',
+      dateOfBirth: details['dateOfBirth']?.toString() ?? '',
       imageUpdatedAt: details['imageUpdatedAt']?.toString(),
     );
+  }
+
+  static String _formatDate(String? isoDate) {
+    final parts = isoDate?.split('T').first.split('-') ?? const [];
+    if (parts.length != 3) return 'Nicht hinterlegt';
+    return '${parts[2]}.${parts[1]}.${parts[0]}';
   }
 
   /// Speichert das Profilbild einer Person (PUT /api/persons/{id}/image).
