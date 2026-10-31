@@ -15,8 +15,8 @@ as them and e.g. chat with each other. The field on the login page asks for the 
 
 | Person | Email | Password | App |
 |---|---|---|---|
-| 1 Sophie Grüneis | `sophie.grueneis@example.com` | `sophie` | Sattler frontend |
-| 6 Lena Grassauer | `lena.grassauer@example.com` | `lena` | Reiter app |
+| 1 Sophie Grüneis | `sophie.grueneis@example.com` | `sophie1234` | Sattler frontend |
+| 6 Lena Grassauer | `lena.grassauer@example.com` | `lena1234` | Reiter app |
 
 ## Persons
 

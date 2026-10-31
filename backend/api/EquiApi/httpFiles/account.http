@@ -2,14 +2,14 @@
 @KeycloakUrl = http://localhost:8180/realms/equipressure
 
 # Voraussetzung: Keycloak läuft (backend/keycloak -> docker compose up -d)
-# Dev-User aus realm-equipressure.json: reiter.dev / reiter und sattler.dev / sattler
+# Dev-User aus realm-equipressure.json: reiter.dev / reiter1234 und sattler.dev / sattler1234
 
 ### 0. Token holen (nur Entwicklung, echte Logins laufen über Google/Microsoft/GitHub)
 # @name login
 POST {{KeycloakUrl}}/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-client_id=dev-tools&grant_type=password&username=reiter.dev&password=reiter
+client_id=dev-tools&grant_type=password&username=reiter.dev&password=reiter1234
 
 ### 1. Identität aus dem Token
 GET {{BaseUrl}}/account/identity
