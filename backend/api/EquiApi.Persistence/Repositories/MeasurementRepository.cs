@@ -113,6 +113,13 @@ public interface IMeasurementRepository
     public void AddRelease(Release release);
 
     /// <summary>
+    ///     Gets the measurement groups that were already released to a person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The ids of the measurement groups</returns>
+    public ValueTask<IReadOnlyCollection<int>> GetReleasedGroupIdsAsync(int personId);
+
+    /// <summary>
     ///     Adds a new measurement group
     /// </summary>
     /// <param name="group">The measurement group to add</param>
@@ -243,6 +250,13 @@ internal sealed class MeasurementRepository(
     {
         releaseSet.Add(release);
     }
+
+    public async ValueTask<IReadOnlyCollection<int>> GetReleasedGroupIdsAsync(int personId) =>
+        await releaseSet.Where(r => r.PersonId == personId)
+                        .SelectMany(r => r.MeasurementEligibilities)
+                        .Select(me => me.MeasurementGroupId)
+                        .Distinct()
+                        .ToListAsync();
 
     public void RemoveGroup(MeasurementGroup group)
     {

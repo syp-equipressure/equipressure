@@ -427,19 +427,31 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
         IReadOnlyCollection<int> groupIds = message.HorseId is { } horseId
             ? await uow.MeasurementRepository.GetGroupIdsOfHorseAsync(horseId)
             : [message.MeasurementGroupId!.Value];
-        if (groupIds.Count > 0)
+        // a horse can be shared several times, every measurement is released only once
+        var releasedIds = await uow.MeasurementRepository.GetReleasedGroupIdsAsync(saddler.Id);
+        var newGroupIds = groupIds.Except(releasedIds).ToList();
+        if (newGroupIds.Count > 0)
         {
             uow.MeasurementRepository.AddRelease(new Release
             {
                 PersonId = saddler.Id,
                 ReleaseTimestamp = now,
-                MeasurementEligibilities = groupIds
+                MeasurementEligibilities = newGroupIds
                                            .Select(id => new MeasurementEligibility { MeasurementGroupId = id })
                                            .ToList()
             });
         }
 
         message.AcceptedAt = now;
+        if (message.HorseId is { } sharedHorseId)
+        {
+            var shares = await uow.ChatRepository.GetSharesOfHorseAsync(message.SenderId, personId, sharedHorseId);
+            foreach (var share in shares)
+            {
+                share.AcceptedAt ??= now;
+            }
+        }
+
         await uow.SaveChangesAsync();
         logger.LogInformation("Person {PersonId} accepted message {MessageId}", personId, messageId);
 

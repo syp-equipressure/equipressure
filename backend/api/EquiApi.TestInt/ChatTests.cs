@@ -156,6 +156,40 @@ public sealed class ChatTests(WebApiTestFixture webApiFixture) : WebApiTestBase(
     }
 
     [Fact]
+    public async ValueTask AcceptShare_SameHorseSharedTwice_AcceptsBothAndReleasesOnce()
+    {
+        var equestrian = TestData.CreatePerson("Lena", "Grassauer");
+        var saddler = TestData.CreatePerson("Sophie", "Grüneis", role: RoleName.Saddler);
+        var horse = TestData.CreateHorse();
+        var saddle = TestData.CreateSaddle(horse);
+        var device = TestData.CreateDevice("EP-TWICE", equestrian, TestData.CreateDeviceCategory());
+        await SeedAsync(saddler, TestData.CreatePersonHorse(equestrian, horse, isOwner: true), saddle, device,
+                        TestData.CreateMeasurementGroup(equestrian, horse, saddle, device));
+        var request = new SendChatMessageRequest(ChatMessageType.Horse, null, horse.Id, null);
+        var first = await ReadContentAsync<ChatMessageDto>(
+            await ApiClient.PostAsJsonAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}", request, JsonOptions,
+                                            TestCancellationToken));
+        var second = await ReadContentAsync<ChatMessageDto>(
+            await ApiClient.PostAsJsonAsync($"api/persons/{equestrian.Id}/chats/{saddler.Id}", request, JsonOptions,
+                                            TestCancellationToken));
+
+        await ApiClient.PutAsync($"api/persons/{saddler.Id}/chats/messages/{first.Id}/accept", null,
+                                 TestCancellationToken);
+
+        var messages = await ReadContentAsync<ChatMessageListResponse>(
+            await ApiClient.GetAsync($"api/persons/{saddler.Id}/chats/{equestrian.Id}", TestCancellationToken));
+        messages.Messages.Single(m => m.Id == second.Id).AcceptedAt.Should().NotBeNull();
+
+        await ApiClient.PutAsync($"api/persons/{saddler.Id}/chats/messages/{second.Id}/accept", null,
+                                 TestCancellationToken);
+
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            (await context.Releases.CountAsync(TestCancellationToken)).Should().Be(1);
+        });
+    }
+
+    [Fact]
     public async ValueTask SendFile_Image_CanBeDownloadedByBothPersonsOnly()
     {
         var (equestrian, saddler) = await SeedEquestrianAndSaddlerAsync();
