@@ -29,6 +29,11 @@ class DeviceConnectionService extends ChangeNotifier {
   static const Duration _connectTimeout = Duration(seconds: 15);
   static const Duration _simulatedConnectDelay = Duration(milliseconds: 1500);
 
+  /// Android bricht das Verbinden direkt nach dem Suchen öfter ab (Fehler 133)
+  static const int _connectTries = 3;
+  static const Duration _retryDelay = Duration(seconds: 1);
+  static const Duration _afterScanDelay = Duration(milliseconds: 300);
+
   static final DeviceConnectionService _instance = DeviceConnectionService._internal();
   factory DeviceConnectionService() => _instance;
   DeviceConnectionService._internal();
@@ -133,6 +138,13 @@ class DeviceConnectionService extends ChangeNotifier {
 
   /// Sucht ein Messgerät in der Nähe, das mit der Gerätenummer im Namen wird bevorzugt.
   Future<BluetoothDevice> _findDevice(Device device) async {
+    // ein noch von Android gehaltenes Gerät sendet nichts und taucht beim Suchen nicht auf
+    final known = await _knownDevices();
+    if (known.isNotEmpty) {
+      final match = known.where((d) => d.platformName.contains(device.number));
+      return match.isNotEmpty ? match.first : known.first;
+    }
+
     final found = Completer<BluetoothDevice>();
     final subscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isEmpty || found.isCompleted) return;
@@ -152,16 +164,44 @@ class DeviceConnectionService extends ChangeNotifier {
     if (!found.isCompleted) {
       throw _ConnectionProblem('Kein Messgerät gefunden. Ist es eingeschaltet und in der Nähe?');
     }
+    await Future.delayed(_afterScanDelay);
     return found.future;
+  }
+
+  Future<List<BluetoothDevice>> _knownDevices() async {
+    try {
+      final devices = [
+        ...FlutterBluePlus.connectedDevices,
+        ...await FlutterBluePlus.systemDevices([_serviceUuid]),
+      ];
+      return devices.where((d) => d.platformName.startsWith(_namePrefix)).toList();
+    } on FlutterBluePlusException {
+      return const [];
+    }
+  }
+
+  /// Verbindet und liest die Dienste des Geräts, bei einem Fehler auch mehrmals.
+  Future<List<BluetoothService>> _connect(BluetoothDevice bluetoothDevice, int attempt) async {
+    for (var tries = 1;; tries++) {
+      try {
+        // nicht gewinnorientierte Nutzung, die Lizenz gilt für Bildungseinrichtungen
+        await bluetoothDevice.connect(license: License.nonprofit, timeout: _connectTimeout);
+        return await bluetoothDevice.discoverServices();
+      } on FlutterBluePlusException {
+        if (tries >= _connectTries || attempt != _attempt) rethrow;
+        try {
+          await bluetoothDevice.disconnect();
+        } on FlutterBluePlusException {
+          // war schon getrennt
+        }
+        await Future.delayed(_retryDelay);
+      }
+    }
   }
 
   Future<void> _open(BluetoothDevice bluetoothDevice, int attempt) async {
     _bluetoothDevice = bluetoothDevice;
-    // nicht gewinnorientierte Nutzung, die Lizenz gilt für Bildungseinrichtungen
-    await bluetoothDevice.connect(license: License.nonprofit, timeout: _connectTimeout);
-    if (attempt != _attempt) return;
-
-    final services = await bluetoothDevice.discoverServices();
+    final services = await _connect(bluetoothDevice, attempt);
     if (attempt != _attempt) return;
     final characteristic = services
         .where((service) => service.uuid == _serviceUuid)
