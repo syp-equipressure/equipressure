@@ -4,7 +4,9 @@ import 'package:reiterappfrontend/screens/horses/add_horse_screen.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/chat_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/widgets/share_with_saddler_sheet.dart';
 import 'dart:io';
 
 class HorseProfileScreen extends StatefulWidget {
@@ -144,6 +146,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       onTap: () {
                         Navigator.of(context).pop(currentHorse);
                       },
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 72,
+                    child: _circleIconButton(
+                      icon: Icons.send_outlined,
+                      onTap: () => shareWithSaddler(
+                        context,
+                        title: '${currentHorse.name} senden an',
+                        share: (contactId) => ChatService().shareHorse(contactId, currentHorse.id),
+                      ),
                     ),
                   ),
                   Positioned(
