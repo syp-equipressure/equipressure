@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/device.dart';
@@ -324,8 +326,8 @@ class PersonService {
     return UserData(
       id: (details['id'] ?? personId).toString(),
       name: '$firstName $lastName',
-      imageUrl: '',
-      birthDate: 'Nicht verfügbar',
+      imageUrl: imageUrl(personId, details['imageUpdatedAt']?.toString()) ?? '',
+      birthDate: _formatDate(details['dateOfBirth']?.toString()),
       address: [
         addressName,
         '$postalCode $city',
@@ -333,7 +335,100 @@ class PersonService {
       email: details['email']?.toString() ?? 'Nicht hinterlegt',
       height: '${details['height'] ?? '–'} cm',
       weight: '${details['weight'] ?? '–'} kg',
+      firstName: firstName.toString(),
+      lastName: lastName.toString(),
+      street: addressName ?? '',
+      postalCode: postalCode,
+      city: city,
+      heightCm: details['height']?.toString() ?? '',
+      weightKg: details['weight']?.toString() ?? '',
+      dateOfBirth: details['dateOfBirth']?.toString() ?? '',
+      imageUpdatedAt: details['imageUpdatedAt']?.toString(),
     );
+  }
+
+  static String _formatDate(String? isoDate) {
+    final parts = isoDate?.split('T').first.split('-') ?? const [];
+    if (parts.length != 3) return 'Nicht hinterlegt';
+    return '${parts[2]}.${parts[1]}.${parts[0]}';
+  }
+
+  /// Meldet ein Handy für Benachrichtigungen an (PUT /api/persons/{id}/push-tokens).
+  static Future<void> registerPushToken(String personId, String token) async {
+    final response = await apiHttp
+        .put(
+          Uri.parse('$baseUrl/persons/$personId/push-tokens'),
+          headers: _jsonHeaders,
+          body: jsonEncode({'token': token}),
+        )
+        .timeout(_timeout);
+    if (response.statusCode != 204) _throwForStatus(response, 'register push token');
+  }
+
+  /// Meldet ein Handy von den Benachrichtigungen ab, z.B. beim Logout.
+  static Future<void> removePushToken(String personId, String token) async {
+    final response = await apiHttp
+        .delete(
+          Uri.parse('$baseUrl/persons/$personId/push-tokens'),
+          headers: _jsonHeaders,
+          body: jsonEncode({'token': token}),
+        )
+        .timeout(_timeout);
+    if (response.statusCode != 204) _throwForStatus(response, 'remove push token');
+  }
+
+  /// Speichert das Profilbild einer Person (PUT /api/persons/{id}/image).
+  static Future<void> uploadImage(String personId, File image) async {
+    final request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/persons/$personId/image'))
+      ..files.add(await http.MultipartFile.fromPath('file', image.path));
+
+    final response = await http.Response.fromStream(
+      await apiHttp.send(request).timeout(const Duration(seconds: 60)),
+    );
+    if (response.statusCode != 204) {
+      _throwForStatus(response, 'upload person image');
+    }
+    if (personId == ownPersonId) {
+      ownPersonId = null;
+      await loadOwnImage();
+    }
+  }
+
+  /// Die Person, zu der [ownImageUpdatedAt] gehört
+  static String? ownPersonId;
+
+  /// Wann das eigene Profilbild gesetzt wurde, die App-Leiste zeigt es an jedem Screen
+  static final ValueNotifier<String?> ownImageUpdatedAt = ValueNotifier(null);
+
+  /// Lädt das eigene Profilbild einmal pro Person. Ohne Bild bleibt das Personen-Symbol,
+  /// ein Fehler beim Laden soll keinen Screen stören.
+  static Future<void> loadOwnImage() async {
+    try {
+      final personId = await BackendPersonContextService.loadPersonId();
+      if (personId == ownPersonId) return;
+
+      ownImageUpdatedAt.value = null;
+      ownPersonId = personId;
+      if (personId == null) return;
+
+      final details = await _fetchPersonDetails(personId);
+      if (personId == ownPersonId) {
+        ownImageUpdatedAt.value = details['imageUpdatedAt']?.toString();
+      }
+    } catch (_) {
+      ownPersonId = null;
+    }
+  }
+
+  /// Adresse des Profilbildes einer Person, null ohne Bild im Backend.
+  /// Das Token steht in der Adresse, weil Bilder keinen Header mitschicken.
+  static String? imageUrl(String personId, String? imageUpdatedAt) {
+    if (imageUpdatedAt == null) return null;
+    final token = AuthService().accessToken;
+    return Uri.parse('$baseUrl/persons/$personId/image').replace(queryParameters: {
+      'v': imageUpdatedAt,
+      if (token != null) 'access_token': token,
+    }).toString();
   }
 
   static Future<List<Device>> loadDevices(String personId) async {

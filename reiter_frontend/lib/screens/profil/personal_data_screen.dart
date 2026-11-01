@@ -1,8 +1,10 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/user_data.dart';
+import 'package:reiterappfrontend/screens/profil/edit_personal_data_screen.dart';
+import 'package:reiterappfrontend/services/person_service.dart';
 
-class PersonalDataScreen extends StatelessWidget {
+class PersonalDataScreen extends StatefulWidget {
   final UserData userData;
 
   const PersonalDataScreen({
@@ -11,11 +13,30 @@ class PersonalDataScreen extends StatelessWidget {
   });
 
   @override
+  State<PersonalDataScreen> createState() => _PersonalDataScreenState();
+}
+
+class _PersonalDataScreenState extends State<PersonalDataScreen> {
+  late UserData userData = widget.userData;
+
+  Future<void> _edit() async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => EditPersonalDataScreen(userData: userData)),
+    );
+    if (saved != true) return;
+
+    final updated = await PersonService.loadUserData(userData.id);
+    if (mounted) setState(() => userData = updated);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.purple300,
       appBar: AppBar(
         backgroundColor: AppColors.purple300,
+        shape: const Border(),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
@@ -23,8 +44,9 @@ class PersonalDataScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
+            tooltip: 'Daten bearbeiten',
             icon: const Icon(Icons.edit_outlined, color: AppColors.textStrong),
-            onPressed: () {},
+            onPressed: _edit,
           ),
         ],
       ),

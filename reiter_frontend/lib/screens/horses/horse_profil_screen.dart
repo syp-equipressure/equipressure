@@ -4,7 +4,9 @@ import 'package:reiterappfrontend/screens/horses/add_horse_screen.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/chat_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/widgets/share_with_saddler_sheet.dart';
 import 'dart:io';
 
 class HorseProfileScreen extends StatefulWidget {
@@ -95,7 +97,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         body: SafeArea(
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             children: [
               Stack(
                 children: [
@@ -106,6 +109,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           height: 350,
                           fit: BoxFit.cover,
                         )
+                      : _horseService.imageUrl(currentHorse) != null
+                          ? Image.network(
+                              _horseService.imageUrl(currentHorse)!,
+                              width: double.infinity,
+                              height: 350,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                width: double.infinity,
+                                height: 350,
+                                color: AppColors.border,
+                              ),
+                            )
                       : currentHorse.assetImage != null
                           ? Image.asset(
                               currentHorse.assetImage!,
@@ -131,6 +146,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       onTap: () {
                         Navigator.of(context).pop(currentHorse);
                       },
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 72,
+                    child: _circleIconButton(
+                      icon: Icons.send_outlined,
+                      onTap: () => shareWithSaddler(
+                        context,
+                        title: '${currentHorse.name} senden an',
+                        share: (contactId) => ChatService().shareHorse(contactId, currentHorse.id),
+                      ),
                     ),
                   ),
                   Positioned(
@@ -189,8 +216,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                   ),
                 ],
               ),
-              Expanded(
-                child: Container(
+              Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     color: AppColors.surface,
@@ -199,7 +225,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       topRight: Radius.circular(24),
                     ),
                   ),
-                  child: SingleChildScrollView(
+                  child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,7 +249,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                   ? Icons.male
                                   : Icons.female,
                               size: 28,
-                              color: AppColors.textSoft,
+                              color: currentHorse.sex == 'male' ? AppColors.male : AppColors.female,
                             ),
                           ],
                         ),
@@ -334,8 +360,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                     ),
                   ),
                 ),
-              ),
             ],
+            ),
           ),
         ),
       ),
@@ -391,4 +417,4 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       ),
     );
   }
-}
+}

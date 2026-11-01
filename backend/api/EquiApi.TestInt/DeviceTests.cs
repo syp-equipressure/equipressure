@@ -47,7 +47,7 @@ public sealed class DeviceTests(WebApiTestFixture webApiFixture) : WebApiTestBas
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await ReadContentAsync<PersonDto>(response);
-        content.Should().Be(new PersonDto(owner.Id, "Max", "Mustermann", "max@reiter.at"));
+        content.Should().Be(new PersonDto(owner.Id, "Max", "Mustermann", "max@reiter.at", null));
     }
 
     [Fact]

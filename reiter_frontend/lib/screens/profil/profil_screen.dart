@@ -9,6 +9,7 @@ import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/screens/profil/personal_data_screen.dart';
 import 'package:reiterappfrontend/screens/profil/devices_screen.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
+import 'package:reiterappfrontend/services/push_service.dart';
 import 'package:reiterappfrontend/services/backend_person_context_service.dart';
 
 class ProfilScreen extends StatefulWidget {
@@ -78,6 +79,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   /// Meldet ab und startet wieder beim Login
   Future<void> _logout() async {
+    await PushService().stop();
     await AuthService().logout();
     await BackendPersonContextService.clearPersonId();
     if (!mounted) return;
@@ -103,6 +105,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
         backgroundColor: AppColors.purple300,
         appBar: AppBar(
           backgroundColor: AppColors.purple300,
+          shape: const Border(),
           actions: [
             if (_personId != null)
               IconButton(
@@ -133,6 +136,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
       drawer: const SideNav(),
       appBar: AppBar(
         backgroundColor: AppColors.purple300,
+        shape: const Border(),
         elevation: 0,
         leading: Builder(
           builder: (context) {
@@ -186,14 +190,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   _buildMenuTile(
                     context,
                     title: 'Persönliche Daten',
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                               PersonalDataScreen(userData: userData),
                         ),
                       );
+                      // Name und Profilbild können sich geändert haben
+                      if (mounted) await _loadPerson(_personId!);
                     },
                   ),
                   Divider(

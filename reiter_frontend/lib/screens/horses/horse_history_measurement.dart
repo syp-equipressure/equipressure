@@ -16,7 +16,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/chat_service.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
+import 'package:reiterappfrontend/widgets/share_with_saddler_sheet.dart';
 
 class MeasurementDetailScreen extends StatefulWidget {
   final Measurement measurement;
@@ -837,6 +839,15 @@ class _MeasurementDetailScreenState extends State<MeasurementDetailScreen> {
                 fontWeight: FontWeight.w600,
                 color: AppColors.textStrong,
               ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'An Sattler*in senden',
+            icon: const Icon(Icons.send_outlined, color: AppColors.textStrong),
+            onPressed: () => shareWithSaddler(
+              context,
+              title: 'Messung senden an',
+              share: (contactId) => ChatService().shareMeasurement(contactId, _measurement.id),
             ),
           ),
           IconButton(

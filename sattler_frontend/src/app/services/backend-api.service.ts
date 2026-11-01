@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { API_BASE_URL } from '../auth/auth.config';
+import { AuthService } from './auth.service';
 import { Customer } from '../models/customer.model';
 import { Horse } from '../models/horse.model';
 import { PressureDevice } from '../models/device.model';
@@ -61,6 +62,7 @@ export interface NewMeasurementGroup {
 @Injectable({ providedIn: 'root' })
 export class BackendApiService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly baseUrl = BACKEND_BASE_URL;
 
   getContacts(personId: string): Observable<Customer[]> {
@@ -80,6 +82,7 @@ export class BackendApiService {
   getHorses(personId: string): Observable<Horse[]> {
     return this.http.get<unknown>(`${this.baseUrl}/persons/${personId}/horses`).pipe(
       map(response => listFrom(response, 'horses').map((horse, index) => mapHorse(horse, personId, index))),
+      switchMap(horses => this.withImages(horses)),
       catchError(toApiError),
     );
   }
@@ -97,7 +100,7 @@ export class BackendApiService {
     );
   }
 
-  /** Saves all values of the horse, the image only exists in the frontend and is kept. */
+  /** Saves all values of the horse, the image is saved on its own and kept. */
   updateHorse(horse: Horse): Observable<Horse> {
     return this.getBreeds().pipe(
       switchMap(breeds => {
@@ -109,6 +112,61 @@ export class BackendApiService {
         );
       }),
     );
+  }
+
+  /** Saves the image of a horse and returns an address to show it. */
+  uploadHorseImage(horseId: string, file: File): Observable<string> {
+    return this.uploadImage(`${this.baseUrl}/horses/${horseId}/image`, file);
+  }
+
+  /** Saves the image of a person and returns an address to show it. */
+  uploadPersonImage(personId: string, file: File): Observable<string> {
+    return this.uploadImage(`${this.baseUrl}/persons/${personId}/image`, file);
+  }
+
+  /**
+   * Address of the image of a person, usable as image source, undefined without an image.
+   * Contains the access token, because images cannot send the Authorization header.
+   */
+  personImageUrl(personId: string, imageUpdatedAt?: string): string | undefined {
+    if (!imageUpdatedAt) return undefined;
+    const version = encodeURIComponent(imageUpdatedAt);
+    const token = encodeURIComponent(this.auth.accessToken);
+    return `${this.baseUrl}/persons/${personId}/image?v=${version}&access_token=${token}`;
+  }
+
+  /** Loads the image of a person and returns an address to show it. */
+  getPersonImage(personId: string): Observable<string> {
+    return this.getImage(`${this.baseUrl}/persons/${personId}/image`);
+  }
+
+  private uploadImage(url: string, file: File): Observable<string> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http.put<void>(url, form).pipe(
+      map(() => URL.createObjectURL(file)),
+      catchError(toApiError),
+    );
+  }
+
+  /** Images need the access token, so they are loaded here and not by the browser. */
+  private getImage(url: string): Observable<string> {
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      map(image => URL.createObjectURL(image)),
+      catchError(toApiError),
+    );
+  }
+
+  /** A horse whose image cannot be loaded is shown without one. */
+  private withImages(horses: Horse[]): Observable<Horse[]> {
+    if (!horses.length) return of(horses);
+    return forkJoin(horses.map(horse => {
+      if (!horse.imageUpdatedAt) return of(horse);
+      return this.getImage(`${this.baseUrl}/horses/${horse.id}/image`).pipe(
+        map(imageUrl => ({ ...horse, imageUrl })),
+        catchError(() => of(horse)),
+      );
+    }));
   }
 
   /** All breeds ordered by name, loaded once. */
@@ -399,6 +457,7 @@ function mapContact(value: unknown): Customer {
     firstName: required(value, 'firstName', 'first_name'),
     lastName: required(value, 'lastName', 'last_name'),
     email: optional(value, 'email'),
+    imageUpdatedAt: optional(value, 'imageUpdatedAt', 'image_updated_at'),
     address: address || undefined,
     heightCm: 0,
     weightKg: 0,
@@ -424,6 +483,7 @@ function mapPerson(value: unknown): Customer {
     description: optional(value, 'description'),
     birthDate: optional(value, 'dateOfBirth', 'date_of_birth'),
     createdAt: optional(value, 'createdAt', 'created_at'),
+    imageUpdatedAt: optional(value, 'imageUpdatedAt', 'image_updated_at'),
     address: addressText,
     heightCm: numeric(value, 'height', 'heightCm'),
     weightKg: numeric(value, 'weight', 'weightKg'),
@@ -508,6 +568,7 @@ function mapHorse(value: unknown, ownerId: string, index: number): Horse {
     heightCm: numeric(value, 'height', 'heightCm'),
     weightKg: numeric(value, 'weight', 'weightKg'),
     imageUrl: '',
+    imageUpdatedAt: optional(value, 'imageUpdatedAt', 'image_updated_at'),
     sex: gender === 'male' ? 'Männlich' : gender === 'female' ? 'Weiblich' : undefined,
     birthDate,
     address: addressText,

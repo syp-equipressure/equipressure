@@ -216,6 +216,7 @@ public sealed class ChatServiceTests
         _uowMock.ChatRepository.GetMessageByIdAsync(1).Returns(message);
         _uowMock.PersonRepository.GetPersonByIdAsync(EquestrianId).Returns(equestrian);
         _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns(saddler);
+        _uowMock.MeasurementRepository.GetReleasedGroupIdsAsync(SaddlerId).Returns([]);
 
         var result = await _sut.AcceptShareAsync(SaddlerId, 1);
 
@@ -224,6 +225,24 @@ public sealed class ChatServiceTests
         await _uowMock.PersonRepository.Received(1).MarkAsContactAsync(equestrian, saddler);
         _uowMock.MeasurementRepository.Received(1).AddRelease(Arg.Is<Release>(r =>
             r.PersonId == SaddlerId && r.MeasurementEligibilities.Single().MeasurementGroupId == 5));
+    }
+
+    [Fact]
+    public async Task AcceptShareAsync_MeasurementAlreadyReleased_AddsNoSecondRelease()
+    {
+        var equestrian = TestData.CreatePerson(EquestrianId, role: RoleName.Equestrian);
+        var saddler = TestData.CreatePerson(SaddlerId, "Sophie", role: RoleName.Saddler);
+        var message = CreateMessage(1, equestrian, saddler, ChatMessageType.Measurement);
+        message.MeasurementGroupId = 5;
+        _uowMock.ChatRepository.GetMessageByIdAsync(1).Returns(message);
+        _uowMock.PersonRepository.GetPersonByIdAsync(EquestrianId).Returns(equestrian);
+        _uowMock.PersonRepository.GetPersonByIdAsync(SaddlerId).Returns(saddler);
+        _uowMock.MeasurementRepository.GetReleasedGroupIdsAsync(SaddlerId).Returns([5]);
+
+        var result = await _sut.AcceptShareAsync(SaddlerId, 1);
+
+        result.Value.Should().BeOfType<Success<ChatMessage>>();
+        _uowMock.MeasurementRepository.DidNotReceive().AddRelease(Arg.Any<Release>());
     }
 
     [Fact]

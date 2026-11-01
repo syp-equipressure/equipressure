@@ -64,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
       widget.onLoggedIn(state);
     } on WrongCredentialsException {
       _showError('E-Mail oder Passwort ist falsch.');
+    } on AccountNotReadyException {
+      _showError('Dein Konto ist noch nicht bestätigt. Bitte schau in dein E-Mail-Postfach.');
     } on FlutterAppAuthUserCancelledException {
       // Seite im Browser geschlossen
     } on PlatformException {

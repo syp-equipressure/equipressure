@@ -7,8 +7,9 @@ import { Sattler, sattlerFullName } from '../../models/sattler.model';
 import { BackendApiService } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { addressError, composeAddress, splitAddress } from '../../utils/address';
+import { imageFileError } from '../../utils/image';
 
-type EditableField = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'website' | 'address';
+type EditableField = 'firstName' | 'lastName' | 'email' | 'website' | 'address';
 
 @Component({
   selector: 'app-profile-page',
@@ -44,7 +45,6 @@ export class ProfilePage {
   readonly firstName = signal('');
   readonly lastName = signal('');
   readonly email = signal('');
-  readonly phoneNumber = signal('');
   readonly companyName = signal('');
   readonly street = signal('');
   readonly postalCode = signal('');
@@ -81,6 +81,7 @@ export class ProfilePage {
             companyName: undefined,
             memberSince: formatMemberSince(customer.createdAt),
           });
+          if (customer.imageUpdatedAt) this.loadAvatar(personId);
           this.backendProfileLoading.set(false);
         },
         error: error => {
@@ -99,7 +100,6 @@ export class ProfilePage {
     this.firstName.set(s.firstName);
     this.lastName.set(s.lastName);
     this.email.set(s.email);
-    this.phoneNumber.set(s.phoneNumber ?? '');
     this.companyName.set(s.companyName ?? '');
     const address = splitAddress(s.address);
     this.street.set(address.street);
@@ -123,7 +123,6 @@ export class ProfilePage {
       firstName: this.firstName().trim(),
       lastName: this.lastName().trim(),
       email: this.email().trim(),
-      phoneNumber: this.phoneNumber().trim() || undefined,
       companyName: this.companyName().trim() || undefined,
       address: this.address().trim() || undefined,
       website: normalizeWebsite(this.website()) || undefined,
@@ -192,15 +191,6 @@ export class ProfilePage {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = 'Bitte eine gültige E-Mail-Adresse eingeben.';
     }
-    const phoneNumber = this.phoneNumber().trim();
-    if (
-      phoneNumber &&
-      (!/^\+?[0-9\s()./-]+$/.test(phoneNumber) ||
-        phoneNumber.replace(/\D/g, '').length < 7 ||
-        phoneNumber.replace(/\D/g, '').length > 15)
-    ) {
-      e.phoneNumber = 'Bitte eine gültige Telefonnummer eingeben.';
-    }
     const website = this.website().trim();
     if (website && !isValidWebsite(website)) {
       e.website = 'Bitte eine gültige Website eingeben.';
@@ -221,12 +211,20 @@ export class ProfilePage {
     this.avatarError.set('');
 
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      this.avatarError.set('Bitte eine Bilddatei auswählen.');
+    const fileError = imageFileError(file);
+    if (fileError) {
+      this.avatarError.set(fileError);
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      this.avatarError.set('Das Bild darf höchstens 5 MB groß sein.');
+
+    const personId = this.backendPersonId();
+    if (personId) {
+      this.api.uploadPersonImage(personId, file).subscribe({
+        next: avatarUrl => this.data.updateSattler({ avatarUrl }),
+        error: error => this.avatarError.set(
+          error instanceof Error ? error.message : 'Das Bild konnte nicht gespeichert werden.',
+        ),
+      });
       return;
     }
 
@@ -240,6 +238,13 @@ export class ProfilePage {
     };
     reader.onerror = () => this.avatarError.set('Das Bild konnte nicht geladen werden.');
     reader.readAsDataURL(file);
+  }
+
+  private loadAvatar(personId: string): void {
+    this.api.getPersonImage(personId).subscribe({
+      next: avatarUrl => this.data.updateSattler({ avatarUrl }),
+      error: () => this.avatarError.set('Das Bild konnte nicht geladen werden.'),
+    });
   }
 }
 

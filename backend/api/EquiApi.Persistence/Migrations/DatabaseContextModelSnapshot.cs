@@ -126,6 +126,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<Instant?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Instant?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Instant?>("DeliveredAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -152,6 +155,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("RecipientId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("ReplyToId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("SenderId")
                         .HasColumnType("integer");
 
@@ -170,6 +176,8 @@ namespace EquiApi.Persistence.Migrations
                     b.HasIndex("HorseId");
 
                     b.HasIndex("MeasurementGroupId");
+
+                    b.HasIndex("ReplyToId");
 
                     b.HasIndex("RecipientId", "ReadAt");
 
@@ -240,6 +248,13 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<decimal>("Height")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("ImageContentType")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Instant?>("ImageUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -269,6 +284,20 @@ namespace EquiApi.Persistence.Migrations
                     b.HasIndex("BreedId");
 
                     b.ToTable("HorseBreed", "EquiPressure");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.HorseImage", b =>
+                {
+                    b.Property<int>("HorseId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("HorseId");
+
+                    b.ToTable("HorseImage", "EquiPressure");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Measurement", b =>
@@ -442,6 +471,13 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<decimal>("Height")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("ImageContentType")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Instant?>("ImageUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -490,6 +526,20 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("PersonHorse", "EquiPressure");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.PersonImage", b =>
+                {
+                    b.Property<int>("PersonId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("PersonId");
+
+                    b.ToTable("PersonImage", "EquiPressure");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.PersonRelationship", b =>
                 {
                     b.Property<int>("EquestrianId")
@@ -524,6 +574,35 @@ namespace EquiApi.Persistence.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("PersonRoleAssignment", "EquiPressure");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.PushToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Instant>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("PushToken", "EquiPressure");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Release", b =>
@@ -620,6 +699,11 @@ namespace EquiApi.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EquiApi.Persistence.Model.ChatMessage", "ReplyTo")
+                        .WithMany()
+                        .HasForeignKey("ReplyToId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("EquiApi.Persistence.Model.Person", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
@@ -631,6 +715,8 @@ namespace EquiApi.Persistence.Migrations
                     b.Navigation("MeasurementGroup");
 
                     b.Navigation("Recipient");
+
+                    b.Navigation("ReplyTo");
 
                     b.Navigation("Sender");
                 });
@@ -680,6 +766,17 @@ namespace EquiApi.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Breed");
+
+                    b.Navigation("Horse");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.HorseImage", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.Horse", "Horse")
+                        .WithOne("Image")
+                        .HasForeignKey("EquiApi.Persistence.Model.HorseImage", "HorseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Horse");
                 });
@@ -809,6 +906,17 @@ namespace EquiApi.Persistence.Migrations
                     b.Navigation("Person");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.PersonImage", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.Person", "Person")
+                        .WithOne("Image")
+                        .HasForeignKey("EquiApi.Persistence.Model.PersonImage", "PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.PersonRelationship", b =>
                 {
                     b.HasOne("EquiApi.Persistence.Model.Person", "Equestrian")
@@ -845,6 +953,17 @@ namespace EquiApi.Persistence.Migrations
                     b.Navigation("Person");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.PushToken", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Release", b =>
@@ -908,6 +1027,8 @@ namespace EquiApi.Persistence.Migrations
                 {
                     b.Navigation("HorseBreeds");
 
+                    b.Navigation("Image");
+
                     b.Navigation("MeasurementGroups");
 
                     b.Navigation("Persons");
@@ -937,6 +1058,8 @@ namespace EquiApi.Persistence.Migrations
             modelBuilder.Entity("EquiApi.Persistence.Model.Person", b =>
                 {
                     b.Navigation("Horses");
+
+                    b.Navigation("Image");
 
                     b.Navigation("MeasurementGroups");
 

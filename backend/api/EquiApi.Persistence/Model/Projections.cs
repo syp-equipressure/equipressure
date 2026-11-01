@@ -16,7 +16,8 @@ public sealed record SaddlerData(
     string CityName,
     string PLZ,
     string? WebsiteLink,
-    string? Description);
+    string? Description,
+    Instant? ImageUpdatedAt);
 
 /// <summary>
 ///     A contact of a person: a saddler if the person is an equestrian, an equestrian if the person is a saddler.
@@ -30,7 +31,8 @@ public sealed record ContactData(
     string CityName,
     string PLZ,
     string? WebsiteLink,
-    string? Description);
+    string? Description,
+    Instant? ImageUpdatedAt);
 
 /// <summary>
 ///     A city that is used by at least one address

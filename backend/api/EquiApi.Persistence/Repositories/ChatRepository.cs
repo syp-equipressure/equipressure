@@ -50,6 +50,21 @@ public interface IChatRepository
     public ValueTask<ChatFile?> GetFileAsync(int messageId);
 
     /// <summary>
+    ///     Removes the content of the file of a message
+    /// </summary>
+    /// <param name="messageId">The id of the message</param>
+    public ValueTask RemoveFileAsync(int messageId);
+
+    /// <summary>
+    ///     Gets all messages in which a person shared a horse with another person
+    /// </summary>
+    /// <param name="senderId">The id of the sender</param>
+    /// <param name="recipientId">The id of the recipient</param>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The tracked messages</returns>
+    public ValueTask<IReadOnlyCollection<ChatMessage>> GetSharesOfHorseAsync(int senderId, int recipientId, int horseId);
+
+    /// <summary>
     ///     Adds a new message, a file of the message is added as well
     /// </summary>
     /// <param name="message">The message to add</param>
@@ -60,6 +75,7 @@ internal sealed class ChatRepository(DbSet<ChatMessage> messageSet, DbSet<ChatFi
 {
     private IQueryable<ChatMessage> MessagesWithDetails =>
         messageSet.Include(m => m.Sender)
+                  .Include(m => m.ReplyTo)
                   .Include(m => m.Recipient)
                   .Include(m => m.Horse)
                   .Include(m => m.MeasurementGroup)
@@ -91,8 +107,16 @@ internal sealed class ChatRepository(DbSet<ChatMessage> messageSet, DbSet<ChatFi
         await messageSet.Where(m => m.RecipientId == recipientId && m.DeliveredAt == null)
                         .ToListAsync();
 
+    public async ValueTask<IReadOnlyCollection<ChatMessage>> GetSharesOfHorseAsync(
+        int senderId, int recipientId, int horseId) =>
+        await messageSet.Where(m => m.SenderId == senderId && m.RecipientId == recipientId && m.HorseId == horseId)
+                        .ToListAsync();
+
     public async ValueTask<ChatFile?> GetFileAsync(int messageId) =>
         await fileSet.AsNoTracking().FirstOrDefaultAsync(f => f.MessageId == messageId);
+
+    public async ValueTask RemoveFileAsync(int messageId) =>
+        await fileSet.Where(f => f.MessageId == messageId).ExecuteDeleteAsync();
 
     public void AddMessage(ChatMessage message)
     {

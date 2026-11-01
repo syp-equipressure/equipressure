@@ -153,12 +153,21 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<HorseListResponse>> GetHorses([FromRoute][ValidId] int id)
     {
-        if (!await HasAccessAsync((access, me) => access.CanManageHorsesOfPersonAsync(me, id)))
+        // stays empty for admins, they see everything
+        int? viewerId = null;
+        if (!await HasAccessAsync((access, me) =>
+        {
+            viewerId = me;
+
+            return access.CanManageHorsesOfPersonAsync(me, id);
+        }))
         {
             return AccessDenied();
         }
 
-        var result = await horseService.GetOwnedHorsesOfPersonAsync(id);
+        var result = viewerId is { } saddlerId && saddlerId != id
+            ? await horseService.GetHorsesVisibleToSaddlerAsync(id, saddlerId)
+            : await horseService.GetOwnedHorsesOfPersonAsync(id);
 
         return result.Match<ActionResult<HorseListResponse>>(
             success => Ok(HorseListResponse.FromHorses(success.Value)),
@@ -376,5 +385,129 @@ public sealed class PersonController(
         ModelState.AddModelError(propertyName, ValidationPatterns.StreetRequiredForSaddlerMessage);
 
         return ValidationProblem();
+    }
+
+    /// <summary>
+    ///     Gets the image of a person.
+    ///     The access token may be sent as query parameter <see cref="Setup.AccessTokenQueryKey" />.
+    /// </summary>
+    [HttpGet("{id:int}/image")]
+    [ProducesResponseType<FileContentResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> GetPersonImage([FromRoute][ValidId] int id)
+    {
+        if (!await HasAccessAsync((access, me) => access.CanViewPersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
+        var result = await personService.GetPersonImageAsync(id);
+
+        return result.Match<IActionResult>(
+            success => ImageFile(success.Value),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Sets the image of a person as multipart form data, at most 5 MB
+    /// </summary>
+    [HttpPut("{id:int}/image")]
+    // a bit more than the image itself, for the multipart boundaries
+    [RequestSizeLimit(UploadImageRequest.MaxFileSize + 64 * 1024)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> SetPersonImage([FromRoute][ValidId] int id,
+                                                         [FromForm] UploadImageRequest request)
+    {
+        if (!IsValid<UploadImageRequest.Validator, UploadImageRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await HasAccessAsync((access, me) => access.CanManagePersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
+        var image = await request.ToDataAsync(HttpContext.RequestAborted);
+        var result = await personService.SetPersonImageAsync(id, image);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Removes the image of a person
+    /// </summary>
+    [HttpDelete("{id:int}/image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> RemovePersonImage([FromRoute][ValidId] int id)
+    {
+        if (!await HasAccessAsync((access, me) => access.CanManagePersonAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
+        var result = await personService.RemovePersonImageAsync(id);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Registers a device of a person for push notifications
+    /// </summary>
+    [HttpPut("{id:int}/push-tokens")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> RegisterPushToken([FromRoute][ValidId] int id,
+                                                            [FromBody] PushTokenRequest request)
+    {
+        if (!IsValid<PushTokenRequest.Validator, PushTokenRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
+        var result = await personService.RegisterPushTokenAsync(id, request.Token);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Removes a device of a person, e.g. after the logout
+    /// </summary>
+    [HttpDelete("{id:int}/push-tokens")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<IActionResult> RemovePushToken([FromRoute][ValidId] int id,
+                                                          [FromBody] PushTokenRequest request)
+    {
+        if (!IsValid<PushTokenRequest.Validator, PushTokenRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
+        await personService.RemovePushTokenAsync(id, request.Token);
+
+        return NoContent();
     }
 }

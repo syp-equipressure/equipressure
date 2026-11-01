@@ -23,6 +23,8 @@ export class OnboardingPage implements OnInit {
   readonly step = signal<Step>('profile');
   readonly saving = signal(false);
   readonly error = signal('');
+  /** Fehlende Felder werden erst nach dem ersten Absenden markiert */
+  readonly submitted = signal(false);
   readonly email = this.auth.email;
 
   readonly profile = {
@@ -44,11 +46,17 @@ export class OnboardingPage implements OnInit {
     }
   }
 
+  isMissing(field: keyof OnboardingPage['profile']): boolean {
+    const value = this.profile[field];
+    return this.submitted() && !(typeof value === 'string' ? value.trim() : value);
+  }
+
   async saveProfile(): Promise<void> {
+    this.submitted.set(true);
     const p = this.profile;
     if (!p.firstName.trim() || !p.lastName.trim() || !p.dateOfBirth || !p.height || !p.weight ||
       !p.street.trim() || !p.plz.trim() || !p.city.trim()) {
-      this.error.set('Bitte fülle alle Felder aus.');
+      this.error.set('Bitte fülle die markierten Felder aus.');
       return;
     }
 

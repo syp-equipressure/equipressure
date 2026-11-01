@@ -2,6 +2,7 @@
 using EquiApi.Dtos;
 using EquiApi.Persistence.Model;
 using EquiApi.TestInt.Util;
+using Microsoft.EntityFrameworkCore;
 
 namespace EquiApi.TestInt;
 
@@ -761,5 +762,139 @@ public sealed class PersonTests(WebApiTestFixture webApiFixture) : WebApiTestBas
                                                    TestCancellationToken);
 
         ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask SetPersonImage_ValidImage_CanBeDownloaded()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        byte[] image = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
+
+        var response = await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm(image, "foto.png"),
+                                                TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+        download.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+        download.Headers.GetValues("X-Content-Type-Options").Should().ContainSingle("nosniff");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+    }
+
+    [Fact]
+    public async ValueTask SetPersonImage_ExistingImage_ReplacesImage()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm([1, 2, 3], "alt.png"), TestCancellationToken);
+        byte[] image = [4, 5, 6];
+
+        var response = await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm(image, "neu.webp"), TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+        download.Content.Headers.ContentType!.MediaType.Should().Be("image/webp");
+        (await download.Content.ReadAsByteArrayAsync(TestCancellationToken)).Should().Equal(image);
+    }
+
+    [Fact]
+    public async ValueTask SetPersonImage_Svg_ReturnsBadRequest()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+
+        var response = await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm([1, 2, 3], "bild.svg"),
+                                                TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async ValueTask GetPersonImage_NoImage_ReturnsNotFound()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+
+        var response = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+
+        ShouldBeProblem(response, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask RemovePersonImage_ExistingImage_RemovesImage()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        await ApiClient.PutAsync($"api/persons/{person.Id}/image", CreateImageForm([1, 2, 3], "foto.png"), TestCancellationToken);
+
+        var response = await ApiClient.DeleteAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var download = await ApiClient.GetAsync($"api/persons/{person.Id}/image", TestCancellationToken);
+        ShouldBeProblem(download, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async ValueTask GetContacts_ContactWithImage_ReturnsImageTimestamp()
+    {
+        var equestrian = TestData.CreatePerson("Anna", "Reiter");
+        var contact = TestData.CreatePerson("Sam", "Sattler");
+        await SeedAsync(TestData.CreateRelationship(equestrian, contact, isContact: true));
+        await ApiClient.PutAsync($"api/persons/{contact.Id}/image", CreateImageForm([1, 2, 3], "foto.png"),
+                                 TestCancellationToken);
+
+        var response = await ApiClient.GetAsync($"api/persons/{equestrian.Id}/contacts", TestCancellationToken);
+
+        var content = await ReadContentAsync<ContactListResponse>(response);
+        content.Contacts.Should().ContainSingle().Which.ImageUpdatedAt.Should().Be(TestClock.GetCurrentInstant());
+    }
+
+    [Fact]
+    public async ValueTask RegisterPushToken_DeviceChangesPerson_MovesDevice()
+    {
+        var first = TestData.CreatePerson("Anna", "Reiter");
+        var second = TestData.CreatePerson("Ben", "Reiter");
+        await SeedAsync(first, second);
+        var request = new PushTokenRequest("device-token");
+
+        await ApiClient.PutAsJsonAsync($"api/persons/{first.Id}/push-tokens", request, JsonOptions, TestCancellationToken);
+        var response = await ApiClient.PutAsJsonAsync($"api/persons/{second.Id}/push-tokens", request, JsonOptions,
+                                                      TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            var token = await context.PushTokens.SingleAsync(TestCancellationToken);
+            token.PersonId.Should().Be(second.Id);
+        });
+    }
+
+    [Fact]
+    public async ValueTask RemovePushToken_RegisteredDevice_RemovesDevice()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        var request = new PushTokenRequest("device-token");
+        await ApiClient.PutAsJsonAsync($"api/persons/{person.Id}/push-tokens", request, JsonOptions, TestCancellationToken);
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"api/persons/{person.Id}/push-tokens");
+        message.Content = JsonContent.Create(request, options: JsonOptions);
+
+        var response = await ApiClient.SendAsync(message, TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            (await context.PushTokens.CountAsync(TestCancellationToken)).Should().Be(0);
+        });
+    }
+
+    private static MultipartFormDataContent CreateImageForm(byte[] image, string fileName)
+    {
+        var form = new MultipartFormDataContent();
+        // no media type, it is derived from the file name
+        form.Add(new ByteArrayContent(image), "file", fileName);
+
+        return form;
     }
 }

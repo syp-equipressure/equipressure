@@ -40,10 +40,10 @@ services:
       - edge
       - db
 
-  # Startet erst mit "--profile api", sobald das Image gebaut ist.
+  # Der Quellcode liegt in ./src und wird beim Start auf dem Server gebaut.
   api:
-    profiles: ["api"]
-    image: ${API_IMAGE}
+    image: equipressure-api:local
+    build: ./src/backend/api
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -52,6 +52,10 @@ services:
       Keycloak__Audience: equi-api
       Keycloak__AdminClientSecret: ${EQUI_API_ADMIN_SECRET}
       General__ClientOrigin: https://${APP_DOMAIN}
+      Firebase__CredentialFile: /run/secrets/firebase.json
+    volumes:
+      # liegt nur auf dem Server, nie in Git
+      - ./firebase-service-account.json:/run/secrets/firebase.json:ro
     # Das Image prüft /health mit curl, beides gibt es dort nicht.
     healthcheck:
       disable: true
@@ -62,6 +66,17 @@ services:
     networks:
       - edge
       - db
+
+  sattler:
+    image: equipressure-sattler:local
+    build: ./src/sattler_frontend
+    restart: unless-stopped
+    environment:
+      API_URL: https://${API_DOMAIN}/api
+      KEYCLOAK_ISSUER: https://${AUTH_DOMAIN}/realms/${KC_REALM}
+    mem_limit: 128m
+    networks:
+      - edge
 
   postgres:
     image: postgres:17-alpine

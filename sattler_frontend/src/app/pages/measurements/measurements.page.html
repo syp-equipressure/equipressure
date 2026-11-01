@@ -148,10 +148,6 @@
           <header class="detail-header">
             <div class="title-line">
               <h2>Messung vom {{ m.date }}</h2>
-              <button type="button" class="icon-btn ghost" aria-label="Notizen bearbeiten" title="Notizen bearbeiten"
-                (click)="editMeasurement(m)">
-                <span class="material-icons">edit</span>
-              </button>
             </div>
             <div class="header-actions">
               @if (shareFeedback()) {
@@ -167,6 +163,13 @@
                 <span class="material-icons">table_view</span>
                 CSV
               </button>
+              @if (canSendToCustomer()) {
+                <button type="button" class="pill-btn light" title="Messung im Chat an den Kunden senden"
+                  [disabled]="sendingToCustomer()" (click)="sendToCustomer(m)">
+                  <span class="material-icons">send</span>
+                  An Kunden senden
+                </button>
+              }
               <button type="button" class="round-btn" aria-label="Teilen" title="Teilen" (click)="shareMeasurement(m)">
                 <span class="material-icons">ios_share</span>
               </button>

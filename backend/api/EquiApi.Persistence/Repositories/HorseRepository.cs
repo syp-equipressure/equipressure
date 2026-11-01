@@ -13,6 +13,20 @@ public interface IHorseRepository
     public ValueTask<Horse?> GetHorseByIdAsync(int horseId);
 
     /// <summary>
+    ///     Gets a horse including the content of its image, to change the image
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The tracked horse or null if it does not exist</returns>
+    public ValueTask<Horse?> GetHorseWithImageAsync(int horseId);
+
+    /// <summary>
+    ///     Gets the image of a horse including the horse
+    /// </summary>
+    /// <param name="horseId">The id of the horse</param>
+    /// <returns>The image or null if the horse has no image</returns>
+    public ValueTask<HorseImage?> GetHorseImageAsync(int horseId);
+
+    /// <summary>
     ///     Checks if a horse exists
     /// </summary>
     /// <param name="horseId">The id of the horse</param>
@@ -25,6 +39,15 @@ public interface IHorseRepository
     /// <param name="personId">The id of the owner</param>
     /// <returns>The horses owned by the person</returns>
     public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesOfPersonAsync(int personId);
+
+    /// <summary>
+    ///     Gets the horses of a customer a saddler may see, including their breeds: all horses of a customer without
+    ///     an account, otherwise only the ones the customer sent them and they accepted
+    /// </summary>
+    /// <param name="ownerId">The id of the owner</param>
+    /// <param name="saddlerId">The id of the saddler</param>
+    /// <returns>The visible horses</returns>
+    public ValueTask<IReadOnlyCollection<Horse>> GetHorsesVisibleToSaddlerAsync(int ownerId, int saddlerId);
 
     /// <summary>
     ///     Gets all saddles of a horse including their category
@@ -112,14 +135,24 @@ public interface IHorseRepository
     public void AddPersonToHorse(PersonHorse personHorse);
 }
 
-internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> personHorseSet, DbSet<Breed> breedSet)
-    : IHorseRepository
+internal sealed class HorseRepository(
+    DbSet<Horse> horseSet,
+    DbSet<PersonHorse> personHorseSet,
+    DbSet<Breed> breedSet,
+    DbSet<HorseImage> imageSet,
+    DbSet<ChatMessage> messageSet) : IHorseRepository
 {
     public async ValueTask<Horse?> GetHorseByIdAsync(int horseId) =>
         await horseSet.Include(h => h.Address)
                       .Include(h => h.HorseBreeds)
                       .ThenInclude(hb => hb.Breed)
                       .FirstOrDefaultAsync(h => h.Id == horseId);
+
+    public async ValueTask<Horse?> GetHorseWithImageAsync(int horseId) =>
+        await horseSet.Include(h => h.Image).FirstOrDefaultAsync(h => h.Id == horseId);
+
+    public async ValueTask<HorseImage?> GetHorseImageAsync(int horseId) =>
+        await imageSet.AsNoTracking().Include(i => i.Horse).FirstOrDefaultAsync(i => i.HorseId == horseId);
 
     public async ValueTask<bool> HorseExistsAsync(int horseId) =>
         await horseSet.AnyAsync(h => h.Id == horseId);
@@ -130,6 +163,21 @@ internal sealed class HorseRepository(DbSet<Horse> horseSet, DbSet<PersonHorse> 
                       .Include(h => h.HorseBreeds)
                       .ThenInclude(hb => hb.Breed)
                       .Where(h => h.Persons.Any(ph => ph.PersonId == personId && ph.IsOwner))
+                      .OrderBy(h => h.Name)
+                      .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<Horse>> GetHorsesVisibleToSaddlerAsync(int ownerId, int saddlerId) =>
+        await horseSet.AsNoTracking()
+                      .Include(h => h.Address)
+                      .Include(h => h.HorseBreeds)
+                      .ThenInclude(hb => hb.Breed)
+                      .Where(h => h.Persons.Any(ph => ph.PersonId == ownerId
+                                                      && ph.IsOwner
+                                                      && (ph.Person.ExternalId == null
+                                                          || messageSet.Any(m => m.SenderId == ownerId
+                                                                                 && m.RecipientId == saddlerId
+                                                                                 && m.HorseId == h.Id
+                                                                                 && m.AcceptedAt != null))))
                       .OrderBy(h => h.Name)
                       .ToListAsync();
 

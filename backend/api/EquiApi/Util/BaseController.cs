@@ -65,6 +65,16 @@ public abstract class BaseController : ControllerBase
         HasAccessAsync((_, me) => ValueTask.FromResult(me == personId));
 
     /// <summary>
+    ///     Response with an image, the media type comes from the client so browsers must not guess another one
+    /// </summary>
+    protected FileContentResult ImageFile(ImageData image)
+    {
+        Response.Headers.XContentTypeOptions = "nosniff";
+
+        return File(image.Data, image.ContentType);
+    }
+
+    /// <summary>
     ///     Response if the logged-in user may not access the requested data
     /// </summary>
     protected ObjectResult AccessDenied() =>

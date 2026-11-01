@@ -2,7 +2,6 @@
 using EquiApi.Dtos;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
 
 namespace EquiApi.Controllers;
 
@@ -10,22 +9,9 @@ namespace EquiApi.Controllers;
 public sealed class ChatController(
     IChatService chatService,
     IPersonService personService,
-    IChatSocketManager socketManager) : BaseController
+    IChatSocketManager socketManager,
+    IChatNotifier chatNotifier) : BaseController
 {
-    private const string UnknownContentType = "application/octet-stream";
-    private static readonly FileExtensionContentTypeProvider contentTypes = new();
-
-    // some clients (e.g. the app) do not send a media type, then it is derived from the file extension
-    private static string ContentTypeOf(IFormFile file)
-    {
-        if (!string.IsNullOrWhiteSpace(file.ContentType) && file.ContentType != UnknownContentType)
-        {
-            return file.ContentType;
-        }
-
-        return contentTypes.TryGetContentType(file.FileName, out string? contentType) ? contentType : UnknownContentType;
-    }
-
     /// <summary>
     ///     Gets all conversations of a person, the newest first
     /// </summary>
@@ -96,6 +82,7 @@ public sealed class ChatController(
         if (result.TryPickT0(out var success, out var failure))
         {
             await socketManager.SendAsync([personId, contactId], ChatEventDto.NewMessage(success.Value));
+            await chatNotifier.NotifyNewMessageAsync(success.Value);
 
             return CreatedAtAction(nameof(GetMessages), new { personId, contactId },
                                    ChatMessageDto.FromMessage(success.Value));
@@ -133,12 +120,13 @@ public sealed class ChatController(
 
         using var content = new MemoryStream();
         await file.CopyToAsync(content, HttpContext.RequestAborted);
-        var data = new ChatFileData(file.FileName, ContentTypeOf(file), content.ToArray());
+        var data = new ChatFileData(file.FileName, file.ResolvedContentType, content.ToArray());
 
         var result = await chatService.SendFileAsync(personId, contactId, request.Text, data);
         if (result.TryPickT0(out var success, out var failure))
         {
             await socketManager.SendAsync([personId, contactId], ChatEventDto.NewMessage(success.Value));
+            await chatNotifier.NotifyNewMessageAsync(success.Value);
 
             return CreatedAtAction(nameof(GetFile), new { personId, messageId = success.Value.Id },
                                    ChatMessageDto.FromMessage(success.Value));
@@ -170,6 +158,37 @@ public sealed class ChatController(
         return result.Match<IActionResult>(
             success => File(success.Value.Data, success.Value.ContentType, success.Value.FileName),
             _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Deletes a message for both persons, only the sender can do this. An accepted horse or measurement stays.
+    ///     Both persons are notified over the chat websocket.
+    /// </summary>
+    [HttpDelete("messages/{messageId:int}")]
+    [ProducesResponseType<ChatMessageDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<ChatMessageDto>> DeleteMessage([FromRoute][ValidId] int personId,
+                                                                       [FromRoute][ValidId] int messageId)
+    {
+        if (!await IsCurrentPersonAsync(personId))
+        {
+            return AccessDenied();
+        }
+
+        var result = await chatService.DeleteMessageAsync(personId, messageId);
+        if (result.TryPickT0(out var success, out var failure))
+        {
+            var message = success.Value;
+            await socketManager.SendAsync([message.SenderId, message.RecipientId], ChatEventDto.Deleted(message));
+
+            return Ok(ChatMessageDto.FromMessage(message));
+        }
+
+        return failure.Match<ActionResult<ChatMessageDto>>(
+            _ => NotFound(),
+            invalid => Problem(statusCode: StatusCodes.Status409Conflict, detail: invalid.Reason));
     }
 
     /// <summary>

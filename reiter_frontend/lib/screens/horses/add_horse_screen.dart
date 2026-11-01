@@ -1,4 +1,5 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:reiterappfrontend/services/horse_service.dart';
 import 'package:reiterappfrontend/widgets/info_button.dart';
 
 class AddHorseScreen extends StatefulWidget {
-  final void Function(
+  final Future<void> Function(
     String name,
     File? image,
     String age,
@@ -55,6 +56,13 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   File? selectedImage;
   String selectedSex = 'female';
+  /// Fehlende Felder werden erst nach dem ersten Speichern markiert
+  bool _showErrors = false;
+
+  /// Geprüft wird erst, wenn nicht mehr getippt wird
+  Timer? _typingTimer;
+  String? _breedError;
+  bool _saving = false;
   String? dateErrorMessage;
   String? heightWeightErrorMessage; // ← NEU: Für Größe/Gewicht Validierung
   bool _isPickingImage = false;
@@ -91,6 +99,10 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
       stableHouseNumberController.text = horse.stableHouseNumber ?? '';
     }
     _loadBreeds();
+    breedController.addListener(() => _afterTyping(_checkBreed));
+    for (final controller in [nameController, breedController, stableCityController, stablePostalCodeController]) {
+      controller.addListener(_refreshErrors);
+    }
   }
 
   /// Die Rassen aus dem Backend für die Vorschläge beim Tippen, leer solange sie nicht geladen sind
@@ -127,8 +139,34 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
     _breedFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Das im Backend gespeicherte Bild des Pferdes, das bearbeitet wird
+  String? get _savedImageUrl =>
+      widget.horse == null ? null : HorseService().imageUrl(widget.horse!);
+
+  String? _missing(TextEditingController controller) =>
+      _showErrors && controller.text.trim().isEmpty ? 'Pflichtfeld' : null;
+
+  void _afterTyping(VoidCallback check) {
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(milliseconds: 700), () {
+      if (mounted) setState(check);
+    });
+  }
+
+  void _checkBreed() {
+    final known = _breeds.map((breed) => breed.name.toLowerCase()).toSet();
+    final names = breedController.text.split(',').map((name) => name.trim().toLowerCase());
+    final unknown = names.any((name) => name.isNotEmpty && !known.contains(name));
+    _breedError = known.isNotEmpty && unknown ? 'Bitte nur Rassen aus der Liste verwenden' : null;
+  }
+
+  void _refreshErrors() {
+    if (_showErrors) setState(() {});
   }
 
   Future<void> _pickImage() async {
@@ -141,7 +179,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 600,
+        maxWidth: 1600,
+        imageQuality: 85,
       );
       if (image != null) {
         setState(() {
@@ -392,7 +431,17 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     borderRadius: BorderRadius.circular(12),
                     color: AppColors.bgPanel,
                   ),
-                  child: selectedImage == null
+                  child: selectedImage == null && _savedImageUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            _savedImageUrl!,
+                            width: double.infinity,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : selectedImage == null
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -423,7 +472,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
 
             // Name
             const Text(
-              'Name',
+              'Name *',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -433,6 +482,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
+                errorText: _missing(nameController),
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
@@ -465,7 +515,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Rasse',
+                      'Rasse *',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -503,6 +553,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
+                          errorText: _breedError ?? _missing(controller),
                           hintText: 'z. B. Haflinger',
                           filled: true,
                           fillColor: AppColors.surface,
@@ -559,7 +610,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Geburtsdatum',
+                  'Geburtsdatum *',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -581,7 +632,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           if (value.length == 2) {
                             FocusScope.of(context).nextFocus();
                           }
-                          _validateDate();
+                          _afterTyping(_validateDate);
                         },
                         decoration: InputDecoration(
                           hintText: 'DD',
@@ -631,7 +682,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           if (value.length == 2) {
                             FocusScope.of(context).nextFocus();
                           }
-                          _validateDate();
+                          _afterTyping(_validateDate);
                         },
                         decoration: InputDecoration(
                           hintText: 'MM',
@@ -679,7 +730,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         onChanged: (value) {
-                          _validateDate();
+                          _afterTyping(_validateDate);
                           setState(() {});
                         },
                         decoration: InputDecoration(
@@ -746,7 +797,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Stockmaß',
+                            'Stockmaß *',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -762,7 +813,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
-                                  onChanged: (value) => _validateHeightWeight(), // ← NEU
+                                  onChanged: (value) => _afterTyping(_validateHeightWeight), // ← NEU
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: AppColors.surface,
@@ -819,7 +870,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Gewicht',
+                            'Gewicht *',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -835,7 +886,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
-                                  onChanged: (value) => _validateHeightWeight(), // ← NEU
+                                  onChanged: (value) => _afterTyping(_validateHeightWeight), // ← NEU
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: AppColors.surface,
@@ -932,7 +983,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Ort',
+                        'Ort *',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -942,6 +993,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                       TextField(
                         controller: stableCityController,
                         decoration: InputDecoration(
+                          errorText: _missing(stableCityController),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -971,7 +1023,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'PLZ',
+                        'PLZ *',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -985,6 +1037,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         decoration: InputDecoration(
+                          errorText: _missing(stablePostalCodeController),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -1112,7 +1165,25 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {
+                onPressed: _saving ? null : () async {
+                  setState(() {
+                    _showErrors = true;
+                    if (dayController.text.isEmpty || monthController.text.isEmpty || yearController.text.isEmpty) {
+                      dateErrorMessage = 'Bitte Geburtsdatum ausfüllen';
+                    }
+                    if (heightController.text.trim().isEmpty || weightController.text.trim().isEmpty) {
+                      heightWeightErrorMessage = 'Bitte Stockmaß und Gewicht ausfüllen';
+                    }
+                  });
+
+                  _checkBreed();
+                  if (_breedError != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(_breedError!), duration: const Duration(seconds: 2)),
+                    );
+                    return;
+                  }
+
                   if (nameController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -1197,7 +1268,8 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                   String height = heightController.text;
                   String weight = weightController.text;
                   
-                  widget.onSave(
+                  setState(() => _saving = true);
+                  await widget.onSave(
                     nameController.text,
                     selectedImage,
                     age,
@@ -1211,11 +1283,19 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
                     stableStreetController.text,
                     stableHouseNumberController.text,
                   );
+                  if (mounted) setState(() => _saving = false);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.save_outlined, size: 18, color: AppColors.text),
+                    if (_saving)
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Icon(Icons.save_outlined, size: 18, color: AppColors.text),
                     const SizedBox(width: 8),
                     const Text(
                       'Speichern',
@@ -1269,7 +1349,7 @@ class _AddHorseScreenState extends State<AddHorseScreen> {
         ),
         child: Icon(
           icon,
-          color: AppColors.text,
+          color: sex == 'male' ? AppColors.male : AppColors.female,
           size: 20,
         ),
       ),

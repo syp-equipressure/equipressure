@@ -29,7 +29,13 @@
             [attr.aria-pressed]="item.contact.id === selectedContactId()"
             (click)="selectContact(item.contact.id)"
           >
-            <span class="customer-avatar">{{ initials(item.contact) }}</span>
+            <span class="customer-avatar">
+              @if (avatarUrl(item.contact); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ initials(item.contact) }}
+              }
+            </span>
             <span class="customer-meta">
               <span class="customer-name">{{ item.contact.firstName }} {{ item.contact.lastName }}</span>
               <span class="customer-preview" [class.unread]="item.unread">{{ item.preview }}</span>
@@ -55,7 +61,13 @@
       @if (selectedContact(); as contact) {
         <header class="chat-header">
           <a class="chat-contact-link" [routerLink]="['/customers', contact.id]" title="Profil öffnen">
-            <span class="customer-avatar">{{ initials(contact) }}</span>
+            <span class="customer-avatar">
+              @if (avatarUrl(contact); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ initials(contact) }}
+              }
+            </span>
             <div class="chat-contact">
               <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
             </div>
@@ -67,6 +79,29 @@
             <div class="date-divider"><span>{{ day.label }}</span></div>
             @for (message of day.messages; track message.id) {
               <article class="message" [class.outgoing]="isOutgoing(message)">
+                @if (!message.deletedAt) {
+                  <div class="message-actions">
+                    <button type="button" aria-label="Antworten" title="Antworten" (click)="replyingTo.set(message)">
+                      <span class="material-icons">reply</span>
+                    </button>
+                    @if (message.text) {
+                      <button type="button" aria-label="Kopieren" title="Kopieren" (click)="copy(message)">
+                        <span class="material-icons">content_copy</span>
+                      </button>
+                    }
+                    @if (canDelete(message)) {
+                      <button type="button" aria-label="Für alle löschen" title="Für alle löschen" (click)="delete(message)">
+                        <span class="material-icons">delete_outline</span>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (message.replyTo; as reply) {
+                  <blockquote class="reply-quote">{{ reply.preview }}</blockquote>
+                }
+                @if (message.deletedAt) {
+                  <p class="deleted-message">Diese Nachricht wurde gelöscht</p>
+                }
                 @if (message.horse || message.measurement) {
                   <div class="share-card">
                     @if (message.horse) {
@@ -87,7 +122,7 @@
                     </span>
                   </div>
                   @if (!isOutgoing(message)) {
-                    @if (message.acceptedAt) {
+                    @if (isAccepted(message)) {
                       <a class="share-action done" [routerLink]="shareLink(message)" [queryParams]="shareQueryParams(message)">
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         Hinzugefügt · Öffnen
@@ -102,7 +137,7 @@
                   } @else if (message.acceptedAt) {
                     <small class="share-state">Hinzugefügt</small>
                   }
-                } @else if (message.type === 'Horse' || message.type === 'Measurement') {
+                } @else if (!message.deletedAt && (message.type === 'Horse' || message.type === 'Measurement')) {
                   <!-- the backend removes the reference when the horse or measurement is deleted -->
                   <small class="share-state">
                     {{ message.type === 'Horse' ? 'Das geteilte Pferd wurde gelöscht.' : 'Die geteilte Messung wurde gelöscht.' }}
@@ -158,6 +193,16 @@
             (selected)="sendMeasurement($event)"
             (cancel)="showPicker.set(false)"
           ></app-measurement-picker>
+        }
+
+        @if (replyingTo(); as reply) {
+          <div class="reply-banner">
+            <span class="material-icons" aria-hidden="true">reply</span>
+            <span class="reply-banner-text">{{ preview(reply) }}</span>
+            <button type="button" aria-label="Antwort abbrechen" title="Antwort abbrechen" (click)="replyingTo.set(null)">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
         }
 
         <form class="chat-composer" (ngSubmit)="sendMessage()">

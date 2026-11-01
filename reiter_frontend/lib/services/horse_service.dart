@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:reiterappfrontend/services/api_client.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/api_config.dart';
@@ -49,7 +51,7 @@ class HorseService {
   static Future<Horse> _withStableLocation(Horse horse) async {
     if (horse.hasStableLocation) return horse;
     final location = await GeocodingService().geocode(
-      street: horse.stableStreet,
+      street: [horse.stableStreet, horse.stableHouseNumber].whereType<String>().join(' '),
       postalCode: horse.stablePostalCode,
       city: horse.stableCity,
     );
@@ -71,7 +73,7 @@ class HorseService {
   }
 
   /// Speichert die geänderten Werte eines Pferdes im Backend (PATCH /api/horses/{id}).
-  /// Das Bild gibt es nur in der App, es bleibt erhalten.
+  /// Ein neu ausgewähltes Bild wird mit hochgeladen.
   Future<Horse> updateHorse(Horse horse) async {
     final url = Uri.parse('$baseUrl/horses/${horse.id}');
     final response = await apiHttp
@@ -91,9 +93,40 @@ class HorseService {
     final updated = await _withStableLocation(
       saved.copyWith(image: horse.image, assetImage: horse.assetImage),
     );
+    if (horse.image != null) await uploadImage(updated, horse.image!);
     final index = _cachedHorses?.indexWhere((h) => h.id == horse.id) ?? -1;
     if (index != -1) _cachedHorses![index] = updated;
     return updated;
+  }
+
+  /// Speichert das Bild eines Pferdes im Backend (PUT /api/horses/{id}/image).
+  Future<Horse> uploadImage(Horse horse, File image) async {
+    final request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/horses/${horse.id}/image'))
+      ..files.add(await http.MultipartFile.fromPath('file', image.path));
+
+    final response = await http.Response.fromStream(
+      await apiHttp.send(request).timeout(const Duration(seconds: 60)),
+    );
+    if (response.statusCode != 204) {
+      throw Exception('Bild konnte nicht gespeichert werden (HTTP ${response.statusCode}).');
+    }
+
+    final updated = horse.copyWith(image: image);
+    final index = _cachedHorses?.indexWhere((h) => h.id == horse.id) ?? -1;
+    if (index != -1) _cachedHorses![index] = updated;
+    return updated;
+  }
+
+  /// Adresse des Bildes eines Pferdes, null ohne Bild im Backend.
+  /// Das Token steht in der Adresse, weil Bilder keinen Header mitschicken.
+  String? imageUrl(Horse horse) {
+    final updatedAt = horse.imageUpdatedAt;
+    if (updatedAt == null) return null;
+    final token = AuthService().accessToken;
+    return Uri.parse('$baseUrl/horses/${horse.id}/image').replace(queryParameters: {
+      'v': updatedAt,
+      if (token != null) 'access_token': token,
+    }).toString();
   }
 
   /// Löscht ein Pferd samt Sätteln und Messungen im Backend (DELETE /api/horses/{id}).
@@ -278,6 +311,7 @@ class HorseService {
 
   static Horse _horseFromBackend(Map<String, dynamic> json) {
     final address = json['address'] as Map<String, dynamic>?;
+    final street = Horse.splitStreet(address?['addressName']?.toString() ?? '');
     return Horse(
       id: json['id']?.toString() ?? '',
       name: (json['name'] ?? '') as String,
@@ -286,9 +320,11 @@ class HorseService {
       weight: json['weight']?.toString() ?? '',
       height: json['height']?.toString() ?? '',
       sex: (json['gender'] ?? 'female').toString(),
+      imageUpdatedAt: json['imageUpdatedAt']?.toString(),
       stableCity: address?['cityName']?.toString(),
       stablePostalCode: address?['plz']?.toString(),
-      stableStreet: address?['addressName']?.toString(),
+      stableStreet: street.street.isEmpty ? null : street.street,
+      stableHouseNumber: street.houseNumber,
     );
   }
 

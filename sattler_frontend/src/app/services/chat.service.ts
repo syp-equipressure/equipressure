@@ -8,6 +8,7 @@ import {
   ChatConversation,
   ChatMessage,
   ChatMessageType,
+  ChatReply,
   ChatToast,
   messagePreview,
 } from '../models/chat.model';
@@ -96,8 +97,18 @@ export class ChatService {
     );
   }
 
-  sendText(contactId: string, text: string): Observable<ChatMessage> {
-    return this.send(contactId, 'Text', { text });
+  sendText(contactId: string, text: string, replyToId?: string): Observable<ChatMessage> {
+    return this.send(contactId, 'Text', { text, replyToId });
+  }
+
+  /** Deletes an own message for both persons. */
+  deleteMessage(message: ChatMessage): Observable<ChatMessage> {
+    const personId = this.personContext.personId();
+    return this.http.delete<unknown>(`${BACKEND_BASE_URL}/persons/${personId}/chats/messages/${message.id}`).pipe(
+      map(mapMessage),
+      tap(deleted => this.upsertMessage(deleted)),
+      catchError(toApiError),
+    );
   }
 
   /** Sends a file or image (at most 10 MB) with an optional text. */
@@ -176,13 +187,14 @@ export class ChatService {
   }
 
   private send(contactId: string, type: ChatMessageType,
-               body: { text?: string; measurementGroupId?: string }): Observable<ChatMessage> {
+               body: { text?: string; measurementGroupId?: string; replyToId?: string }): Observable<ChatMessage> {
     const personId = this.personContext.personId();
     return this.http.post<unknown>(`${BACKEND_BASE_URL}/persons/${personId}/chats/${contactId}`, {
       type,
       text: body.text || null,
       horseId: null,
       measurementGroupId: body.measurementGroupId ? Number(body.measurementGroupId) : null,
+      replyToId: body.replyToId ? Number(body.replyToId) : null,
     }).pipe(
       map(mapMessage),
       // the websocket delivers the message as well, upserting twice is harmless
@@ -244,7 +256,7 @@ export class ChatService {
     if (!isRecord(event)) return;
 
     const me = this.personContext.personId();
-    if (event['type'] === 'message' || event['type'] === 'accepted') {
+    if (event['type'] === 'message' || event['type'] === 'accepted' || event['type'] === 'deleted') {
       const message = mapMessage(event['message']);
       this.upsertMessage(message);
       if (event['type'] === 'message' && message.recipientId === me) this.onIncoming(message);
@@ -361,9 +373,25 @@ function mapConversation(value: unknown): ChatConversation {
       id: String(contact['id'] ?? ''),
       firstName: String(contact['firstName'] ?? ''),
       lastName: String(contact['lastName'] ?? ''),
+      imageUpdatedAt: typeof contact['imageUpdatedAt'] === 'string' ? contact['imageUpdatedAt'] : undefined,
     },
     lastMessage: mapMessage(record['lastMessage']),
     unreadCount: Number(record['unreadCount'] ?? 0),
+  };
+}
+
+function mapReply(value: unknown): ChatReply | null {
+  if (!isRecord(value)) return null;
+  const text = typeof value['text'] === 'string' ? value['text'] : '';
+  const fallback = value['type'] === 'Horse'
+    ? 'Geteiltes Pferd'
+    : value['type'] === 'Measurement'
+      ? 'Geteilte Messung'
+      : String(value['fileName'] ?? 'Datei');
+  return {
+    id: String(value['id']),
+    senderId: String(value['senderId'] ?? ''),
+    preview: value['isDeleted'] === true ? 'Gelöschte Nachricht' : text || fallback,
   };
 }
 
@@ -388,6 +416,8 @@ function mapMessage(value: unknown): ChatMessage {
     deliveredAt: toDate(record['deliveredAt']),
     readAt: toDate(record['readAt']),
     acceptedAt: toDate(record['acceptedAt']),
+    deletedAt: toDate(record['deletedAt']),
+    replyTo: mapReply(record['replyTo']),
     senderId: String(record['senderId'] ?? ''),
     recipientId: String(record['recipientId'] ?? ''),
     horse: horse ? { id: String(horse['id']), name: String(horse['name'] ?? '') } : null,

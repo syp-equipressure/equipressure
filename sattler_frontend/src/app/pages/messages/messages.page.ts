@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { concat, map } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { BackendApiService } from '../../services/backend-api.service';
 import { ChatService } from '../../services/chat.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { ChatContact, ChatMessage, messagePreview } from '../../models/chat.model';
@@ -34,6 +35,7 @@ interface MessageDay {
 export class MessagesPage implements OnDestroy {
   readonly chat = inject(ChatService);
   private readonly personContext = inject(BackendPersonContextService);
+  private readonly api = inject(BackendApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -45,6 +47,8 @@ export class MessagesPage implements OnDestroy {
   readonly selectedContactId = signal('');
   readonly draft = signal('');
   readonly sending = signal(false);
+  /** The message the next text answers */
+  readonly replyingTo = signal<ChatMessage | null>(null);
   readonly sendError = signal('');
   readonly messagesLoading = signal(false);
   readonly acceptingId = signal('');
@@ -131,9 +135,10 @@ export class MessagesPage implements OnDestroy {
 
     this.sending.set(true);
     this.sendError.set('');
-    this.chat.sendText(contactId, text).subscribe({
+    this.chat.sendText(contactId, text, this.replyingTo()?.id).subscribe({
       next: () => {
         this.draft.set('');
+        this.replyingTo.set(null);
         this.sending.set(false);
       },
       error: (error: Error) => {
@@ -205,6 +210,33 @@ export class MessagesPage implements OnDestroy {
     });
   }
 
+  preview(message: ChatMessage): string {
+    return messagePreview(message);
+  }
+
+  canDelete(message: ChatMessage): boolean {
+    return this.isOutgoing(message) && !message.acceptedAt;
+  }
+
+  copy(message: ChatMessage): void {
+    void navigator.clipboard.writeText(message.text ?? '');
+  }
+
+  delete(message: ChatMessage): void {
+    if (!window.confirm('Diese Nachricht für alle löschen?')) return;
+    this.sendError.set('');
+    this.chat.deleteMessage(message).subscribe({
+      error: (error: Error) => this.sendError.set(error.message),
+    });
+  }
+
+  /** A horse can be shared several times, it counts as added as soon as one of the messages is accepted. */
+  isAccepted(message: ChatMessage): boolean {
+    if (message.acceptedAt) return true;
+    const messages = this.chat.messagesWith(this.selectedContactId()) ?? [];
+    return !!message.horse && messages.some(other => other.horse?.id === message.horse?.id && other.acceptedAt);
+  }
+
   accept(message: ChatMessage): void {
     this.acceptingId.set(message.id);
     this.sendError.set('');
@@ -238,6 +270,10 @@ export class MessagesPage implements OnDestroy {
 
   shareQueryParams(message: ChatMessage): Record<string, string> | null {
     return message.measurement ? { measurementId: message.measurement.id } : null;
+  }
+
+  avatarUrl(contact: ChatContact): string | undefined {
+    return this.api.personImageUrl(contact.id, contact.imageUpdatedAt);
   }
 
   initials(contact: ChatContact): string {

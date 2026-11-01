@@ -30,6 +30,27 @@ public sealed record SharedMeasurementDto(int Id, string Name, LocalDate Date, i
 public sealed record ChatFileDto(string FileName, string ContentType, long Size);
 
 /// <summary>
+///     The message another message answers, reduced to what the apps show above the answer
+/// </summary>
+/// <param name="Id">The id of the message</param>
+/// <param name="SenderId">The id of the sender</param>
+/// <param name="Type">The type of the message</param>
+/// <param name="Text">The text of the message</param>
+/// <param name="FileName">The name of the sent file</param>
+/// <param name="IsDeleted">True if the sender deleted the message</param>
+public sealed record ChatReplyDto(
+    int Id,
+    int SenderId,
+    ChatMessageType Type,
+    string? Text,
+    string? FileName,
+    bool IsDeleted)
+{
+    public static ChatReplyDto FromMessage(ChatMessage message) =>
+        new(message.Id, message.SenderId, message.Type, message.Text, message.FileName, message.DeletedAt is not null);
+}
+
+/// <summary>
 ///     A chat message
 /// </summary>
 /// <param name="Id">The id of the message</param>
@@ -44,6 +65,8 @@ public sealed record ChatFileDto(string FileName, string ContentType, long Size)
 /// <param name="Horse">The shared horse, only for shared horses</param>
 /// <param name="Measurement">The shared measurement group, only for shared measurements</param>
 /// <param name="File">The sent file, only for files and images</param>
+/// <param name="DeletedAt">When the sender deleted the message, null if not deleted</param>
+/// <param name="ReplyTo">The message this one answers</param>
 public sealed record ChatMessageDto(
     int Id,
     ChatMessageType Type,
@@ -56,7 +79,9 @@ public sealed record ChatMessageDto(
     int RecipientId,
     SharedHorseDto? Horse,
     SharedMeasurementDto? Measurement,
-    ChatFileDto? File)
+    ChatFileDto? File,
+    Instant? DeletedAt,
+    ChatReplyDto? ReplyTo)
 {
     public static ChatMessageDto FromMessage(ChatMessage message) =>
         new(message.Id,
@@ -77,7 +102,9 @@ public sealed record ChatMessageDto(
             message.FileName is null
                 ? null
                 : new ChatFileDto(message.FileName, message.FileContentType ?? "application/octet-stream",
-                                  message.FileSize ?? 0));
+                                  message.FileSize ?? 0),
+            message.DeletedAt,
+            message.ReplyTo is null ? null : ChatReplyDto.FromMessage(message.ReplyTo));
 }
 
 /// <summary>
@@ -129,12 +156,16 @@ public sealed record ChatEventDto(string Type, ChatMessageDto? Message, int? Rea
     public const string DeliveredType = "delivered";
     public const string ReadType = "read";
     public const string AcceptedType = "accepted";
+    public const string DeletedType = "deleted";
 
     public static ChatEventDto NewMessage(ChatMessage message) =>
         new(MessageType, ChatMessageDto.FromMessage(message), null, null);
 
     public static ChatEventDto Accepted(ChatMessage message) =>
         new(AcceptedType, ChatMessageDto.FromMessage(message), null, null);
+
+    public static ChatEventDto Deleted(ChatMessage message) =>
+        new(DeletedType, ChatMessageDto.FromMessage(message), null, null);
 
     public static ChatEventDto Delivered(int recipientId, int senderId) =>
         new(DeliveredType, null, recipientId, senderId);
@@ -149,11 +180,13 @@ public sealed record ChatEventDto(string Type, ChatMessageDto? Message, int? Rea
 /// <param name="Text">The text, required for text messages and optional otherwise</param>
 /// <param name="HorseId">The id of the shared horse, required for shared horses</param>
 /// <param name="MeasurementGroupId">The id of the shared measurement group, required for shared measurements</param>
+/// <param name="ReplyToId">The id of the message this one answers</param>
 public sealed record SendChatMessageRequest(
     ChatMessageType Type,
     string? Text,
     int? HorseId,
-    int? MeasurementGroupId)
+    int? MeasurementGroupId,
+    int? ReplyToId = null)
 {
     /// <summary>
     ///     The maximum length of the text of a message, also used for files
@@ -161,7 +194,7 @@ public sealed record SendChatMessageRequest(
     public const int MaxTextLength = 2000;
 
     public NewChatMessageData ToData(int senderId, int recipientId) =>
-        new(senderId, recipientId, Type, Text, HorseId, MeasurementGroupId);
+        new(senderId, recipientId, Type, Text, HorseId, MeasurementGroupId, ReplyToId);
 
     public sealed class Validator : AbstractValidator<SendChatMessageRequest>
     {
@@ -172,6 +205,7 @@ public sealed record SendChatMessageRequest(
             RuleFor(x => x.Type).NotEqual(ChatMessageType.File);
             RuleFor(x => x.Text).MaximumLength(MaxTextLength).When(x => x.Text is not null);
             RuleFor(x => x.Text).NotEmpty().When(x => x.Type == ChatMessageType.Text);
+            RuleFor(x => x.ReplyToId).GreaterThan(0).When(x => x.ReplyToId is not null);
             RuleFor(x => x.HorseId).NotNull().GreaterThan(0).When(x => x.Type == ChatMessageType.Horse);
             RuleFor(x => x.MeasurementGroupId).NotNull().GreaterThan(0)
                                               .When(x => x.Type == ChatMessageType.Measurement);

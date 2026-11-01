@@ -14,6 +14,20 @@ public interface IPersonRepository
     public ValueTask<Person?> GetPersonByIdAsync(int personId);
 
     /// <summary>
+    ///     Gets a person including the content of their image, to change the image
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The tracked person or null if it does not exist</returns>
+    public ValueTask<Person?> GetPersonWithImageAsync(int personId);
+
+    /// <summary>
+    ///     Gets the image of a person including the person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The image or null if the person has no image</returns>
+    public ValueTask<PersonImage?> GetPersonImageAsync(int personId);
+
+    /// <summary>
     ///     Gets the person linked to a Keycloak account, including their address and roles
     /// </summary>
     /// <param name="externalId">The id of the user in Keycloak</param>
@@ -119,6 +133,32 @@ public interface IPersonRepository
     public void AddPerson(Person person);
 
     /// <summary>
+    ///     Gets a registered device
+    /// </summary>
+    /// <param name="token">The push token of the device</param>
+    /// <returns>The tracked entry or null if the device is not registered</returns>
+    public ValueTask<PushToken?> GetPushTokenAsync(string token);
+
+    /// <summary>
+    ///     Gets the push tokens of all devices of a person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The push tokens</returns>
+    public ValueTask<IReadOnlyCollection<string>> GetPushTokensOfPersonAsync(int personId);
+
+    /// <summary>
+    ///     Registers a device
+    /// </summary>
+    /// <param name="token">The new entry</param>
+    public void AddPushToken(PushToken token);
+
+    /// <summary>
+    ///     Removes devices, e.g. because the app was removed from them
+    /// </summary>
+    /// <param name="tokens">The push tokens</param>
+    public ValueTask RemovePushTokensAsync(IReadOnlyCollection<string> tokens);
+
+    /// <summary>
     ///     Removes a person, their role assignments are removed as well
     /// </summary>
     /// <param name="person">The person to remove</param>
@@ -128,13 +168,21 @@ public interface IPersonRepository
 internal sealed class PersonRepository(
     DbSet<Person> personSet,
     DbSet<PersonRelationship> relationshipSet,
-    DbSet<AccountRole> roleSet) : IPersonRepository
+    DbSet<AccountRole> roleSet,
+    DbSet<PersonImage> imageSet,
+    DbSet<PushToken> pushTokenSet) : IPersonRepository
 {
     public async ValueTask<Person?> GetPersonByIdAsync(int personId) =>
         await personSet.Include(p => p.Address)
                        .Include(p => p.Roles)
                        .ThenInclude(pra => pra.Role)
                        .FirstOrDefaultAsync(p => p.Id == personId);
+
+    public async ValueTask<Person?> GetPersonWithImageAsync(int personId) =>
+        await personSet.Include(p => p.Image).FirstOrDefaultAsync(p => p.Id == personId);
+
+    public async ValueTask<PersonImage?> GetPersonImageAsync(int personId) =>
+        await imageSet.AsNoTracking().Include(i => i.Person).FirstOrDefaultAsync(i => i.PersonId == personId);
 
     public async ValueTask<Person?> GetPersonByExternalIdAsync(string externalId) =>
         await personSet.Include(p => p.Address)
@@ -185,7 +233,8 @@ internal sealed class PersonRepository(
                                                     p.Address.CityName,
                                                     p.Address.PLZ,
                                                     p.WebsiteLink,
-                                                    p.Description))
+                                                    p.Description,
+                                                    p.ImageUpdatedAt))
                        .ToListAsync();
 
     public async ValueTask<PersonRelationship?> GetRelationshipAsync(int equestrianId, int saddlerId) =>
@@ -223,6 +272,20 @@ internal sealed class PersonRepository(
         relationshipSet.Remove(relationship);
     }
 
+    public async ValueTask<PushToken?> GetPushTokenAsync(string token) =>
+        await pushTokenSet.FirstOrDefaultAsync(t => t.Token == token);
+
+    public async ValueTask<IReadOnlyCollection<string>> GetPushTokensOfPersonAsync(int personId) =>
+        await pushTokenSet.Where(t => t.PersonId == personId).Select(t => t.Token).ToListAsync();
+
+    public void AddPushToken(PushToken token)
+    {
+        pushTokenSet.Add(token);
+    }
+
+    public async ValueTask RemovePushTokensAsync(IReadOnlyCollection<string> tokens) =>
+        await pushTokenSet.Where(t => tokens.Contains(t.Token)).ExecuteDeleteAsync();
+
     public void AddPerson(Person person)
     {
         personSet.Add(person);
@@ -246,5 +309,6 @@ internal sealed class PersonRepository(
                                               p.Address.CityName,
                                               p.Address.PLZ,
                                               p.WebsiteLink,
-                                              p.Description));
+                                              p.Description,
+                                              p.ImageUpdatedAt));
 }

@@ -328,4 +328,77 @@ public sealed class HorseController(IHorseService horseService) : BaseController
                                                     success => Ok(HorseDto.FromHorse(success.Value)),
                                                     _ => NotFound());
     }
+
+    /// <summary>
+    ///     Gets the image of a horse.
+    ///     The access token may be sent as query parameter <see cref="Setup.AccessTokenQueryKey" />.
+    /// </summary>
+    [HttpGet("{id:int}/image")]
+    [ProducesResponseType<FileContentResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> GetHorseImage([FromRoute][ValidId] int id)
+    {
+        if (!await HasAccessAsync((access, me) => access.CanViewHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
+        var result = await horseService.GetHorseImageAsync(id);
+
+        return result.Match<IActionResult>(
+            success => ImageFile(success.Value),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Sets the image of a horse as multipart form data, at most 5 MB
+    /// </summary>
+    [HttpPut("{id:int}/image")]
+    // a bit more than the image itself, for the multipart boundaries
+    [RequestSizeLimit(UploadImageRequest.MaxFileSize + 64 * 1024)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> SetHorseImage([FromRoute][ValidId] int id,
+                                                         [FromForm] UploadImageRequest request)
+    {
+        if (!IsValid<UploadImageRequest.Validator, UploadImageRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
+        var image = await request.ToDataAsync(HttpContext.RequestAborted);
+        var result = await horseService.SetHorseImageAsync(id, image);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Removes the image of a horse
+    /// </summary>
+    [HttpDelete("{id:int}/image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> RemoveHorseImage([FromRoute][ValidId] int id)
+    {
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        {
+            return AccessDenied();
+        }
+
+        var result = await horseService.RemoveHorseImageAsync(id);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
 }

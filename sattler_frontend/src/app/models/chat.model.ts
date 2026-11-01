@@ -21,6 +21,13 @@ export interface SharedMeasurement {
   horseName: string;
 }
 
+/** The message another message answers. */
+export interface ChatReply {
+  id: string;
+  senderId: string;
+  preview: string;
+}
+
 export interface ChatMessage {
   id: string;
   type: ChatMessageType;
@@ -35,12 +42,17 @@ export interface ChatMessage {
   horse: SharedHorse | null;
   measurement: SharedMeasurement | null;
   file: ChatFile | null;
+  /** When the sender deleted the message for both persons */
+  deletedAt: Date | null;
+  replyTo: ChatReply | null;
 }
 
 export interface ChatContact {
   id: string;
   firstName: string;
   lastName: string;
+  /** ISO timestamp when the image was set in the backend, missing without an image */
+  imageUpdatedAt?: string;
 }
 
 export interface ChatConversation {
@@ -59,6 +71,7 @@ export interface ChatToast {
 
 /** Short text of a message for previews and notifications. */
 export function messagePreview(message: ChatMessage): string {
+  if (message.deletedAt) return 'Diese Nachricht wurde gelöscht';
   switch (message.type) {
     // the backend removes the reference when the horse or measurement is deleted
     case 'Horse':

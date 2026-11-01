@@ -9,6 +9,8 @@ export interface Customer {
   birthDate?: string;
   /** ISO timestamp when the person was added, shown as "member since" */
   createdAt?: string;
+  /** ISO timestamp when the image was set in the backend, missing without an image */
+  imageUpdatedAt?: string;
   address?: string;
   heightCm: number;
   weightKg: number;

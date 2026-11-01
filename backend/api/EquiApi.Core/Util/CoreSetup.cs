@@ -15,5 +15,7 @@ public static class CoreSetup
         services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddScoped<IAccessService, AccessService>();
         services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IChatNotifier, ChatNotifier>();
+        services.AddSingleton<IPushSender, NoPushSender>();
     }
 }

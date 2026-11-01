@@ -9,6 +9,8 @@ public sealed class AuthenticationTests(WebApiTestFixture webApiFixture) : WebAp
     [InlineData("api/persons/1")]
     [InlineData("api/persons/saddlers")]
     [InlineData("api/horses/1")]
+    [InlineData("api/horses/1/image")]
+    [InlineData("api/persons/1/image")]
     [InlineData("api/locations")]
     [InlineData("api/devices/EP0001")]
     [InlineData("api/measurementgroups/1")]

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/services/push_service.dart';
 import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import '../../widgets/dashed_border.dart';
@@ -28,6 +29,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   void initState() {
     super.initState();
     _loadHorses();
+    PushService().start();
   }
 
   Future<void> _loadHorses() async {
@@ -82,7 +84,19 @@ class _HorsesScreenState extends State<HorsesScreen> {
     );
 
     try {
-      final savedHorse = await _horseService.addHorse(newHorse);
+      var savedHorse = await _horseService.addHorse(newHorse);
+      if (image != null) {
+        // das Pferd ist schon gespeichert, ein Fehler beim Bild darf es nicht verwerfen
+        try {
+          savedHorse = await _horseService.uploadImage(savedHorse, image);
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Das Pferd ist gespeichert, das Bild aber nicht: $error')),
+            );
+          }
+        }
+      }
       if (!mounted) return;
       setState(() {
         horses = [...horses, savedHorse];
@@ -236,6 +250,12 @@ class _HorsesScreenState extends State<HorsesScreen> {
                   width: double.infinity,
                   child: horse.image != null
                       ? Image.file(horse.image!, fit: BoxFit.cover)
+                      : _horseService.imageUrl(horse) != null
+                      ? Image.network(
+                          _horseService.imageUrl(horse)!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(color: AppColors.borderSoft),
+                        )
                       : horse.assetImage != null
                       ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
                       : Container(

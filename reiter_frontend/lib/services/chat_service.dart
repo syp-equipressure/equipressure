@@ -135,8 +135,25 @@ class ChatService extends ChangeNotifier {
     return messages;
   }
 
-  Future<Message> sendText(String contactId, String text) =>
-      _send(contactId, {'type': MessageType.text.json, 'text': text});
+  Future<Message> sendText(String contactId, String text, {String? replyToId}) =>
+      _send(contactId, {
+        'type': MessageType.text.json,
+        'text': text,
+        if (replyToId != null) 'replyToId': int.parse(replyToId),
+      });
+
+  /// Löscht eine eigene Nachricht für beide Personen.
+  Future<void> deleteMessage(Message message) async {
+    final personId = _personId ?? await _currentPersonId();
+    final response = await apiHttp
+        .delete(Uri.parse('$_baseUrl/persons/$personId/chats/messages/${message.id}'))
+        .timeout(_timeout);
+    if (response.statusCode != 200) {
+      throw Exception(_problemDetail(response) ??
+          'Nachricht konnte nicht gelöscht werden (HTTP ${response.statusCode}).');
+    }
+    _upsert(Message.fromJson(jsonDecode(response.body)));
+  }
 
   Future<Message> shareHorse(String contactId, String horseId) => _send(
         contactId,
@@ -247,7 +264,7 @@ class ChatService extends ChangeNotifier {
 
   void _onEvent(Map<String, dynamic> event) {
     final type = event['type'];
-    if (type == 'message' || type == 'accepted') {
+    if (type == 'message' || type == 'accepted' || type == 'deleted') {
       final message = Message.fromJson(event['message']);
       final isNew = _upsert(message);
       if (type == 'message' && isNew && message.recipientId == _personId) {

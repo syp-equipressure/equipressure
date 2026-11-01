@@ -2,6 +2,7 @@ import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart' show CustomAppBar;
+import '../../widgets/person_avatar.dart';
 import '../../widgets/sidenav.dart';
 import '../../models/chat.dart';
 import '../../services/chat_service.dart';
@@ -259,26 +260,11 @@ class _ChatListItem extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: AppColors.successLight,
-      child: Text(
-        _getInitials(chat.contactName),
-        style: TextStyle(
-          color: AppColors.success,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
+    return PersonAvatar(
+      personId: chat.contactId,
+      imageUpdatedAt: chat.contactImageUpdatedAt,
+      name: chat.contactName,
     );
-  }
-
-  String _getInitials(String name) {
-    final parts = name.split(' ').where((part) => part.isNotEmpty).toList();
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return parts.isNotEmpty ? parts[0][0].toUpperCase() : '?';
   }
 }
 

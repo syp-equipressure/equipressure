@@ -85,6 +85,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       await register();
       if (mounted) Navigator.pop(context, true);
+    } on AccountNotReadyException {
+      // das Konto wurde angelegt, nur die Anmeldung muss warten
+      _showError('Dein Konto ist erstellt. Bitte bestätige deine E-Mail und melde dich dann an.');
     } on EmailAlreadyUsedException {
       _showError('Zu dieser E-Mail gibt es schon ein Konto.');
     } on TooManyAttemptsException {
@@ -139,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.words,
                           autofillHints: const [AutofillHints.givenName],
-                          decoration: authInputDecoration('Vorname'),
+                          decoration: authInputDecoration('Vorname *'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -149,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.words,
                           autofillHints: const [AutofillHints.familyName],
-                          decoration: authInputDecoration('Nachname'),
+                          decoration: authInputDecoration('Nachname *'),
                         ),
                       ),
                     ],
@@ -161,7 +164,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.next,
                     autocorrect: false,
                     autofillHints: const [AutofillHints.email],
-                    decoration: authInputDecoration('E-Mail'),
+                    decoration: authInputDecoration('E-Mail *'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -169,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: !_passwordVisible,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.newPassword],
-                    decoration: authInputDecoration('Passwort').copyWith(
+                    decoration: authInputDecoration('Passwort *').copyWith(
                       suffixIcon: PasswordVisibilityButton(
                         visible: _passwordVisible,
                         onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
@@ -183,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.done,
                     autofillHints: const [AutofillHints.newPassword],
                     onSubmitted: (_) => _register(),
-                    decoration: authInputDecoration('Passwort wiederholen'),
+                    decoration: authInputDecoration('Passwort wiederholen *'),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),

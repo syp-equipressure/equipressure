@@ -4,6 +4,8 @@ export interface Horse {
   age: number;
   breed: string;
   imageUrl: string;
+  /** ISO timestamp when the image was set in the backend, missing without an image */
+  imageUpdatedAt?: string;
   ownerId: string;
   heightCm: number;
   weightKg: number;

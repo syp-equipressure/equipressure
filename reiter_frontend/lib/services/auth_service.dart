@@ -7,6 +7,9 @@ import 'api_config.dart';
 /// E-Mail oder Passwort stimmen nicht.
 class WrongCredentialsException implements Exception {}
 
+/// Das Konto gibt es, aber Keycloak verlangt noch die Bestätigung der E-Mail.
+class AccountNotReadyException implements Exception {}
+
 /// Beim Registrieren: zu dieser E-Mail gibt es schon ein Konto.
 class EmailAlreadyUsedException implements Exception {}
 
@@ -69,7 +72,10 @@ class AuthService {
     ).timeout(const Duration(seconds: 10));
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    if (json['error'] == 'invalid_grant') throw WrongCredentialsException();
+    if (json['error'] == 'invalid_grant') {
+      if (json['error_description'] == 'Account is not fully set up') throw AccountNotReadyException();
+      throw WrongCredentialsException();
+    }
     if (response.statusCode != 200) {
       throw Exception('Login failed: HTTP ${response.statusCode}');
     }
