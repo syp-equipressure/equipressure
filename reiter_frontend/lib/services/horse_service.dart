@@ -319,7 +319,8 @@ class HorseService {
       birthDate: _isoToDotDate(json['dateOfBirth']),
       weight: json['weight']?.toString() ?? '',
       height: json['height']?.toString() ?? '',
-      sex: (json['gender'] ?? 'female').toString(),
+      // das Backend liefert Male und Female, die App vergleicht klein geschrieben
+      sex: (json['gender'] ?? 'female').toString().toLowerCase(),
       imageUpdatedAt: json['imageUpdatedAt']?.toString(),
       stableCity: address?['cityName']?.toString(),
       stablePostalCode: address?['plz']?.toString(),
