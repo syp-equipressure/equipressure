@@ -444,7 +444,7 @@ export class MeasurementsPage implements OnDestroy {
     this.chat.sendMeasurement(ownerId, measurement.id).subscribe({
       next: () => {
         this.sendingToCustomer.set(false);
-        this.showShareFeedback('Die Messung wurde im Chat gesendet.');
+        void this.router.navigate(['/messages'], { queryParams: { contact: ownerId } });
       },
       error: () => {
         this.sendingToCustomer.set(false);
