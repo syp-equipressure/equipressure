@@ -17,6 +17,7 @@ import { printMeasurementReport } from '../../services/measurement-report';
 import { hasNoRecordedData } from '../../services/measurement-mapper';
 import { downloadMeasurementCsv } from '../../services/measurement-export';
 import { HeatmapDialogComponent } from '../../shared/heatmap-dialog/heatmap-dialog';
+import { ChatService } from '../../services/chat.service';
 
 type TabKey = 'profil' | 'messungen' | 'notizen';
 type PressureStatistic = 'average' | 'maximum' | 'pro';
@@ -38,6 +39,7 @@ export class MeasurementsPage implements OnDestroy {
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
 
   private readonly personContext = inject(BackendPersonContextService);
+  private readonly chat = inject(ChatService);
 
   readonly horseLoading = signal(false);
   readonly horseActionError = signal('');
@@ -393,6 +395,12 @@ export class MeasurementsPage implements OnDestroy {
 
   readonly heatmapExpanded = signal(false);
   readonly shareFeedback = signal('');
+  readonly sendingToCustomer = signal(false);
+  /** Nur Messungen an Pferden anderer Personen gehen an einen Kunden */
+  readonly canSendToCustomer = computed(() => {
+    const ownerId = this.horse()?.ownerId;
+    return !!ownerId && isBackendId(ownerId) && ownerId !== this.personContext.personId();
+  });
   private shareFeedbackTimer?: number;
 
   /** Beschreibt die aktuelle Ansicht, z.B. "Trab · Links · Maximum". */
@@ -426,6 +434,23 @@ export class MeasurementsPage implements OnDestroy {
   /** Lädt alle Aufnahmen der Messung als CSV-Datei herunter (für Excel). */
   downloadCsv(measurement: Measurement): void {
     downloadMeasurementCsv(measurement, this.horse()?.name ?? 'Pferd');
+  }
+
+  /** Schickt die Messung im Chat an die Person, der das Pferd gehört. */
+  sendToCustomer(measurement: Measurement): void {
+    const ownerId = this.horse()?.ownerId;
+    if (!ownerId || this.sendingToCustomer()) return;
+    this.sendingToCustomer.set(true);
+    this.chat.sendMeasurement(ownerId, measurement.id).subscribe({
+      next: () => {
+        this.sendingToCustomer.set(false);
+        this.showShareFeedback('Die Messung wurde im Chat gesendet.');
+      },
+      error: () => {
+        this.sendingToCustomer.set(false);
+        this.showShareFeedback('Die Messung konnte nicht gesendet werden.');
+      },
+    });
   }
 
   /** Teilt einen Link auf die Messung, ohne Web Share API wird der Link kopiert. */
