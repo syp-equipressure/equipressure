@@ -50,6 +50,12 @@ public interface IChatRepository
     public ValueTask<ChatFile?> GetFileAsync(int messageId);
 
     /// <summary>
+    ///     Removes the content of the file of a message
+    /// </summary>
+    /// <param name="messageId">The id of the message</param>
+    public ValueTask RemoveFileAsync(int messageId);
+
+    /// <summary>
     ///     Gets all messages in which a person shared a horse with another person
     /// </summary>
     /// <param name="senderId">The id of the sender</param>
@@ -69,6 +75,7 @@ internal sealed class ChatRepository(DbSet<ChatMessage> messageSet, DbSet<ChatFi
 {
     private IQueryable<ChatMessage> MessagesWithDetails =>
         messageSet.Include(m => m.Sender)
+                  .Include(m => m.ReplyTo)
                   .Include(m => m.Recipient)
                   .Include(m => m.Horse)
                   .Include(m => m.MeasurementGroup)
@@ -107,6 +114,9 @@ internal sealed class ChatRepository(DbSet<ChatMessage> messageSet, DbSet<ChatFi
 
     public async ValueTask<ChatFile?> GetFileAsync(int messageId) =>
         await fileSet.AsNoTracking().FirstOrDefaultAsync(f => f.MessageId == messageId);
+
+    public async ValueTask RemoveFileAsync(int messageId) =>
+        await fileSet.Where(f => f.MessageId == messageId).ExecuteDeleteAsync();
 
     public void AddMessage(ChatMessage message)
     {

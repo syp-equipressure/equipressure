@@ -14,7 +14,8 @@ public sealed record NewChatMessageData(
     ChatMessageType Type,
     string? Text,
     int? HorseId,
-    int? MeasurementGroupId);
+    int? MeasurementGroupId,
+    int? ReplyToId = null);
 
 /// <summary>
 ///     A file (e.g. an image) sent in a chat message
@@ -116,6 +117,19 @@ public interface IChatService
     ///     or <see cref="InvalidMessage" /> if the message does not share anything or the persons cannot be contacts
     /// </returns>
     public ValueTask<OneOf<Success<ChatMessage>, NotFound, InvalidMessage>> AcceptShareAsync(int personId,
+        int messageId);
+
+    /// <summary>
+    ///     Deletes a message for both persons: its content is removed, its place in the conversation stays.
+    ///     Only the sender can delete a message, an accepted horse or measurement cannot be deleted.
+    /// </summary>
+    /// <param name="personId">The id of the sender</param>
+    /// <param name="messageId">The id of the message</param>
+    /// <returns>
+    ///     The deleted message, <see cref="NotFound" /> if the person did not send the message
+    ///     or <see cref="InvalidMessage" /> if it cannot be deleted anymore
+    /// </returns>
+    public ValueTask<OneOf<Success<ChatMessage>, NotFound, InvalidMessage>> DeleteMessageAsync(int personId,
         int messageId);
 
     /// <summary>
@@ -243,9 +257,23 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
             return new IChatService.InvalidMessage("Only the owner or a rider of a horse can share it");
         }
 
+        if (data.ReplyToId is { } replyToId)
+        {
+            var original = await uow.ChatRepository.GetMessageByIdAsync(replyToId);
+            bool isSameConversation = original is not null
+                                      && ((original.SenderId == data.SenderId && original.RecipientId == data.RecipientId)
+                                          || (original.SenderId == data.RecipientId
+                                              && original.RecipientId == data.SenderId));
+            if (!isSameConversation || original!.DeletedAt is not null)
+            {
+                return new IChatService.InvalidMessage("Only existing messages of the conversation can be answered");
+            }
+        }
+
         var message = new ChatMessage
         {
             Type = data.Type,
+            ReplyToId = data.ReplyToId,
             Text = string.IsNullOrWhiteSpace(data.Text) ? null : data.Text.Trim(),
             SentAt = clock.GetCurrentInstant(),
             SenderId = data.SenderId,
@@ -375,6 +403,48 @@ internal sealed class ChatService(IUnitOfWork uow, IClock clock, ILogger<ChatSer
         await uow.SaveChangesAsync();
 
         return new Success<IReadOnlyCollection<int>>(undelivered.Select(m => m.SenderId).Distinct().ToList());
+    }
+
+    public async ValueTask<OneOf<Success<ChatMessage>, NotFound, IChatService.InvalidMessage>> DeleteMessageAsync(
+        int personId, int messageId)
+    {
+        var message = await uow.ChatRepository.GetMessageByIdAsync(messageId);
+        if (message is null || message.SenderId != personId)
+        {
+            logger.LogInformation("Person {PersonId} did not send message {MessageId}", personId, messageId);
+
+            return new NotFound();
+        }
+
+        // an accepted horse or measurement stays, the saddler's access depends on it
+        if (message.AcceptedAt is not null)
+        {
+            return new IChatService.InvalidMessage("An accepted horse or measurement cannot be deleted");
+        }
+
+        if (message.DeletedAt is not null)
+        {
+            return new Success<ChatMessage>(message);
+        }
+
+        if (message.Type == ChatMessageType.File)
+        {
+            await uow.ChatRepository.RemoveFileAsync(messageId);
+        }
+
+        message.DeletedAt = clock.GetCurrentInstant();
+        message.Text = null;
+        message.FileName = null;
+        message.FileContentType = null;
+        message.FileSize = null;
+        message.Horse = null;
+        message.HorseId = null;
+        message.MeasurementGroup = null;
+        message.MeasurementGroupId = null;
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Person {PersonId} deleted message {MessageId}", personId, messageId);
+
+        return new Success<ChatMessage>(message);
     }
 
     public async ValueTask<OneOf<Success<ChatMessage>, NotFound, IChatService.InvalidMessage>> AcceptShareAsync(

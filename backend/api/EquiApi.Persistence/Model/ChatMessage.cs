@@ -18,6 +18,13 @@ public class ChatMessage
     // set as soon as the recipient added the shared horse or measurement
     public Instant? AcceptedAt { get; set; }
 
+    // set when the sender deleted the message, its content is gone but the place in the conversation stays
+    public Instant? DeletedAt { get; set; }
+
+    // the message this one answers, null if that message no longer exists
+    public int? ReplyToId { get; set; }
+    public ChatMessage? ReplyTo { get; set; }
+
     public int SenderId { get; set; }
     public Person Sender { get; set; } = null!;
 
