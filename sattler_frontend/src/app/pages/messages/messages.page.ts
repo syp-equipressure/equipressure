@@ -47,6 +47,8 @@ export class MessagesPage implements OnDestroy {
   readonly selectedContactId = signal('');
   readonly draft = signal('');
   readonly sending = signal(false);
+  /** The message the next text answers */
+  readonly replyingTo = signal<ChatMessage | null>(null);
   readonly sendError = signal('');
   readonly messagesLoading = signal(false);
   readonly acceptingId = signal('');
@@ -133,9 +135,10 @@ export class MessagesPage implements OnDestroy {
 
     this.sending.set(true);
     this.sendError.set('');
-    this.chat.sendText(contactId, text).subscribe({
+    this.chat.sendText(contactId, text, this.replyingTo()?.id).subscribe({
       next: () => {
         this.draft.set('');
+        this.replyingTo.set(null);
         this.sending.set(false);
       },
       error: (error: Error) => {
@@ -204,6 +207,26 @@ export class MessagesPage implements OnDestroy {
         this.sendError.set(error.message);
         this.sending.set(false);
       },
+    });
+  }
+
+  preview(message: ChatMessage): string {
+    return messagePreview(message);
+  }
+
+  canDelete(message: ChatMessage): boolean {
+    return this.isOutgoing(message) && !message.acceptedAt;
+  }
+
+  copy(message: ChatMessage): void {
+    void navigator.clipboard.writeText(message.text ?? '');
+  }
+
+  delete(message: ChatMessage): void {
+    if (!window.confirm('Diese Nachricht für alle löschen?')) return;
+    this.sendError.set('');
+    this.chat.deleteMessage(message).subscribe({
+      error: (error: Error) => this.sendError.set(error.message),
     });
   }
 

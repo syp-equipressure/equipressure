@@ -240,6 +240,83 @@
 }
 
 .message {
+  position: relative;
+
+  &:hover .message-actions,
+  &:focus-within .message-actions {
+    opacity: 1;
+  }
+}
+
+.message-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  button {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: t.$bg-page;
+    color: t.$purple-600;
+    cursor: pointer;
+  }
+
+  .material-icons {
+    font-size: 16px;
+  }
+}
+
+.reply-quote {
+  margin: 0 0 6px;
+  padding: 5px 9px;
+  border-left: 3px solid t.$purple-500;
+  background: t.$bg-panel;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message p.deleted-message {
+  color: t.$purple-600;
+  font-style: italic;
+}
+
+.reply-banner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 13px;
+
+  button {
+    display: grid;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+}
+
+.reply-banner-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message {
   max-width: min(72%, 560px);
   padding: 12px 15px 9px;
   border: 1px solid t.$border;
