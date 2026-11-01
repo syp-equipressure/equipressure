@@ -8,6 +8,10 @@ const CHARACTERISTIC_UUID = 'abcd1234-5678-90ab-cdef-1234567890ab';
 /** The Bluetooth name of the device starts with this, e.g. EquiPressure_Dummy. */
 const NAME_PREFIX = 'EquiPressure';
 
+/** Connecting right after the selection fails from time to time. */
+const CONNECT_TRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
 export type DeviceConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
 /**
@@ -56,10 +60,7 @@ export class DeviceConnectionService {
       bluetoothDevice.addEventListener('gattserverdisconnected', this.onDisconnected);
       this.bluetoothDevice = bluetoothDevice;
 
-      const server = await bluetoothDevice.gatt?.connect();
-      if (!server) throw new Error('No GATT server');
-      const service = await server.getPrimaryService(SERVICE_UUID);
-      const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+      const characteristic = await this.openCharacteristic(bluetoothDevice);
 
       this.parser.reset();
       this.decoder = new TextDecoder();
@@ -72,6 +73,20 @@ export class DeviceConnectionService {
       // NotFoundError: the selection was closed without choosing a device
       if (!(error instanceof DOMException && error.name === 'NotFoundError')) {
         this.error.set('Die Verbindung zum Messgerät ist fehlgeschlagen.');
+      }
+    }
+  }
+
+  private async openCharacteristic(device: BluetoothDevice): Promise<BluetoothRemoteGATTCharacteristic> {
+    for (let tries = 1; ; tries++) {
+      try {
+        const server = await device.gatt?.connect();
+        if (!server) throw new Error('No GATT server');
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        return await service.getCharacteristic(CHARACTERISTIC_UUID);
+      } catch (error) {
+        if (tries >= CONNECT_TRIES) throw error;
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
       }
     }
   }
