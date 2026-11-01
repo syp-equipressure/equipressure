@@ -353,6 +353,30 @@ class PersonService {
     return '${parts[2]}.${parts[1]}.${parts[0]}';
   }
 
+  /// Meldet ein Handy für Benachrichtigungen an (PUT /api/persons/{id}/push-tokens).
+  static Future<void> registerPushToken(String personId, String token) async {
+    final response = await apiHttp
+        .put(
+          Uri.parse('$baseUrl/persons/$personId/push-tokens'),
+          headers: _jsonHeaders,
+          body: jsonEncode({'token': token}),
+        )
+        .timeout(_timeout);
+    if (response.statusCode != 204) _throwForStatus(response, 'register push token');
+  }
+
+  /// Meldet ein Handy von den Benachrichtigungen ab, z.B. beim Logout.
+  static Future<void> removePushToken(String personId, String token) async {
+    final response = await apiHttp
+        .delete(
+          Uri.parse('$baseUrl/persons/$personId/push-tokens'),
+          headers: _jsonHeaders,
+          body: jsonEncode({'token': token}),
+        )
+        .timeout(_timeout);
+    if (response.statusCode != 204) _throwForStatus(response, 'remove push token');
+  }
+
   /// Speichert das Profilbild einer Person (PUT /api/persons/{id}/image).
   static Future<void> uploadImage(String personId, File image) async {
     final request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/persons/$personId/image'))

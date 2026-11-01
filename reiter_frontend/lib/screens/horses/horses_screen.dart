@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/services/push_service.dart';
 import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import '../../widgets/dashed_border.dart';
@@ -28,6 +29,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   void initState() {
     super.initState();
     _loadHorses();
+    PushService().start();
   }
 
   Future<void> _loadHorses() async {

@@ -9,6 +9,7 @@ import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/screens/profil/personal_data_screen.dart';
 import 'package:reiterappfrontend/screens/profil/devices_screen.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
+import 'package:reiterappfrontend/services/push_service.dart';
 import 'package:reiterappfrontend/services/backend_person_context_service.dart';
 
 class ProfilScreen extends StatefulWidget {
@@ -78,6 +79,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   /// Meldet ab und startet wieder beim Login
   Future<void> _logout() async {
+    await PushService().stop();
     await AuthService().logout();
     await BackendPersonContextService.clearPersonId();
     if (!mounted) return;
