@@ -41,6 +41,15 @@ public interface IHorseRepository
     public ValueTask<IReadOnlyCollection<Horse>> GetOwnedHorsesOfPersonAsync(int personId);
 
     /// <summary>
+    ///     Gets the horses of a customer a saddler may see, including their breeds: all horses of a customer without
+    ///     an account, otherwise only the ones the customer sent them and they accepted
+    /// </summary>
+    /// <param name="ownerId">The id of the owner</param>
+    /// <param name="saddlerId">The id of the saddler</param>
+    /// <returns>The visible horses</returns>
+    public ValueTask<IReadOnlyCollection<Horse>> GetHorsesVisibleToSaddlerAsync(int ownerId, int saddlerId);
+
+    /// <summary>
     ///     Gets all saddles of a horse including their category
     /// </summary>
     /// <param name="horseId">The id of the horse</param>
@@ -130,7 +139,8 @@ internal sealed class HorseRepository(
     DbSet<Horse> horseSet,
     DbSet<PersonHorse> personHorseSet,
     DbSet<Breed> breedSet,
-    DbSet<HorseImage> imageSet) : IHorseRepository
+    DbSet<HorseImage> imageSet,
+    DbSet<ChatMessage> messageSet) : IHorseRepository
 {
     public async ValueTask<Horse?> GetHorseByIdAsync(int horseId) =>
         await horseSet.Include(h => h.Address)
@@ -153,6 +163,21 @@ internal sealed class HorseRepository(
                       .Include(h => h.HorseBreeds)
                       .ThenInclude(hb => hb.Breed)
                       .Where(h => h.Persons.Any(ph => ph.PersonId == personId && ph.IsOwner))
+                      .OrderBy(h => h.Name)
+                      .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<Horse>> GetHorsesVisibleToSaddlerAsync(int ownerId, int saddlerId) =>
+        await horseSet.AsNoTracking()
+                      .Include(h => h.Address)
+                      .Include(h => h.HorseBreeds)
+                      .ThenInclude(hb => hb.Breed)
+                      .Where(h => h.Persons.Any(ph => ph.PersonId == ownerId
+                                                      && ph.IsOwner
+                                                      && (ph.Person.ExternalId == null
+                                                          || messageSet.Any(m => m.SenderId == ownerId
+                                                                                 && m.RecipientId == saddlerId
+                                                                                 && m.HorseId == h.Id
+                                                                                 && m.AcceptedAt != null))))
                       .OrderBy(h => h.Name)
                       .ToListAsync();
 

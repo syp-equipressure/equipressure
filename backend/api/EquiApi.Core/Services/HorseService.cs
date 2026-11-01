@@ -54,6 +54,15 @@ public interface IHorseService
     public ValueTask<OneOf<Success<IReadOnlyCollection<Horse>>, NotFound>> GetOwnedHorsesOfPersonAsync(int personId);
 
     /// <summary>
+    ///     Gets the horses of a customer a saddler may see
+    /// </summary>
+    /// <param name="ownerId">The id of the owner</param>
+    /// <param name="saddlerId">The id of the saddler</param>
+    /// <returns>The horses (may be empty) or <see cref="NotFound" /> if the owner does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Horse>>, NotFound>> GetHorsesVisibleToSaddlerAsync(int ownerId,
+        int saddlerId);
+
+    /// <summary>
     ///     Adds a new horse and makes the given person its owner. An existing address with the same values is reused.
     /// </summary>
     /// <param name="data">The values of the new horse</param>
@@ -233,6 +242,21 @@ internal sealed class HorseService(IUnitOfWork uow, IClock clock, ILogger<HorseS
         }
 
         var horses = await uow.HorseRepository.GetOwnedHorsesOfPersonAsync(personId);
+
+        return new Success<IReadOnlyCollection<Horse>>(horses);
+    }
+
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<Horse>>, NotFound>> GetHorsesVisibleToSaddlerAsync(
+        int ownerId, int saddlerId)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(ownerId))
+        {
+            logger.LogInformation("Person {PersonId} not found", ownerId);
+
+            return new NotFound();
+        }
+
+        var horses = await uow.HorseRepository.GetHorsesVisibleToSaddlerAsync(ownerId, saddlerId);
 
         return new Success<IReadOnlyCollection<Horse>>(horses);
     }

@@ -18,6 +18,8 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
     private readonly Dictionary<string, Person> _persons = [];
     private Horse _storm = null!;
     private Horse _luna = null!;
+    private Horse _notShared = null!;
+    private Horse _kurtsHorse = null!;
     private Breed _breed = null!;
     private MeasurementGroup _group = null!;
     private MeasurementGroup _saddlerGroup = null!;
@@ -32,6 +34,8 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
         var kurt = TestData.CreatePerson("Kurt");
         _storm = TestData.CreateHorse();
         _luna = TestData.CreateHorse("Luna");
+        _notShared = TestData.CreateHorse("Geheim");
+        _kurtsHorse = TestData.CreateHorse("Kurtis");
         _breed = TestData.CreateBreed();
         var device = TestData.CreateDevice(DeviceId, anna, TestData.CreateDeviceCategory(), ben);
         _group = TestData.CreateMeasurementGroup(anna, _storm, TestData.CreateSaddle(_storm), device);
@@ -42,6 +46,17 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
         context.AddRange(anna, ben, carla, sam, kurt, _breed, device, saddlerDevice, _group, _saddlerGroup,
                          _measurement,
                          TestData.CreatePersonHorse(anna, _storm, true),
+                         TestData.CreatePersonHorse(anna, _notShared, true),
+                         TestData.CreatePersonHorse(kurt, _kurtsHorse, true),
+                         new ChatMessage
+                         {
+                             Type = ChatMessageType.Horse,
+                             SentAt = TestClock.GetCurrentInstant(),
+                             AcceptedAt = TestClock.GetCurrentInstant(),
+                             Sender = anna,
+                             Recipient = sam,
+                             Horse = _storm
+                         },
                          TestData.CreatePersonHorse(carla, _luna, true),
                          TestData.CreateRelationship(anna, sam, true),
                          TestData.CreateRelationship(kurt, sam, true));
@@ -71,6 +86,8 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
     // horses
     [InlineData("anna", "GET", "api/horses/{storm}", HttpStatusCode.OK)]
     [InlineData("sam", "GET", "api/horses/{storm}", HttpStatusCode.OK)]
+    [InlineData("sam", "GET", "api/horses/{notShared}", HttpStatusCode.Forbidden)]
+    [InlineData("sam", "GET", "api/horses/{kurtsHorse}", HttpStatusCode.OK)]
     [InlineData("ben", "GET", "api/horses/{storm}", HttpStatusCode.Forbidden)]
     [InlineData("carla", "GET", "api/horses/{storm}", HttpStatusCode.Forbidden)]
     [InlineData("carla", "GET", "api/horses/{storm}/saddles", HttpStatusCode.Forbidden)]
@@ -221,6 +238,24 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
         response.StatusCode.Should().Be(expectedStatusCode);
     }
 
+    [Fact]
+    public async ValueTask GetHorses_SaddlerOfCustomerWithAccount_ReturnsOnlyAcceptedHorses()
+    {
+        var response = await SendAsUserAsync(HttpMethod.Get, ResolveUrl("api/persons/{anna}/horses"), "sam");
+
+        var content = await ReadContentAsync<HorseListResponse>(response);
+        content.Horses.Select(h => h.Id).Should().Equal(_storm.Id);
+    }
+
+    [Fact]
+    public async ValueTask GetHorses_OwnHorses_ReturnsAllHorses()
+    {
+        var response = await SendAsUserAsync(HttpMethod.Get, ResolveUrl("api/persons/{anna}/horses"), "anna");
+
+        var content = await ReadContentAsync<HorseListResponse>(response);
+        content.Horses.Select(h => h.Id).Should().BeEquivalentTo([_storm.Id, _notShared.Id]);
+    }
+
     [Theory]
     [InlineData("anna", HttpStatusCode.Created)]
     [InlineData("sam", HttpStatusCode.Created)]
@@ -254,6 +289,8 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
         }
 
         return url.Replace("{storm}", _storm.Id.ToString())
+                  .Replace("{notShared}", _notShared.Id.ToString())
+                  .Replace("{kurtsHorse}", _kurtsHorse.Id.ToString())
                   .Replace("{luna}", _luna.Id.ToString())
                   .Replace("{saddle}", _group.SaddleId.ToString())
                   .Replace("{group}", _group.Id.ToString())
