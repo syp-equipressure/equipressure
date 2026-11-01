@@ -52,6 +52,10 @@ services:
       Keycloak__Audience: equi-api
       Keycloak__AdminClientSecret: ${EQUI_API_ADMIN_SECRET}
       General__ClientOrigin: https://${APP_DOMAIN}
+      Firebase__CredentialFile: /run/secrets/firebase.json
+    volumes:
+      # liegt nur auf dem Server, nie in Git
+      - ./firebase-service-account.json:/run/secrets/firebase.json:ro
     # Das Image prüft /health mit curl, beides gibt es dort nicht.
     healthcheck:
       disable: true
