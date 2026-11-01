@@ -96,6 +96,8 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.surface,
+        // bleibt immer sichtbar, das Profil scrollt dahinter
+        bottomNavigationBar: _buildActions(),
         body: SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -279,83 +281,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           currentHorse.fullStableAddress,
                         ),
                         
-                        const SizedBox(height: 40),
-
-                        /// Historie Button
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HorseHistoryScreen(horse: currentHorse),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      '${currentHorse.name}\'s Historie',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: AppColors.textStrong,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    size: 20,
-                                    color: AppColors.textStrong,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NewMeasurementScreen(
-                                    horse: currentHorse,
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.purple100,
-                              foregroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'Messung starten',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -364,6 +289,47 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.borderSoft)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HorseHistoryScreen(horse: currentHorse)),
+              ),
+              icon: const Icon(Icons.history),
+              label: const Text('Historie'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => NewMeasurementScreen(horse: currentHorse)),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.purple100,
+                foregroundColor: AppColors.primary,
+              ),
+              child: const Text(
+                'Messung starten',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
