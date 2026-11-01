@@ -153,12 +153,21 @@ public sealed class PersonController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<HorseListResponse>> GetHorses([FromRoute][ValidId] int id)
     {
-        if (!await HasAccessAsync((access, me) => access.CanManageHorsesOfPersonAsync(me, id)))
+        // stays empty for admins, they see everything
+        int? viewerId = null;
+        if (!await HasAccessAsync((access, me) =>
+        {
+            viewerId = me;
+
+            return access.CanManageHorsesOfPersonAsync(me, id);
+        }))
         {
             return AccessDenied();
         }
 
-        var result = await horseService.GetOwnedHorsesOfPersonAsync(id);
+        var result = viewerId is { } saddlerId && saddlerId != id
+            ? await horseService.GetHorsesVisibleToSaddlerAsync(id, saddlerId)
+            : await horseService.GetOwnedHorsesOfPersonAsync(id);
 
         return result.Match<ActionResult<HorseListResponse>>(
             success => Ok(HorseListResponse.FromHorses(success.Value)),
@@ -449,5 +458,56 @@ public sealed class PersonController(
         return result.Match<IActionResult>(
             _ => NoContent(),
             _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Registers a device of a person for push notifications
+    /// </summary>
+    [HttpPut("{id:int}/push-tokens")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<IActionResult> RegisterPushToken([FromRoute][ValidId] int id,
+                                                            [FromBody] PushTokenRequest request)
+    {
+        if (!IsValid<PushTokenRequest.Validator, PushTokenRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
+        var result = await personService.RegisterPushTokenAsync(id, request.Token);
+
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Removes a device of a person, e.g. after the logout
+    /// </summary>
+    [HttpDelete("{id:int}/push-tokens")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<IActionResult> RemovePushToken([FromRoute][ValidId] int id,
+                                                          [FromBody] PushTokenRequest request)
+    {
+        if (!IsValid<PushTokenRequest.Validator, PushTokenRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
+        await personService.RemovePushTokenAsync(id, request.Token);
+
+        return NoContent();
     }
 }

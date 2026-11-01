@@ -126,6 +126,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<Instant?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Instant?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Instant?>("DeliveredAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -152,6 +155,9 @@ namespace EquiApi.Persistence.Migrations
                     b.Property<int>("RecipientId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("ReplyToId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("SenderId")
                         .HasColumnType("integer");
 
@@ -170,6 +176,8 @@ namespace EquiApi.Persistence.Migrations
                     b.HasIndex("HorseId");
 
                     b.HasIndex("MeasurementGroupId");
+
+                    b.HasIndex("ReplyToId");
 
                     b.HasIndex("RecipientId", "ReadAt");
 
@@ -568,6 +576,35 @@ namespace EquiApi.Persistence.Migrations
                     b.ToTable("PersonRoleAssignment", "EquiPressure");
                 });
 
+            modelBuilder.Entity("EquiApi.Persistence.Model.PushToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Instant>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("PushToken", "EquiPressure");
+                });
+
             modelBuilder.Entity("EquiApi.Persistence.Model.Release", b =>
                 {
                     b.Property<int>("Id")
@@ -662,6 +699,11 @@ namespace EquiApi.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EquiApi.Persistence.Model.ChatMessage", "ReplyTo")
+                        .WithMany()
+                        .HasForeignKey("ReplyToId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("EquiApi.Persistence.Model.Person", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
@@ -673,6 +715,8 @@ namespace EquiApi.Persistence.Migrations
                     b.Navigation("MeasurementGroup");
 
                     b.Navigation("Recipient");
+
+                    b.Navigation("ReplyTo");
 
                     b.Navigation("Sender");
                 });
@@ -909,6 +953,17 @@ namespace EquiApi.Persistence.Migrations
                     b.Navigation("Person");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("EquiApi.Persistence.Model.PushToken", b =>
+                {
+                    b.HasOne("EquiApi.Persistence.Model.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.Release", b =>

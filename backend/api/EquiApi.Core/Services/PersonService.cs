@@ -214,6 +214,21 @@ public interface IPersonService
     public ValueTask<OneOf<Success, NotFound>> RemovePersonImageAsync(int personId);
 
     /// <summary>
+    ///     Registers a device of a person for push notifications. A device belongs to the person who logged in last.
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="token">The push token of the device</param>
+    /// <returns><see cref="Success" /> or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success, NotFound>> RegisterPushTokenAsync(int personId, string token);
+
+    /// <summary>
+    ///     Removes a device of a person, e.g. after the logout
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <param name="token">The push token of the device</param>
+    public ValueTask RemovePushTokenAsync(int personId, string token);
+
+    /// <summary>
     ///     Returned if another person already uses an email
     /// </summary>
     public readonly record struct EmailAlreadyTaken;
@@ -710,6 +725,41 @@ internal sealed class PersonService(IUnitOfWork uow, IClock clock, ILogger<Perso
         logger.LogInformation("Image of person {PersonId} was removed", personId);
 
         return new Success();
+    }
+
+    public async ValueTask<OneOf<Success, NotFound>> RegisterPushTokenAsync(int personId, string token)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        var now = clock.GetCurrentInstant();
+        var existing = await uow.PersonRepository.GetPushTokenAsync(token);
+        if (existing is null)
+        {
+            uow.PersonRepository.AddPushToken(new PushToken { Token = token, PersonId = personId, UpdatedAt = now });
+        }
+        else
+        {
+            existing.PersonId = personId;
+            existing.UpdatedAt = now;
+        }
+
+        await uow.SaveChangesAsync();
+
+        return new Success();
+    }
+
+    public async ValueTask RemovePushTokenAsync(int personId, string token)
+    {
+        var existing = await uow.PersonRepository.GetPushTokenAsync(token);
+        if (existing?.PersonId == personId)
+        {
+            await uow.PersonRepository.RemovePushTokensAsync([token]);
+        }
     }
 
     private void LogPersonNotFound(int personId)

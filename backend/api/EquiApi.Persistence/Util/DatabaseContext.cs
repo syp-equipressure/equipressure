@@ -14,8 +14,11 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
     public DbSet<PersonRelationship> PersonRelationships { get; set; }
     public DbSet<AccountRole> AccountRoles { get; set; }
     public DbSet<PersonRoleAssignment> PersonRoleAssignments { get; set; }
+    public const int PushTokenMaxLength = 512;
+
     public DbSet<PersonHorse> PersonHorses { get; set; }
     public DbSet<PersonImage> PersonImages { get; set; }
+    public DbSet<PushToken> PushTokens { get; set; }
 
     // Horse DbSets
     public DbSet<Horse> Horses { get; set; }
@@ -472,6 +475,11 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
                .HasForeignKey(m => m.MeasurementGroupId)
                .OnDelete(DeleteBehavior.SetNull);
 
+        message.HasOne(m => m.ReplyTo)
+               .WithMany()
+               .HasForeignKey(m => m.ReplyToId)
+               .OnDelete(DeleteBehavior.SetNull);
+
         message.Property(m => m.FileName).HasMaxLength(255);
         message.Property(m => m.FileContentType).HasMaxLength(255);
 
@@ -486,5 +494,15 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
 
         mb.Entity<HorseImage>().HasKey(i => i.HorseId);
         mb.Entity<PersonImage>().HasKey(i => i.PersonId);
+
+        var pushToken = mb.Entity<PushToken>();
+        pushToken.HasKey(t => t.Id);
+        pushToken.Property(t => t.Id).ValueGeneratedOnAdd();
+        pushToken.Property(t => t.Token).HasMaxLength(PushTokenMaxLength);
+        pushToken.HasIndex(t => t.Token).IsUnique();
+        pushToken.HasOne(t => t.Person)
+                 .WithMany()
+                 .HasForeignKey(t => t.PersonId)
+                 .OnDelete(DeleteBehavior.Cascade);
     }
 }

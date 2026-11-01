@@ -133,6 +133,32 @@ public interface IPersonRepository
     public void AddPerson(Person person);
 
     /// <summary>
+    ///     Gets a registered device
+    /// </summary>
+    /// <param name="token">The push token of the device</param>
+    /// <returns>The tracked entry or null if the device is not registered</returns>
+    public ValueTask<PushToken?> GetPushTokenAsync(string token);
+
+    /// <summary>
+    ///     Gets the push tokens of all devices of a person
+    /// </summary>
+    /// <param name="personId">The id of the person</param>
+    /// <returns>The push tokens</returns>
+    public ValueTask<IReadOnlyCollection<string>> GetPushTokensOfPersonAsync(int personId);
+
+    /// <summary>
+    ///     Registers a device
+    /// </summary>
+    /// <param name="token">The new entry</param>
+    public void AddPushToken(PushToken token);
+
+    /// <summary>
+    ///     Removes devices, e.g. because the app was removed from them
+    /// </summary>
+    /// <param name="tokens">The push tokens</param>
+    public ValueTask RemovePushTokensAsync(IReadOnlyCollection<string> tokens);
+
+    /// <summary>
     ///     Removes a person, their role assignments are removed as well
     /// </summary>
     /// <param name="person">The person to remove</param>
@@ -143,7 +169,8 @@ internal sealed class PersonRepository(
     DbSet<Person> personSet,
     DbSet<PersonRelationship> relationshipSet,
     DbSet<AccountRole> roleSet,
-    DbSet<PersonImage> imageSet) : IPersonRepository
+    DbSet<PersonImage> imageSet,
+    DbSet<PushToken> pushTokenSet) : IPersonRepository
 {
     public async ValueTask<Person?> GetPersonByIdAsync(int personId) =>
         await personSet.Include(p => p.Address)
@@ -244,6 +271,20 @@ internal sealed class PersonRepository(
     {
         relationshipSet.Remove(relationship);
     }
+
+    public async ValueTask<PushToken?> GetPushTokenAsync(string token) =>
+        await pushTokenSet.FirstOrDefaultAsync(t => t.Token == token);
+
+    public async ValueTask<IReadOnlyCollection<string>> GetPushTokensOfPersonAsync(int personId) =>
+        await pushTokenSet.Where(t => t.PersonId == personId).Select(t => t.Token).ToListAsync();
+
+    public void AddPushToken(PushToken token)
+    {
+        pushTokenSet.Add(token);
+    }
+
+    public async ValueTask RemovePushTokensAsync(IReadOnlyCollection<string> tokens) =>
+        await pushTokenSet.Where(t => tokens.Contains(t.Token)).ExecuteDeleteAsync();
 
     public void AddPerson(Person person)
     {

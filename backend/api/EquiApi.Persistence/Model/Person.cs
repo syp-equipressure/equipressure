@@ -42,6 +42,19 @@ public class Person
 }
 
 /// <summary>
+///     A device of a person that receives push notifications
+/// </summary>
+public class PushToken
+{
+    public int Id { get; set; }
+    public required string Token { get; set; }
+    public Instant UpdatedAt { get; set; }
+
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
+}
+
+/// <summary>
 ///     The content of the image of a person
 /// </summary>
 public class PersonImage

@@ -2,6 +2,7 @@
 using EquiApi.Dtos;
 using EquiApi.Persistence.Model;
 using EquiApi.TestInt.Util;
+using Microsoft.EntityFrameworkCore;
 
 namespace EquiApi.TestInt;
 
@@ -847,6 +848,45 @@ public sealed class PersonTests(WebApiTestFixture webApiFixture) : WebApiTestBas
 
         var content = await ReadContentAsync<ContactListResponse>(response);
         content.Contacts.Should().ContainSingle().Which.ImageUpdatedAt.Should().Be(TestClock.GetCurrentInstant());
+    }
+
+    [Fact]
+    public async ValueTask RegisterPushToken_DeviceChangesPerson_MovesDevice()
+    {
+        var first = TestData.CreatePerson("Anna", "Reiter");
+        var second = TestData.CreatePerson("Ben", "Reiter");
+        await SeedAsync(first, second);
+        var request = new PushTokenRequest("device-token");
+
+        await ApiClient.PutAsJsonAsync($"api/persons/{first.Id}/push-tokens", request, JsonOptions, TestCancellationToken);
+        var response = await ApiClient.PutAsJsonAsync($"api/persons/{second.Id}/push-tokens", request, JsonOptions,
+                                                      TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            var token = await context.PushTokens.SingleAsync(TestCancellationToken);
+            token.PersonId.Should().Be(second.Id);
+        });
+    }
+
+    [Fact]
+    public async ValueTask RemovePushToken_RegisteredDevice_RemovesDevice()
+    {
+        var person = TestData.CreatePerson();
+        await SeedAsync(person);
+        var request = new PushTokenRequest("device-token");
+        await ApiClient.PutAsJsonAsync($"api/persons/{person.Id}/push-tokens", request, JsonOptions, TestCancellationToken);
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"api/persons/{person.Id}/push-tokens");
+        message.Content = JsonContent.Create(request, options: JsonOptions);
+
+        var response = await ApiClient.SendAsync(message, TestCancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await ModifyDatabaseContentAsync(async context =>
+        {
+            (await context.PushTokens.CountAsync(TestCancellationToken)).Should().Be(0);
+        });
     }
 
     private static MultipartFormDataContent CreateImageForm(byte[] image, string fileName)

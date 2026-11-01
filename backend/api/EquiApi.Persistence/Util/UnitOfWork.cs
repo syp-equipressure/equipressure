@@ -23,7 +23,7 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 {
     public IPersonRepository PersonRepository =>
         field ??= new PersonRepository(context.Persons, context.PersonRelationships, context.AccountRoles,
-                                     context.PersonImages);
+                                     context.PersonImages, context.PushTokens);
 
     public ILocationRepository LocationRepository =>
         field ??= new LocationRepository(context.Addresses);
@@ -32,7 +32,8 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
         field ??= new DeviceRepository(context.Devices, context.DeviceCategories, context.MeasurementGroups);
 
     public IHorseRepository HorseRepository =>
-        field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds, context.HorseImages);
+        field ??= new HorseRepository(context.Horses, context.PersonHorses, context.Breeds, context.HorseImages,
+                                    context.ChatMessages);
 
     public ISaddleRepository SaddleRepository =>
         field ??= new SaddleRepository(context.Saddles, context.SaddleCategories, context.MeasurementGroups);
@@ -46,7 +47,7 @@ internal sealed class UnitOfWork(DatabaseContext context) : IUnitOfWork
 
     public IAccessRepository AccessRepository =>
         field ??= new AccessRepository(context.Persons, context.PersonRelationships, context.Horses, context.Devices,
-                                       context.MeasurementGroups);
+                                       context.MeasurementGroups, context.ChatMessages);
 
     public Task SaveChangesAsync() => context.SaveChangesAsync();
 }

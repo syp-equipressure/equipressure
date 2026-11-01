@@ -1,4 +1,5 @@
 ﻿using System.Threading.RateLimiting;
+using EquiApi.Core.Services;
 using EquiApi.Core.Util;
 using EquiApi.Persistence.Util;
 using EquiApi.Util;
@@ -42,6 +43,12 @@ public static class Setup
         {
             services.ConfigurePersistence(configurationManager, isDev);
             services.ConfigureCore();
+            // without the key of the service account, e.g. in the local development, nothing is sent
+            if (configurationManager["Firebase:CredentialFile"] is { Length: > 0 } credentialFile)
+            {
+                services.AddSingleton<IPushSender>(new FirebasePushSender(credentialFile));
+            }
+
             services.AddSingleton<IChatSocketManager, ChatSocketManager>();
         }
 

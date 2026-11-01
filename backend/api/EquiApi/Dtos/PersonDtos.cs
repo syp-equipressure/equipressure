@@ -1,5 +1,6 @@
 ﻿using EquiApi.Core.Services;
 using EquiApi.Persistence.Model;
+using EquiApi.Persistence.Util;
 using EquiApi.Shared;
 using FluentValidation;
 
@@ -17,6 +18,21 @@ public sealed record PersonDto(int Id, string FirstName, string LastName, string
 {
     public static PersonDto FromPerson(Person person) =>
         new(person.Id, person.FirstName, person.LastName, person.Email, person.ImageUpdatedAt);
+}
+
+/// <summary>
+///     Request to register or remove a device for push notifications
+/// </summary>
+/// <param name="Token">The push token of the device</param>
+public sealed record PushTokenRequest(string Token)
+{
+    public sealed class Validator : AbstractValidator<PushTokenRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Token).NotEmpty().MaximumLength(DatabaseContext.PushTokenMaxLength);
+        }
+    }
 }
 
 /// <summary>
