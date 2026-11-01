@@ -6,8 +6,9 @@ const MAX_PENDING_LENGTH = 64 * 1024;
 
 /**
  * Builds heatmap frames (20x20 values in N/cm²) from the Bluetooth data of the measurement device.
- * Like in the backend (MeasurementDataBluetoothHandler) every line is a number or a JSON array in mbar.
- * A Bluetooth message only carries a few bytes, so longer lines arrive in several parts.
+ * The device sends one line per frame with a timestamp and 400 values in mbar, separated by commas:
+ * `100700,0,0,6,2,...`. A Bluetooth message only carries a part of it, so a line arrives in several
+ * parts and ends with a line break. A number or a JSON array works as well.
  */
 export class DeviceFrameParser {
   private pending = '';
@@ -33,6 +34,7 @@ export class DeviceFrameParser {
 
 function parseLine(line: string): number[][] | null {
   if (!line) return null;
+  if (line.includes(',') && !line.startsWith('[')) return parseCsvLine(line);
 
   let parsed: unknown;
   try {
@@ -45,6 +47,19 @@ function parseLine(line: string): number[][] | null {
   if (values.length === 0 || values.length > CELLS || values.some(value => !Number.isFinite(value))) return null;
 
   const cells = (values.length === CELLS ? values : toHeatmapCells(values)).map(value => value / MBAR_PER_NCM2);
+  return Array.from({ length: GRID_SIZE }, (_, row) => cells.slice(row * GRID_SIZE, (row + 1) * GRID_SIZE));
+}
+
+/** An incomplete line, e.g. after a lost Bluetooth packet, is skipped. */
+function parseCsvLine(line: string): number[][] | null {
+  const parts = line.split(',');
+  if (parts.length === CELLS + 1) parts.shift();
+  if (parts.length !== CELLS) return null;
+
+  const values = parts.map(Number);
+  if (values.some(value => !Number.isFinite(value))) return null;
+
+  const cells = values.map(value => value / MBAR_PER_NCM2);
   return Array.from({ length: GRID_SIZE }, (_, row) => cells.slice(row * GRID_SIZE, (row + 1) * GRID_SIZE));
 }
 

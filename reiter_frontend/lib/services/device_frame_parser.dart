@@ -4,9 +4,9 @@ import 'package:reiterappfrontend/services/measurement_service.dart';
 
 /// Baut aus den Bluetooth-Daten des Messgeräts Aufnahmen für die Heatmap.
 ///
-/// Das Gerät schickt wie beim Backend (MeasurementDataBluetoothHandler) pro Zeile eine Zahl oder ein
-/// JSON-Array in mbar. Eine Bluetooth-Nachricht trägt nur wenige Bytes, längere Zeilen kommen in
-/// mehreren Teilen an.
+/// Das Gerät schickt pro Zeile einen Zeitstempel und 400 Werte in mbar, getrennt durch Beistriche:
+/// `100700,0,0,6,2,...`. Eine Bluetooth-Nachricht trägt nur einen Teil davon, eine Zeile kommt also
+/// in mehreren Teilen an und endet mit einem Zeilenumbruch. Eine Zahl oder ein JSON-Array geht auch.
 class DeviceFrameParser {
   static const int _cells =
       MeasurementService.heatmapGridSize * MeasurementService.heatmapGridSize;
@@ -36,6 +36,7 @@ class DeviceFrameParser {
 
   static List<double>? _parseLine(String line) {
     if (line.isEmpty) return null;
+    if (line.contains(',') && !line.startsWith('[')) return _parseCsvLine(line);
 
     final List<double> values;
     try {
@@ -45,5 +46,15 @@ class DeviceFrameParser {
     }
     if (values.isEmpty || values.length > _cells) return null;
     return MeasurementService.toHeatmapGrid(values);
+  }
+
+  /// Eine unvollständige Zeile, z.B. nach einem verlorenen Bluetooth-Paket, wird übersprungen.
+  static List<double>? _parseCsvLine(String line) {
+    final parts = line.split(',');
+    if (parts.length == _cells + 1) parts.removeAt(0);
+    if (parts.length != _cells) return null;
+
+    final values = parts.map((part) => double.tryParse(part.trim())).toList();
+    return values.contains(null) ? null : values.cast<double>();
   }
 }

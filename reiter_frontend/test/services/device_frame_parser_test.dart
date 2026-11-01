@@ -33,6 +33,26 @@ void main() {
       expect(frames.every((frame) => frame.length == 400), isTrue);
     });
 
+    test('versteht eine Zeile des Geräts mit Zeitstempel und 400 Werten', () {
+      final parser = DeviceFrameParser();
+      final values = List<int>.generate(400, (i) => i);
+      final line = '100700,${values.join(',')}\n';
+
+      expect(parser.add(utf8.encode(line.substring(0, 180))), isEmpty);
+      final frames = parser.add(utf8.encode(line.substring(180)));
+
+      expect(frames, hasLength(1));
+      expect(frames.single, hasLength(400));
+      expect(frames.single.first, 0);
+      expect(frames.single.last, 399);
+    });
+
+    test('überspringt eine unvollständige Zeile des Geräts', () {
+      final parser = DeviceFrameParser();
+
+      expect(parser.add(utf8.encode('100700,1,2,3\n')), isEmpty);
+    });
+
     test('überspringt ungültige Zeilen', () {
       final parser = DeviceFrameParser();
 

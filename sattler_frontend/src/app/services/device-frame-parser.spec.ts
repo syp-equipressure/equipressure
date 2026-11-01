@@ -18,6 +18,22 @@ describe('DeviceFrameParser', () => {
     expect(new DeviceFrameParser().add(`${fullFrame}\r\n${fullFrame}\n`).length).toBe(2);
   });
 
+  it('reads a line of the device with a timestamp and 400 values', () => {
+    const parser = new DeviceFrameParser();
+    const line = `100700,${Array.from({ length: 400 }, (_, index) => index).join(',')}\n`;
+
+    expect(parser.add(line.slice(0, 180))).toEqual([]);
+    const frames = parser.add(line.slice(180));
+
+    expect(frames.length).toBe(1);
+    expect(frames[0].length).toBe(20);
+    expect(frames[0][19][19]).toBeCloseTo(3.99);
+  });
+
+  it('skips an incomplete line of the device', () => {
+    expect(new DeviceFrameParser().add('100700,1,2,3\n')).toEqual([]);
+  });
+
   it('stretches short values to the heatmap grid', () => {
     const frames = new DeviceFrameParser().add('[12.5, 13.1, 14.8]\n12.5\n');
 
