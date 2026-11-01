@@ -12,7 +12,13 @@
       <section class="heatmap-card">
         <div class="heatmap-heading">
           <span>Druckverteilung</span>
-          <span class="live-indicator">● LIVE</span>
+          @if (!isLive) {
+            <span class="live-indicator simulated">Simulation, kein Messgerät verbunden</span>
+          } @else if (connectionLost()) {
+            <span class="live-indicator lost">Verbindung verloren</span>
+          } @else {
+            <span class="live-indicator">● LIVE</span>
+          }
         </div>
         <app-pressure-heatmap [grid]="pressureGrid()" [max]="8"></app-pressure-heatmap>
         <div class="heatmap-legend"><span>Niedrig</span><span class="legend-gradient"></span><span>Hoch</span></div>

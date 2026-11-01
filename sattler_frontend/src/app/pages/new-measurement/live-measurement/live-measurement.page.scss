@@ -42,6 +42,8 @@
 .heatmap-card { display: flex; flex-direction: column; padding: 14px; background: #f3f3f3; }
 .heatmap-heading { display: flex; justify-content: space-between; padding: 4px 4px 12px; color: t.$text-strong; font-size: 13px; font-weight: 600; }
 .live-indicator { color: #44a94b; font-size: 11px; }
+.live-indicator.simulated { color: t.$accent-orange; }
+.live-indicator.lost { color: t.$accent-red; }
 app-pressure-heatmap { display: block; flex: 1; min-height: 380px; border-radius: 8px; overflow: hidden; }
 .heatmap-legend { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 0 2px; color: t.$text-soft; font-size: 11px; }
 .legend-gradient { width: min(300px, 60%); height: 7px; border-radius: 8px; background: linear-gradient(90deg, blue, cyan, lime, yellow, red); }

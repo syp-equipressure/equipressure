@@ -21,8 +21,12 @@ class DeviceConnectionButton extends StatelessWidget {
       builder: (context, _) {
         final connected = connection.isConnectedTo(device);
         final connecting = connection.isConnectingTo(device);
+        final error = connection.errorFor(device);
 
-        return Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
           children: [
             Icon(
               Icons.circle,
@@ -37,7 +41,9 @@ class DeviceConnectionButton extends StatelessWidget {
             Expanded(
               child: Text(
                 connected
-                    ? 'Verbunden'
+                    ? connection.isSimulated
+                        ? 'Verbunden (Simulation)'
+                        : 'Verbunden'
                     : connecting
                         ? 'Verbinde …'
                         : 'Nicht verbunden',
@@ -71,6 +77,12 @@ class DeviceConnectionButton extends StatelessWidget {
                       )
                     : const Text('Verbinden'),
               ),
+          ],
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 6),
+              Text(error, style: const TextStyle(fontSize: 13, color: AppColors.error)),
+            ],
           ],
         );
       },

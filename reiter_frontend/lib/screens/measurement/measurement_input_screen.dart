@@ -533,6 +533,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
         section.isExpanded = false;
         section.duration = result.duration;
         section.pressureData = result.pressureData;
+        section.frames = result.frames;
       });
     }
   }
@@ -585,6 +586,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                     : s.gait,
                 hand: s.hand,
                 pressureData: s.pressureData ?? [],
+                frames: s.frames,
                 duration: s.duration,
               ))
           .toList(),
@@ -638,6 +640,7 @@ class MeasurementSection {
   bool isCompleted;
   Duration? duration;
   List<double>? pressureData;
+  List<List<double>> frames = const [];
 
   MeasurementSection({
     required this.gait,
