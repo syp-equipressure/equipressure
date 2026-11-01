@@ -1,7 +1,7 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -119,8 +119,73 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isSending) return;
 
-    await _send(() => _chatService.sendText(_contactId, text));
-    if (_error == null) _messageController.clear();
+    final replyTo = _replyTo;
+    await _send(() => _chatService.sendText(_contactId, text, replyToId: replyTo?.id));
+    if (_error == null) {
+      _messageController.clear();
+      setState(() => _replyTo = null);
+    }
+  }
+
+  /// Die Nachricht, auf die gerade geantwortet wird
+  Message? _replyTo;
+
+  Future<void> _showMessageActions(Message message) async {
+    if (message.isDeleted) return;
+
+    final isFromMe = message.senderId != _contactId;
+    final text = message.text;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('Antworten'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                setState(() => _replyTo = message);
+              },
+            ),
+            if (text != null && text.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.copy_outlined),
+                title: const Text('Kopieren'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Clipboard.setData(ClipboardData(text: text));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Nachricht kopiert')),
+                  );
+                },
+              ),
+            if (isFromMe && message.acceptedAt == null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                title: const Text('Für alle löschen', style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _deleteMessage(message);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteMessage(Message message) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _chatService.deleteMessage(message);
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Die Nachricht konnte nicht gelöscht werden.')),
+      );
+    }
   }
 
   void _showAttachmentMenu() {
@@ -475,7 +540,9 @@ class _ChatScreenState extends State<ChatScreen> {
         if (showDate) _buildDateDivider(message.sentAt),
         Align(
           alignment: isFromMe ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
+          child: GestureDetector(
+            onLongPress: () => _showMessageActions(message),
+            child: Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             constraints: BoxConstraints(
@@ -501,7 +568,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
-                if (message.file != null)
+                if (message.replyTo != null) _buildReplyQuote(message.replyTo!),
+                if (message.isDeleted)
+                  const Text(
+                    'Diese Nachricht wurde gelöscht',
+                    style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textMuted),
+                  )
+                else if (message.file != null)
                   _buildFile(message)
                 else if (message.type != MessageType.text)
                   _buildShareCard(message),
@@ -518,8 +591,26 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
           ),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildReplyQuote(ChatReply reply) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      decoration: const BoxDecoration(
+        color: AppColors.bgPanel,
+        border: Border(left: BorderSide(color: AppColors.primary, width: 3)),
+      ),
+      child: Text(
+        reply.preview,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13, color: AppColors.textSoft),
+      ),
     );
   }
 
@@ -763,7 +854,30 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_replyTo != null)
+            Row(
+              children: [
+                const Icon(Icons.reply, size: 18, color: AppColors.textSoft),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _replyTo!.preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSoft),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Antwort abbrechen',
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => setState(() => _replyTo = null),
+                ),
+              ],
+            ),
+          Row(
         children: [
           Expanded(
             child: Container(
@@ -808,6 +922,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
+          ),
+        ],
           ),
         ],
       ),

@@ -1,3 +1,29 @@
+/// Die Nachricht, auf die eine andere antwortet.
+class ChatReply {
+  final String id;
+  final String senderId;
+  final String preview;
+
+  const ChatReply({required this.id, required this.senderId, required this.preview});
+
+  factory ChatReply.fromJson(Map<String, dynamic> json) {
+    final text = json['text'] as String?;
+    final String preview;
+    if (json['isDeleted'] == true) {
+      preview = 'Gelöschte Nachricht';
+    } else if (text != null && text.isNotEmpty) {
+      preview = text;
+    } else if (json['type'] == 'Horse') {
+      preview = 'Geteiltes Pferd';
+    } else if (json['type'] == 'Measurement') {
+      preview = 'Geteilte Messung';
+    } else {
+      preview = json['fileName'] as String? ?? 'Datei';
+    }
+    return ChatReply(id: json['id'].toString(), senderId: json['senderId'].toString(), preview: preview);
+  }
+}
+
 /// Eine Chat-Nachricht aus dem Backend: ein Text, ein geteiltes Pferd oder eine
 /// geteilte Messung.
 class Message {
@@ -20,6 +46,14 @@ class Message {
   /// Bild oder Datei, der Inhalt wird über [ChatService.fileUrl] geladen.
   final ChatFile? file;
 
+  /// Wann der Absender die Nachricht für beide gelöscht hat
+  final DateTime? deletedAt;
+
+  /// Die Nachricht, auf die diese antwortet
+  final ChatReply? replyTo;
+
+  bool get isDeleted => deletedAt != null;
+
   Message({
     required this.id,
     required this.senderId,
@@ -33,12 +67,15 @@ class Message {
     this.horse,
     this.measurement,
     this.file,
+    this.deletedAt,
+    this.replyTo,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
     final horse = json['horse'];
     final measurement = json['measurement'];
     final file = json['file'];
+    final replyTo = json['replyTo'];
     return Message(
       id: json['id'].toString(),
       senderId: json['senderId'].toString(),
@@ -54,6 +91,8 @@ class Message {
           ? SharedMeasurement.fromJson(measurement)
           : null,
       file: file is Map<String, dynamic> ? ChatFile.fromJson(file) : null,
+      deletedAt: _parseDate(json['deletedAt']),
+      replyTo: replyTo is Map<String, dynamic> ? ChatReply.fromJson(replyTo) : null,
     );
   }
 
@@ -71,11 +110,14 @@ class Message {
       horse: horse,
       measurement: measurement,
       file: file,
+      deletedAt: deletedAt,
+      replyTo: replyTo,
     );
   }
 
   /// Kurzer Text für die Chatliste und Benachrichtigungen.
   String get preview {
+    if (isDeleted) return 'Diese Nachricht wurde gelöscht';
     switch (type) {
       case MessageType.horse:
         return horse == null ? 'Geteiltes Pferd gelöscht' : 'Pferd geteilt: ${horse!.name}';
