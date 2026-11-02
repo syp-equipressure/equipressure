@@ -70,7 +70,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
           child: const Center(
           child: Text(
-            'Sattler*innen',
+            'Sattler-Chat',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,

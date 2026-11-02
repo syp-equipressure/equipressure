@@ -52,7 +52,7 @@ class SideNav extends StatelessWidget {
               listenable: ChatService(),
               builder: (context, _) => _DrawerItem(
                 icon: Icons.chat_bubble_outline,
-                text: 'Sattler*innen',
+                text: 'Sattler-Chat',
                 badge: ChatService().unreadTotal,
                 onTap: () {
                   Navigator.of(context).push(
@@ -63,20 +63,12 @@ class SideNav extends StatelessWidget {
             ),
             _DrawerItem(
               icon: Icons.location_on_outlined,
-              text: 'Sattler*in finden',
+              text: 'Sattler-Map',
               onTap: () {
                 Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => FindSaddler())
                 );
               },
-            ),
-
-            const Spacer(),
-
-            _DrawerItem(
-              icon: Icons.settings,
-              text: 'Einstellungen',
-              onTap: () {},
             ),
           ],
         ),
