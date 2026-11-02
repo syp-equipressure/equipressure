@@ -57,6 +57,11 @@ export class MeasurementSessionPage {
     this.session()?.segments.filter(segment => segment.completed).length ?? 0,
   );
 
+  /** Erst wenn jede Teilmessung aufgenommen ist, kann die Messung gespeichert werden. */
+  readonly openCount = computed(() =>
+    this.session()?.segments.filter(segment => !segment.completed).length ?? 0,
+  );
+
   constructor() {
     const params = this.queryParams();
     const ownerId = params.get('ownerId');
@@ -135,7 +140,7 @@ export class MeasurementSessionPage {
 
   finish(): void {
     const session = this.session();
-    if (!session || this.completedCount() === 0 || this.saving()) return;
+    if (!session || this.completedCount() === 0 || this.openCount() > 0 || this.saving()) return;
     const owner = this.owner();
     this.saving.set(true);
     this.saveError.set('');

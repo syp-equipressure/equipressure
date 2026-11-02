@@ -217,6 +217,12 @@ textarea::placeholder { color: #999; }
   font-size: 14px;
 }
 
+.finish-hint {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
 .finish-button {
   display: block;
   width: min(450px, 100%);

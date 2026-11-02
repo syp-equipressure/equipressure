@@ -130,7 +130,13 @@
     @if (saveError()) {
       <p class="save-error" role="alert">{{ saveError() }}</p>
     }
-    <button type="button" class="finish-button" [disabled]="completedCount() === 0 || saving()" (click)="finish()">
+    @if (openCount() > 0) {
+      <p class="finish-hint" role="status">
+        {{ openCount() === 1 ? 'Eine Teilmessung ist noch offen.' : openCount() + ' Teilmessungen sind noch offen.' }}
+        Nimm sie auf oder lösche sie, um die Messung zu beenden.
+      </p>
+    }
+    <button type="button" class="finish-button" [disabled]="completedCount() === 0 || openCount() > 0 || saving()" (click)="finish()">
       {{ saving() ? 'Messung wird gespeichert …' : 'Messung beenden' }}
     </button>
   </main>
