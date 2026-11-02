@@ -43,7 +43,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             return ValidationProblem();
         }
 
-        if (!await HasAccessAsync((access, me) => access.CanManageHorsesOfPersonAsync(me, request.OwnerId)))
+        if (!await HasAccessAsync((access, me) => access.CanManagePersonAsync(me, request.OwnerId)))
         {
             return AccessDenied();
         }
@@ -65,7 +65,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult> RemoveHorse([FromRoute][ValidId] int id)
     {
-        if (!await HasAccessAsync((access, me) => access.CanRemoveHorseAsync(me, id)))
+        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
         {
             return AccessDenied();
         }
@@ -224,7 +224,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             return ValidationProblem();
         }
 
-        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        if (!await HasAccessAsync((access, me) => access.CanManageSaddlesOfHorseAsync(me, id)))
         {
             return AccessDenied();
         }
@@ -253,7 +253,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
             return ValidationProblem();
         }
 
-        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        if (!await HasAccessAsync((access, me) => access.CanManageSaddlesOfHorseAsync(me, id)))
         {
             return AccessDenied();
         }
@@ -276,7 +276,7 @@ public sealed class HorseController(IHorseService horseService) : BaseController
     public async ValueTask<IActionResult> RemoveSaddle([FromRoute][ValidId] int id,
                                                        [FromRoute][ValidId] int saddleId)
     {
-        if (!await HasAccessAsync((access, me) => access.CanManageHorseAsync(me, id)))
+        if (!await HasAccessAsync((access, me) => access.CanManageSaddlesOfHorseAsync(me, id)))
         {
             return AccessDenied();
         }

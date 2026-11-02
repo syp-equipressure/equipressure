@@ -32,7 +32,8 @@ public sealed record ContactData(
     string PLZ,
     string? WebsiteLink,
     string? Description,
-    Instant? ImageUpdatedAt);
+    Instant? ImageUpdatedAt,
+    bool HasAccount);
 
 /// <summary>
 ///     A city that is used by at least one address

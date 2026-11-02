@@ -14,7 +14,7 @@ public class Person
     public required string LastName { get; set; }
     public decimal Height { get; set; } // in cm
     public decimal Weight { get; set; } // in kg
-    public LocalDate DateOfBirth { get; set; }
+    public LocalDate? DateOfBirth { get; set; } // unknown for riders added by another person
     public string? Email { get; set; }
     public string? WebsiteLink { get; set; }
     public string? Description { get; set; }
@@ -28,6 +28,12 @@ public class Person
     public string? ImageContentType { get; set; }
     public Instant? ImageUpdatedAt { get; set; }
     public PersonImage? Image { get; set; }
+
+    /// <summary>
+    ///     The person who added this rider for their own measurements, null for everybody else
+    /// </summary>
+    public int? CreatedById { get; set; }
+    public Person? CreatedBy { get; set; }
 
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;

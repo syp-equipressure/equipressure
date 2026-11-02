@@ -96,6 +96,11 @@ public sealed class DatabaseContext(DbContextOptions<DatabaseContext> options) :
         person.Property(p => p.CreatedAt).HasDefaultValueSql("now()");
         person.Property(p => p.ImageContentType).HasMaxLength(255);
 
+        person.HasOne(p => p.CreatedBy)
+              .WithMany()
+              .HasForeignKey(p => p.CreatedById)
+              .OnDelete(DeleteBehavior.SetNull);
+
         person.HasOne(p => p.Image)
               .WithOne(i => i.Person)
               .HasForeignKey<PersonImage>(i => i.PersonId)

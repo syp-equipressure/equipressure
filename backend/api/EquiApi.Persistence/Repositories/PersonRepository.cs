@@ -92,6 +92,13 @@ public interface IPersonRepository
     public ValueTask<IReadOnlyCollection<ContactData>> GetContactsAsync(int personId);
 
     /// <summary>
+    ///     Gets the riders a person added for their own measurements, ordered by last name
+    /// </summary>
+    /// <param name="personId">The id of the person who added the riders</param>
+    /// <returns>The riders of the person</returns>
+    public ValueTask<IReadOnlyCollection<Person>> GetRidersCreatedByAsync(int personId);
+
+    /// <summary>
     ///     Gets the relationship (contact and/or favourite) between an equestrian and a saddler
     /// </summary>
     /// <param name="equestrianId">The id of the equestrian</param>
@@ -234,7 +241,15 @@ internal sealed class PersonRepository(
                                                     p.Address.PLZ,
                                                     p.WebsiteLink,
                                                     p.Description,
-                                                    p.ImageUpdatedAt))
+                                                    p.ImageUpdatedAt,
+                                                    p.ExternalId != null))
+                       .ToListAsync();
+
+    public async ValueTask<IReadOnlyCollection<Person>> GetRidersCreatedByAsync(int personId) =>
+        await personSet.AsNoTracking()
+                       .Where(p => p.CreatedById == personId)
+                       .OrderBy(p => p.LastName)
+                       .ThenBy(p => p.FirstName)
                        .ToListAsync();
 
     public async ValueTask<PersonRelationship?> GetRelationshipAsync(int equestrianId, int saddlerId) =>

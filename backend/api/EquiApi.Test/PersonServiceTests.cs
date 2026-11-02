@@ -25,6 +25,7 @@ public sealed class PersonServiceTests
                 .Returns(call => call.Arg<IReadOnlyCollection<RoleName>>().Select(TestData.CreateRole).ToList());
         _uowMock.PersonRepository.GetRelationshipsOfPersonAsync(Arg.Any<int>())
                 .Returns(new List<PersonRelationship>());
+        _uowMock.HorseRepository.GetHorsesToDeleteAsync(Arg.Any<int>()).Returns(new List<Horse>());
     }
 
     [Fact]
@@ -211,8 +212,8 @@ public sealed class PersonServiceTests
     {
         var contacts = new List<ContactData>
         {
-            new(2, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles", null),
-            new(3, "Anna", "Huber", null, "Linz", "4020", null, null, null)
+            new(2, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles", null, true),
+            new(3, "Anna", "Huber", null, "Linz", "4020", null, null, null, false)
         };
         _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
         _uowMock.PersonRepository.GetContactsAsync(PersonId).Returns(contacts);
@@ -493,6 +494,58 @@ public sealed class PersonServiceTests
 
         result.Value.Should().BeOfType<Success>();
         _uowMock.PersonRepository.Received(1).RemovePerson(person);
+        await _uowMock.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task DeletePersonAsync_PersonWithoutAccount_RemovesOwnedHorses()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        var horse = TestData.CreateHorse();
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+        _uowMock.HorseRepository.GetHorsesToDeleteAsync(PersonId).Returns(new List<Horse> { horse });
+
+        await _sut.DeletePersonAsync(PersonId);
+
+        _uowMock.HorseRepository.Received(1).DeleteHorse(horse);
+    }
+
+    [Fact]
+    public async Task DeletePersonAsync_PersonWithAccount_KeepsHorses()
+    {
+        var person = TestData.CreatePerson(PersonId);
+        person.ExternalId = "external-id";
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(person);
+
+        await _sut.DeletePersonAsync(PersonId);
+
+        await _uowMock.HorseRepository.DidNotReceive().GetHorsesToDeleteAsync(Arg.Any<int>());
+    }
+
+    [Fact]
+    public async Task AddRiderAsync_PersonNotFound_ReturnsNotFound()
+    {
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns((Person?) null);
+
+        var result = await _sut.AddRiderAsync(PersonId, new NewRiderData("Lisa", "Reiter", 170M, 60M));
+
+        result.Value.Should().BeOfType<NotFound>();
+        _uowMock.PersonRepository.DidNotReceive().AddPerson(Arg.Any<Person>());
+    }
+
+    [Fact]
+    public async Task AddRiderAsync_PersonExists_AddsRiderWithAddressOfCreator()
+    {
+        var creator = TestData.CreatePerson(PersonId);
+        _uowMock.PersonRepository.GetPersonByIdAsync(PersonId).Returns(creator);
+
+        await _sut.AddRiderAsync(PersonId, new NewRiderData("Lisa", "Reiter", 170M, 60M));
+
+        _uowMock.PersonRepository.Received(1).AddPerson(Arg.Is<Person>(rider =>
+            rider.FirstName == "Lisa"
+            && rider.CreatedById == PersonId
+            && rider.AddressId == creator.AddressId
+            && rider.DateOfBirth == null));
         await _uowMock.Received(1).SaveChangesAsync();
     }
 

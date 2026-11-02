@@ -452,7 +452,10 @@ namespace EquiApi.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<LocalDate>("DateOfBirth")
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<LocalDate?>("DateOfBirth")
                         .HasColumnType("date");
 
                     b.Property<string>("Description")
@@ -491,6 +494,8 @@ namespace EquiApi.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AddressId");
+
+                    b.HasIndex("CreatedById");
 
                     b.HasIndex("DateOfBirth");
 
@@ -884,7 +889,14 @@ namespace EquiApi.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("EquiApi.Persistence.Model.Person", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Address");
+
+                    b.Navigation("CreatedBy");
                 });
 
             modelBuilder.Entity("EquiApi.Persistence.Model.PersonHorse", b =>

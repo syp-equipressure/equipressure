@@ -124,6 +124,55 @@ public sealed class PersonController(
     }
 
     /// <summary>
+    ///     Gets the riders a person added for their own measurements
+    /// </summary>
+    [HttpGet("{id:int}/riders")]
+    [ProducesResponseType<RiderListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<RiderListResponse>> GetRiders([FromRoute][ValidId] int id)
+    {
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
+        var result = await personService.GetRidersAsync(id);
+
+        return result.Match<ActionResult<RiderListResponse>>(
+            success => Ok(RiderListResponse.FromPersons(success.Value)),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Adds a rider for the own measurements, only the name and the measures are needed
+    /// </summary>
+    [HttpPost("{id:int}/riders")]
+    [ProducesResponseType<RiderDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<RiderDto>> AddRider([FromRoute][ValidId] int id,
+                                                            [FromBody] AddRiderRequest request)
+    {
+        if (!IsValid<AddRiderRequest.Validator, AddRiderRequest>(request))
+        {
+            return ValidationProblem();
+        }
+
+        if (!await IsCurrentPersonAsync(id))
+        {
+            return AccessDenied();
+        }
+
+        var result = await personService.AddRiderAsync(id, request.ToData());
+
+        return result.Match<ActionResult<RiderDto>>(
+            success => CreatedAtAction(nameof(GetPersonById), new { id = success.Value.Id },
+                                       RiderDto.FromPerson(success.Value)),
+            _ => NotFound());
+    }
+
+    /// <summary>
     ///     Gets the saddlers a person marked as favourite
     /// </summary>
     [HttpGet("{id:int}/favourites")]
@@ -159,7 +208,7 @@ public sealed class PersonController(
         {
             viewerId = me;
 
-            return access.CanManageHorsesOfPersonAsync(me, id);
+            return access.CanViewHorsesOfPersonAsync(me, id);
         }))
         {
             return AccessDenied();

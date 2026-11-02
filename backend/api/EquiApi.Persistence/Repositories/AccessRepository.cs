@@ -23,15 +23,16 @@ public interface IAccessRepository
     public ValueTask<bool?> CanViewPersonAsync(int personId, int otherPersonId);
 
     /// <summary>
-    ///     A person may change themselves, a saddler may also change customers without an account of their own
+    ///     A person may change themselves and the riders they added, a saddler may also change customers without
+    ///     an account of their own
     /// </summary>
     public ValueTask<bool?> CanManagePersonAsync(int personId, int otherPersonId);
 
     /// <summary>
-    ///     A person may see and add their own horses, a saddler also those of their customers. Which horses of a
-    ///     customer a saddler sees is decided by <see cref="CanViewHorseAsync" />.
+    ///     A person may see their own horses, a saddler also those of their customers. Which horses of a customer
+    ///     a saddler sees is decided by <see cref="CanViewHorseAsync" />.
     /// </summary>
-    public ValueTask<bool?> CanManageHorsesOfPersonAsync(int personId, int otherPersonId);
+    public ValueTask<bool?> CanViewHorsesOfPersonAsync(int personId, int otherPersonId);
 
     /// <summary>
     ///     A person may see a horse they own or ride. A saddler sees the horses of customers without an account and
@@ -40,14 +41,15 @@ public interface IAccessRepository
     public ValueTask<bool?> CanViewHorseAsync(int personId, int horseId);
 
     /// <summary>
-    ///     A person may change a horse they own, a saddler also the horses of their customers they may see
+    ///     A person may change and remove a horse they own, a saddler also the horses of customers without an account
     /// </summary>
     public ValueTask<bool?> CanManageHorseAsync(int personId, int horseId);
 
     /// <summary>
-    ///     Only the owner may remove a horse
+    ///     Besides the persons who may change a horse, a saddler may change the saddles of all customer horses they
+    ///     may see, they need them for their measurements
     /// </summary>
-    public ValueTask<bool?> IsHorseOwnerAsync(int personId, int horseId);
+    public ValueTask<bool?> CanManageSaddlesOfHorseAsync(int personId, int horseId);
 
     /// <summary>
     ///     The owner and the users of a device may see and use it
@@ -66,7 +68,8 @@ public interface IAccessRepository
     public ValueTask<bool?> CanViewMeasurementGroupAsync(int personId, int groupId);
 
     /// <summary>
-    ///     The person who took the measurements and the owner of the horse may change them
+    ///     The rider and the owner of the horse may change the measurements, a saddler those of customers without an
+    ///     account and those taken with their own device
     /// </summary>
     public ValueTask<bool?> CanManageMeasurementGroupAsync(int personId, int groupId);
 
@@ -101,6 +104,17 @@ internal sealed class AccessRepository(
                                                                            && m.AcceptedAt != null))))
                 .Select(h => h.Id);
 
+    /// <summary>
+    ///     The horses of customers a saddler added themselves, these customers cannot manage anything on their own
+    /// </summary>
+    private IQueryable<int> OwnCustomerHorsesOf(int saddlerId) =>
+        horseSet.Where(h => h.Persons.Any(ph => ph.IsOwner
+                                                && ph.Person.ExternalId == null
+                                                && relationshipSet.Any(r => r.SaddlerId == saddlerId
+                                                                            && r.EquestrianId == ph.PersonId
+                                                                            && r.IsContact)))
+                .Select(h => h.Id);
+
     public async ValueTask<int?> GetPersonIdByExternalIdAsync(string externalId) =>
         await personSet.Where(p => p.ExternalId == externalId)
                        .Select(p => (int?) p.Id)
@@ -109,6 +123,7 @@ internal sealed class AccessRepository(
     public async ValueTask<bool?> CanViewPersonAsync(int personId, int otherPersonId) =>
         await personSet.Where(p => p.Id == otherPersonId)
                        .Select(p => (bool?) (p.Id == personId
+                                            || p.CreatedById == personId
                                             || p.Roles.Any(r => r.Role.Name == RoleName.Saddler)
                                             || relationshipSet.Any(r =>
                                                 (r.SaddlerId == personId && r.EquestrianId == p.Id)
@@ -122,12 +137,13 @@ internal sealed class AccessRepository(
         await personSet.Where(p => p.Id == otherPersonId)
                        .Select(p => (bool?) (p.Id == personId
                                             || (p.ExternalId == null
-                                                && relationshipSet.Any(r => r.SaddlerId == personId
-                                                                            && r.EquestrianId == p.Id
-                                                                            && r.IsContact))))
+                                                && (p.CreatedById == personId
+                                                    || relationshipSet.Any(r => r.SaddlerId == personId
+                                                                                && r.EquestrianId == p.Id
+                                                                                && r.IsContact)))))
                        .FirstOrDefaultAsync();
 
-    public async ValueTask<bool?> CanManageHorsesOfPersonAsync(int personId, int otherPersonId) =>
+    public async ValueTask<bool?> CanViewHorsesOfPersonAsync(int personId, int otherPersonId) =>
         await personSet.Where(p => p.Id == otherPersonId)
                        .Select(p => (bool?) (p.Id == personId
                                             || relationshipSet.Any(r => r.SaddlerId == personId
@@ -144,12 +160,13 @@ internal sealed class AccessRepository(
     public async ValueTask<bool?> CanManageHorseAsync(int personId, int horseId) =>
         await horseSet.Where(h => h.Id == horseId)
                       .Select(h => (bool?) (h.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId)
-                                           || CustomerHorsesOf(personId).Contains(h.Id)))
+                                           || OwnCustomerHorsesOf(personId).Contains(h.Id)))
                       .FirstOrDefaultAsync();
 
-    public async ValueTask<bool?> IsHorseOwnerAsync(int personId, int horseId) =>
+    public async ValueTask<bool?> CanManageSaddlesOfHorseAsync(int personId, int horseId) =>
         await horseSet.Where(h => h.Id == horseId)
-                      .Select(h => (bool?) h.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId))
+                      .Select(h => (bool?) (h.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId)
+                                           || CustomerHorsesOf(personId).Contains(h.Id)))
                       .FirstOrDefaultAsync();
 
     public async ValueTask<bool?> CanUseDeviceAsync(int personId, string deviceId) =>
@@ -173,7 +190,11 @@ internal sealed class AccessRepository(
     public async ValueTask<bool?> CanManageMeasurementGroupAsync(int personId, int groupId) =>
         await groupSet.Where(g => g.Id == groupId)
                       .Select(g => (bool?) (g.PersonId == personId
-                                           || g.Horse.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId)))
+                                           || g.Horse.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId)
+                                           || OwnCustomerHorsesOf(personId).Contains(g.HorseId)
+                                           || (CustomerHorsesOf(personId).Contains(g.HorseId)
+                                               && (g.Device.OwnerId == personId
+                                                   || g.Device.Users.Any(u => u.UserId == personId)))))
                       .FirstOrDefaultAsync();
 
     public async ValueTask<bool?> CanAddMeasurementToGroupAsync(int personId, int groupId) =>

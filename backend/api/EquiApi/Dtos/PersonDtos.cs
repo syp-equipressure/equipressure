@@ -61,11 +61,12 @@ public sealed record PersonListResponse(IReadOnlyList<PersonDto> Persons)
 /// <param name="Roles">The roles of the person</param>
 /// <param name="CreatedAt">When the person was added</param>
 /// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
+/// <param name="HasAccount">Whether the person logs in themselves, false for customers added by a saddler</param>
 public sealed record PersonDetailDto(
     int Id,
     string FirstName,
     string LastName,
-    LocalDate DateOfBirth,
+    LocalDate? DateOfBirth,
     decimal Height,
     decimal Weight,
     string? Email,
@@ -74,7 +75,8 @@ public sealed record PersonDetailDto(
     AddressDto Address,
     IReadOnlyList<RoleName> Roles,
     Instant CreatedAt,
-    Instant? ImageUpdatedAt)
+    Instant? ImageUpdatedAt,
+    bool HasAccount)
 {
     public static PersonDetailDto FromPerson(Person person) =>
         new(person.Id,
@@ -89,7 +91,8 @@ public sealed record PersonDetailDto(
             AddressDto.FromAddress(person.Address),
             person.Roles.Select(assignment => assignment.Role.Name).ToList(),
             person.CreatedAt,
-            person.ImageUpdatedAt);
+            person.ImageUpdatedAt,
+            person.ExternalId is not null);
 }
 
 
@@ -163,6 +166,7 @@ public sealed record SaddlerListResponse(IReadOnlyList<SaddlerDto> Saddlers)
 /// <param name="WebsiteLink">The optional website, only set for saddlers</param>
 /// <param name="Description">The optional description, only set for saddlers</param>
 /// <param name="ImageUpdatedAt">When the image was set, null without an image</param>
+/// <param name="HasAccount">Whether the contact logs in themselves, false for customers added by a saddler</param>
 public sealed record ContactDto(
     int Id,
     string FirstName,
@@ -172,11 +176,12 @@ public sealed record ContactDto(
     string PLZ,
     string? WebsiteLink,
     string? Description,
-    Instant? ImageUpdatedAt)
+    Instant? ImageUpdatedAt,
+    bool HasAccount)
 {
     public static ContactDto FromContactData(ContactData contact) =>
         new(contact.Id, contact.FirstName, contact.LastName, contact.AddressName, contact.CityName, contact.PLZ,
-            contact.WebsiteLink, contact.Description, contact.ImageUpdatedAt);
+            contact.WebsiteLink, contact.Description, contact.ImageUpdatedAt, contact.HasAccount);
 }
 
 /// <summary>
@@ -187,6 +192,53 @@ public sealed record ContactListResponse(IReadOnlyList<ContactDto> Contacts)
 {
     public static ContactListResponse FromContacts(IEnumerable<ContactData> contacts) =>
         new(contacts.Select(ContactDto.FromContactData).ToList());
+}
+
+/// <summary>
+///     A rider a person added for their own measurements
+/// </summary>
+/// <param name="Id">The id of the rider</param>
+/// <param name="FirstName">The first name of the rider</param>
+/// <param name="LastName">The last name of the rider</param>
+/// <param name="Height">The height of the rider in cm</param>
+/// <param name="Weight">The weight of the rider in kg</param>
+public sealed record RiderDto(int Id, string FirstName, string LastName, decimal Height, decimal Weight)
+{
+    public static RiderDto FromPerson(Person person) =>
+        new(person.Id, person.FirstName, person.LastName, person.Height, person.Weight);
+}
+
+/// <summary>
+///     A list of riders
+/// </summary>
+/// <param name="Riders">The riders</param>
+public sealed record RiderListResponse(IReadOnlyList<RiderDto> Riders)
+{
+    public static RiderListResponse FromPersons(IEnumerable<Person> persons) =>
+        new(persons.Select(RiderDto.FromPerson).ToList());
+}
+
+/// <summary>
+///     Request to add a rider for the own measurements
+/// </summary>
+/// <param name="FirstName">The first name of the rider</param>
+/// <param name="LastName">The last name of the rider</param>
+/// <param name="Height">The height of the rider in cm</param>
+/// <param name="Weight">The weight of the rider in kg</param>
+public sealed record AddRiderRequest(string FirstName, string LastName, decimal Height, decimal Weight)
+{
+    public NewRiderData ToData() => new(FirstName, LastName, Height, Weight);
+
+    public sealed class Validator : AbstractValidator<AddRiderRequest>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.FirstName).NotEmpty();
+            RuleFor(x => x.LastName).NotEmpty();
+            RuleFor(x => x.Height).GreaterThan(0);
+            RuleFor(x => x.Weight).GreaterThan(0);
+        }
+    }
 }
 
 /// <summary>

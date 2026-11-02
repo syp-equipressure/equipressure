@@ -92,6 +92,9 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
     [InlineData("carla", "GET", "api/horses/{storm}", HttpStatusCode.Forbidden)]
     [InlineData("carla", "GET", "api/horses/{storm}/saddles", HttpStatusCode.Forbidden)]
     [InlineData("sam", "DELETE", "api/horses/{storm}", HttpStatusCode.Forbidden)]
+    [InlineData("sam", "DELETE", "api/horses/{kurtsHorse}", HttpStatusCode.NoContent)]
+    [InlineData("anna", "GET", "api/persons/{anna}/riders", HttpStatusCode.OK)]
+    [InlineData("carla", "GET", "api/persons/{anna}/riders", HttpStatusCode.Forbidden)]
     [InlineData("anna", "DELETE", "api/horses/{storm}", HttpStatusCode.NoContent)]
     [InlineData("carla", "DELETE", "api/horses/{storm}/saddles/{saddle}", HttpStatusCode.Forbidden)]
     // the saddle was used for the measurement group, so the owner gets past the access check but cannot remove it
@@ -195,7 +198,8 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
 
     [Theory]
     [InlineData("anna", "{anna}", HttpStatusCode.Created)]
-    [InlineData("sam", "{anna}", HttpStatusCode.Created)]
+    [InlineData("sam", "{kurt}", HttpStatusCode.Created)]
+    [InlineData("sam", "{anna}", HttpStatusCode.Forbidden)]
     [InlineData("carla", "{anna}", HttpStatusCode.Forbidden)]
     public async ValueTask CreateHorse_DependingOnOwner_ChecksAccess(string user, string owner,
                                                                      HttpStatusCode expectedStatusCode)
@@ -208,7 +212,8 @@ public sealed class AuthorizationTests(WebApiTestFixture webApiFixture) : WebApi
     }
 
     [Theory]
-    [InlineData("sam", "{storm}", HttpStatusCode.OK)]
+    [InlineData("sam", "{kurtsHorse}", HttpStatusCode.OK)]
+    [InlineData("sam", "{storm}", HttpStatusCode.Forbidden)]
     [InlineData("carla", "{storm}", HttpStatusCode.Forbidden)]
     public async ValueTask PatchHorse_DependingOnUser_ChecksAccess(string user, string horse,
                                                                    HttpStatusCode expectedStatusCode)

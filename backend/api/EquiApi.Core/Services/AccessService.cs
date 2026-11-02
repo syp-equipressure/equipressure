@@ -26,10 +26,10 @@ public interface IAccessService
     /// </summary>
     public bool CanAddPerson(RoleName role);
 
-    public ValueTask<bool> CanManageHorsesOfPersonAsync(int personId, int otherPersonId);
+    public ValueTask<bool> CanViewHorsesOfPersonAsync(int personId, int otherPersonId);
     public ValueTask<bool> CanViewHorseAsync(int personId, int horseId);
     public ValueTask<bool> CanManageHorseAsync(int personId, int horseId);
-    public ValueTask<bool> CanRemoveHorseAsync(int personId, int horseId);
+    public ValueTask<bool> CanManageSaddlesOfHorseAsync(int personId, int horseId);
     public ValueTask<bool> CanUseDeviceAsync(int personId, string deviceId);
     public ValueTask<bool> CanManageDeviceAsync(int personId, string deviceId);
 
@@ -63,8 +63,8 @@ internal sealed class AccessService(IUnitOfWork uow) : IAccessService
 
     public bool CanAddPerson(RoleName role) => role == RoleName.Equestrian;
 
-    public async ValueTask<bool> CanManageHorsesOfPersonAsync(int personId, int otherPersonId) =>
-        await Repository.CanManageHorsesOfPersonAsync(personId, otherPersonId) ?? true;
+    public async ValueTask<bool> CanViewHorsesOfPersonAsync(int personId, int otherPersonId) =>
+        await Repository.CanViewHorsesOfPersonAsync(personId, otherPersonId) ?? true;
 
     public async ValueTask<bool> CanViewHorseAsync(int personId, int horseId) =>
         await Repository.CanViewHorseAsync(personId, horseId) ?? true;
@@ -72,8 +72,8 @@ internal sealed class AccessService(IUnitOfWork uow) : IAccessService
     public async ValueTask<bool> CanManageHorseAsync(int personId, int horseId) =>
         await Repository.CanManageHorseAsync(personId, horseId) ?? true;
 
-    public async ValueTask<bool> CanRemoveHorseAsync(int personId, int horseId) =>
-        await Repository.IsHorseOwnerAsync(personId, horseId) ?? true;
+    public async ValueTask<bool> CanManageSaddlesOfHorseAsync(int personId, int horseId) =>
+        await Repository.CanManageSaddlesOfHorseAsync(personId, horseId) ?? true;
 
     public async ValueTask<bool> CanUseDeviceAsync(int personId, string deviceId) =>
         await Repository.CanUseDeviceAsync(personId, deviceId) ?? true;

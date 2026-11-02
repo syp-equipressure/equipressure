@@ -50,6 +50,7 @@ public sealed record MeasurementGroupListResponse(IReadOnlyList<MeasurementGroup
 /// <param name="RiderHeight">The height of the rider in cm</param>
 /// <param name="RiderWeight">The weight of the rider in kg</param>
 /// <param name="SaddleName">The name of the saddle</param>
+/// <param name="DeviceId">The id of the device the measurements were taken with</param>
 public sealed record MeasurementGroupDetailDto(
     int Id,
     LocalDate Date,
@@ -63,13 +64,14 @@ public sealed record MeasurementGroupDetailDto(
     string RiderLastName,
     decimal RiderHeight,
     decimal RiderWeight,
-    string SaddleName)
+    string SaddleName,
+    string DeviceId)
 {
     public static MeasurementGroupDetailDto FromGroup(MeasurementGroup group) =>
         new(group.Id, group.Date, group.Name, group.Notes, group.Horse.Name,
             group.Horse.HorseBreeds.FirstOrDefault()?.Breed.Name ?? string.Empty, group.Horse.DateOfBirth,
             group.Horse.Weight, group.Person.FirstName, group.Person.LastName, group.Person.Height,
-            group.Person.Weight, group.Saddle.Name);
+            group.Person.Weight, group.Saddle.Name, group.DeviceId);
 }
 
 /// <summary>

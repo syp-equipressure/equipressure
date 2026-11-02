@@ -1045,3 +1045,42 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "EquiPressure"."__EFMigrationsHistory" WHERE "MigrationId" = '20261102174454_AddRiderCreatedBy') THEN
+    ALTER TABLE "EquiPressure"."Person" ALTER COLUMN "DateOfBirth" DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "EquiPressure"."__EFMigrationsHistory" WHERE "MigrationId" = '20261102174454_AddRiderCreatedBy') THEN
+    ALTER TABLE "EquiPressure"."Person" ADD "CreatedById" integer;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "EquiPressure"."__EFMigrationsHistory" WHERE "MigrationId" = '20261102174454_AddRiderCreatedBy') THEN
+    CREATE INDEX "IX_Person_CreatedById" ON "EquiPressure"."Person" ("CreatedById");
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "EquiPressure"."__EFMigrationsHistory" WHERE "MigrationId" = '20261102174454_AddRiderCreatedBy') THEN
+    ALTER TABLE "EquiPressure"."Person" ADD CONSTRAINT "FK_Person_Person_CreatedById" FOREIGN KEY ("CreatedById") REFERENCES "EquiPressure"."Person" ("Id") ON DELETE SET NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "EquiPressure"."__EFMigrationsHistory" WHERE "MigrationId" = '20261102174454_AddRiderCreatedBy') THEN
+    INSERT INTO "EquiPressure"."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261102174454_AddRiderCreatedBy', '10.0.12');
+    END IF;
+END $EF$;
+COMMIT;
+

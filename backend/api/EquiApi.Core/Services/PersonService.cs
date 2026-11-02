@@ -6,6 +6,11 @@ using OneOf.Types;
 namespace EquiApi.Core.Services;
 
 /// <summary>
+///     The values of a rider a person adds for their own measurements
+/// </summary>
+public sealed record NewRiderData(string FirstName, string LastName, decimal Height, decimal Weight);
+
+/// <summary>
 ///     The values of a new person
 /// </summary>
 public sealed record NewPersonData(
@@ -109,6 +114,22 @@ public interface IPersonService
     /// <param name="personId">The id of the equestrian or saddler</param>
     /// <returns>The contacts (may be empty) or <see cref="NotFound" /> if the person does not exist</returns>
     public ValueTask<OneOf<Success<IReadOnlyCollection<ContactData>>, NotFound>> GetContactsAsync(int personId);
+
+    /// <summary>
+    ///     Gets the riders a person added for their own measurements
+    /// </summary>
+    /// <param name="personId">The id of the person who added the riders</param>
+    /// <returns>The riders (may be empty) or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetRidersAsync(int personId);
+
+    /// <summary>
+    ///     Adds a rider for the measurements of a person. Only the name and the measures are known, so the rider
+    ///     uses the address of that person.
+    /// </summary>
+    /// <param name="personId">The id of the person adding the rider</param>
+    /// <param name="data">The values of the rider</param>
+    /// <returns>The new rider or <see cref="NotFound" /> if the person does not exist</returns>
+    public ValueTask<OneOf<Success<Person>, NotFound>> AddRiderAsync(int personId, NewRiderData data);
 
     /// <summary>
     ///     Adds a new person with a role. An existing address with the same values is reused.
@@ -362,6 +383,49 @@ internal sealed class PersonService(IUnitOfWork uow, IClock clock, ILogger<Perso
         return new Success<IReadOnlyCollection<ContactData>>(contacts);
     }
 
+    public async ValueTask<OneOf<Success<IReadOnlyCollection<Person>>, NotFound>> GetRidersAsync(int personId)
+    {
+        if (!await uow.PersonRepository.PersonExistsAsync(personId))
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        var riders = await uow.PersonRepository.GetRidersCreatedByAsync(personId);
+
+        return new Success<IReadOnlyCollection<Person>>(riders);
+    }
+
+    public async ValueTask<OneOf<Success<Person>, NotFound>> AddRiderAsync(int personId, NewRiderData data)
+    {
+        var creator = await uow.PersonRepository.GetPersonByIdAsync(personId);
+        if (creator is null)
+        {
+            LogPersonNotFound(personId);
+
+            return new NotFound();
+        }
+
+        var roles = await GetRolesAsync([RoleName.Equestrian]);
+        var rider = new Person
+        {
+            FirstName = data.FirstName,
+            LastName = data.LastName,
+            Height = data.Height,
+            Weight = data.Weight,
+            CreatedById = personId,
+            AddressId = creator.AddressId,
+            Roles = roles.Select(role => new PersonRoleAssignment { Role = role }).ToList()
+        };
+
+        uow.PersonRepository.AddPerson(rider);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Rider {RiderId} added by person {PersonId}", rider.Id, personId);
+
+        return new Success<Person>(rider);
+    }
+
     public async ValueTask<OneOf<Success<Person>, IPersonService.EmailAlreadyTaken>> AddPersonAsync(
         NewPersonData data)
     {
@@ -508,6 +572,15 @@ internal sealed class PersonService(IUnitOfWork uow, IClock clock, ILogger<Perso
         foreach (var relationship in await uow.PersonRepository.GetRelationshipsOfPersonAsync(personId))
         {
             uow.PersonRepository.RemoveRelationship(relationship);
+        }
+
+        // nobody else could manage the horses of a customer without an account, they go with them
+        if (person.ExternalId is null)
+        {
+            foreach (var horse in await uow.HorseRepository.GetHorsesToDeleteAsync(personId))
+            {
+                uow.HorseRepository.DeleteHorse(horse);
+            }
         }
 
         uow.PersonRepository.RemovePerson(person);

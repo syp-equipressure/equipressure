@@ -73,7 +73,7 @@ public sealed class MeasurementTests(WebApiTestFixture webApiFixture) : WebApiTe
         content.Should().Be(new MeasurementGroupDetailDto(group.Id, group.Date, "Dressurtraining",
                                                           "Sehr ausbalanciert", "Luna", "Haflinger",
                                                           horse.DateOfBirth, horse.Weight, "Max", "Mustermann",
-                                                          180M, 75M, "Dressage Saddle"));
+                                                          180M, 75M, "Dressage Saddle", group.DeviceId));
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class MeasurementTests(WebApiTestFixture webApiFixture) : WebApiTe
         var content = await ReadContentAsync<MeasurementGroupDetailDto>(response);
         content.Should().Be(new MeasurementGroupDetailDto(content.Id, request.Date, "Galopptraining", "Erste Messung",
                                                           "Luna", "Haflinger", horse.DateOfBirth, horse.Weight, "Max",
-                                                          "Mustermann", 180M, 75M, "Dressage Saddle"));
+                                                          "Mustermann", 180M, 75M, "Dressage Saddle", request.DeviceId));
 
         response.Headers.Location.Should().NotBeNull();
         var getResponse = await ApiClient.GetAsync(response.Headers.Location, TestCancellationToken);

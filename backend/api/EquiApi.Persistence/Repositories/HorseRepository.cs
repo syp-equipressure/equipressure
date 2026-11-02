@@ -123,6 +123,13 @@ public interface IHorseRepository
     public void AddHorse(Horse horse);
 
     /// <summary>
+    ///     Gets the horses of an owner for deleting them
+    /// </summary>
+    /// <param name="personId">The id of the owner</param>
+    /// <returns>The tracked horses of the owner</returns>
+    public ValueTask<IReadOnlyCollection<Horse>> GetHorsesToDeleteAsync(int personId);
+
+    /// <summary>
     /// Deletes a horse
     /// </summary>
     /// <param name="horse">The horse to delete</param>
@@ -230,6 +237,10 @@ internal sealed class HorseRepository(
     {
         horseSet.Add(horse);
     }
+
+    public async ValueTask<IReadOnlyCollection<Horse>> GetHorsesToDeleteAsync(int personId) =>
+        await horseSet.Where(h => h.Persons.Any(ph => ph.IsOwner && ph.PersonId == personId))
+                      .ToListAsync();
 
     public void DeleteHorse(Horse horse)
     {
