@@ -124,8 +124,8 @@
               }
             </div>
           </button>
-          <!-- nur Messungen der eigenen Pferde dürfen gelöscht werden -->
-          @if (canManageHorse()) {
+          <!-- eigene Pferde, eigene Kund*innen und mit dem eigenen Gerät aufgenommene Messungen -->
+          @if (canDeleteMeasurement(m)) {
             <button
               type="button"
               class="icon-btn ghost delete-measurement"

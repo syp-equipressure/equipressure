@@ -54,10 +54,25 @@ export class HorsesPage {
     return c.isMe ? 'Meine Pferde' : `${fullName(c)} Pferde`;
   });
 
+  /** Saddlers add horses for themselves and for customers they added, other customers manage their own. */
+  readonly canAddHorse = computed(() =>
+    !this.params().has('customerId') || this.customer()?.hasAccount === false,
+  );
+
   /** "Meine Pferde" is opened from the sidenav, only the horses of a customer have a page to go back to */
   readonly showBack = computed(() => this.params().has('customerId'));
 
   constructor() {
+    // nach einem direkten Aufruf ist noch unbekannt, ob die Person ein eigenes Konto hat
+    effect(onCleanup => {
+      const customerId = this.params().get('customerId');
+      if (!customerId || !/^[1-9]\d*$/.test(customerId) || this.customer()?.hasAccount !== undefined) return;
+      const subscription = this.api.getPerson(customerId).subscribe({
+        next: customer => this.data.upsertCustomers([customer]),
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+
     effect(onCleanup => {
       const ownerId = this.backendOwnerId();
       this.backendError.set('');

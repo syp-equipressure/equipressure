@@ -16,6 +16,7 @@ export interface BackendGroupDetail {
   riderHeight: number;
   riderWeight: number;
   saddleName: string;
+  deviceId?: string;
 }
 
 export interface BackendMeasurement {
@@ -53,6 +54,7 @@ export function toMeasurement(
     horseId,
     date: toGermanDate(group.date),
     deviceName: group.name,
+    deviceId: group.deviceId,
     durationLabel: duration,
     symmetryPct: symmetry(pressureGrid),
     notes: group.notes ?? '',

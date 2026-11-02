@@ -1,4 +1,5 @@
 import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ConfirmService } from '../../services/confirm.service';
 import { EMPTY, Observable, catchError, concat, defer, forkJoin, switchMap, tap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -34,6 +35,7 @@ export class MeasurementsPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
+  private readonly confirmDialog = inject(ConfirmService);
   private readonly api = inject(BackendApiService);
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
@@ -58,15 +60,19 @@ export class MeasurementsPage implements OnDestroy {
   });
 
   /**
-   * The saddler may only change and delete their own horses, not the horses of customers.
+   * The saddler may change and delete their own horses and those of customers they added themselves.
    * With a backend person the owner of the horse decides, without it the local "me" customer.
    */
   readonly canManageHorse = computed(() => {
     const horse = this.horse();
     if (!horse) return false;
     const personId = this.personContext.personId();
-    return personId ? horse.ownerId === personId : !!this.customer()?.isMe;
+    if (!personId) return !!this.customer()?.isMe;
+    return horse.ownerId === personId || this.customer()?.hasAccount === false;
   });
+
+  /** The devices of the saddler, measurements taken with them may be deleted at every customer. */
+  private readonly ownDeviceIds = signal<string[]>([]);
 
   readonly customerName = computed(() => {
     const c = this.customer();
@@ -113,6 +119,15 @@ export class MeasurementsPage implements OnDestroy {
       this.tab.set('messungen');
       this.selectedId.set(measurementId);
     }
+
+    effect(onCleanup => {
+      const personId = this.personContext.personId();
+      if (!isBackendId(personId)) return;
+      const subscription = this.api.getDevices(personId).subscribe({
+        next: devices => this.ownDeviceIds.set(devices.map(device => device.id)),
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
 
     // Pferd und Kund*in sind nur bekannt, wenn vorher die Kunden- oder Pferdeliste geladen wurde.
     // Bei einem direkten Aufruf (z.B. "Öffnen" im Chat) werden sie hier aus dem Backend nachgeladen.
@@ -291,24 +306,33 @@ export class MeasurementsPage implements OnDestroy {
     this.showHorseForm.set(false);
   }
 
+  canDeleteMeasurement(measurement: Measurement): boolean {
+    return this.canManageHorse() || this.ownDeviceIds().includes(measurement.deviceId ?? '');
+  }
+
   isBackendHorse(horse: HorseModel): boolean {
     return isBackendId(horse.id);
   }
 
-  deleteHorse(): void {
+  private horseListRoute(): string[] {
+    const customerId = this.params().get('customerId');
+    return customerId ? ['/customers', customerId, 'horses'] : ['/my-horses'];
+  }
+
+  async deleteHorse(): Promise<void> {
     const horse = this.horse();
     if (!horse || !this.canManageHorse()) return;
-    if (!window.confirm(`Möchtest du ${horse.name} und alle zugehörigen Messungen und Sättel wirklich löschen?`)) return;
+    if (!await this.confirmDialog.ask({ title: 'Pferd löschen', message: `Möchtest du ${horse.name} und alle zugehörigen Messungen und Sättel wirklich löschen?` })) return;
     if (!isBackendId(horse.id)) {
       this.data.removeHorse(horse.id);
-      void this.router.navigate(['/my-horses']);
+      void this.router.navigate(this.horseListRoute());
       return;
     }
     this.horseActionError.set('');
     this.api.deleteHorse(horse.id).subscribe({
       next: () => {
         this.data.removeHorse(horse.id);
-        void this.router.navigate(['/my-horses']);
+        void this.router.navigate(this.horseListRoute());
       },
       error: (error: Error) => this.horseActionError.set(error.message),
     });
@@ -325,11 +349,11 @@ export class MeasurementsPage implements OnDestroy {
     this.resetProModeWithoutSelection();
   }
 
-  deleteMeasurement(id: string, event: Event): void {
+  async deleteMeasurement(id: string, event: Event): Promise<void> {
     event.stopPropagation();
     const measurement = this.data.getMeasurement(id);
-    if (!measurement || !this.canManageHorse()) return;
-    if (!window.confirm(`Möchtest du die Messung vom ${measurement.date} wirklich löschen?`)) return;
+    if (!measurement || !this.canDeleteMeasurement(measurement)) return;
+    if (!await this.confirmDialog.ask({ title: 'Messung löschen', message: `Möchtest du die Messung vom ${measurement.date} wirklich löschen?` })) return;
     if (!isBackendId(id)) {
       this.removeMeasurementLocally(id);
       return;

@@ -6,6 +6,8 @@ export interface Measurement {
   horseId: string;
   date: string; // dd.mm.yyyy
   deviceName: string; // e.g. "Prestige X-D2"
+  /** The device the measurement was taken with, a saddler may delete their own measurements */
+  deviceId?: string;
   durationLabel: string; // e.g. "01:22 min"
   symmetryPct: number; // 0-100
   notes: string;
