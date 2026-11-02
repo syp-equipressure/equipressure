@@ -17,8 +17,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColors.surface,
 
       // 👇 DAS MACHT DEN SCHATTEN WIE IM BILD
-      elevation: 3,
-      shadowColor: AppColors.shadow(1.5),
+      elevation: 1,
+      shadowColor: AppColors.shadow(0.2),
 
       centerTitle: true,
 
