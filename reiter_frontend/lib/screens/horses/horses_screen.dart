@@ -137,19 +137,28 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _listView() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            'Meine Pferde',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return CustomScrollView(
+      slivers: [
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 40),
+          sliver: SliverToBoxAdapter(
+            child: Center(
+              child: Text(
+                'Meine Pferde',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
-          const SizedBox(height: 40),
-          Expanded(child: horses.isEmpty ? _emptyBox() : _horseGrid()),
-        ],
-      ),
+        ),
+        if (horses.isEmpty)
+          SliverFillRemaining(hasScrollBody: false, child: _emptyBox())
+        else
+          // unten Platz für den Hinzufügen-Button
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+            sliver: _horseGrid(),
+          ),
+      ],
     );
   }
 
@@ -191,7 +200,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _horseGrid() {
-    return GridView.builder(
+    return SliverGrid.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 16,
