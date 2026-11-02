@@ -28,9 +28,7 @@ export class SettingsPage {
     feedback.set('');
     try {
       this.settings.savePreferences(this.preferences());
-      feedback.set(
-        'Auf diesem Gerät gespeichert. Für eine Synchronisierung mit deinem Konto fehlt noch der Backend-Endpunkt.',
-      );
+      feedback.set('Auf diesem Gerät gespeichert.');
       feedbackIsError.set(false);
     } catch {
       feedback.set('Die Einstellungen konnten auf diesem Gerät nicht gespeichert werden.');

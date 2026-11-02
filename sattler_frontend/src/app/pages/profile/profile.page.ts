@@ -169,7 +169,7 @@ export class ProfilePage {
       next: () => {
         this.data.updateSattler(patch);
         this.backendProfileSaving.set(false);
-        this.backendProfileNotice.set('Profil im Backend gespeichert.');
+        this.backendProfileNotice.set('Profil gespeichert.');
         this.editMode.set(false);
       },
       error: error => {
