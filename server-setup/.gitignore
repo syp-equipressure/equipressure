@@ -1,2 +1,5 @@
 .env
 firebase-service-account.json
+backups/
+.deploy.lock
+.deploy-failed

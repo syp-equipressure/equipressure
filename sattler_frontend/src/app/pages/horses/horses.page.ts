@@ -54,6 +54,9 @@ export class HorsesPage {
     return c.isMe ? 'Meine Pferde' : `${fullName(c)} Pferde`;
   });
 
+  /** "Meine Pferde" is opened from the sidenav, only the horses of a customer have a page to go back to */
+  readonly showBack = computed(() => this.params().has('customerId'));
+
   constructor() {
     effect(onCleanup => {
       const ownerId = this.backendOwnerId();

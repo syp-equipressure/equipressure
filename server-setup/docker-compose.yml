@@ -40,10 +40,9 @@ services:
       - edge
       - db
 
-  # Der Quellcode liegt in ./src und wird beim Start auf dem Server gebaut.
+  # Die Images baut GitHub nach grünen Tests, deploy.sh holt sie automatisch.
   api:
-    image: equipressure-api:local
-    build: ./src/backend/api
+    image: ghcr.io/syp-equipressure/equipressure-api:latest
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -68,8 +67,7 @@ services:
       - db
 
   sattler:
-    image: equipressure-sattler:local
-    build: ./src/sattler_frontend
+    image: ghcr.io/syp-equipressure/equipressure-sattler:latest
     restart: unless-stopped
     environment:
       API_URL: https://${API_DOMAIN}/api

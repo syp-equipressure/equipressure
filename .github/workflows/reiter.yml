@@ -1,0 +1,77 @@
+name: Reiter App
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths: [ 'reiter_frontend/**', '.github/workflows/reiter.yml' ]
+  pull_request:
+    branches: [ main, dev ]
+    paths: [ 'reiter_frontend/**', '.github/workflows/reiter.yml' ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.38.6'
+
+defaults:
+  run:
+    working-directory: reiter_frontend
+
+jobs:
+  analyze-and-test:
+    name: Analyze & tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
+
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Build APK for the server
+        run: >-
+          flutter build apk --release
+          --dart-define=API_URL=https://api.equipressure.com/api
+          --dart-define=KEYCLOAK_ISSUER=https://auth.equipressure.com/realms/equipressure
+
+      # An app cannot be installed from the server, the APK is downloaded from the workflow run
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: equipressure-${{ github.ref_name }}-${{ github.sha }}
+          path: reiter_frontend/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
