@@ -5,11 +5,12 @@ import { filter, map } from 'rxjs';
 import { SidenavComponent } from './shared/sidenav/sidenav';
 import { SidenavService } from './services/sidenav.service';
 import { ChatToastsComponent } from './shared/chat-toasts/chat-toasts';
+import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog';
 import { ChatService } from './services/chat.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, SidenavComponent, ChatToastsComponent],
+  imports: [RouterOutlet, SidenavComponent, ChatToastsComponent, ConfirmDialogComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

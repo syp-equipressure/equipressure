@@ -1,4 +1,5 @@
 import { Component, Input, computed, effect, inject, signal } from '@angular/core';
+import { ConfirmService } from '../../services/confirm.service';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -58,6 +59,7 @@ function toGermanDate(value: string): string {
   styleUrl: './stub.page.scss',
 })
 export class StubPage {
+  private readonly confirmDialog = inject(ConfirmService);
   @Input() title = '';
 
   private readonly route = inject(ActivatedRoute);
@@ -377,11 +379,11 @@ export class StubPage {
     if (this.selectedOwner()?.backend) this.loadSaddleCategories();
   }
 
-  deleteSaddle(): void {
+  async deleteSaddle(): Promise<void> {
     const horse = this.selectedHorse();
     const saddleId = this.editingSaddleId();
     if (!horse || !saddleId) return;
-    if (!window.confirm(`Möchtest du den Sattel „${this.saddleName()}“ wirklich löschen?`)) return;
+    if (!await this.confirmDialog.ask({ title: 'Sattel löschen', message: `Möchtest du den Sattel „${this.saddleName()}“ wirklich löschen?` })) return;
 
     const removed = () => {
       this.data.deleteSaddle(saddleId);

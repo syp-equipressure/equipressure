@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ConfirmService } from '../../services/confirm.service';
 import { FormsModule } from '@angular/forms';
 import { PressureDevice } from '../../models/device.model';
 import { DataService } from '../../services/data.service';
@@ -14,6 +15,7 @@ import { BackendPersonContextService } from '../../services/backend-person-conte
   styleUrl: './devices.page.scss',
 })
 export class DevicesPage {
+  private readonly confirmDialog = inject(ConfirmService);
   private readonly data = inject(DataService);
   private readonly api = inject(BackendApiService);
   private readonly personContext = inject(BackendPersonContextService);
@@ -169,8 +171,8 @@ export class DevicesPage {
     });
   }
 
-  deleteDevice(device: PressureDevice): void {
-    if (!window.confirm(`Möchtest du das Gerät „${device.name}“ wirklich löschen?`)) return;
+  async deleteDevice(device: PressureDevice): Promise<void> {
+    if (!await this.confirmDialog.ask({ title: 'Gerät löschen', message: `Möchtest du das Gerät „${device.name}“ wirklich löschen?` })) return;
     if (this.backendPersonId()) {
       this.api.deleteDevice(device.id).subscribe({
         next: () => {

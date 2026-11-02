@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnDestroy, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { ConfirmService } from '../../services/confirm.service';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -33,6 +34,7 @@ interface MessageDay {
   styleUrl: './messages.page.scss',
 })
 export class MessagesPage implements OnDestroy {
+  private readonly confirmDialog = inject(ConfirmService);
   readonly chat = inject(ChatService);
   private readonly personContext = inject(BackendPersonContextService);
   private readonly api = inject(BackendApiService);
@@ -222,8 +224,8 @@ export class MessagesPage implements OnDestroy {
     void navigator.clipboard.writeText(message.text ?? '');
   }
 
-  delete(message: ChatMessage): void {
-    if (!window.confirm('Diese Nachricht für alle löschen?')) return;
+  async delete(message: ChatMessage): Promise<void> {
+    if (!await this.confirmDialog.ask({ title: 'Nachricht löschen', message: 'Diese Nachricht für alle löschen?' })) return;
     this.sendError.set('');
     this.chat.deleteMessage(message).subscribe({
       error: (error: Error) => this.sendError.set(error.message),

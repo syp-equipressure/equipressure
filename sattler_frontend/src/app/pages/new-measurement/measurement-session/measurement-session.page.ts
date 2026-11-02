@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ConfirmService } from '../../../services/confirm.service';
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -18,6 +19,7 @@ import { fullName } from '../../../models/customer.model';
   styleUrl: './measurement-session.page.scss',
 })
 export class MeasurementSessionPage {
+  private readonly confirmDialog = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
@@ -105,8 +107,8 @@ export class MeasurementSessionPage {
     this.sessionService.addSegment();
   }
 
-  removeSegment(segmentId: string): void {
-    if (!window.confirm('Möchtest du diese Teilmessung wirklich löschen?')) return;
+  async removeSegment(segmentId: string): Promise<void> {
+    if (!await this.confirmDialog.ask({ title: 'Teilmessung löschen', message: 'Möchtest du diese Teilmessung wirklich löschen?' })) return;
     this.sessionService.removeSegment(segmentId);
   }
 
