@@ -86,18 +86,11 @@ class Horse {
 
   /// ← NEU: Hilfsmethode für vollständige Adresse
   String get fullStableAddress {
-    if (stableStreet == null || stableStreet!.isEmpty) {
-      return '-';
-    }
-    
     final street = '${stableStreet ?? ''} ${stableHouseNumber ?? ''}'.trim();
     final cityLine = '${stablePostalCode ?? ''} ${stableCity ?? ''}'.trim();
-    
-    if (cityLine.isEmpty) {
-      return street;
-    }
-    
-    return '$street\n$cityLine';
+
+    final lines = [street, cityLine].where((line) => line.isNotEmpty);
+    return lines.isEmpty ? '-' : lines.join('\n');
   }
 
   /// ← NEU: Prüft ob Adresse vorhanden ist
