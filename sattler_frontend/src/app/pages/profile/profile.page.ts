@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { DataService } from '../../services/data.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Sattler, sattlerFullName } from '../../models/sattler.model';
@@ -19,9 +20,14 @@ type EditableField = 'firstName' | 'lastName' | 'email' | 'website' | 'address';
   styleUrl: './profile.page.scss',
 })
 export class ProfilePage {
+  private readonly auth = inject(AuthService);
   private readonly data = inject(DataService);
   private readonly api = inject(BackendApiService);
   private readonly personContext = inject(BackendPersonContextService);
+
+  logout(): void {
+    this.auth.logout();
+  }
 
   readonly sattler = this.data.sattler;
   readonly backendPersonId = this.personContext.personId;

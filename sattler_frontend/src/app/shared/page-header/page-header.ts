@@ -4,7 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { SidenavService } from '../../services/sidenav.service';
 import { DataService } from '../../services/data.service';
 import { fullName } from '../../models/customer.model';
-import { AuthService } from '../../services/auth.service';
 import { AccountService } from '../../services/account.service';
 import { BackendApiService } from '../../services/backend-api.service';
 
@@ -25,7 +24,6 @@ export class PageHeaderComponent {
   private readonly sidenav = inject(SidenavService);
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
-  private readonly auth = inject(AuthService);
   private readonly account = inject(AccountService);
   private readonly api = inject(BackendApiService);
 
@@ -43,10 +41,6 @@ export class PageHeaderComponent {
 
   get accountEmail(): string {
     return this.account.me()?.email ?? this.data.getMe().email ?? '';
-  }
-
-  logout(): void {
-    this.auth.logout();
   }
 
   get profileActive(): boolean {

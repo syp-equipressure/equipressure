@@ -181,6 +181,18 @@
   box-shadow: t.$shadow-card;
 }
 
+.logout-option {
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+
+  &.profile-option .profile-option-icon {
+    background: t.$danger-bg;
+    color: t.$danger-text;
+  }
+}
+
 .profile-option {
   display: flex;
   align-items: center;
