@@ -14,6 +14,9 @@ class SelectionDropdown<T> extends StatelessWidget {
   /// Zeigt in der aufgeklappten Liste neben jedem Eintrag einen Stift zum Bearbeiten
   final ValueChanged<T>? onEditItem;
 
+  /// Ohne Angabe lässt sich jeder Eintrag bearbeiten
+  final bool Function(T item)? canEditItem;
+
   const SelectionDropdown({
     super.key,
     required this.label,
@@ -26,6 +29,7 @@ class SelectionDropdown<T> extends StatelessWidget {
     this.onAddNew,
     this.addNewText,
     this.onEditItem,
+    this.canEditItem,
   });
 
   @override
@@ -78,7 +82,7 @@ class SelectionDropdown<T> extends StatelessWidget {
                 ...items.map((T item) {
                   return DropdownMenuItem<String>(
                     value: getItemId(item),
-                    child: onEditItem == null
+                    child: onEditItem == null || !(canEditItem?.call(item) ?? true)
                         ? Text(getItemText(item), overflow: TextOverflow.ellipsis)
                         : Row(
                             children: [

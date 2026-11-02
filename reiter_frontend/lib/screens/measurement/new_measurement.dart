@@ -198,7 +198,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => NewPersonScreen()
+        builder: (_) => const NewPersonScreen()
       ),
     ).then((newPerson) async {
       await _loadData();
@@ -211,6 +211,24 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
           );
         });
       }
+    });
+  }
+
+  /// Öffnet einen selbst angelegten Reiter zum Bearbeiten oder Löschen
+  Future<void> _showEditRiderScreen(Person rider) async {
+    final previousSelection = selectedPerson;
+    final updated = await Navigator.push<Person>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewPersonScreen(existingRider: rider),
+      ),
+    );
+    await _loadData();
+    if (!mounted) return;
+    setState(() {
+      // der bearbeitete Reiter wird ausgewählt, nach dem Löschen bleibt die bisherige Auswahl (falls es sie noch gibt)
+      final id = updated?.id ?? previousSelection?.id;
+      selectedPerson = persons.where((p) => p.id == id).firstOrNull;
     });
   }
 
@@ -319,6 +337,8 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                     },
                     onAddNew: _showAddRiderDialog,
                     addNewText: 'Reiter:in hinzufügen',
+                    onEditItem: _showEditRiderScreen,
+                    canEditItem: (person) => person.isOwnRider,
                   ),
 
                   if (selectedPerson != null) ...[

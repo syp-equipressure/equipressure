@@ -439,8 +439,7 @@ class PersonService {
   // Instanzmethoden für bestehende Screens.
   // ---------------------------------------------------------------------------
 
-  // The backend has no global person list, so use the selected person and their
-  // contacts, hydrating each entry through the existing person-detail route.
+  // Die Auswahl für Messungen: die angemeldete Person und ihre selbst angelegten Reiter.
   Future<List<Person>> getPersons() async {
     final personId = await BackendPersonContextService.loadPersonId() ??
         AuthService().currentUserId()?.toString();
@@ -449,47 +448,84 @@ class PersonService {
       return _cachedPersons!;
     }
 
-    final contacts = await loadPersonContacts(personId);
-    final personIds = <String>{
-      personId,
-      ...contacts.map((contact) => contact['id'].toString()),
-    };
-    final details = await Future.wait(
-      personIds.map(_fetchPersonDetails),
-    );
-    _cachedPersons = details.map(_personFromBackend).toList();
+    final me = await _fetchPersonDetails(personId);
+    final riders = await _loadRiders(personId);
+    _cachedPersons = [_personFromBackend(me), ...riders];
     _cachedPersonContext = personId;
     return _cachedPersons!;
   }
 
-  Future<Person> addPerson(Person person) async {
-    final dateOfBirth = person.dob;
-    if (dateOfBirth == null) {
-      throw ArgumentError('A date of birth is required to create a person.');
-    }
+  static Future<List<Person>> _loadRiders(String personId) async {
+    final url = Uri.parse('$baseUrl/persons/$personId/riders');
+    final response = await apiHttp.get(url).timeout(_timeout);
 
-    final createdPerson = await addPersonData({
-      'firstName': person.firstname,
-      'lastName': person.lastname,
-      'height': person.heightCm,
-      'weight': person.weightKg,
-      'dateOfBirth': dateOfBirth.toIso8601String().split('T').first,
-      'email': person.email.trim().isEmpty ? null : person.email.trim(),
-      'websiteLink': person.websiteLink,
-      'description': person.description,
-      'address': {
-        'addressName': person.street.trim().isEmpty ? null : person.street.trim(),
-        'cityName': person.city,
-        'plz': person.plz.toString(),
-      },
-      'role': 'Equestrian',
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return (body['riders'] as List<dynamic>)
+          .map((rider) => _riderFromBackend(rider as Map<String, dynamic>))
+          .toList();
+    }
+    _throwForStatus(response, 'load riders');
+  }
+
+  /// POST /persons/{id}/riders, für einen Reiter reichen Name, Größe und Gewicht.
+  Future<Person> addRider(
+    String firstname,
+    String lastname,
+    int heightCm,
+    int weightKg,
+  ) async {
+    final personId = await BackendPersonContextService.loadPersonId() ??
+        AuthService().currentUserId()?.toString();
+    if (personId == null) throw StateError('No backend person is selected.');
+
+    final url = Uri.parse('$baseUrl/persons/$personId/riders');
+    final response = await apiHttp
+        .post(
+          url,
+          headers: _jsonHeaders,
+          body: jsonEncode({
+            'firstName': firstname,
+            'lastName': lastname,
+            'height': heightCm,
+            'weight': weightKg,
+          }),
+        )
+        .timeout(_timeout);
+
+    if (response.statusCode == 201) {
+      clearCache();
+      return _riderFromBackend(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    _throwForStatus(response, 'add rider');
+  }
+
+  Future<Person> updateRider(
+    int riderId,
+    String firstname,
+    String lastname,
+    int heightCm,
+    int weightKg,
+  ) async {
+    await updatePerson(riderId.toString(), {
+      'firstName': firstname,
+      'lastName': lastname,
+      'height': heightCm,
+      'weight': weightKg,
     });
+    clearCache();
+    return _riderFromBackend({
+      'id': riderId,
+      'firstName': firstname,
+      'lastName': lastname,
+      'height': heightCm,
+      'weight': weightKg,
+    });
+  }
 
-    if (_cachedPersons != null &&
-        !_cachedPersons!.any((cached) => cached.id == createdPerson.id)) {
-      _cachedPersons!.add(createdPerson);
-    }
-    return createdPerson;
+  Future<void> deleteRider(int riderId) async {
+    await deletePerson(riderId.toString());
+    clearCache();
   }
 
   void clearCache() {
@@ -504,6 +540,25 @@ class PersonService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
     _throwForStatus(response, 'load person $personId');
+  }
+
+  static Person _riderFromBackend(Map<String, dynamic> json) {
+    final height = json['height'];
+    final weight = json['weight'];
+
+    return Person(
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      firstname: (json['firstName'] ?? '').toString(),
+      lastname: (json['lastName'] ?? '').toString(),
+      heightCm: height is num ? height.round() : 0,
+      weightKg: weight is num ? weight.round() : 0,
+      plz: 0,
+      city: '',
+      street: '',
+      housenumber: 0,
+      email: '',
+      isOwnRider: true,
+    );
   }
 
   static Person _personFromBackend(Map<String, dynamic> json) {

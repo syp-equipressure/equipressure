@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
 
+/// Legt einen eigenen Reiter für Messungen an oder bearbeitet ihn ([existingRider]).
+/// Gibt den gespeicherten Reiter zurück, nach dem Löschen null.
 class NewPersonScreen extends StatefulWidget {
-  const NewPersonScreen({super.key});
+  final Person? existingRider;
+
+  const NewPersonScreen({super.key, this.existingRider});
 
   @override
   State<NewPersonScreen> createState() => _NewPersonScreenState();
@@ -18,14 +22,22 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
   final _lastname = TextEditingController();
   final _height = TextEditingController();
   final _weight = TextEditingController();
-  final _email = TextEditingController();
-  final _birthDate = TextEditingController();
-  final _city = TextEditingController();
-  final _postalCode = TextEditingController();
-  final _street = TextEditingController();
 
-  DateTime? _selectedBirthDate;
   bool _isLoading = false;
+
+  bool get _isEditing => widget.existingRider != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final rider = widget.existingRider;
+    if (rider != null) {
+      _firstname.text = rider.firstname;
+      _lastname.text = rider.lastname;
+      _height.text = rider.heightCm.toString();
+      _weight.text = rider.weightKg.toString();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,11 +48,11 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, widget.existingRider),
         ),
-        title: const Text(
-          'Neuen Reiter anlegen',
-          style: TextStyle(
+        title: Text(
+          _isEditing ? 'Reiter bearbeiten' : 'Neuen Reiter anlegen',
+          style: const TextStyle(
             color: AppColors.textStrong,
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -67,21 +79,10 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                         const SizedBox(height: 24),
                         _buildTextField('Nachname', _lastname),
                         const SizedBox(height: 24),
-                        _buildBirthDateField(),
-                        const SizedBox(height: 24),
                         _buildNumberField('Größe', _height, 'cm'),
                         const SizedBox(height: 24),
                         _buildNumberField('Gewicht', _weight, 'kg'),
-                        const SizedBox(height: 24),
-                        _buildTextField('Ort', _city),
-                        const SizedBox(height: 24),
-                        _buildNumberField('PLZ', _postalCode, ''),
-                        const SizedBox(height: 24),
-                        _buildTextField('Straße und Hausnummer (optional)', _street,
-                            requiredField: false),
-                        const SizedBox(height: 24),
-                        _buildTextField('E-Mail', _email, requiredField: false),
-                        const SizedBox(height: 200),
+                        const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
                           height: 50,
@@ -111,6 +112,19 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                             ),
                           ),
                         ),
+                        if (_isEditing) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: TextButton.icon(
+                              onPressed: _delete,
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              label: const Text('Reiter löschen'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -120,11 +134,7 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
     );
   }
 
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller, {
-    bool requiredField = true,
-  }) {
+  Widget _buildTextField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -153,53 +163,10 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
               borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
-          validator: (v) => requiredField && (v == null || v.isEmpty)
-              ? 'Pflichtfeld'
-              : null,
+          validator: (v) => v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
         ),
       ],
     );
-  }
-
-  Widget _buildBirthDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Geburtsdatum',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _birthDate,
-          readOnly: true,
-          onTap: _pickBirthDate,
-          decoration: InputDecoration(
-            hintText: 'TT.MM.JJJJ',
-            suffixIcon: const Icon(Icons.calendar_today_outlined),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          validator: (_) => _selectedBirthDate == null ? 'Pflichtfeld' : null,
-        ),
-      ],
-    );
-  }
-
-  Future<void> _pickBirthDate() async {
-    final today = DateTime.now();
-    final latestDate = DateTime(today.year, today.month, today.day - 1);
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: _selectedBirthDate ?? DateTime(2000, 1, 1),
-      firstDate: DateTime(1900),
-      lastDate: latestDate,
-    );
-    if (selected == null) return;
-    setState(() {
-      _selectedBirthDate = selected;
-      _birthDate.text =
-          '${selected.day.toString().padLeft(2, '0')}.${selected.month.toString().padLeft(2, '0')}.${selected.year}';
-    });
   }
 
   Widget _buildNumberField(String label, TextEditingController controller, String unit) {
@@ -235,7 +202,9 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
           ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Pflichtfeld';
-            if (int.tryParse(v) == null) return 'Nur Zahlen erlaubt';
+            final value = int.tryParse(v);
+            if (value == null) return 'Nur Zahlen erlaubt';
+            if (value <= 0) return 'Muss größer als 0 sein';
             return null;
           },
         ),
@@ -250,23 +219,17 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
 
     try {
       final service = PersonService();
-      final person = Person(
-        id: 0,
-        firstname: _firstname.text.trim(),
-        lastname: _lastname.text.trim(),
-        heightCm: int.parse(_height.text),
-        weightKg: int.parse(_weight.text),
-        plz: int.parse(_postalCode.text),
-        city: _city.text.trim(),
-        street: _street.text.trim(),
-        housenumber: 0,
-        email: _email.text.trim(),
-        dob: _selectedBirthDate,
-      );
-      final createdPerson = await service.addPerson(person);
+      final firstname = _firstname.text.trim();
+      final lastname = _lastname.text.trim();
+      final heightCm = int.parse(_height.text);
+      final weightKg = int.parse(_weight.text);
+      final rider = widget.existingRider;
+      final savedRider = rider == null
+          ? await service.addRider(firstname, lastname, heightCm, weightKg)
+          : await service.updateRider(rider.id, firstname, lastname, heightCm, weightKg);
 
       if (mounted) {
-        Navigator.pop(context, createdPerson);
+        Navigator.pop(context, savedRider);
       }
     } catch (e) {
       if (mounted) {
@@ -281,17 +244,55 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
     }
   }
 
+  Future<void> _delete() async {
+    final rider = widget.existingRider!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reiter löschen'),
+        content: Text(
+          '${rider.fullName} wird mit allen Messungen endgültig gelöscht. '
+          'Das kann nicht rückgängig gemacht werden.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Endgültig löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await PersonService().deleteRider(rider.id);
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Löschen: $e')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _firstname.dispose();
     _lastname.dispose();
     _height.dispose();
     _weight.dispose();
-    _email.dispose();
-    _birthDate.dispose();
-    _city.dispose();
-    _postalCode.dispose();
-    _street.dispose();
     super.dispose();
   }
 }
