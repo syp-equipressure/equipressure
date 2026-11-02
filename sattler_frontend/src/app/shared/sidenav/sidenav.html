@@ -37,9 +37,4 @@
     <span class="material-icons icon">{{ settings.icon }}</span>
     <span class="label">{{ settings.label }}</span>
   </a>
-
-  <button class="theme-toggle" type="button" (click)="theme.toggle()" [attr.aria-pressed]="theme.isDark()">
-    <span class="material-icons">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
-    <span class="label">{{ theme.isDark() ? 'Lightmode' : 'Darkmode' }}</span>
-  </button>
 </aside>

@@ -51,7 +51,7 @@
   border: 0;
   border-radius: 8px;
   background: t.$purple-500;
-  color: #fff;
+  color: t.$on-accent;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -81,8 +81,8 @@
 }
 
 .load-state.error {
-  background: #fff0ef;
-  color: #a52c27;
+  background: t.$danger-bg;
+  color: t.$danger-text;
 }
 
 .search-input,

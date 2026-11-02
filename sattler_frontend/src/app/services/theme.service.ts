@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 
 type Theme = 'light' | 'dark';
 
@@ -9,7 +9,7 @@ export class ThemeService {
   private readonly storageKey = 'equipressure-theme';
 
   readonly theme = signal<Theme>(this.readTheme());
-  readonly isDark = signal(this.theme() === 'dark');
+  readonly isDark = computed(() => this.theme() === 'dark');
 
   constructor() {
     this.applyTheme(this.theme());
@@ -18,7 +18,6 @@ export class ThemeService {
   toggle(): void {
     const nextTheme = this.isDark() ? 'light' : 'dark';
     this.theme.set(nextTheme);
-    this.isDark.set(nextTheme === 'dark');
     this.document.defaultView?.localStorage.setItem(this.storageKey, nextTheme);
     this.applyTheme(nextTheme);
   }

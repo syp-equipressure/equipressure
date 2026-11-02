@@ -36,7 +36,7 @@
 .session-card {
   border: 1px solid t.$border;
   border-radius: 12px;
-  background: #fff;
+  background: t.$bg-card;
 }
 
 .segment-card { padding: 14px 16px 16px; }
@@ -44,7 +44,7 @@
 .segment-card.cdk-drag-placeholder { opacity: 0.25; }
 .segment-card.cdk-drag-animating { transition: transform 180ms ease; }
 .segment-heading { display: flex; align-items: center; gap: 10px; min-height: 28px; }
-.segment-heading > strong { flex: 1; color: #161616; font-size: 14px; font-weight: 700; }
+.segment-heading > strong { flex: 1; color: t.$text-strong; font-size: 14px; font-weight: 700; }
 .segment-actions { display: flex; align-items: center; gap: 2px; }
 .segment-action {
   display: inline-grid;
@@ -63,9 +63,9 @@
 .segment-action:disabled { color: t.$text-muted; cursor: not-allowed; opacity: 0.45; }
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
-.segment-action.remove-segment { color: #999; }
+.segment-action.remove-segment { color: t.$text-muted; }
 .segment-action.remove-segment .material-icons { font-size: 17px; }
-.segment-action.remove-segment:hover { background: #fff0f0; color: #b94343; }
+.segment-action.remove-segment:hover { background: t.$danger-bg; color: t.$danger-text; }
 .step-icon, .progress-number {
   display: inline-grid;
   flex: 0 0 auto;
@@ -74,11 +74,11 @@
   height: 28px;
   border-radius: 6px;
   background: t.$purple-500;
-  color: #fff;
+  color: t.$on-accent;
   font-size: 14px;
   font-weight: 700;
 }
-.expand-icon { color: #999; font-size: 16px; }
+.expand-icon { color: t.$text-muted; font-size: 16px; }
 .status { color: #50ac64; font-size: 10px; }
 
 .segment-selectors {
@@ -86,19 +86,19 @@
   grid-template-columns: 1fr 1fr;
   gap: 26px;
   padding: 11px 8px 12px 20px;
-  border-top: 1px solid #ececec;
+  border-top: 1px solid t.$border-soft;
   margin: 8px -12px 0;
 
   label { display: grid; gap: 3px; }
-  label span { color: #333; font-size: 12px; font-weight: 600; }
+  label span { color: t.$text; font-size: 12px; font-weight: 600; }
   select {
     width: 100%;
     height: 32px;
-    border: 1px solid #dedede;
+    border: 1px solid t.$border;
     border-radius: 6px;
     padding: 0 8px;
-    background: white;
-    color: #292929;
+    background: t.$bg-card;
+    color: t.$text-strong;
     font: inherit;
     font-size: 12px;
   }
@@ -110,7 +110,7 @@
   border-radius: 7px;
   padding: 5px 8px;
   background: t.$purple-500;
-  color: white;
+  color: t.$on-accent;
   cursor: pointer;
   font-size: 12px;
 }
@@ -139,7 +139,7 @@
 .add-segment span { margin-right: 6px; font-size: 17px; vertical-align: -1px; }
 
 .notes-card { display: grid; gap: 10px; padding: 16px; }
-.field-label { padding-left: 4px; color: #666; font-size: 13px; font-weight: 600; }
+.field-label { padding-left: 4px; color: t.$text-soft; font-size: 13px; font-weight: 600; }
 textarea {
   width: 100%;
   min-height: 104px;
@@ -151,7 +151,7 @@ textarea {
   font: inherit;
   font-size: 12px;
 }
-textarea::placeholder { color: #999; }
+textarea::placeholder { color: t.$text-muted; }
 
 .session-side { gap: 18px; }
 .timer-card {
@@ -172,12 +172,12 @@ textarea::placeholder { color: #999; }
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
 }
-.timer-card small { color: #666; font-size: 11px; }
+.timer-card small { color: t.$text-soft; font-size: 11px; }
 
 .detail-card, .progress-card { padding: 16px; }
 .detail-card h2, .progress-card h2 {
   margin: 0;
-  color: #222;
+  color: t.$text-strong;
   font-size: 14px;
 }
 .detail-card h2 span, .progress-card h2 span { margin-right: 6px; color: t.$purple-500; }
@@ -189,8 +189,8 @@ textarea::placeholder { color: #999; }
   font-size: 12px;
 }
 .detail-card dt, .detail-card dd { padding: 8px 0; border-bottom: 1px solid #e6e6e6; }
-.detail-card dt { color: #555; }
-.detail-card dd { margin: 0; color: #222; text-align: right; }
+.detail-card dt { color: t.$text-soft; }
+.detail-card dd { margin: 0; color: t.$text-strong; text-align: right; }
 .detail-card dt:last-of-type, .detail-card dd:last-of-type { border-bottom: 0; }
 
 .progress-card ol { display: grid; gap: 4px; margin: 8px -6px -2px; padding: 0; list-style: none; }
@@ -202,12 +202,12 @@ textarea::placeholder { color: #999; }
   border-radius: 8px;
   padding: 0 4px;
   background: t.$purple-50;
-  color: #333;
+  color: t.$text;
   font-size: 11px;
 }
 .progress-number { width: 20px; height: 20px; border-radius: 50%; background: t.$purple-400; font-size: 10px; }
-.progress-card li strong { margin-left: auto; padding-right: 7px; color: #777; font-weight: 500; }
-.progress-card li.complete { background: #e4f5e6; }
+.progress-card li strong { margin-left: auto; padding-right: 7px; color: t.$text-muted; font-weight: 500; }
+.progress-card li.complete { background: t.$success-bg; }
 .progress-card li.complete .progress-number { background: #50ad68; }
 
 .save-error {
@@ -231,13 +231,13 @@ textarea::placeholder { color: #999; }
   border-radius: 11px;
   padding: 16px 20px;
   background: t.$purple-500;
-  color: white;
+  color: t.$on-accent;
   cursor: pointer;
   font: inherit;
   font-size: 15px;
 }
 .finish-button:hover:not(:disabled) { background: t.$purple-600; }
-.finish-button:disabled { background: t.$purple-500; color: white; cursor: not-allowed; }
+.finish-button:disabled { background: t.$purple-500; color: t.$on-accent; cursor: not-allowed; }
 
 @media (max-width: 760px) {
   .session-page { padding: 14px 16px 24px; }

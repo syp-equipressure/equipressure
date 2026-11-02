@@ -79,7 +79,7 @@
 
   .badge {
     background: t.$purple-400;
-    color: white;
+    color: t.$on-accent;
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
@@ -119,31 +119,6 @@
 .settings {
   margin-top: 12px;
   font-weight: 400;
-}
-
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  margin-top: 6px;
-  padding: 11px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: t.$text-soft;
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-
-  &:hover {
-    background: t.$bg-page;
-  }
-
-  .material-icons {
-    font-size: 21px;
-  }
 }
 
 @media (max-width: 900px) {

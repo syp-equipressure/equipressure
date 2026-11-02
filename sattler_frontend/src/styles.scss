@@ -38,6 +38,11 @@ html {
   --text-muted: #8993a0;
   --accent-red: #e53935;
   --accent-orange: #f2a23a;
+  --on-accent: #ffffff;
+  --danger-bg: #fff0ef;
+  --danger-text: #a52c27;
+  --success-bg: #edf7ef;
+  --success-text: #256b35;
   --shadow-card: 0 1px 2px rgba(24, 33, 47, 0.05), 0 4px 14px rgba(24, 33, 47, 0.07);
   --shadow-elev: 0 10px 28px rgba(24, 33, 47, 0.14);
 }
@@ -63,6 +68,11 @@ html[data-theme='dark'] {
   --text-muted: #858d9b;
   --accent-red: #ff7b78;
   --accent-orange: #ffc06e;
+  --on-accent: #1b1726;
+  --danger-bg: #3d2427;
+  --danger-text: #ffa19e;
+  --success-bg: #1f3528;
+  --success-text: #93dfa8;
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.18);
   --shadow-elev: 0 12px 32px rgba(0, 0, 0, 0.36);
   --mat-sys-surface: #20232a;
@@ -190,7 +200,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .history-link { border: 0; padding: 10px 0; background: transparent; color: var(--purple-600); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; }
 .history-link:hover { color: var(--purple-700); }
 .history-link span { margin-left: 6px; }
-.profile-measurement-button { min-width: 180px; min-height: 40px; border: 0; border-radius: 6px; background: var(--purple-500); color: #fff; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; }
+.profile-measurement-button { min-width: 180px; min-height: 40px; border: 0; border-radius: 6px; background: var(--purple-500); color: var(--on-accent); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; }
 .profile-measurement-button:hover { background: var(--purple-600); }
 
 @media (max-width: 700px) {

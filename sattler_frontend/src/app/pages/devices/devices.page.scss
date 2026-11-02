@@ -41,7 +41,7 @@
   font-weight: 600;
 }
 
-.primary-button { background: t.$purple-500; color: #fff; }
+.primary-button { background: t.$purple-500; color: t.$on-accent; }
 .primary-button:hover { background: t.$purple-600; }
 .secondary-button { border-color: t.$border; background: t.$bg-panel; color: t.$text; }
 
@@ -89,7 +89,7 @@
   cursor: pointer;
 }
 .icon-button:hover { background: t.$purple-50; color: t.$purple-500; }
-.icon-button.delete:hover { background: #fff0ef; color: #b42318; }
+.icon-button.delete:hover { background: t.$danger-bg; color: t.$danger-text; }
 
 .empty-state {
   display: grid;
@@ -106,7 +106,7 @@
 }
 
 .feedback { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; font-size: 13px; }
-.feedback.error { background: #fff0ef; color: #a52c27; }
+.feedback.error { background: t.$danger-bg; color: t.$danger-text; }
 
 .form-overlay { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / 45%); }
 .device-form {

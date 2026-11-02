@@ -24,6 +24,15 @@ $accent-red:    var(--accent-red);
 $accent-orange: var(--accent-orange);
 $accent-purple: $purple-500;
 
+// Text on violet surfaces, which get lighter in the dark theme
+$on-accent:    var(--on-accent);
+
+// Feedback colors
+$danger-bg:    var(--danger-bg);
+$danger-text:  var(--danger-text);
+$success-bg:   var(--success-bg);
+$success-text: var(--success-text);
+
 // Layout
 $sidenav-width: 256px;
 $header-height: 68px;

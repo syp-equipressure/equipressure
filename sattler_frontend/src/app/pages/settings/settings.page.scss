@@ -135,13 +135,13 @@
   line-height: 1.5;
 
   &.success {
-    background: #edf7ef;
-    color: #256b35;
+    background: t.$success-bg;
+    color: t.$success-text;
   }
 
   &.error {
-    background: #fff0ef;
-    color: #a52c27;
+    background: t.$danger-bg;
+    color: t.$danger-text;
   }
 }
 
@@ -170,7 +170,7 @@
 .primary-button {
   border: 1px solid t.$purple-500;
   background: t.$purple-500;
-  color: #ffffff;
+  color: t.$on-accent;
 
   &:hover:not(:disabled) {
     background: t.$purple-600;

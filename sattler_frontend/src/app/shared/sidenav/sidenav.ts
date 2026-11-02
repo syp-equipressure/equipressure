@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Output, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { ThemeService } from '../../services/theme.service';
 import { ChatService } from '../../services/chat.service';
 
 interface NavItem {
@@ -20,7 +19,6 @@ interface NavItem {
 export class SidenavComponent {
   @Output() close = new EventEmitter<void>();
 
-  readonly theme = inject(ThemeService);
   private readonly chat = inject(ChatService);
 
   // the badge shows the number of unread chat messages

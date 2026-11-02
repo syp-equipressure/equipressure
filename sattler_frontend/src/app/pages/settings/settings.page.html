@@ -4,6 +4,23 @@
   <article class="settings-card">
     <header class="card-header">
       <div>
+        <h2>Darstellung</h2>
+        <p>Wähle, wie EquiPressure auf diesem Gerät aussieht.</p>
+      </div>
+      <span class="material-icons card-icon" aria-hidden="true">dark_mode</span>
+    </header>
+
+    <div class="toggle-list">
+      <label class="toggle-row">
+        <span><strong>Darkmode</strong><small>Dunkle Farben für die ganze Website</small></span>
+        <input type="checkbox" role="switch" [checked]="theme.isDark()" (change)="theme.toggle()" />
+      </label>
+    </div>
+  </article>
+
+  <article class="settings-card">
+    <header class="card-header">
+      <div>
         <h2>Benachrichtigungen</h2>
         <p>Lege fest, worüber du per E-Mail informiert werden möchtest.</p>
       </div>

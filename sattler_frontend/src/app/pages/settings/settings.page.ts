@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, UserPreferences } from '../../services/settings.service';
+import { ThemeService } from '../../services/theme.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 @Component({
@@ -12,6 +13,7 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 })
 export class SettingsPage {
   private readonly settings = inject(SettingsService);
+  readonly theme = inject(ThemeService);
 
   readonly preferences = signal<UserPreferences>(copyPreferences(this.settings.preferences()));
   readonly preferencesSaving = signal(false);

@@ -127,11 +127,11 @@
 }
 
 .field-input.missing {
-  border-color: #a12622;
+  border-color: t.$danger-text;
 }
 
 .field-error {
-  color: #a12622;
+  color: t.$danger-text;
   font-size: 12px;
 }
 
@@ -143,8 +143,8 @@
   line-height: 1.5;
 
   &.error {
-    background: #fdecec;
-    color: #a12622;
+    background: t.$danger-bg;
+    color: t.$danger-text;
   }
 }
 
@@ -168,7 +168,7 @@
 .btn-primary {
   border: none;
   background: t.$purple-500;
-  color: #fff;
+  color: t.$on-accent;
 
   &:disabled {
     opacity: 0.6;
