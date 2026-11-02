@@ -15,6 +15,8 @@ export interface Customer {
   heightCm: number;
   weightKg: number;
   isMe?: boolean;
+  /** False for customers the saddler added themselves, only those may be changed and deleted */
+  hasAccount?: boolean;
   horseIds: string[];
 }
 

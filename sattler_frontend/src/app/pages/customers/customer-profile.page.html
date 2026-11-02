@@ -50,8 +50,38 @@
         </span>
         <span class="material-icons row-arrow">arrow_forward</span>
       </a>
+
+      <div class="customer-actions">
+        @if (customer.hasAccount === false) {
+          <button class="edit-action" type="button" (click)="showEdit.set(true)">
+            <span class="material-icons" aria-hidden="true">edit</span>
+            Bearbeiten
+          </button>
+          <button class="delete-action" type="button" (click)="deleteCustomer()">
+            <span class="material-icons" aria-hidden="true">delete_outline</span>
+            Kund*in löschen
+          </button>
+        } @else if (customer.hasAccount) {
+          <button class="delete-action" type="button" (click)="removeContact()">
+            <span class="material-icons" aria-hidden="true">person_remove</span>
+            Aus Kontakten entfernen
+          </button>
+        }
+      </div>
+      @if (actionError()) {
+        <p class="action-error" role="alert">{{ actionError() }}</p>
+      }
     </section>
   </main>
+
+  @if (showEdit()) {
+    <app-new-customer-form
+      [backendMode]="true"
+      [existing]="customer"
+      (saved)="customerSaved($event)"
+      (cancelled)="showEdit.set(false)"
+    />
+  }
 } @else {
   <main class="profile-page">
     <section class="panel not-found">Kundenprofil nicht gefunden.</section>

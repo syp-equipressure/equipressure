@@ -222,6 +222,16 @@ export class BackendApiService {
     );
   }
 
+  removeContact(personId: string, contactId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/persons/${personId}/contacts/${contactId}`).pipe(
+      catchError(toApiError),
+    );
+  }
+
+  deletePerson(personId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/persons/${personId}`).pipe(catchError(toApiError));
+  }
+
   // ── Saddles ────────────────────────────────────────────────────────────────
 
   getSaddleCategories(): Observable<SaddleCategory[]> {
@@ -459,6 +469,7 @@ function mapContact(value: unknown): Customer {
     email: optional(value, 'email'),
     imageUpdatedAt: optional(value, 'imageUpdatedAt', 'image_updated_at'),
     address: address || undefined,
+    hasAccount: value['hasAccount'] === true,
     heightCm: 0,
     weightKg: 0,
     horseIds: [],
@@ -475,6 +486,7 @@ function mapPerson(value: unknown): Customer {
         .join(', ')
     : undefined;
   return {
+    hasAccount: value['hasAccount'] === true,
     id: required(value, 'id'),
     firstName: required(value, 'firstName', 'first_name'),
     lastName: required(value, 'lastName', 'last_name'),

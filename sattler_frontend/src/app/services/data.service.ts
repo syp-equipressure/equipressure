@@ -376,6 +376,11 @@ export class DataService {
     return this._customers().find(c => c.isMe)!;
   }
 
+  removeCustomer(customerId: string): void {
+    this._horses().filter(horse => horse.ownerId === customerId).forEach(horse => this.removeHorse(horse.id));
+    this._customers.update(list => list.filter(customer => customer.id !== customerId));
+  }
+
   addCustomer(customer: Customer): void {
     this._customers.update(list => [...list, customer]);
   }

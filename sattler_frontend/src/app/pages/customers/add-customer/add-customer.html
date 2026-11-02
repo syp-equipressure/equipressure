@@ -1,8 +1,8 @@
 <div class="form-overlay" (click)="cancel()"></div>
 
-<div class="form-panel" role="dialog" aria-modal="true" aria-label="Neue Kund*in anlegen">
+<div class="form-panel" role="dialog" aria-modal="true" [attr.aria-label]="existing() ? 'Kund*in bearbeiten' : 'Neue Kund*in anlegen'">
   <div class="form-header">
-    <h2 class="form-title">Neue Kund*in</h2>
+    <h2 class="form-title">{{ existing() ? 'Kund*in bearbeiten' : 'Neue Kund*in' }}</h2>
     <button class="close-btn" (click)="cancel()" aria-label="Schließen">
       <span class="material-icons">close</span>
     </button>

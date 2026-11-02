@@ -114,6 +114,47 @@
   }
 }
 
+.customer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .material-icons { font-size: 19px; }
+
+  &:empty { display: none; }
+}
+
+.edit-action {
+  border: 1px solid t.$border;
+  background: t.$bg-card;
+  color: t.$text;
+}
+
+.delete-action {
+  border: 1px solid transparent;
+  background: t.$danger-bg;
+  color: t.$danger-text;
+}
+
+.action-error {
+  margin: 10px 0 0;
+  color: t.$danger-text;
+  font-size: 13px;
+}
+
 .horses-overview-link {
   display: flex;
   align-items: center;

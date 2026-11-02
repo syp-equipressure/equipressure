@@ -1,9 +1,9 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {Customer} from '../../../models/customer.model';
 import { BackendApiService } from '../../../services/backend-api.service';
 import { BackendPersonContextService } from '../../../services/backend-person-context.service';
-import { addressError, composeAddress } from '../../../utils/address';
+import { addressError, composeAddress, splitAddress } from '../../../utils/address';
 
 @Component({
   selector: 'app-new-customer-form',
@@ -12,8 +12,10 @@ import { addressError, composeAddress } from '../../../utils/address';
   templateUrl: './add-customer.html',
   styleUrl: './add-customer.scss',
 })
-export class AddCustomer {
+export class AddCustomer implements OnInit {
   readonly backendMode = input(false);
+  /** The customer to change, without it a new customer is added */
+  readonly existing = input<Customer | null>(null);
   readonly maxBirthDate = todayDate();
   readonly saved = output<Customer>();
   readonly cancelled = output<void>();
@@ -36,6 +38,21 @@ export class AddCustomer {
   errors = signal<Partial<Record<keyof Customer, string>>>({});
   saveError = signal('');
   saving = signal(false);
+
+  ngOnInit(): void {
+    const customer = this.existing();
+    if (!customer) return;
+    const address = splitAddress(customer.address);
+    this.firstName.set(customer.firstName);
+    this.lastName.set(customer.lastName);
+    this.email.set(customer.email ?? '');
+    this.birthDate.set(customer.birthDate ?? '');
+    this.street.set(address.street);
+    this.postalCode.set(address.postalCode);
+    this.city.set(address.city);
+    this.heightCm.set(customer.heightCm || null);
+    this.weightKg.set(customer.weightKg || null);
+  }
 
   private validate(): boolean {
     const e: Partial<Record<keyof Customer, string>> = {};
@@ -108,8 +125,46 @@ export class AddCustomer {
     this.pendingContactId.set(null);
   }
 
+  private updateExisting(customer: Customer): void {
+    const email = this.email().trim();
+    this.saving.set(true);
+    this.saveError.set('');
+    this.api.updatePerson(customer.id, {
+      firstName: this.firstName().trim(),
+      lastName: this.lastName().trim(),
+      height: this.heightCm(),
+      weight: this.weightKg(),
+      dateOfBirth: this.birthDate(),
+      // ein leeres Feld behält die bisherige Adresse, das Backend kennt kein Entfernen
+      ...(email ? { email } : {}),
+      address: parseAddress(this.address()),
+    }).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.saved.emit({
+          ...customer,
+          firstName: this.firstName().trim(),
+          lastName: this.lastName().trim(),
+          email: email || customer.email,
+          birthDate: this.birthDate(),
+          address: this.address().trim(),
+          heightCm: this.heightCm()!,
+          weightKg: this.weightKg()!,
+        });
+      },
+      error: error => {
+        this.saving.set(false);
+        this.saveError.set(error instanceof Error ? error.message : 'Änderungen konnten nicht gespeichert werden.');
+      },
+    });
+  }
+
   private submitToBackend(): void {
     if (this.saving()) return;
+    if (this.existing()) {
+      this.updateExisting(this.existing()!);
+      return;
+    }
     const personId = this.personContext.personId();
     const pendingContactId = this.pendingContactId();
     this.saving.set(true);
