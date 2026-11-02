@@ -50,6 +50,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1.4;
   }
 
   strong {
@@ -70,6 +71,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 20px;
+  // overflow would otherwise cut off letters like g and y
+  line-height: 1.4;
   font-weight: 650;
   color: t.$text-strong;
   margin: 0;
