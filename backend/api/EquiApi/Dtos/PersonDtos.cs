@@ -160,6 +160,7 @@ public sealed record SaddlerListResponse(IReadOnlyList<SaddlerDto> Saddlers)
 /// <param name="Id">The id of the contact</param>
 /// <param name="FirstName">The first name of the contact</param>
 /// <param name="LastName">The last name of the contact</param>
+/// <param name="Email">The optional email of the contact</param>
 /// <param name="AddressName">Optional street and house number</param>
 /// <param name="CityName">The name of the city</param>
 /// <param name="PLZ">The postal code</param>
@@ -171,6 +172,7 @@ public sealed record ContactDto(
     int Id,
     string FirstName,
     string LastName,
+    string? Email,
     string? AddressName,
     string CityName,
     string PLZ,
@@ -180,7 +182,7 @@ public sealed record ContactDto(
     bool HasAccount)
 {
     public static ContactDto FromContactData(ContactData contact) =>
-        new(contact.Id, contact.FirstName, contact.LastName, contact.AddressName, contact.CityName, contact.PLZ,
+        new(contact.Id, contact.FirstName, contact.LastName, contact.Email, contact.AddressName, contact.CityName, contact.PLZ,
             contact.WebsiteLink, contact.Description, contact.ImageUpdatedAt, contact.HasAccount);
 }
 

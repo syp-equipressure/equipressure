@@ -236,6 +236,7 @@ internal sealed class PersonRepository(
                        .Select(p => new ContactData(p.Id,
                                                     p.FirstName,
                                                     p.LastName,
+                                                    p.Email,
                                                     p.Address.AddressName,
                                                     p.Address.CityName,
                                                     p.Address.PLZ,

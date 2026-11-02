@@ -27,6 +27,7 @@ public sealed record ContactData(
     int Id,
     string FirstName,
     string LastName,
+    string? Email,
     string? AddressName,
     string CityName,
     string PLZ,

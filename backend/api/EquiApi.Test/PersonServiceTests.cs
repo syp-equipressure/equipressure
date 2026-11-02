@@ -212,8 +212,8 @@ public sealed class PersonServiceTests
     {
         var contacts = new List<ContactData>
         {
-            new(2, "Sabine", "Sattler", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles", null, true),
-            new(3, "Anna", "Huber", null, "Linz", "4020", null, null, null, false)
+            new(2, "Sabine", "Sattler", "sabine@example.com", null, "Steyr", "4400", "https://sattler.example.com", "Custom saddles", null, true),
+            new(3, "Anna", "Huber", null, null, "Linz", "4020", null, null, null, false)
         };
         _uowMock.PersonRepository.PersonExistsAsync(PersonId).Returns(true);
         _uowMock.PersonRepository.GetContactsAsync(PersonId).Returns(contacts);
