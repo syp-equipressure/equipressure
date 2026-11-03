@@ -348,17 +348,144 @@ a| Sattler Frontend Chat
 ** Slideshow von Heatmaps der letzen Messungen
 ** lügen und Grafik machen wie der Gewinn der Sattler gestiegen ist seit sie Equipressure verwenden
 
-
 ==== Weiteres
 * Teaser Video überlegen
+* Pitch Präsentation für Unternehmen
 
 === Vereinbarungen und Entscheidungen
 [%autowidth]
 |===
 |wer |macht was |bis wann
 
-|Einzenberger
-a| 
+|Lena Graßauer
+a| Frontend Überarbeitung für beide Versionen als Vorbereitung auf Sophie
+| 17.11.2026
+
+|Lena Graßauer, Almina Silnovic
+a| Login für Reiter und Sattler
+| 17.11.2026
+
+|Lena Graßauer
+a| Chat einbauen
+| 17.11.2026
+
+|Lena Graßauer
+a| Homeserver und Deployment
+| 17.11.2026
+
+|Flora Dallinger
+a| Bluetooth Gerät verbinden, Daten empfangen und an App weitergeben sowie testen
+| 17.11.2026
+
+|Flora Dallinger
+a| Horse Endpunkte überarbeiten
+| 17.11.2026
+
+|Katharina Einzenberger
+a| restliche fehlende Routen implementieren
+| 17.11.2026
+
+|Katharina Einzenberger
+a| CI/CD Pipeline
+| 17.11.2026
+
+|Katharina Einzenberger
+a| Project Award Präsentation
+| 17.11.2026
+
+|Almina Silnovic
+a| Jugend Innovativ Antrag
 | 17.11.2026
 
 |===
+
+== 2026-11-03
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Sophie
+| Grüneis
+| Auftraggeber
+
+| Markus
+| Haslinger
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 03/11/2026
+
+|Dauer
+|10:15 -
+|===
+====
+
+=== Besprochenes
+* Sattler Frontend
+* Reiter Frontend
+
+=== Hardware
+Patent rennt ja aus, wir könnten uns mit Medilogic zusammenreden und ihnen anbieten, dass wir mit ihnen zusammenarbeiten und ihnen die Software verkaufen etc.
+
+=== Sattler Frontend
+* Neue Messung:
+** bei Kundenauswähl tippen und nicht nur Select list sonder mit Autocomplete List weil Sattler mehr als 5 Kunden haben wird
+** kann man auch bei Pferden und generell überall machen für Kontinuität
+** bei neuem Sattel erstellen auch Kategorie "Sonstiges"
+* vom Pferd sind Größe und Gewicht nicht zwingend erfoderlich; soll optional werden, weil Reiter oft gar nicht Größe und Gewichts des Pferde wissen
+* Profi Filter deutlicher hervorheben mit Tooltip (für Profi ist vorher Gangart und Hand auszuwählen)
+* Logo im PDF-Protokoll abbilden 
+** Logo kann beim Sattlerprofil hochladen optional
+* Apple Login, Facebook, LinkedIn einfach mehr Auswahl beim Registrieren
+** Apple Login statt Github
+* Reiter nach selbem Stall anzeigen können, damit Sattler die Fahrt vielleicht besser planen können
+** damit man mehrere Termine gleichzeitig machen kann
+* Button "Aus Kontakten entfernen" rechts unten machen und ohne das "-"
+* neue Teilmessung: 
+** Sonstiges bei Gangart
+* wenn man Messung nicht beenden kann weil noch nicht gemessen wurde, muss der Button ausgegraut sein und nicht nur nicht bedienbar
+* Messübersicht die 3 rechteckigen Button nach rechts ins weiße Feld schieben und Ansicht wechseln vlt rechts unten hin dann; Bild größer machen
+* Notizen von Messungen direkt bei der Detailansicht anzeigen oder genauere Infos in der Notizen Ansicht machen 
+
+=== Reiter Frontend
+* aus der Historie des Pferdes muss man wieder beim Pferd landen
+* bei Gerätegruppe
+** man sollte Mitglieder nicht mit Personen ID hinzufügen können, weil die Personen ID nicht auslesbar ist
+** lieber Namen eingeben und Autocomplete List machen
+* Sattler zu Favouriten hinzufügen funktioniert noch nicht
+* der Sattler kann keine User zu seinem Gerät hinzufügen, ist das gewollt?
+
+
+
