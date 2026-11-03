@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class SelectionDropdown<T> extends StatelessWidget {
@@ -10,6 +11,11 @@ class SelectionDropdown<T> extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onAddNew;
   final String? addNewText;
+  /// Zeigt in der aufgeklappten Liste neben jedem Eintrag einen Stift zum Bearbeiten
+  final ValueChanged<T>? onEditItem;
+
+  /// Ohne Angabe lässt sich jeder Eintrag bearbeiten
+  final bool Function(T item)? canEditItem;
 
   const SelectionDropdown({
     super.key,
@@ -22,6 +28,8 @@ class SelectionDropdown<T> extends StatelessWidget {
     this.enabled = true,
     this.onAddNew,
     this.addNewText,
+    this.onEditItem,
+    this.canEditItem,
   });
 
   @override
@@ -44,10 +52,10 @@ class SelectionDropdown<T> extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             border: Border.all(
-              color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
+              color: enabled ? AppColors.border : AppColors.borderSoft,
             ),
             borderRadius: BorderRadius.circular(12),
-            color: enabled ? Colors.white : Colors.grey[50],
+            color: enabled ? AppColors.surface : AppColors.bgPanel,
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -55,17 +63,44 @@ class SelectionDropdown<T> extends StatelessWidget {
               isExpanded: true,
               icon: Icon(
                 Icons.expand_more,
-                color: enabled ? Colors.grey[600] : Colors.grey[400],
+                color: enabled ? AppColors.textSoft : AppColors.textMuted,
               ),
               hint: Text(
                 'Bitte wählen...',
-                style: TextStyle(color: Colors.grey[400]),
+                style: TextStyle(color: AppColors.textMuted),
               ),
+              // im zugeklappten Zustand nur der Name, ohne Stift
+              selectedItemBuilder: (context) => [
+                for (final item in items)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(getItemText(item), overflow: TextOverflow.ellipsis),
+                  ),
+                if (onAddNew != null) const SizedBox.shrink(),
+              ],
               items: [
                 ...items.map((T item) {
                   return DropdownMenuItem<String>(
                     value: getItemId(item),
-                    child: Text(getItemText(item)),
+                    child: onEditItem == null || !(canEditItem?.call(item) ?? true)
+                        ? Text(getItemText(item), overflow: TextOverflow.ellipsis)
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Text(getItemText(item), overflow: TextOverflow.ellipsis),
+                              ),
+                              IconButton(
+                                tooltip: '$label bearbeiten',
+                                icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.text),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () {
+                                  // zuerst die aufgeklappte Liste schließen
+                                  Navigator.of(context).pop();
+                                  onEditItem!(item);
+                                },
+                              ),
+                            ],
+                          ),
                   );
                 }),
                 if (onAddNew != null)
@@ -76,13 +111,13 @@ class SelectionDropdown<T> extends StatelessWidget {
                         const Icon(
                           Icons.add_circle_outline,
                           size: 20,
-                          color: Color(0xFF6B4C9A),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           addNewText ?? '$label hinzufügen',
                           style: const TextStyle(
-                            color: Color(0xFF6B4C9A),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

@@ -1,18 +1,21 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// Auswahl, was im Chat geteilt wird: Bilder, Dateien, ganze Pferde mit allen
+/// Messungen oder eine einzelne Messung.
 class ChatAttachmentMenu extends StatelessWidget {
-  final VoidCallback onFilesSelected;
   final VoidCallback onImagesSelected;
-  final VoidCallback onProfileSelected;
+  final VoidCallback onFilesSelected;
   final VoidCallback onHorsesSelected;
+  final VoidCallback onMeasurementSelected;
 
   const ChatAttachmentMenu({
     super.key,
-    required this.onFilesSelected,
     required this.onImagesSelected,
-    required this.onProfileSelected,
+    required this.onFilesSelected,
     required this.onHorsesSelected,
+    required this.onMeasurementSelected,
   });
 
   @override
@@ -20,11 +23,11 @@ class ChatAttachmentMenu extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.shadow(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -34,37 +37,30 @@ class ChatAttachmentMenu extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _AttachmentMenuItem(
-            icon: Icons.insert_drive_file_outlined,
-            label: 'Dateien',
-            onTap: onFilesSelected,
-          ),
-          _buildDivider(),
-          _AttachmentMenuItem(
             icon: Icons.image_outlined,
             label: 'Bilder',
             onTap: onImagesSelected,
           ),
-          _buildDivider(),
+          Divider(height: 1, color: AppColors.borderSoft),
           _AttachmentMenuItem(
-            icon: Icons.person_outline,
-            label: 'Mein Profil',
-            onTap: onProfileSelected,
+            icon: Icons.insert_drive_file_outlined,
+            label: 'Dateien',
+            onTap: onFilesSelected,
           ),
-          _buildDivider(),
+          Divider(height: 1, color: AppColors.borderSoft),
           _AttachmentMenuItem(
             svgPath: 'assets/icon/horseIcon.svg',
-            label: 'Pferde',
+            label: 'Pferde mit allen Messungen',
             onTap: onHorsesSelected,
+          ),
+          Divider(height: 1, color: AppColors.borderSoft),
+          _AttachmentMenuItem(
+            icon: Icons.analytics_outlined,
+            label: 'Einzelne Messung',
+            onTap: onMeasurementSelected,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      color: Colors.grey[200],
     );
   }
 }
@@ -95,20 +91,20 @@ class _AttachmentMenuItem extends StatelessWidget {
                 svgPath!,
                 width: 22,
                 height: 22,
-                colorFilter: ColorFilter.mode(Colors.grey[700]!, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(AppColors.text, BlendMode.srcIn),
               )
             else
               Icon(
                 icon,
                 size: 22,
-                color: Colors.grey[700],
+                color: AppColors.text,
               ),
             const SizedBox(width: 16),
             Text(
               label,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey[800],
+                color: AppColors.textStrong,
               ),
             ),
           ],

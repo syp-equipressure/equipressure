@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DropdownFilterChip extends StatelessWidget {
@@ -53,10 +54,10 @@ class DropdownFilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selectedItem != null ? Colors.grey[200] : Colors.white,
+          color: selectedItem != null ? AppColors.borderSoft : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selectedItem != null ? Colors.grey[400]! : Colors.grey[300]!,
+            color: selectedItem != null ? AppColors.textMuted : AppColors.border,
           ),
         ),
         child: Row(
@@ -66,7 +67,7 @@ class DropdownFilterChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: AppColors.text,
                 fontWeight: selectedItem != null ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -74,7 +75,7 @@ class DropdownFilterChip extends StatelessWidget {
             Icon(
               Icons.arrow_drop_down,
               size: 20,
-              color: Colors.grey[700],
+              color: AppColors.text,
             ),
           ],
         ),

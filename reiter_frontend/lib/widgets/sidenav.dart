@@ -1,9 +1,11 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // <--- NEU
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/screens/saddler_contact/saddler_contact.dart';
+import 'package:reiterappfrontend/services/chat_service.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -11,7 +13,7 @@ class SideNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           children: [
@@ -45,31 +47,28 @@ class SideNav extends StatelessWidget {
                 );
               },
             ),
-            _DrawerItem(
-              icon: Icons.chat_bubble_outline,
-              text: 'Sattler*innen',
-              onTap: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SaddlerContact())
-                );
-              },
+            // zeigt die Anzahl der ungelesenen Chat-Nachrichten
+            ListenableBuilder(
+              listenable: ChatService(),
+              builder: (context, _) => _DrawerItem(
+                icon: Icons.chat_bubble_outline,
+                text: 'Sattler-Chat',
+                badge: ChatService().unreadTotal,
+                onTap: () {
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => SaddlerContact())
+                  );
+                },
+              ),
             ),
             _DrawerItem(
               icon: Icons.location_on_outlined,
-              text: 'Sattler*in finden',
+              text: 'Sattler-Map',
               onTap: () {
                 Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => FindSaddler())
                 );
               },
-            ),
-
-            const Spacer(),
-
-            _DrawerItem(
-              icon: Icons.settings,
-              text: 'Einstellungen',
-              onTap: () {},
             ),
           ],
         ),
@@ -84,12 +83,14 @@ class _DrawerItem extends StatelessWidget {
 
   final String text;
   final VoidCallback onTap;
+  final int badge;
 
   const _DrawerItem({
     this.icon,
     this.svgPath,
     required this.text,
     required this.onTap,
+    this.badge = 0,
   }) : assert(icon != null || svgPath != null);
 
   @override
@@ -100,6 +101,23 @@ class _DrawerItem extends StatelessWidget {
         text,
         style: const TextStyle(fontSize: 15),
       ),
+      trailing: badge > 0
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '$badge',
+                style: const TextStyle(
+                  color: AppColors.surface,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
       onTap: onTap,
     );
   }
@@ -110,7 +128,7 @@ class _DrawerItem extends StatelessWidget {
         svgPath!,
         width: 22,
         height: 22,
-        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+        colorFilter: const ColorFilter.mode(AppColors.textStrong, BlendMode.srcIn),
       );
     }
     return Icon(icon, size: 22);

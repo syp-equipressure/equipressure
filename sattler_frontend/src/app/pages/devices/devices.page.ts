@@ -1,0 +1,195 @@
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ConfirmService } from '../../services/confirm.service';
+import { FormsModule } from '@angular/forms';
+import { PressureDevice } from '../../models/device.model';
+import { DataService } from '../../services/data.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { BackendApiService, DeviceCategory } from '../../services/backend-api.service';
+import { BackendPersonContextService } from '../../services/backend-person-context.service';
+
+@Component({
+  selector: 'app-devices-page',
+  standalone: true,
+  imports: [FormsModule, PageHeaderComponent],
+  templateUrl: './devices.page.html',
+  styleUrl: './devices.page.scss',
+})
+export class DevicesPage {
+  private readonly confirmDialog = inject(ConfirmService);
+  private readonly data = inject(DataService);
+  private readonly api = inject(BackendApiService);
+  private readonly personContext = inject(BackendPersonContextService);
+
+  readonly backendDevices = signal<PressureDevice[] | null>(null);
+  readonly backendLoading = signal(false);
+  readonly backendError = signal('');
+  readonly backendPersonId = this.personContext.personId;
+  readonly devices = computed(() => this.backendDevices() ?? this.data.devices());
+  readonly formOpen = signal(false);
+  readonly editingId = signal<string | null>(null);
+  readonly name = signal('');
+  readonly number = signal('');
+  readonly error = signal('');
+  readonly saveError = signal('');
+  readonly saving = signal(false);
+  readonly categories = signal<DeviceCategory[]>([]);
+  readonly categoryId = signal<number | null>(null);
+
+  constructor() {
+    effect(onCleanup => {
+      const personId = this.backendPersonId();
+      this.backendError.set('');
+      if (!personId) {
+        this.backendDevices.set(null);
+        this.backendLoading.set(false);
+        return;
+      }
+      this.backendLoading.set(true);
+      const subscription = this.api.getDevices(personId).subscribe({
+        next: devices => {
+          this.backendDevices.set(devices);
+          this.backendLoading.set(false);
+        },
+        error: error => {
+          this.backendDevices.set([]);
+          this.backendError.set(error instanceof Error ? error.message : 'Messgeräte konnten nicht geladen werden.');
+          this.backendLoading.set(false);
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
+
+  openAddForm(): void {
+    this.editingId.set(null);
+    this.name.set('');
+    this.number.set('');
+    this.error.set('');
+    this.saveError.set('');
+    this.formOpen.set(true);
+    if (this.backendPersonId()) this.loadCategories();
+  }
+
+  private loadCategories(): void {
+    if (this.categories().length) {
+      this.categoryId.set(this.categories()[0].id);
+      return;
+    }
+    this.api.getDeviceCategories().subscribe({
+      next: categories => {
+        this.categories.set(categories);
+        this.categoryId.set(categories[0]?.id ?? null);
+      },
+      error: error => this.error.set(
+        error instanceof Error ? error.message : 'Gerätekategorien konnten nicht geladen werden.',
+      ),
+    });
+  }
+
+  editDevice(device: PressureDevice): void {
+    this.editingId.set(device.id);
+    this.name.set(device.name);
+    this.number.set(device.number);
+    this.error.set('');
+    this.saveError.set('');
+    this.formOpen.set(true);
+  }
+
+  cancelForm(): void {
+    this.formOpen.set(false);
+    this.error.set('');
+  }
+
+  saveDevice(): void {
+    const personId = this.backendPersonId();
+    if (personId) {
+      this.saveBackendDevice(personId);
+      return;
+    }
+    const name = this.name().trim();
+    const number = this.number().trim();
+    if (!name || !number) {
+      this.error.set('Bitte Gerätename und Gerätenummer eingeben.');
+      return;
+    }
+
+    const existing = this.devices().find(device =>
+      device.number.toLocaleLowerCase('de') === number.toLocaleLowerCase('de') &&
+      device.id !== this.editingId(),
+    );
+    if (existing) {
+      this.error.set('Diese Gerätenummer ist bereits eingetragen.');
+      return;
+    }
+
+    const device: PressureDevice = {
+      id: this.editingId() ?? crypto.randomUUID(),
+      name,
+      number,
+    };
+    try {
+      if (this.editingId()) {
+        this.data.updateDevice(device);
+      } else {
+        this.data.addDevice(device);
+      }
+      this.formOpen.set(false);
+      this.saveError.set('');
+    } catch {
+      this.saveError.set('Das Gerät konnte nicht gespeichert werden. Bitte prüfe den verfügbaren Speicherplatz.');
+    }
+  }
+
+  /** Das Backend kann Geräte anlegen (Seriennummer + Kategorie) und löschen, aber nicht bearbeiten. */
+  private saveBackendDevice(personId: string): void {
+    const number = this.number().trim();
+    const categoryId = this.categoryId();
+    if (!number) {
+      this.error.set('Bitte die Gerätenummer eingeben.');
+      return;
+    }
+    if (categoryId === null) {
+      this.error.set('Bitte eine Kategorie auswählen.');
+      return;
+    }
+    if (this.devices().some(device => device.number.toLocaleLowerCase('de') === number.toLocaleLowerCase('de'))) {
+      this.error.set('Diese Gerätenummer ist bereits eingetragen.');
+      return;
+    }
+
+    this.saving.set(true);
+    this.api.createDevice(number, personId, categoryId).subscribe({
+      next: device => {
+        this.backendDevices.update(devices => [...(devices ?? []), device]);
+        this.saving.set(false);
+        this.formOpen.set(false);
+      },
+      error: error => {
+        this.saving.set(false);
+        this.error.set(error instanceof Error ? error.message : 'Das Gerät konnte nicht gespeichert werden.');
+      },
+    });
+  }
+
+  async deleteDevice(device: PressureDevice): Promise<void> {
+    if (!await this.confirmDialog.ask({ title: 'Gerät löschen', message: `Möchtest du das Gerät „${device.name}“ wirklich löschen?` })) return;
+    if (this.backendPersonId()) {
+      this.api.deleteDevice(device.id).subscribe({
+        next: () => {
+          this.backendDevices.update(devices => devices?.filter(item => item.id !== device.id) ?? null);
+          this.saveError.set('');
+        },
+        error: error => this.saveError.set(
+          error instanceof Error ? error.message : 'Das Gerät konnte nicht gelöscht werden.',
+        ),
+      });
+      return;
+    }
+    try {
+      this.data.deleteDevice(device.id);
+      this.saveError.set('');
+    } catch {
+      this.saveError.set('Das Gerät konnte nicht gelöscht werden.');
+    }
+  }
+}

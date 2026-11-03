@@ -1,4 +1,7 @@
-﻿namespace EquiApi.Util;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EquiApi.Util;
 
 public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {
@@ -12,8 +15,20 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             logger.LogError(ex, "An unhandled exception occurred while processing the request to {Path}",
                             context.Request.Path);
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            var problem = new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "An unexpected error occurred"
+            };
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsync("An unexpected error occurred");
+            await context.Response.WriteAsJsonAsync(problem, (JsonSerializerOptions?) null,
+                                                    "application/problem+json");
         }
     }
 }

@@ -1,0 +1,491 @@
+= Minutes of Meeting
+EquiPressure
+2026/2027
+5th grade
+
+== 2026-09-22
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 22/09/2026
+
+|Dauer
+|12:35 - 13:00
+|===
+====
+
+=== Besprochenes
+* Ist-Stand Präsentation
+* Project Award Präsentations Layout
+
+==== Kritik an der Präsentation
+* Marketing nennt man Go-Market, nicht Marketing Beginn in der Roadmap
+
+==== Layout Project Award Präsentation
+* Vision (Überblick; aber das Wort mag er nicht)
+* Markt in Zahlen, Marktpotential
+* Zielgruppenunterschiede erklären (Reiter vs. Sattler)
+* Team mit Aufgabenbereichen (Teamleader, Frontend, Backend)
+* Geschäftsmodell
+* Roadmap mit Jahren/Stunden/Quartalen
+* Marketing Ideen?
+* wie sehen die Hardware Daten aus
+
+==== Überblick über dieses Schuljahr
+* bis Jänner brauchen wir Mock-Daten über Bluetooth
+* Projekt soll Jänner/Februar fertig sein
+** Codebase soll Ende Dezember fertig sein
+** im Jänner/Februar dann nur mehr Projektabschlussarbeiten und Dokumentation
+* im Sommersemester werden Marketingvideos gedreht und Marketing generell gestartet
+* es wird eine Projectaward Probelauf geben
+* Business Plan muss geschrieben werden
+** ausmachen wie viel Anteil Sophie Grüneis bekommt
+** kann man davon leben?
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|alle
+a| Project Award Präsentation
+| 06.11.2026
+
+|alle
+a| Backlog aufräumen und neue User Stories überlegen
+| 06.11.2026
+
+|Einzenberger
+a| Location Endpoints und Zeitschreibungstool suchen
+| 06.11.2026
+
+|Graßauer
+a| Almina ins Frontend einarbeiten, Features durchgehen und aufteilen
+| 06.11.2026
+
+|Dallinger
+a| Measurement und Horse Enpoints
+| 06.11.2026
+
+|Silnovic
+a| Frontend einarbeiten und Aufgaben von Lena bekommen
+| 06.11.2026
+|===
+
+== 2026-10-06
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 06/10/2026
+
+|Dauer
+|12:10 - 13:00
+|===
+====
+
+=== Besprochenes
+* Project Award Präsentation
+* Business Plan
+* Frontend Sattler Profil
+* PR Horse Endpoints
+
+==== Project Award Präsentation
+* starker Slogan
+* Folie 5: design überlegen wegen den Kästchen
+** optisch verwirrend weil rechts mehr Text steht wahrscheinlich
+* Folie 4: Selbstüberprüfung weil Selbstkontrolle auch eine andere Bedetung hat
+** deutlich erwähnen, dass es die Probleme sind
+** Probleme noch besser überlegen, besser formulieren
+** "verbesserte/moderner Verwaltungssoftware"
+* das Wort Probleme gibt's nicht? Anscheinend reden wir nur positiv
+** Ist-Stand/Ist-Situation, Pain
+* eine Folie für Probleme und Lösung der Reiter:innen und eine für Sattler:innen, graphisch schön aufbereiteten
+* Überschriften vertikal in der Box zentrieren
+* Markt weltweit Folie löschen, weil's für uns irrelevant ist 
+* Folie 8: Pferdeanzahl auch schreiben
+** wenn wir was finden zur Pferdeverteilung in Österreich nach Bundesländer
+* den Beruf Sattler erklären
+** und bei den Aufgaben erklären was unser Produkt da helfen kann
+** sagen welche Zeit man sich erspart und damit auch Geld
+* er sagt unser Design ist hässlich und technisch nüchtern
+** Haslinger sagt es schaut aus als hätte er es gemacht
+** Hammer sagt wir san ambitionierte junge Frauen und deswegen müssen wir jo anscheinend besser designen können
+
+==== Frontend Sattler
+* Sortierfilter bei Kundschaft
+* Das Wort Kundschaft gefällt ihm gar nicht => KI fragen was wir nehmen können das nicht gegendert ist
+* er versteht das Projekt wieder nicht?
+* man erwartet wenn man vorm Laptop sitzt mehr (Dashboard), weil die Startseite sehr gut für Tablet konfiguriert ist
+** die Startseite ist zu wenig für den Sattler
+** Burger Menü kann man z.B. standardmäßig offen haben
+** Prozesse die zu tun sind anzeigen?
+* Stammdaten der Kunden anzeigen
+** Kathis Idee: Kann man ja über den Pferden auf derselben Seite machen, dass es bisi mehr gefüllt ist
+* Kundenverwaltung fehlt (Kunden löschen, sofort neu anlegen, ändern)
+* Sophie fragen mit welchem Gerät sie unterwegs ist 
+* es ist ihnen zu viel weiß auf der Seite
+
+==== Business Plan
+* Präsentation machen für Business Plan
+* maximales Marktvolumen: wenn das alle nehmen, wie viel können wir maximal einnehmen
+* professionelle Nuter recherchieren: wir erwähnen oben Trainer, physio etc., entweder wir löschen das oder wir bessern das aus und nehmen nur Sattler
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Einzenberger
+a| Project Award Präsentation
+| v
+
+|Einzenberger
+a| UserStories vom git umschreiben
+| 20.10.2026
+
+|Einzenberger
+a| Location Endpoints und Code Review
+| 20.10.2026
+
+|Graßauer
+a| Sattler Frontend Design überarbeiten
+| 20.10.2026
+
+|Graßauer, Silnovic
+a| Schnittstellen zum Backend
+| 20.10.2026
+
+|Dallinger
+a| Horse, Device, Person Endpoints
+| 20.10.2026
+
+|Dallinger
+a| Bluetooth Verbindung Prototypen-Dummy
+| 20.10.2026
+
+|Silnovic
+a| Sattler Frontend Chat
+| 20.10.2026
+
+|===
+
+== 2026-10-20
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Hans-Christian
+| Hammer
+| Professor
+
+| Markus
+| Haslinger
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 20/10/2026
+
+|Dauer
+|12:12 - 12:45
+|===
+====
+
+=== Besprochenes
+* Project Award Präsentation
+* Frontend Sattler
+* Reiter Frontend
+* Tag der offenen Tür Ausstellung
+* Business Plan
+
+==== Project Award Präsentation
+* Slogan gefällt ihm nicht weil "Schmerzen" ein negatives Wort ist
+** Regel ist in Slogans nie negative Worte verwenden
+** Das Wort "Schmerz" ist komplett falsch
+** "Freiheit für Perde" na bitte ned
+** Kathi "Wohlfühlen für jedes Pferd"
+** Freiheit für Pferde - Freude am Reiten
+* Folie 4
+** 02: Fehlstellung von Pferden vermeiden
+** ist zustand weg
+** rechts "unsere lösung"
+** Haslinger: Einfach ist zustand weg, text drunter so lassen und rechts "lösung" drüber schreiben damit's schön positiv ist
+* Folie 5:
+** Bild wie man Sättel ausbessert, wie das angepasst wird
+** stärkere Visualisierung
+* Folie 6: wie bei Folie 4
+* Folie 7: "Team" statt "das Team"
+* Folie 8: Kreise Proportionen stärker visualisiern damit das Verhältnis klar wird
+** soll zeigen wie verherrend dass Verhältnis zwischen Reiter und Sattler
+** das genaue Verhältnis hinschreiben
+** danach Folie die sagt warum wir EquiPressure genau brauchen (BOTSCHAFT)
+* Folie 9: Lückenfüller den keinen interessiert (AHHHHH!!!!!!)
+* Folie 11: warum wir das nehmen gar nicht hinschreiben, Toolname nehmen mit Entwickler
+* neue Folien:
+** Folie wo wir Prozesse der Demo kurz erzählen/erklären (messungen machen, pferd anlegen, etc.)
+*** Marketing psycho-Trick damit wir's ihnen 2 Mal erzählen damits besser hängen bleibt
+** Live Demo; Backup Folien falls Live Demo nicht geht
+*** Drehbuch für Live-Demo überlegen
+*** wir haben nur 10 Minuten insgesamt
+** Letze Folie: Wir bedanken uns für ihre Aufmerksamkeit und fassen kurz zusammen: Wieso EquiPressure
+
+==== Sattler Frontend
+* Dashboard
+** Zahl aller Pferde die in Betreuung sind
+** noch bisi Füller-Statistiken damit's noch bisi voller sind
+** eye catcher auf der rechten Seite machen; schöne Grafik
+** Slideshow von Heatmaps der letzen Messungen
+** lügen und Grafik machen wie der Gewinn der Sattler gestiegen ist seit sie Equipressure verwenden
+
+==== Weiteres
+* Teaser Video überlegen
+* Pitch Präsentation für Unternehmen
+
+=== Vereinbarungen und Entscheidungen
+[%autowidth]
+|===
+|wer |macht was |bis wann
+
+|Lena Graßauer
+a| Frontend Überarbeitung für beide Versionen als Vorbereitung auf Sophie
+| 17.11.2026
+
+|Lena Graßauer, Almina Silnovic
+a| Login für Reiter und Sattler
+| 17.11.2026
+
+|Lena Graßauer
+a| Chat einbauen
+| 17.11.2026
+
+|Lena Graßauer
+a| Homeserver und Deployment
+| 17.11.2026
+
+|Flora Dallinger
+a| Bluetooth Gerät verbinden, Daten empfangen und an App weitergeben sowie testen
+| 17.11.2026
+
+|Flora Dallinger
+a| Horse Endpunkte überarbeiten
+| 17.11.2026
+
+|Katharina Einzenberger
+a| restliche fehlende Routen implementieren
+| 17.11.2026
+
+|Katharina Einzenberger
+a| CI/CD Pipeline
+| 17.11.2026
+
+|Katharina Einzenberger
+a| Project Award Präsentation
+| 17.11.2026
+
+|Almina Silnovic
+a| Jugend Innovativ Antrag
+| 17.11.2026
+
+|===
+
+== 2026-11-03
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Sophie
+| Grüneis
+| Auftraggeber
+
+| Markus
+| Haslinger
+| Professor
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|5AHIF - Raum 120
+
+|Datum
+|Di. 03/11/2026
+
+|Dauer
+|10:15 -
+|===
+====
+
+=== Besprochenes
+* Sattler Frontend
+* Reiter Frontend
+
+=== Hardware
+Patent rennt ja aus, wir könnten uns mit Medilogic zusammenreden und ihnen anbieten, dass wir mit ihnen zusammenarbeiten und ihnen die Software verkaufen etc.
+
+=== Sattler Frontend
+* Neue Messung:
+** bei Kundenauswähl tippen und nicht nur Select list sonder mit Autocomplete List weil Sattler mehr als 5 Kunden haben wird
+** kann man auch bei Pferden und generell überall machen für Kontinuität
+** bei neuem Sattel erstellen auch Kategorie "Sonstiges"
+* vom Pferd sind Größe und Gewicht nicht zwingend erfoderlich; soll optional werden, weil Reiter oft gar nicht Größe und Gewichts des Pferde wissen
+* Profi Filter deutlicher hervorheben mit Tooltip (für Profi ist vorher Gangart und Hand auszuwählen)
+* Logo im PDF-Protokoll abbilden 
+** Logo kann beim Sattlerprofil hochladen optional
+* Apple Login, Facebook, LinkedIn einfach mehr Auswahl beim Registrieren
+** Apple Login statt Github
+* Reiter nach selbem Stall anzeigen können, damit Sattler die Fahrt vielleicht besser planen können
+** damit man mehrere Termine gleichzeitig machen kann
+* Button "Aus Kontakten entfernen" rechts unten machen und ohne das "-"
+* neue Teilmessung: 
+** Sonstiges bei Gangart
+* wenn man Messung nicht beenden kann weil noch nicht gemessen wurde, muss der Button ausgegraut sein und nicht nur nicht bedienbar
+* Messübersicht die 3 rechteckigen Button nach rechts ins weiße Feld schieben und Ansicht wechseln vlt rechts unten hin dann; Bild größer machen
+* Notizen von Messungen direkt bei der Detailansicht anzeigen oder genauere Infos in der Notizen Ansicht machen 
+
+=== Reiter Frontend
+* aus der Historie des Pferdes muss man wieder beim Pferd landen
+* bei Gerätegruppe
+** man sollte Mitglieder nicht mit Personen ID hinzufügen können, weil die Personen ID nicht auslesbar ist
+** lieber Namen eingeben und Autocomplete List machen
+* Sattler zu Favouriten hinzufügen funktioniert noch nicht
+* der Sattler kann keine User zu seinem Gerät hinzufügen, ist das gewollt?
+
+
+

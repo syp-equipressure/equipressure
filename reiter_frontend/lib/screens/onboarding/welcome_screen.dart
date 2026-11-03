@@ -12,7 +12,10 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onNext,
+      // nach links wischen führt zur Anmeldung
+      onHorizontalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) < 0) onNext();
+      },
       child: Container(
         color: AppColors.background,
         child: SafeArea(
@@ -26,6 +29,8 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text('EquiPressure', style: AppTextStyles.h2),
               const Spacer(),
+              const Text('Wische nach links, um zu starten', style: AppTextStyles.labelSmall),
+              const SizedBox(height: 16),
               const PageIndicator(currentPage: 0, totalPages: 5),
               const SizedBox(height: 40),
             ],

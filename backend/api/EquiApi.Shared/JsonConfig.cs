@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using NodaTime.Serialization.SystemTextJson;
 
@@ -10,7 +10,6 @@ public static class JsonConfig
     {
         options.DefaultIgnoreCondition = JsonIgnoreCondition.Never;
         options.PropertyNameCaseInsensitive = true;
-        options.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.Converters.Add(new JsonStringEnumConverter());
         options.WriteIndented = isDev;

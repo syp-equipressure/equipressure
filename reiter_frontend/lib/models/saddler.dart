@@ -2,6 +2,9 @@ class Saddler {
   final String id;
   final String name;
   final String? imagePath;
+
+  /// Wann das Profilbild im Backend gesetzt wurde, null ohne Bild
+  final String? imageUpdatedAt;
   final String? logoPath;
   final String? street;
   final String? houseNumber;
@@ -21,6 +24,7 @@ class Saddler {
     required this.id,
     required this.name,
     this.imagePath,
+    this.imageUpdatedAt,
     this.logoPath,
     this.street,
     this.houseNumber,
@@ -63,6 +67,7 @@ class Saddler {
     String? id,
     String? name,
     String? imagePath,
+    String? imageUpdatedAt,
     String? logoPath,
     String? street,
     String? houseNumber,
@@ -82,6 +87,7 @@ class Saddler {
       id: id ?? this.id,
       name: name ?? this.name,
       imagePath: imagePath ?? this.imagePath,
+      imageUpdatedAt: imageUpdatedAt ?? this.imageUpdatedAt,
       logoPath: logoPath ?? this.logoPath,
       street: street ?? this.street,
       houseNumber: houseNumber ?? this.houseNumber,

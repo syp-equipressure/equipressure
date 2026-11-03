@@ -1,9 +1,12 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/horses/add_horse_screen.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history.dart';
 import 'package:reiterappfrontend/screens/measurement/new_measurement.dart';
 import 'package:reiterappfrontend/models/horse.dart';
+import 'package:reiterappfrontend/services/chat_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/widgets/share_with_saddler_sheet.dart';
 import 'dart:io';
 
 class HorseProfileScreen extends StatefulWidget {
@@ -42,7 +45,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
     String stableStreet,     // ← NEU
     String stableHouseNumber, // ← NEU
   ) async {
-    final updatedHorse = Horse(
+    final changedHorse = Horse(
       id: currentHorse.id,
       name: name,
       image: image,
@@ -57,21 +60,30 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
       stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber, // ← NEU
     );
 
-    await _horseService.updateHorse(updatedHorse);
-
-    setState(() {
-      currentHorse = updatedHorse;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final updatedHorse = await _horseService.updateHorse(changedHorse);
+      if (!mounted) return;
+      setState(() {
+        currentHorse = updatedHorse;
+      });
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Pferd erfolgreich aktualisiert'),
           duration: Duration(seconds: 2),
         ),
       );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_errorText(e))),
+      );
+      // das Formular bleibt offen, damit nichts verloren geht
+      rethrow;
     }
   }
+
+  static String _errorText(Object error) =>
+      error.toString().replaceFirst(RegExp(r'^(Exception|Invalid argument\(s\)): '), '');
 
   @override
   Widget build(BuildContext context) {
@@ -83,9 +95,12 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
+        // bleibt immer sichtbar, das Profil scrollt dahinter
+        bottomNavigationBar: _buildActions(),
         body: SafeArea(
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             children: [
               Stack(
                 children: [
@@ -96,6 +111,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           height: 350,
                           fit: BoxFit.cover,
                         )
+                      : _horseService.imageUrl(currentHorse) != null
+                          ? Image.network(
+                              _horseService.imageUrl(currentHorse)!,
+                              width: double.infinity,
+                              height: 350,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                width: double.infinity,
+                                height: 350,
+                                color: AppColors.border,
+                              ),
+                            )
                       : currentHorse.assetImage != null
                           ? Image.asset(
                               currentHorse.assetImage!,
@@ -106,11 +133,11 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           : Container(
                               width: double.infinity,
                               height: 350,
-                              color: Colors.grey[300],
+                              color: AppColors.border,
                               child: Icon(
                                 Icons.image_outlined,
                                 size: 80,
-                                color: Colors.grey[500],
+                                color: AppColors.textMuted,
                               ),
                             ),
                   Positioned(
@@ -121,6 +148,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       onTap: () {
                         Navigator.of(context).pop(currentHorse);
                       },
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 72,
+                    child: _circleIconButton(
+                      icon: Icons.send_outlined,
+                      onTap: () => shareWithSaddler(
+                        context,
+                        title: '${currentHorse.name} senden an',
+                        share: (contactId) => ChatService().shareHorse(contactId, currentHorse.id),
+                      ),
                     ),
                   ),
                   Positioned(
@@ -138,14 +177,25 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                               horse: currentHorse,
                               onSave: (name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber) async {
                                 final nav = Navigator.of(context);
-                                await _updateHorse(name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber);
+                                try {
+                                  await _updateHorse(name, image, age, breed, birthDate, height, weight, sex, stableCity, stablePostalCode, stableStreet, stableHouseNumber);
+                                } catch (_) {
+                                  return; // Fehler wird schon angezeigt, Formular bleibt offen
+                                }
                                 if (mounted) nav.pop();
                               },
                               onCancel: () => Navigator.pop(context),
 
                               onDelete: () async {
                                 final nav = Navigator.of(context);
-                                await _horseService.deleteHorse(currentHorse.id);
+                                try {
+                                  await _horseService.deleteHorse(currentHorse.id);
+                                } catch (e) {
+                                  scaffoldMessenger.showSnackBar(
+                                    SnackBar(content: Text(_errorText(e))),
+                                  );
+                                  return;
+                                }
                                 if (mounted) {
                                   nav.pop();
                                   nav.pop('deleted');
@@ -168,28 +218,31 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                   ),
                 ],
               ),
-              Expanded(
-                child: Container(
+              Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(24),
                       topRight: Radius.circular(24),
                     ),
                   ),
-                  child: SingleChildScrollView(
+                  child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Text(
-                              currentHorse.name,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
+                            Flexible(
+                              child: Text(
+                                currentHorse.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -198,7 +251,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                   ? Icons.male
                                   : Icons.female,
                               size: 28,
-                              color: Colors.grey[600],
+                              color: currentHorse.sex == 'male' ? AppColors.male : AppColors.female,
                             ),
                           ],
                         ),
@@ -228,87 +281,55 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           currentHorse.fullStableAddress,
                         ),
                         
-                        const SizedBox(height: 40),
-
-                        /// Historie Button
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HorseHistoryScreen(horse: currentHorse),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${currentHorse.name}\'s Historie',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[800],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    size: 20,
-                                    color: Colors.grey[800],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NewMeasurementScreen(
-                                    horse: currentHorse,
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFD4B5F5),
-                              foregroundColor: const Color(0xFF6B4C9A),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'Messung starten',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
                 ),
-              ),
             ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.borderSoft)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HorseHistoryScreen(horse: currentHorse)),
+              ),
+              icon: const Icon(Icons.history),
+              label: const Text('Historie'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => NewMeasurementScreen(horse: currentHorse)),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.purple100,
+                foregroundColor: AppColors.primary,
+              ),
+              child: const Text(
+                'Messung starten',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -323,7 +344,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[800],
+              color: AppColors.textStrong,
             ),
           ),
         ),
@@ -346,20 +367,20 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.shadow(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.black),
+        icon: Icon(icon, color: AppColors.textStrong),
         onPressed: onTap,
       ),
     );
   }
-}
+}

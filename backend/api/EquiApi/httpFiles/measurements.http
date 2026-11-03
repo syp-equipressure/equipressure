@@ -1,0 +1,288 @@
+# Tests für den MeasurementController (api/measurementgroups)
+#
+# Die Ids und erwarteten Werte passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank).
+# Schreibende Tests arbeiten mit einer selbst angelegten Messgruppe, die am Ende wieder gelöscht wird. Die Datei kann
+# daher in Rider mit "Run all requests in file" beliebig oft von oben nach unten ausgeführt werden.
+
+@BaseUrl = http://localhost:5200/api
+
+# Luna (Pferd 1) hat die Messgruppen 1 (Dressurtraining) und 2 (Springtraining).
+# Gruppe 1 hat die Messungen 1 (Schritt Links), 2 (Schritt Rechts), 3 (Trab Links) und 11 (Trab Rechts).
+# Messung 1 dauert 2 Minuten mit einer Aufzeichnung alle 3 Sekunden: Messdaten 1 bis 41, je 20x20 = 400 Werte.
+@horseId = 1
+@groupId = 1
+@measurementId = 1
+@dataId = 1
+
+### Alle Messgruppen eines Pferdes abrufen (Luna: 2 Gruppen)
+GET {{BaseUrl}}/measurementgroups/horse/{{horseId}}
+
+> {%
+    client.test("Luna hat 2 Messgruppen", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.groups.length === 2, "Anzahl: " + response.body.groups.length);
+    });
+%}
+
+### Detailansicht einer Messgruppe (Pferd, Reiterin, Sattel, Datum, Notizen)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}
+
+> {%
+    client.test("Gruppe 1 ist Lenas Dressurtraining mit Luna", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.name === "Dressurtraining", "Name: " + response.body.name);
+        client.assert(response.body.horseName === "Luna", "Pferd: " + response.body.horseName);
+        client.assert(response.body.riderFirstName === "Lena", "Reiterin: " + response.body.riderFirstName);
+        client.assert(response.body.saddleName === "Dressursattel Classic", "Sattel: " + response.body.saddleName);
+    });
+%}
+
+### Nicht existierende Messgruppe abrufen (404)
+GET {{BaseUrl}}/measurementgroups/999999
+
+> {%
+    client.test("Unbekannte Messgruppe liefert 404", function () {
+        client.assert(response.status === 404, "Erwartet 404, war " + response.status);
+    });
+%}
+
+### Alle Messungen einer Messgruppe abrufen (4 Messungen)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+
+> {%
+    client.test("Gruppe 1 hat 4 Messungen", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.measurements.length === 4, "Anzahl: " + response.body.measurements.length);
+    });
+%}
+
+### Eine Messung abrufen (Schritt Links)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}
+
+> {%
+    client.test("Messung 1 ist Schritt Links", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.pace === "Schritt" && response.body.hand === "Links",
+            "Messung: " + response.body.pace + " " + response.body.hand);
+    });
+%}
+
+### Eine Messung nach Gangart und Hand filtern (Trab Links = Messung 3)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/filter?pace=Trab&hand=Links
+
+> {%
+    client.test("Trab Links ist Messung 3", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.id === 3, "Messung: " + response.body.id);
+    });
+%}
+
+### Durchschnitt aller Messwerte einer Gruppe (nur Schritt)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/average?pace=Schritt
+
+> {%
+    client.test("Durchschnitt im Schritt ist größer als 0", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.value > 0, "Durchschnitt: " + response.body.value);
+    });
+%}
+
+### Minimum aller Messwerte einer Gruppe (nur linke Hand)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/min?hand=Links
+
+> {%
+    client.test("Minimum ist nicht negativ", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.value >= 0, "Minimum: " + response.body.value);
+    });
+%}
+
+### Maximum aller Messwerte einer Gruppe (ohne Filter)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/max
+
+> {%
+    client.test("Maximum ist größer als 0", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.value > 0, "Maximum: " + response.body.value);
+    });
+%}
+
+### Durchschnitt der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/average
+
+> {%
+    client.test("Durchschnitt von Messung 1 ist größer als 0", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.value > 0, "Durchschnitt: " + response.body.value);
+    });
+%}
+
+### Minimum der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/min
+
+> {%
+    client.test("Minimum von Messung 1 ist nicht negativ", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.value >= 0, "Minimum: " + response.body.value);
+    });
+%}
+
+### Maximum der Messwerte einer Messung
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/max
+
+> {%
+    client.test("Maximum von Messung 1 ist größer als 0", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.value > 0, "Maximum: " + response.body.value);
+    });
+%}
+
+### Alle Messdaten einer Messung abrufen (41 Aufzeichnungen mit je 400 Werten, nach Zeitstempel sortiert)
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/measurementData
+
+> {%
+    client.test("Messung 1 hat 41 Aufzeichnungen mit je 400 Werten", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.data.length === 41, "Aufzeichnungen: " + response.body.data.length);
+        client.assert(JSON.parse(response.body.data[0].data).length === 400,
+            "Werte pro Aufzeichnung: " + JSON.parse(response.body.data[0].data).length);
+    });
+%}
+
+### Ein Messdatum abrufen
+GET {{BaseUrl}}/measurementgroups/{{groupId}}/measurements/{{measurementId}}/measurementData/{{dataId}}
+
+> {%
+    client.test("Messdatum 1 gehört zu Messung 1", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.id === 1, "Messdatum: " + response.body.id);
+    });
+%}
+
+### Messung mit bereits vorhandener Gangart und Hand anlegen (409, Gruppe 1 hat schon Schritt Links)
+POST {{BaseUrl}}/measurementgroups/{{groupId}}/measurements
+Content-Type: application/json
+
+{
+    "pace": "Schritt",
+    "hand": "Links"
+}
+
+> {%
+    client.test("Doppelte Gangart und Hand wird abgelehnt", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Messgruppe mit dem Sattel eines anderen Pferdes anlegen (404, Sattel 4 gehört Apollo)
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-20",
+    "personId": 6,
+    "horseId": {{horseId}},
+    "saddleId": 4,
+    "deviceId": "EP0701"
+}
+
+> {%
+    client.test("Fremder Sattel wird abgelehnt", function () {
+        client.assert(response.status === 404, "Erwartet 404, war " + response.status);
+    });
+%}
+
+### Messgruppe mit einem Gerät anlegen, das nicht der Besitzerin des Pferdes gehört (409, EP0702 gehört Max)
+# Eine Reitbeteiligung misst mit dem Gerät der Besitzerin, nur Sattler dürfen mit ihrem eigenen Gerät messen
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-20",
+    "personId": 7,
+    "horseId": {{horseId}},
+    "saddleId": 1,
+    "deviceId": "EP0702"
+}
+
+> {%
+    client.test("Fremdes Gerät wird abgelehnt", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Neue Messgruppe anlegen (Max reitet Luna mit Sattel 1, gemessen mit Lenas Gerät EP0701)
+POST {{BaseUrl}}/measurementgroups
+Content-Type: application/json
+
+{
+    "name": "Galopptraining",
+    "date": "2026-10-20",
+    "notes": "Erste Messung mit neuem Pad",
+    "personId": 7,
+    "horseId": {{horseId}},
+    "saddleId": 1,
+    "deviceId": "EP0701"
+}
+
+> {%
+    client.test("Messgruppe angelegt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(response.body.riderFirstName === "Max", "Reiter: " + response.body.riderFirstName);
+    });
+    client.global.set("createdGroupId", response.body.id);
+%}
+
+### Messung mit Aufzeichnungen zur angelegten Gruppe hinzufügen
+# Die Aufzeichnungen sind optional. Ein echtes Gerät liefert pro Aufzeichnung 400 Werte (20x20), hier reichen ein paar.
+POST {{BaseUrl}}/measurementgroups/{{createdGroupId}}/measurements
+Content-Type: application/json
+
+{
+    "pace": "Galopp",
+    "hand": "Links",
+    "description": "Gleichmäßiger Galopp",
+    "recordings": [
+        { "timestamp": "2026-10-20T14:00:00Z", "values": [0, 12, 340, 512, 98] },
+        { "timestamp": "2026-10-20T14:00:03Z", "values": [1, 15, 352, 530, 101] }
+    ]
+}
+
+> {%
+    client.test("Messung angelegt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(response.body.pace === "Galopp", "Gangart: " + response.body.pace);
+    });
+    client.global.set("createdMeasurementId", response.body.id);
+%}
+
+### Aufzeichnungen der angelegten Messung abrufen (die beiden mitgeschickten Aufzeichnungen)
+GET {{BaseUrl}}/measurementgroups/{{createdGroupId}}/measurements/{{createdMeasurementId}}/measurementData
+
+> {%
+    client.test("Beide Aufzeichnungen wurden gespeichert", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.data.length === 2, "Aufzeichnungen: " + response.body.data.length);
+        client.assert(response.body.data[0].data === "[0,12,340,512,98]", "Werte: " + response.body.data[0].data);
+    });
+%}
+
+### Angelegte Messung löschen (löscht auch ihre Messdaten)
+DELETE {{BaseUrl}}/measurementgroups/{{createdGroupId}}/measurements/{{createdMeasurementId}}
+
+> {%
+    client.test("Messung gelöscht", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Angelegte Messgruppe löschen (löscht auch ihre Messungen und entfernt sie aus allen Freigaben)
+DELETE {{BaseUrl}}/measurementgroups/{{createdGroupId}}
+
+> {%
+    client.test("Messgruppe gelöscht", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}

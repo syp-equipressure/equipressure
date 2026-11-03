@@ -1,1 +1,262 @@
-@BaseUrl = http://localhost:5200/api/persons
+# Tests für den PersonController (api/persons)
+#
+# Die Ids und erwarteten Werte passen zu den Testdaten aus DevelopmentSeedData.md (frische Datenbank).
+# Schreibende Tests verändern die Testdaten nicht dauerhaft: sie schalten etwas ein und gleich wieder aus oder
+# arbeiten mit einer selbst angelegten Person, die am Ende wieder gelöscht wird. Die Datei kann daher in Rider mit
+# "Run all requests in file" beliebig oft von oben nach unten ausgeführt werden.
+
+@BaseUrl = http://localhost:5200/api
+
+# 1 Sophie Grüneis (Sattlerin), 3 Anna Schmidt (Sattlerin), 6 Lena Grassauer (Reiterin), 7 Max Mustermann (Reiter),
+# 10 Eva Moser (Gast)
+@saddlerId = 1
+@otherSaddlerId = 3
+@equestrianId = 6
+@otherEquestrianId = 7
+@guestId = 10
+
+### Person mit allen Daten abrufen (Sophie Grüneis)
+GET {{BaseUrl}}/persons/{{saddlerId}}
+
+> {%
+    client.test("Sophie Grüneis mit Adresse und Rolle", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.lastName === "Grüneis", "Nachname: " + response.body.lastName);
+        client.assert(response.body.address.addressName === "Lenaustraße 18", "Adresse: " + response.body.address.addressName);
+        client.assert(response.body.roles.indexOf("Saddler") >= 0, "Rollen: " + response.body.roles);
+    });
+%}
+
+### Nicht existierende Person abrufen (404)
+GET {{BaseUrl}}/persons/999999
+
+> {%
+    client.test("Unbekannte Person liefert 404", function () {
+        client.assert(response.status === 404, "Erwartet 404, war " + response.status);
+    });
+%}
+
+### Namen einer Person abrufen (Lena Grassauer)
+GET {{BaseUrl}}/persons/{{equestrianId}}/profile-data
+
+> {%
+    client.test("Name von Lena", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.firstName === "Lena" && response.body.lastName === "Grassauer",
+            "Name: " + response.body.firstName + " " + response.body.lastName);
+    });
+%}
+
+### Adresse einer Person abrufen (Lena wohnt am Reiterhof Sonnenhügel)
+GET {{BaseUrl}}/persons/{{equestrianId}}/location
+
+> {%
+    client.test("Adresse von Lena", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.addressName === "Reiterhof Sonnenhügel 5", "Adresse: " + response.body.addressName);
+        client.assert(response.body.cityName === "Traun" && response.body.plz === "4050",
+            "Ort: " + response.body.plz + " " + response.body.cityName);
+    });
+%}
+
+### Kontakte einer Reiterin abrufen (Lena: Sophie und Anna, nach Nachnamen sortiert)
+GET {{BaseUrl}}/persons/{{equestrianId}}/contacts
+
+> {%
+    client.test("Kontakte von Lena sind Sophie und Anna", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.contacts.map(function (c) { return c.id; });
+        client.assert(JSON.stringify(ids) === "[1,3]", "Kontakte: " + JSON.stringify(ids));
+    });
+%}
+
+### Kontakte einer Sattlerin abrufen (Sophie: Lena und Max - Julia ist nur Favorit, kein Kontakt)
+GET {{BaseUrl}}/persons/{{saddlerId}}/contacts
+
+> {%
+    client.test("Kontakte von Sophie sind Lena und Max", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.contacts.map(function (c) { return c.id; });
+        client.assert(JSON.stringify(ids) === "[6,7]", "Kontakte: " + JSON.stringify(ids));
+    });
+%}
+
+### Favoriten einer Reiterin abrufen (Lena: Ferdinand und Sophie, nach Nachnamen sortiert)
+GET {{BaseUrl}}/persons/{{equestrianId}}/favourites
+
+> {%
+    client.test("Favoriten von Lena sind Ferdinand und Sophie", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.saddlers.map(function (s) { return s.id; });
+        client.assert(JSON.stringify(ids) === "[2,1]", "Favoriten: " + JSON.stringify(ids));
+    });
+%}
+
+### Eigene Pferde einer Person abrufen (Lena besitzt Apollo und Luna)
+GET {{BaseUrl}}/persons/{{equestrianId}}/horses
+
+> {%
+    client.test("Lena besitzt Apollo und Luna", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var names = response.body.horses.map(function (h) { return h.name; });
+        client.assert(JSON.stringify(names) === '["Apollo","Luna"]', "Pferde: " + JSON.stringify(names));
+    });
+%}
+
+### Geräte einer Person abrufen (Lena besitzt EP0701)
+GET {{BaseUrl}}/persons/{{equestrianId}}/devices
+
+> {%
+    client.test("Lena hat das Gerät EP0701", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        var ids = response.body.devices.map(function (d) { return d.id; });
+        client.assert(JSON.stringify(ids) === '["EP0701"]', "Geräte: " + JSON.stringify(ids));
+    });
+%}
+
+### Alle Sattler mit Adresse abrufen (5 Sattler, nach Nachnamen sortiert)
+GET {{BaseUrl}}/persons/saddlers
+
+> {%
+    client.test("Alle 5 Sattler, Feldhofer zuerst", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.saddlers.length === 5, "Anzahl: " + response.body.saddlers.length);
+        client.assert(response.body.saddlers[0].lastName === "Feldhofer", "Erster: " + response.body.saddlers[0].lastName);
+    });
+%}
+
+### Sattler als Favorit markieren (Max markiert Sophie, die bisher nur Kontakt ist)
+PUT {{BaseUrl}}/persons/{{otherEquestrianId}}/favourites/{{saddlerId}}
+
+> {%
+    client.test("Favorit gesetzt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Sattler als Favorit entfernen (stellt die Testdaten wieder her, der Kontakt bleibt)
+DELETE {{BaseUrl}}/persons/{{otherEquestrianId}}/favourites/{{saddlerId}}
+
+> {%
+    client.test("Favorit entfernt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Gast versucht einen Favoriten zu setzen (409, nur Reiter können Sattler favorisieren)
+PUT {{BaseUrl}}/persons/{{guestId}}/favourites/{{saddlerId}}
+
+> {%
+    client.test("Gast kann keinen Favoriten setzen", function () {
+        client.assert(response.status === 409, "Erwartet 409, war " + response.status);
+    });
+%}
+
+### Kontakt hinzufügen (Max und Anna)
+PUT {{BaseUrl}}/persons/{{otherEquestrianId}}/contacts/{{otherSaddlerId}}
+
+> {%
+    client.test("Kontakt hinzugefügt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Kontakt entfernen (stellt die Testdaten wieder her, geht von beiden Seiten - hier von Annas Seite)
+DELETE {{BaseUrl}}/persons/{{otherSaddlerId}}/contacts/{{otherEquestrianId}}
+
+> {%
+    client.test("Kontakt entfernt", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Neue Person (Reiterin) anlegen, die E-Mail ist durch den Zeitstempel bei jedem Lauf eindeutig
+POST {{BaseUrl}}/persons
+Content-Type: application/json
+
+{
+    "firstName": "Theresa",
+    "lastName": "Testreiterin",
+    "height": 170.0,
+    "weight": 60.0,
+    "dateOfBirth": "1999-04-12",
+    "email": "theresa.{{$timestamp}}@example.com",
+    "address": {
+        "addressName": "Hausstraße 12",
+        "cityName": "Traun",
+        "plz": "4050"
+    },
+    "role": "Equestrian"
+}
+
+> {%
+    client.test("Person angelegt", function () {
+        client.assert(response.status === 201, "Erwartet 201, war " + response.status);
+        client.assert(response.body.roles.indexOf("Equestrian") >= 0, "Rollen: " + response.body.roles);
+    });
+    client.global.set("createdPersonId", response.body.id);
+%}
+
+### Sattlerin ohne Straße anlegen (400, Sattler müssen ihre Straße angeben)
+POST {{BaseUrl}}/persons
+Content-Type: application/json
+
+{
+    "firstName": "Sabine",
+    "lastName": "Sattler",
+    "height": 168.0,
+    "weight": 60.0,
+    "dateOfBirth": "1988-03-14",
+    "address": {
+        "cityName": "Linz",
+        "plz": "4020"
+    },
+    "role": "Saddler"
+}
+
+> {%
+    client.test("Sattlerin ohne Straße wird abgelehnt", function () {
+        client.assert(response.status === 400, "Erwartet 400, war " + response.status);
+    });
+%}
+
+### Angelegte Person ändern (nur gesetzte Felder werden geändert)
+PATCH {{BaseUrl}}/persons/{{createdPersonId}}
+Content-Type: application/json
+
+{
+    "lastName": "Testreiterin-Neu",
+    "height": 172.0
+}
+
+> {%
+    client.test("Person geändert", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}
+
+### Adresse der angelegten Person setzen
+PUT {{BaseUrl}}/persons/{{createdPersonId}}/location
+Content-Type: application/json
+
+{
+    "addressName": "Pferdehof Grünwald 12",
+    "cityName": "Leonding",
+    "plz": "4060"
+}
+
+> {%
+    client.test("Adresse gesetzt (bestehende Adresse von Max wird wiederverwendet)", function () {
+        client.assert(response.status === 200, "Erwartet 200, war " + response.status);
+        client.assert(response.body.id === 7, "Adress-Id: " + response.body.id);
+    });
+%}
+
+### Angelegte Person löschen
+DELETE {{BaseUrl}}/persons/{{createdPersonId}}
+
+> {%
+    client.test("Person gelöscht", function () {
+        client.assert(response.status === 204, "Erwartet 204, war " + response.status);
+    });
+%}

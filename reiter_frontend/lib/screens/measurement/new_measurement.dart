@@ -1,10 +1,16 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/screens/measurement/new_person.dart';
 import 'package:reiterappfrontend/screens/measurement/new_saddle.dart';
+import 'package:reiterappfrontend/screens/profil/devices_screen.dart';
+import 'package:reiterappfrontend/services/device_connection_service.dart';
+import 'package:reiterappfrontend/services/device_service.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
+import 'package:reiterappfrontend/widgets/device_connection_button.dart';
 import 'package:reiterappfrontend/services/saddle_service.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
@@ -34,17 +40,33 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
   List<Person> persons = [];
   List<Saddle> saddles = [];
   List<Horse> horses = [];
+  List<Device> devices = [];
   bool isLoading = true;
 
   Person? selectedPerson;
   Horse? selectedHorse;
   Saddle? selectedSaddle;
+  Device? selectedDevice;
+
+  final DeviceConnectionService _connection = DeviceConnectionService();
 
   @override
   void initState() {
     super.initState();
     selectedHorse = widget.horse;
+    // "Weiter zur Messung" hängt vom Verbindungsstatus ab
+    _connection.addListener(_onConnectionChanged);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _connection.removeListener(_onConnectionChanged);
+    super.dispose();
+  }
+
+  void _onConnectionChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadData() async {
@@ -54,11 +76,16 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
       final loadedPersons = await _personService.getPersons();
       final loadedSaddles = await _saddleService.getSaddles();
       final loadedHorses = await _horseService.getHorses();
+      final personId = await _horseService.currentPersonId();
+      final loadedDevices = await DeviceService().getDevices(personId.toString());
+      if (!mounted) return;
 
       setState(() {
         persons = loadedPersons;
         saddles = loadedSaddles;
         horses = loadedHorses;
+        devices = loadedDevices;
+        selectedDevice = _preselectDevice(loadedDevices);
         
         // Wichtig: Setze selectedHorse nochmal nach dem Laden
         // damit das Dropdown das richtige Objekt aus der horses-Liste findet
@@ -72,13 +99,98 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Laden: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Laden: $e')),
+      );
     }
+  }
+
+  /// Bereits verbundenes Gerät, sonst die bisherige Auswahl, sonst das einzige Gerät.
+  Device? _preselectDevice(List<Device> loadedDevices) {
+    Device? find(String? id) {
+      for (final device in loadedDevices) {
+        if (device.id == id) return device;
+      }
+      return null;
+    }
+
+    return find(_connection.device?.id) ??
+        find(selectedDevice?.id) ??
+        (loadedDevices.length == 1 ? loadedDevices.first : null);
+  }
+
+  void _onDeviceChanged(Device? device) {
+    // eine Verbindung zu einem anderen Gerät wird getrennt
+    if (_connection.device != null && _connection.device!.id != device?.id) {
+      _connection.disconnect();
+    }
+    setState(() => selectedDevice = device);
+  }
+
+  Future<void> _openDevices() async {
+    final personId = await _horseService.currentPersonId();
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DevicesScreen(
+          devices: List.of(devices),
+          ownerId: personId.toString(),
+        ),
+      ),
+    );
+    DeviceService().clearCache();
+    await _loadData();
+  }
+
+  Widget _buildDeviceSection() {
+    if (devices.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Messgerät',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Du hast noch kein Satteldruckmessgerät hinterlegt.',
+            style: TextStyle(fontSize: 14, color: AppColors.text),
+          ),
+          TextButton.icon(
+            onPressed: _openDevices,
+            icon: const Icon(Icons.add),
+            label: const Text('Gerät hinzufügen'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SelectionDropdown<Device>(
+          label: 'Messgerät',
+          value: selectedDevice,
+          items: devices,
+          getItemText: (device) => device.name == device.number
+              ? device.number
+              : '${device.number} · ${device.name}',
+          getItemId: (device) => device.id,
+          onChanged: _onDeviceChanged,
+        ),
+        if (selectedDevice != null) ...[
+          const SizedBox(height: 12),
+          DeviceConnectionButton(device: selectedDevice!),
+        ],
+      ],
+    );
   }
 
   void _showAddRiderDialog() {
@@ -86,7 +198,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => NewPersonScreen()
+        builder: (_) => const NewPersonScreen()
       ),
     ).then((newPerson) async {
       await _loadData();
@@ -99,6 +211,24 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
           );
         });
       }
+    });
+  }
+
+  /// Öffnet einen selbst angelegten Reiter zum Bearbeiten oder Löschen
+  Future<void> _showEditRiderScreen(Person rider) async {
+    final previousSelection = selectedPerson;
+    final updated = await Navigator.push<Person>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewPersonScreen(existingRider: rider),
+      ),
+    );
+    await _loadData();
+    if (!mounted) return;
+    setState(() {
+      // der bearbeitete Reiter wird ausgewählt, nach dem Löschen bleibt die bisherige Auswahl (falls es sie noch gibt)
+      final id = updated?.id ?? previousSelection?.id;
+      selectedPerson = persons.where((p) => p.id == id).firstOrNull;
     });
   }
 
@@ -131,6 +261,27 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
     });
   }
 
+  /// Öffnet einen Sattel zum Bearbeiten oder Löschen
+  Future<void> _showEditSaddleScreen(Saddle saddle) async {
+    final previousSelection = selectedSaddle;
+    final updated = await Navigator.push<Saddle>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewSaddleScreen(
+          preselectedHorse: selectedHorse,
+          existingSaddle: saddle,
+        ),
+      ),
+    );
+    await _loadData();
+    if (!mounted) return;
+    setState(() {
+      // der bearbeitete Sattel wird ausgewählt, nach dem Löschen bleibt die bisherige Auswahl (falls es sie noch gibt)
+      final id = updated?.id ?? previousSelection?.id;
+      selectedSaddle = saddles.where((s) => s.id == id).firstOrNull;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Filtere Sättel für das ausgewählte Pferd
@@ -139,7 +290,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
         : saddles.where((s) => s.horseId == selectedHorse!.id).toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       drawer: const SideNav(),
       appBar: const CustomAppBar(title: 'EquiPressure'),
       body: isLoading
@@ -186,6 +337,8 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                     },
                     onAddNew: _showAddRiderDialog,
                     addNewText: 'Reiter:in hinzufügen',
+                    onEditItem: _showEditRiderScreen,
+                    canEditItem: (person) => person.isOwnRider,
                   ),
 
                   if (selectedPerson != null) ...[
@@ -228,10 +381,10 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Sattel Dropdown
+                  // Sattel Dropdown, mit dem Stift in der Liste wird ein Sattel bearbeitet
                   SelectionDropdown<Saddle>(
                     label: 'Sattel',
-                    value: selectedSaddle != null && 
+                    value: selectedSaddle != null &&
                            saddlesForHorse.any((s) => s.id == selectedSaddle!.id)
                         ? selectedSaddle
                         : null,
@@ -246,12 +399,18 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                     enabled: selectedHorse != null,
                     onAddNew: _showAddSaddleDialog,
                     addNewText: 'Sattel hinzufügen',
+                    onEditItem: _showEditSaddleScreen,
                   ),
 
                   if (selectedSaddle != null) ...[
                     const SizedBox(height: 12),
                     SingleInfoBox(text: 'Kategorie ${selectedSaddle!.category}'),
                   ],
+
+                  const SizedBox(height: 24),
+
+                  // Messgerät auswählen und verbinden
+                  _buildDeviceSection(),
 
                   const SizedBox(height: 48),
 
@@ -269,16 +428,17 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                                     user: selectedPerson!,
                                     horse: selectedHorse!,
                                     saddle: selectedSaddle!,
+                                    device: selectedDevice!,
                                   ),
                                 ),
                               );
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4B5F5),
-                        foregroundColor: const Color(0xFF6B4C9A),
-                        disabledBackgroundColor: Colors.grey[300],
-                        disabledForegroundColor: Colors.grey[500],
+                        backgroundColor: AppColors.purple100,
+                        foregroundColor: AppColors.primary,
+                        disabledBackgroundColor: AppColors.border,
+                        disabledForegroundColor: AppColors.textMuted,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -300,8 +460,10 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
   }
 
   bool _canProceed() {
-    return selectedPerson != null && 
-           selectedHorse != null && 
-           selectedSaddle != null;
+    return selectedPerson != null &&
+           selectedHorse != null &&
+           selectedSaddle != null &&
+           selectedDevice != null &&
+           _connection.isConnectedTo(selectedDevice!);
   }
 }

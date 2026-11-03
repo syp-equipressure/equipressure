@@ -1,7 +1,9 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/services/horse_service.dart';
+import 'package:reiterappfrontend/services/push_service.dart';
 import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import '../../widgets/dashed_border.dart';
@@ -27,11 +29,12 @@ class _HorsesScreenState extends State<HorsesScreen> {
   void initState() {
     super.initState();
     _loadHorses();
+    PushService().start();
   }
 
   Future<void> _loadHorses() async {
     setState(() => isLoading = true);
-    
+
     try {
       final loadedHorses = await _horseService.getHorses();
       setState(() {
@@ -41,71 +44,91 @@ class _HorsesScreenState extends State<HorsesScreen> {
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Laden: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler beim Laden: $e')));
       }
     }
   }
 
   // ✅ AKTUALISIERT: Jetzt mit 12 Parametern (inkl. Stalladresse)
-  void _addHorse(
+  Future<void> _addHorse(
     String name,
     File? image,
     String age,
     String breed,
     String birthDate,
-    String weight,
     String height,
+    String weight,
     String sex,
-    String stableCity,       // ← NEU
-    String stablePostalCode, // ← NEU
-    String stableStreet,     // ← NEU
-    String stableHouseNumber,// ← NEU
+    String stableCity,
+    String stablePostalCode,
+    String stableStreet,
+    String stableHouseNumber,
   ) async {
     final newHorse = Horse(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
+      id: '',
+      name: name.trim(),
       image: image,
-      breed: breed,
+      breed: breed.trim(),
       birthDate: birthDate,
       weight: weight,
       height: height,
       sex: sex,
-      stableCity: stableCity.isEmpty ? null : stableCity,
-      stablePostalCode: stablePostalCode.isEmpty ? null : stablePostalCode,
-      stableStreet: stableStreet.isEmpty ? null : stableStreet,
-      stableHouseNumber: stableHouseNumber.isEmpty ? null : stableHouseNumber,
+      stableCity: stableCity.trim(),
+      stablePostalCode: stablePostalCode.trim(),
+      stableStreet: stableStreet.trim().isEmpty ? null : stableStreet.trim(),
+      stableHouseNumber: stableHouseNumber.trim().isEmpty
+          ? null
+          : stableHouseNumber.trim(),
     );
 
-    await _horseService.addHorse(newHorse);
-    
-    setState(() {
-      view = HorsesView.list;
-    });
-    
-    // Lade die Pferde neu, um die Liste zu aktualisieren
-    await _loadHorses();
+    try {
+      var savedHorse = await _horseService.addHorse(newHorse);
+      if (image != null) {
+        // das Pferd ist schon gespeichert, ein Fehler beim Bild darf es nicht verwerfen
+        try {
+          savedHorse = await _horseService.uploadImage(savedHorse, image);
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Das Pferd ist gespeichert, das Bild aber nicht: $error')),
+            );
+          }
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        horses = [...horses, savedHorse];
+        view = HorsesView.list;
+        isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Pferd konnte nicht gespeichert werden: $error'),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.bgPanel,
       drawer: const SideNav(),
       appBar: view == HorsesView.add
           ? null
-          : const CustomAppBar(
-              title: 'EquiPressure',
-            ),
-      body: view == HorsesView.add 
-          ? _addView() 
-          : isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _listView(),
+          : const CustomAppBar(title: 'EquiPressure'),
+      body: view == HorsesView.add
+          ? _addView()
+          : isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _listView(),
       floatingActionButton: horses.isNotEmpty && view == HorsesView.list
           ? FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+              backgroundColor: AppColors.primary,
               onPressed: () => setState(() => view = HorsesView.add),
               child: const Icon(Icons.add),
             )
@@ -114,21 +137,28 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _listView() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            'Meine Pferde',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return CustomScrollView(
+      slivers: [
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 40),
+          sliver: SliverToBoxAdapter(
+            child: Center(
+              child: Text(
+                'Meine Pferde',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
-          const SizedBox(height: 40),
-          Expanded(
-            child: horses.isEmpty ? _emptyBox() : _horseGrid(),
+        ),
+        if (horses.isEmpty)
+          SliverFillRemaining(hasScrollBody: false, child: _emptyBox())
+        else
+          // unten Platz für den Hinzufügen-Button
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+            sliver: _horseGrid(),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -150,19 +180,16 @@ class _HorsesScreenState extends State<HorsesScreen> {
                   height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[400]!, width: 2),
+                    border: Border.all(color: AppColors.textMuted, width: 2),
                   ),
-                  child: Icon(Icons.add, size: 32, color: Colors.grey[600]),
+                  child: Icon(Icons.add, size: 32, color: AppColors.textSoft),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Füge ein Pferd hinzu um mit\n'
                   'den Messungen starten zu\nkönnen',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
+                  style: TextStyle(color: AppColors.textSoft, height: 1.5),
                 ),
               ],
             ),
@@ -173,7 +200,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   Widget _horseGrid() {
-    return GridView.builder(
+    return SliverGrid.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 16,
@@ -191,9 +218,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
         // Warte auf das Ergebnis vom HorseProfileScreen
         final result = await Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => HorseProfileScreen(horse: horse),
-          ),
+          MaterialPageRoute(builder: (_) => HorseProfileScreen(horse: horse)),
         );
 
         // Falls das Pferd aktualisiert wurde, lade die Liste neu
@@ -207,20 +232,19 @@ class _HorsesScreenState extends State<HorsesScreen> {
               ),
             );
           }
-        }
-        else if (result != null && result is Horse) {
+        } else if (result != null && result is Horse) {
           await _loadHorses();
         }
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               blurRadius: 12,
               offset: const Offset(0, 4),
-              color: Colors.black.withValues(alpha: 0.05),
+              color: AppColors.shadow(0.05),
             ),
           ],
         ),
@@ -228,36 +252,49 @@ class _HorsesScreenState extends State<HorsesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: horse.image != null
-                    ? Image.file(horse.image!, fit: BoxFit.cover)
-                    : horse.assetImage != null
-                        ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
-                        : Container(
-                            color: Colors.grey[200],
-                            child: Icon(Icons.image_outlined,
-                                size: 48, color: Colors.grey[400]),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: horse.image != null
+                      ? Image.file(horse.image!, fit: BoxFit.cover)
+                      : _horseService.imageUrl(horse) != null
+                      ? Image.network(
+                          _horseService.imageUrl(horse)!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(color: AppColors.borderSoft),
+                        )
+                      : horse.assetImage != null
+                      ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
+                      : Container(
+                          color: AppColors.borderSoft,
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: 48,
+                            color: AppColors.textMuted,
                           ),
+                        ),
+                ),
               ),
             ),
             const SizedBox(height: 12),
+            // ✅ Name wird bei Überlänge mit ... abgekürzt
             Text(
               horse.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 4),
+            // ✅ Alter | Rasse wird bei Überlänge mit ... abgekürzt
             Text(
               '${_calculateAge(horse.birthDate)} | ${horse.breed}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: TextStyle(fontSize: 12, color: AppColors.textSoft),
             ),
           ],
         ),
@@ -266,26 +303,26 @@ class _HorsesScreenState extends State<HorsesScreen> {
   }
 
   String _calculateAge(String birthDate) {
-    if (birthDate.isEmpty) return '?yo';
-    
+    if (birthDate.isEmpty) return '?J';
+
     try {
       final parts = birthDate.split('.');
       if (parts.length == 3) {
         final day = int.parse(parts[0]);
         final month = int.parse(parts[1]);
         final year = int.parse(parts[2]);
-        
+
         final birth = DateTime(year, month, day);
         final now = DateTime.now();
         final age = now.year - birth.year;
-        
-        return '${age}yo';
+
+        return '$age J';
       }
     } catch (e) {
-      return '?yo';
+      return '? J';
     }
-    
-    return '?yo';
+
+    return '? J';
   }
 
   Widget _addView() {

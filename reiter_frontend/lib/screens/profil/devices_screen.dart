@@ -1,14 +1,19 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:reiterappfrontend/models/device.dart';
+import 'package:reiterappfrontend/services/device_service.dart';
+import 'package:reiterappfrontend/widgets/device_connection_button.dart';
 import 'device_group_screen.dart';
 
 class DevicesScreen extends StatefulWidget {
   final List<Device> devices;
+  final String ownerId;
 
   const DevicesScreen({
     super.key,
     required this.devices,
+    required this.ownerId,
   });
 
   @override
@@ -19,43 +24,109 @@ class _DevicesScreenState extends State<DevicesScreen> {
   int? expandedIndex;
 
   void _scanQRCode() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => _QRCodeScannerScreen(
-          onCodeScanned: (code) {
-            Navigator.pop(context, code);
-          },
-        ),
-      ),
-    ).then((result) {
-      if (result != null) {
-        _handleScannedCode(result);
-      }
-    });
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => _QRCodeScannerScreen(
+              onCodeScanned: (code) {
+                Navigator.pop(context, code);
+              },
+            ),
+          ),
+        )
+        .then((result) {
+          if (result != null) {
+            _handleScannedCode(result);
+          }
+        });
   }
 
-  void _handleScannedCode(String code) {
-    // Handle the scanned code
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Scanned: $code')),
+  Future<void> _handleScannedCode(String code) async {
+    final List<DeviceCategory> categories;
+    try {
+      categories = await DeviceService.getCategories();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gerätekategorien konnten nicht geladen werden.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    int? selectedId = categories.isEmpty ? null : categories.first.id;
+    final categoryId = await showDialog<int>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Gerät hinzufügen'),
+          content: DropdownButtonFormField<int>(
+            initialValue: selectedId,
+            decoration: const InputDecoration(labelText: 'Gerätekategorie'),
+            items: [
+              for (final category in categories)
+                DropdownMenuItem(
+                  value: category.id,
+                  child: Text(
+                    '${category.name} (bis ${category.numOfAllowedPeople} weitere Personen)',
+                  ),
+                ),
+            ],
+            onChanged: (id) => setDialogState(() => selectedId = id),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: selectedId == null ? null : () => Navigator.pop(context, selectedId),
+              child: const Text('Hinzufügen'),
+            ),
+          ],
+        ),
+      ),
     );
+    if (categoryId == null || !mounted) return;
+
+    try {
+      final device = await DeviceService.addDevice(
+        deviceId: code,
+        ownerId: int.parse(widget.ownerId),
+        categoryId: categoryId,
+      );
+      if (!mounted) return;
+      if (device != null) {
+        setState(() => widget.devices.add(device));
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gerät wurde hinzugefügt.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gerät konnte nicht hinzugefügt werden: $error'),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Meine Satteldruckmessgeräte',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.textStrong,
             fontWeight: FontWeight.w500,
             fontSize: 16,
           ),
@@ -67,28 +138,22 @@ class _DevicesScreenState extends State<DevicesScreen> {
           widget.devices.length,
           (index) => Column(
             children: [
-              _buildDeviceItem(
-                index: index,
-                device: widget.devices[index],
-              ),
+              _buildDeviceItem(index: index, device: widget.devices[index]),
               if (index < widget.devices.length - 1)
-                Divider(height: 1, color: Colors.grey[300]),
+                Divider(height: 1, color: AppColors.border),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _scanQRCode,
-        backgroundColor: const Color.fromARGB(255, 178, 149, 230),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildDeviceItem({
-    required int index,
-    required Device device,
-  }) {
+  Widget _buildDeviceItem({required int index, required Device device}) {
     final isExpanded = expandedIndex == index;
 
     return Column(
@@ -106,7 +171,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 Expanded(
                   child: RichText(
                     text: TextSpan(
-                      style: const TextStyle(fontSize: 15, color: Colors.black),
+                      style: const TextStyle(fontSize: 15, color: AppColors.textStrong),
                       children: [
                         const TextSpan(
                           text: 'Gerät: ',
@@ -122,7 +187,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ),
                 Icon(
                   isExpanded ? Icons.keyboard_arrow_up : Icons.chevron_right,
-                  color: Colors.black54,
+                  color: AppColors.textSoft,
                   size: 24,
                 ),
               ],
@@ -131,13 +196,17 @@ class _DevicesScreenState extends State<DevicesScreen> {
         ),
         if (isExpanded)
           Container(
-            color: Colors.grey[50],
+            color: AppColors.bgPanel,
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Gerätenummer
                 _buildInfoRow('Gerätenummer:', device.number),
+                const SizedBox(height: 16),
+
+                // Verbindung zum Gerät
+                DeviceConnectionButton(device: device),
                 const SizedBox(height: 16),
 
                 // Gerätegruppe
@@ -165,36 +234,23 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.chevron_right, color: Colors.black54, size: 20),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.textSoft,
+                          size: 20,
+                        ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                // Gerät löschen Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _showDeleteDeviceDialog(context, device);
-                    },
-                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                    label: const Text(
-                      'Gerät löschen',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: () => _confirmDeleteDevice(device),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Gerät entfernen'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    padding: EdgeInsets.zero,
                   ),
                 ),
               ],
@@ -204,66 +260,72 @@ class _DevicesScreenState extends State<DevicesScreen> {
     );
   }
 
+  Future<void> _confirmDeleteDevice(Device device) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gerät entfernen'),
+        content: Text(
+          'Möchtest du das Gerät "${device.name}" (${device.number}) wirklich entfernen? '
+          'Alle Personen der Gerätegruppe verlieren den Zugriff.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Entfernen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await DeviceService.deleteDevice(device.id);
+      if (!mounted) return;
+      setState(() {
+        widget.devices.removeWhere((d) => d.id == device.id);
+        expandedIndex = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gerät wurde entfernt.')),
+      );
+    } on DeviceApiException catch (error) {
+      if (!mounted) return;
+      final message = error.isConflict
+          ? 'Mit dem Gerät wurde schon gemessen. Lösche zuerst die Messungen.'
+          : error.statusCode == 403
+              ? 'Nur der Eigentümer kann das Gerät entfernen.'
+              : 'Gerät konnte nicht entfernt werden.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gerät konnte nicht entfernt werden.')),
+      );
+    }
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 15, color: AppColors.text),
           ),
         ),
       ],
-    );
-  }
-
-  void _showDeleteDeviceDialog(BuildContext context, Device device) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Gerät löschen?'),
-          content: Text(
-            'Sind Sie sicher, dass Sie das Gerät "${device.name}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  widget.devices.removeWhere((d) => d.id == device.id);
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Gerät "${device.name}" wurde gelöscht'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              child: const Text(
-                'Löschen',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
@@ -300,12 +362,12 @@ class _QRCodeScannerScreenState extends State<_QRCodeScannerScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.surface),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'QR-Code scannen',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.surface),
         ),
       ),
       body: MobileScanner(
@@ -325,11 +387,11 @@ class _QRCodeScannerScreenState extends State<_QRCodeScannerScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.camera_alt, color: Colors.white, size: 48),
+                const Icon(Icons.camera_alt, color: AppColors.surface, size: 48),
                 const SizedBox(height: 16),
                 const Text(
                   'Kamera wird benötigt',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: AppColors.surface, fontSize: 16),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

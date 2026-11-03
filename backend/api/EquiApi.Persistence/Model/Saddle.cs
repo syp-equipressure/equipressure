@@ -4,13 +4,13 @@ public class Saddle
 {
     public int Id { get; set; }
     public required string Name { get; set; }
-    
+
     public int HorseId { get; set; }
     public Horse Horse { get; set; } = null!;
-    
+
     public int CategoryId { get; set; }
     public SaddleCategory Category { get; set; } = null!;
-    
+
     public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
 }
 
@@ -18,6 +18,6 @@ public class SaddleCategory
 {
     public int Id { get; set; }
     public required string Name { get; set; }
-    
+
     public List<Saddle> Saddles { get; set; } = [];
 }

@@ -1,60 +1,65 @@
+﻿using System.ComponentModel.DataAnnotations;
 using EquiApi.Core.Services;
+using EquiApi.Dtos;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EquiApi.Controllers;
 
 [Route("api/locations")]
-public sealed class LocationController(
-    ILocationService locationService,
-    ILogger<LocationController> logger) : BaseController
+public sealed class LocationController(ILocationService locationService) : BaseController
 {
+    /// <summary>
+    ///     Gets the cities that are used by addresses, most used cities first
+    /// </summary>
     [HttpGet]
-    [ProducesResponseType<IReadOnlyCollection<DataTransfer.AddressDto>>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async ValueTask<ActionResult<IReadOnlyCollection<DataTransfer.AddressDto>>> GetCities(
-        [FromQuery] int? length,
+    [ProducesResponseType<IReadOnlyList<CityDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async ValueTask<ActionResult<IReadOnlyList<CityDto>>> GetCities(
+        [FromQuery][Range(1, int.MaxValue)] int? length,
         [FromQuery] string? nameFilter)
     {
-        var result = await locationService.GetCitiesAsync(length, nameFilter);
+        var cities = await locationService.GetCitiesAsync(length, nameFilter);
 
-        return result.Match<ActionResult<IReadOnlyCollection<DataTransfer.AddressDto>>>(
-            success => Ok(success.Value.Select(DataTransfer.AddressDto.FromAddress).ToList()),
-            error =>
-            {
-                logger.LogWarning("No cities found (nameFilter: {nameFilter}, length: {length})", nameFilter, length);
-                return NotFound();
-            });
+        return Ok(cities.Select(CityDto.FromCity).ToList());
     }
 
-    [HttpPost]
-    [ProducesResponseType<DataTransfer.AddressDto>(StatusCodes.Status201Created)]
+    /// <summary>
+    ///     Gets an address
+    /// </summary>
+    [HttpGet("{id:int}")]
+    [ProducesResponseType<AddressDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async ValueTask<IActionResult> AddAddress([FromBody] DataTransfer.AddressDto request)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async ValueTask<ActionResult<AddressDto>> GetAddressById([FromRoute][ValidId] int id)
     {
-        if (!ValidateRequest<DataTransfer.AddressDto.Validator, DataTransfer.AddressDto>(request))
+        var result = await locationService.GetAddressByIdAsync(id);
+
+        return result.Match<ActionResult<AddressDto>>(
+            success => Ok(AddressDto.FromAddress(success.Value)),
+            _ => NotFound());
+    }
+
+    /// <summary>
+    ///     Adds an address
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType<AddressDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async ValueTask<ActionResult<AddressDto>> AddAddress([FromBody] AddressRequest request)
+    {
+        if (!IsValid<AddressRequest.Validator, AddressRequest>(request))
         {
-            return BadRequest();
+            return ValidationProblem();
         }
 
-        var result = await locationService.AddAddressAsync(request.AddressName, request.PLZ, request.CityName);
+        var result = await locationService.AddAddressAsync(request.ToData());
 
-        return result.Match<IActionResult>(
-            success =>
-            {
-                logger.LogInformation("Address successfully added: {cityName}, {plz}", request.CityName, request.PLZ);
-                // Wieso kein createdAtAction?
-                return Created();
-            },
-            invalidData =>
-            {
-                logger.LogWarning("AddAddress failed — invalid data for {cityName}, {plz}", request.CityName, request.PLZ);
-                return BadRequest();
-            },
-            error =>
-            {
-                logger.LogError("AddAddress failed unexpectedly for {cityName}, {plz}", request.CityName, request.PLZ);
-                return Problem();
-            });
+        return result.Match<ActionResult<AddressDto>>(
+            success => CreatedAtAction(nameof(GetAddressById), new { id = success.Value.Id },
+                                       AddressDto.FromAddress(success.Value)),
+            conflict => Problem(statusCode: StatusCodes.Status409Conflict,
+                                detail: $"The address already exists with id {conflict.ExistingAddressId}"));
     }
 }

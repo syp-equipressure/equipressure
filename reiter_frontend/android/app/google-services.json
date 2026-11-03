@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "54804859747",
+    "project_id": "equipressure-97928",
+    "storage_bucket": "equipressure-97928.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:54804859747:android:271d4d1a6f7611563f6156",
+        "android_client_info": {
+          "package_name": "at.equipressure.reiter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMjt3lx1YisJTF4jG7ukfOGqk8SSwNSjI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

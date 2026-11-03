@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/person.dart';
@@ -5,6 +6,7 @@ import 'package:reiterappfrontend/models/saddle.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
 import 'package:reiterappfrontend/screens/measurement/live_measurement_screen.dart';
+import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:intl/intl.dart';
@@ -13,12 +15,15 @@ class MeasurementInputScreen extends StatefulWidget {
   final Person user;
   final Horse horse;
   final Saddle saddle;
+  /// Das verbundene Messgerät, mit dem gemessen wird
+  final Device device;
 
   const MeasurementInputScreen({
     super.key,
     required this.user,
     required this.horse,
     required this.saddle,
+    required this.device,
   });
 
   @override
@@ -69,7 +74,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: const CustomAppBar(title: 'EquiPressure'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -89,6 +94,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                 Expanded(
                   child: Text(
                     'Messung von ${widget.horse.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -116,8 +123,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
               child: ElevatedButton(
                 onPressed: _addMeasurementSection,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4B5F5),
-                  foregroundColor: const Color(0xFF6B4C9A),
+                  backgroundColor: AppColors.purple100,
+                  foregroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -149,18 +156,18 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
               maxLines: 5,
               decoration: InputDecoration(
                 hintText: 'Notizen eingeben...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                hintStyle: TextStyle(color: AppColors.textMuted),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF6B4C9A)),
+                  borderSide: const BorderSide(color: AppColors.primary),
                 ),
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -175,8 +182,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
               child: ElevatedButton(
                 onPressed: _endMeasurement,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4B5F5),
-                  foregroundColor: const Color(0xFF6B4C9A),
+                  backgroundColor: AppColors.purple100,
+                  foregroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -202,8 +209,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
       decoration: BoxDecoration(
         border: Border.all(
           color: section.isCompleted
-              ? const Color(0xFFD4B5F5)
-              : Colors.grey[300]!,
+              ? AppColors.purple100
+              : AppColors.border,
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -237,14 +244,14 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD4B5F5).withValues(alpha: 0.4),
+                        color: AppColors.purple100.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'fertig',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6B4C9A),
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -263,7 +270,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                     section.isExpanded
                         ? Icons.expand_less
                         : Icons.chevron_right,
-                    color: Colors.grey[600],
+                    color: AppColors.textSoft,
                   ),
                 ],
               ),
@@ -272,7 +279,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
 
           // Expanded content
           if (section.isExpanded) ...[
-            Divider(height: 1, color: Colors.grey[300]),
+            Divider(height: 1, color: AppColors.border),
             Padding(
               padding: const EdgeInsets.all(16),
               child: section.isCompleted
@@ -311,8 +318,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           child: ElevatedButton(
             onPressed: () => _startPartialMeasurement(section),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4B5F5),
-              foregroundColor: const Color(0xFF6B4C9A),
+              backgroundColor: AppColors.purple100,
+              foregroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -339,14 +346,14 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
+            color: AppColors.textSoft,
           ),
         ),
         const SizedBox(width: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -391,18 +398,18 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           TextField(
             decoration: InputDecoration(
               hintText: 'Name der Gangart',
-              hintStyle: TextStyle(color: Colors.grey[400]),
+              hintStyle: TextStyle(color: AppColors.textMuted),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF6B4C9A)),
+                borderSide: const BorderSide(color: AppColors.primary),
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -442,8 +449,8 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           child: ElevatedButton(
             onPressed: () => _startPartialMeasurement(section),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4B5F5),
-              foregroundColor: const Color(0xFF6B4C9A),
+              backgroundColor: AppColors.purple100,
+              foregroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -470,14 +477,14 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          icon: Icon(Icons.expand_more, color: Colors.grey[600]),
+          icon: Icon(Icons.expand_more, color: AppColors.textSoft),
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
@@ -526,6 +533,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
         section.isExpanded = false;
         section.duration = result.duration;
         section.pressureData = result.pressureData;
+        section.frames = result.frames;
       });
     }
   }
@@ -559,7 +567,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
       horseId: widget.horse.id,
       horseName: widget.horse.name,
       date: DateTime.now(),
-      owner: 'Lena Graßauer',
+      owner: widget.user.fullName,
       rider: widget.user.fullName,
       weight: '${widget.horse.weight}kg',
       height: '${widget.horse.height}m',
@@ -578,12 +586,19 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
                     : s.gait,
                 hand: s.hand,
                 pressureData: s.pressureData ?? [],
+                frames: s.frames,
+                duration: s.duration,
               ))
           .toList(),
     );
 
     try {
-      await _measurementService.addMeasurement(newMeasurement);
+      final savedMeasurement = await _measurementService.addMeasurement(
+        newMeasurement,
+        personId: widget.user.id,
+        saddleId: int.parse(widget.saddle.id),
+        deviceId: widget.device.id,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -597,7 +612,7 @@ class _MeasurementInputScreenState extends State<MeasurementInputScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => MeasurementDetailScreen(
-              measurement: newMeasurement,
+              measurement: savedMeasurement,
               horse: widget.horse,
             ),
           ),
@@ -625,6 +640,7 @@ class MeasurementSection {
   bool isCompleted;
   Duration? duration;
   List<double>? pressureData;
+  List<List<double>> frames = const [];
 
   MeasurementSection({
     required this.gait,

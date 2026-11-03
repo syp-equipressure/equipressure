@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -39,10 +40,10 @@ class DateRangeFilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: hasDateFilter ? Colors.grey[200] : Colors.white,
+          color: hasDateFilter ? AppColors.borderSoft : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: hasDateFilter ? Colors.grey[400]! : Colors.grey[300]!,
+            color: hasDateFilter ? AppColors.textMuted : AppColors.border,
           ),
         ),
         child: Row(
@@ -52,7 +53,7 @@ class DateRangeFilterChip extends StatelessWidget {
               _getDateRangeLabel(),
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: AppColors.text,
                 fontWeight: hasDateFilter ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -66,7 +67,7 @@ class DateRangeFilterChip extends StatelessWidget {
                   child: Icon(
                     Icons.close,
                     size: 16,
-                    color: Colors.black54,
+                    color: AppColors.textSoft,
                   ),
                 ),
               ),

@@ -1,6 +1,7 @@
-using EquiApi.Persistence;
-using EquiApi.Persistence.Util;
+﻿using EquiApi.Persistence.Util;
 using EquiApi.Shared;
+using EquiApi.Util;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -11,18 +12,35 @@ namespace EquiApi.TestInt.Util;
 internal sealed class WebAppFactory(string connectionString) : WebApplicationFactory<Program>
 {
     public static readonly LocalDateTime CurrentDateTimeForTests = new(2026, 01, 01, 14, 30, 00);
-    
+
+    public static LocalDate CurrentDate => CurrentDateTimeForTests.Date;
+
+    public IKeycloakAdminClient KeycloakAdminClient { get; } = Substitute.For<IKeycloakAdminClient>();
+
     public IClock TestClock =>
         Services.GetService<IClock>() ??
         throw new InvalidOperationException("Service provider not available or clock not registered");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // every test creates its own data, see DevelopmentSeedDataTests for the development test data
+        builder.UseSetting("General:SeedDevelopmentData", "false");
+
         builder.ConfigureTestServices(services =>
         {
             SetTestDbContext(services);
             SetTestClock(services);
+            SetTestAuthentication(services);
+            // there is no Keycloak in tests
+            services.AddSingleton(KeycloakAdminClient);
         });
+    }
+
+    private static void SetTestAuthentication(IServiceCollection services)
+    {
+        // there is no Keycloak in tests, the user is passed in a header instead (see TestAuthHandler)
+        services.AddAuthentication(TestAuthHandler.SchemeName)
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
     }
 
     private void SetTestDbContext(IServiceCollection services)
@@ -57,4 +75,3 @@ internal sealed class WebAppFactory(string connectionString) : WebApplicationFac
         }
     }
 }
-

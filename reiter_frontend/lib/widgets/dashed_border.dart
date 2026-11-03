@@ -1,3 +1,4 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 
@@ -12,7 +13,7 @@ class DashedBorder extends StatelessWidget {
   const DashedBorder({
     super.key,
     required this.child,
-    this.color = const Color(0xFFBDBDBD),
+    this.color = AppColors.textMuted,
     this.strokeWidth = 2,
     this.dashWidth = 8,
     this.dashSpace = 4,

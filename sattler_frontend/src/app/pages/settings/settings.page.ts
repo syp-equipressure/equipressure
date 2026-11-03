@@ -1,0 +1,68 @@
+import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { SettingsService, UserPreferences } from '../../services/settings.service';
+import { ThemeService } from '../../services/theme.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+
+@Component({
+  selector: 'app-settings-page',
+  standalone: true,
+  imports: [FormsModule, PageHeaderComponent],
+  templateUrl: './settings.page.html',
+  styleUrl: './settings.page.scss',
+})
+export class SettingsPage {
+  private readonly settings = inject(SettingsService);
+  readonly theme = inject(ThemeService);
+
+  readonly preferences = signal<UserPreferences>(copyPreferences(this.settings.preferences()));
+  readonly preferencesSaving = signal(false);
+  readonly notificationsFeedback = signal('');
+  readonly notificationsFeedbackIsError = signal(false);
+  readonly localeFeedback = signal('');
+  readonly localeFeedbackIsError = signal(false);
+
+  savePreferences(section: 'notifications' | 'locale'): void {
+    this.preferencesSaving.set(true);
+    const feedback = section === 'notifications' ? this.notificationsFeedback : this.localeFeedback;
+    const feedbackIsError =
+      section === 'notifications' ? this.notificationsFeedbackIsError : this.localeFeedbackIsError;
+    feedback.set('');
+    try {
+      this.settings.savePreferences(this.preferences());
+      feedback.set('Auf diesem Gerät gespeichert.');
+      feedbackIsError.set(false);
+    } catch {
+      feedback.set('Die Einstellungen konnten auf diesem Gerät nicht gespeichert werden.');
+      feedbackIsError.set(true);
+    } finally {
+      this.preferencesSaving.set(false);
+    }
+  }
+
+  updateNotification(key: keyof UserPreferences['notifications'], enabled: boolean): void {
+    this.preferences.update(preferences => ({
+      ...preferences,
+      notifications: { ...preferences.notifications, [key]: enabled },
+    }));
+  }
+
+  updateLanguage(language: UserPreferences['language']): void {
+    this.preferences.update(preferences => ({ ...preferences, language }));
+  }
+
+  updateDateFormat(dateFormat: UserPreferences['dateFormat']): void {
+    this.preferences.update(preferences => ({ ...preferences, dateFormat }));
+  }
+
+  updateTimeFormat(timeFormat: UserPreferences['timeFormat']): void {
+    this.preferences.update(preferences => ({ ...preferences, timeFormat }));
+  }
+}
+
+function copyPreferences(preferences: UserPreferences): UserPreferences {
+  return {
+    ...preferences,
+    notifications: { ...preferences.notifications },
+  };
+}

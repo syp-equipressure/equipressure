@@ -1,0 +1,447 @@
+/*
+ * EquiPressure-Design für die Keycloak-Seiten (Anmelden, Registrieren, Passwort vergessen), dieselben Farben
+ * wie im Sattler-Frontend (sattler_frontend/src/styles.scss) und in der Reiter-App (lib/theme/app_colors.dart).
+ * Die Seite ist kompakt gehalten, alles soll ohne Scrollen sichtbar sein.
+ */
+:root {
+    --ep-purple-50: #f4f2fb;
+    --ep-purple-100: #eae6f7;
+    --ep-purple-200: #d5cded;
+    --ep-purple-400: #8f7bc7;
+    --ep-purple-500: #6955ae;
+    --ep-purple-600: #55438f;
+    --ep-bg-page: #f5f6f8;
+    --ep-bg-card: #ffffff;
+    --ep-border: #dde1e7;
+    --ep-border-soft: #e7e9ee;
+    --ep-text-strong: #18212f;
+    --ep-text: #293342;
+    --ep-text-soft: #5f6b7a;
+    --ep-text-muted: #8993a0;
+    --ep-accent-red: #e53935;
+
+    --pf-v5-global--primary-color--100: var(--ep-purple-500);
+    --pf-v5-global--primary-color--200: var(--ep-purple-600);
+    --pf-v5-global--link--Color: var(--ep-purple-500);
+    --pf-v5-global--link--Color--hover: var(--ep-purple-600);
+    --pf-v5-global--FontFamily--text: Roboto, "Helvetica Neue", Arial, sans-serif;
+    --pf-v5-global--FontFamily--heading: Roboto, "Helvetica Neue", Arial, sans-serif;
+    --pf-v5-global--Color--100: var(--ep-text);
+    --pf-v5-global--danger-color--100: var(--ep-accent-red);
+    --keycloak-card-top-color: transparent;
+}
+
+/* Seite: heller Verlauf mit zwei violetten Akzenten statt des Keycloak-Hintergrundbilds */
+.login-pf body,
+#keycloak-bg {
+    min-height: 100%;
+    background:
+        radial-gradient(38rem 26rem at 8% -6%, var(--ep-purple-200), transparent 70%),
+        radial-gradient(34rem 26rem at 96% 108%, var(--ep-purple-100), transparent 70%),
+        var(--ep-bg-page);
+}
+
+.pf-v5-c-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding-block: 12px;
+    background: transparent;
+}
+
+.pf-v5-c-login__container {
+    width: 100%;
+    grid-template-columns: minmax(0, 27rem);
+    padding: 0 16px;
+}
+
+/* Logo in der Karte über der Überschrift, der Realm-Name wird nicht angezeigt */
+#kc-header {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 -60px;
+    padding: 0;
+}
+
+#kc-header-wrapper {
+    width: 170px;
+    max-width: 100%;
+    height: 42px;
+    margin: 18px auto 0;
+    font-size: 0;
+    color: transparent;
+    background: url("../img/equipressure-logo.png") center / contain no-repeat;
+    /* das Logo hat einen weißen Hintergrund, auf der weißen Karte fällt er nicht auf */
+    mix-blend-mode: multiply;
+}
+
+/* Karte */
+.pf-v5-c-login__main {
+    margin-bottom: 0;
+    background: var(--ep-bg-card);
+    border-radius: 28px;
+    box-shadow: 0 2px 4px rgba(24, 33, 47, 0.04), 0 18px 48px rgba(64, 51, 107, 0.14);
+    overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+    display: block;
+    border-top: 0;
+    padding: 72px 32px 0;
+    text-align: center;
+}
+
+#kc-page-title {
+    color: var(--ep-text-strong);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* Untertitel, die Seiten haben in Keycloak keinen eigenen */
+#kc-page-title::after {
+    display: block;
+    margin-top: 6px;
+    color: var(--ep-text-soft);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+[data-page-id="login-login"] #kc-page-title::after {
+    content: "Schön, dass du wieder da bist.";
+}
+
+[data-page-id="login-register"] #kc-page-title::after {
+    content: "In einer Minute bist du startklar.";
+}
+
+[data-page-id="login-login-reset-password"] #kc-page-title::after {
+    content: "Wir schicken dir einen Link per E-Mail.";
+}
+
+.pf-v5-c-login__main-body {
+    padding: 18px 32px 22px;
+}
+
+/* der Fußbereich liegt schon innerhalb des Innenabstands der Karte */
+.pf-v5-c-login__main-footer {
+    padding: 0;
+}
+
+.pf-v5-c-form {
+    --pf-v5-c-form--GridGap: 12px;
+}
+
+/* Bezeichnungen stehen als Platzhalter im Feld (js/equipressure.js), für Screenreader bleiben sie erhalten */
+.ep-label-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* Eingabefelder: groß und rund, beim Fokus violett */
+.pf-v5-c-form-control {
+    --pf-v5-c-form-control--before--BorderColor: transparent;
+    --pf-v5-c-form-control--after--BorderBottomColor: transparent;
+    --pf-v5-c-form-control--hover--after--BorderBottomColor: transparent;
+    --pf-v5-c-form-control--focus--after--BorderBottomColor: transparent;
+    border-radius: 14px;
+}
+
+.pf-v5-c-form-control::before {
+    border: 1px solid var(--ep-border);
+    border-radius: 14px;
+}
+
+.pf-v5-c-form-control:focus-within::before {
+    border: 2px solid var(--ep-purple-500);
+}
+
+.pf-v5-c-form-control::after {
+    display: none;
+}
+
+.pf-v5-c-form-control > input {
+    padding: 12px 16px;
+    color: var(--ep-text-strong);
+    font-size: 15px;
+}
+
+.pf-v5-c-form-control > input:focus {
+    outline: none;
+}
+
+.pf-v5-c-form-control > input::placeholder {
+    color: var(--ep-text-muted);
+    opacity: 1;
+}
+
+/* Passwort einblenden: Auge im Feld statt eines eigenen Buttons daneben */
+.pf-v5-c-input-group {
+    position: relative;
+}
+
+.pf-v5-c-input-group .pf-v5-c-form-control > input {
+    padding-right: 48px;
+}
+
+.pf-v5-c-input-group__item:has(> .pf-v5-c-button.pf-m-control) {
+    position: absolute;
+    top: 0;
+    right: 4px;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+}
+
+.pf-v5-c-button.pf-m-control {
+    --pf-v5-c-button--m-control--BackgroundColor: transparent;
+    --pf-v5-c-button--m-control--hover--BackgroundColor: transparent;
+    --pf-v5-c-button--m-control--focus--BackgroundColor: transparent;
+    --pf-v5-c-button--m-control--active--BackgroundColor: transparent;
+    color: var(--ep-text-muted);
+}
+
+.pf-v5-c-button.pf-m-control::after {
+    display: none;
+}
+
+/* Angemeldet bleiben und Passwort vergessen in einer Zeile, leere Hilfetexte brauchen keinen Platz */
+.pf-v5-c-form__helper-text {
+    margin-top: 10px;
+}
+
+.pf-v5-c-form__helper-text:not(:has(.pf-v5-c-check, a)) {
+    display: none;
+}
+
+.pf-v5-c-helper-text {
+    align-items: center;
+    font-size: 13px;
+}
+
+.pf-v5-c-check {
+    align-items: center;
+}
+
+.pf-v5-c-check__input {
+    accent-color: var(--ep-purple-500);
+}
+
+.pf-v5-c-check__label {
+    color: var(--ep-text-soft);
+    font-size: 13px;
+}
+
+.pf-v5-c-helper-text a,
+#kc-registration a,
+#kc-form-options a,
+#backToApplication {
+    color: var(--ep-purple-500);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.pf-v5-c-helper-text a:hover,
+#kc-registration a:hover,
+#kc-form-options a:hover {
+    color: var(--ep-purple-600);
+    text-decoration: underline;
+}
+
+/* Hauptbutton: Verlauf im Violett der Apps */
+.pf-v5-c-button.pf-m-primary {
+    border: 0;
+    border-radius: 999px;
+    padding-block: 12px;
+    color: #ffffff;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--ep-purple-400), var(--ep-purple-600));
+    box-shadow: 0 8px 18px rgba(85, 67, 143, 0.28);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:focus {
+    color: #ffffff;
+    background: linear-gradient(90deg, var(--ep-purple-500), var(--ep-purple-600));
+    box-shadow: 0 10px 22px rgba(85, 67, 143, 0.36);
+    transform: translateY(-1px);
+}
+
+.pf-v5-c-button.pf-m-primary::after {
+    display: none;
+}
+
+/* "Oder anmelden mit" mit Linien links und rechts */
+.pf-v5-c-login__main-footer-band {
+    margin: 0;
+    padding: 16px 0 12px;
+    border: 0;
+    color: var(--ep-text-soft);
+}
+
+.pf-v5-c-login__main-footer-band:first-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    border: 0;
+}
+
+.pf-v5-c-login__main-footer-band:first-child::before,
+.pf-v5-c-login__main-footer-band:first-child::after {
+    flex: 1;
+    height: 1px;
+    background: var(--ep-border-soft);
+    content: "";
+}
+
+.pf-v5-c-login__main-footer-band-item {
+    color: var(--ep-text-soft);
+    font-size: 13px;
+}
+
+/* Anbieter als runde Icons, der Name bleibt für Screenreader im aria-label */
+#kc-social-providers ul {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    padding: 0;
+}
+
+#kc-social-providers li {
+    padding-bottom: 0 !important;
+}
+
+#kc-social-providers .pf-v5-c-button.pf-m-secondary {
+    --pf-v5-c-button--m-secondary--BackgroundColor: var(--ep-bg-card);
+    --pf-v5-c-button--m-secondary--hover--BackgroundColor: var(--ep-purple-50);
+    --pf-v5-c-button--m-secondary--after--BorderColor: var(--ep-border);
+    --pf-v5-c-button--m-secondary--hover--after--BorderColor: var(--ep-purple-400);
+    justify-content: center !important;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+#kc-social-providers .pf-v5-c-button.pf-m-secondary::after {
+    border-radius: 50%;
+}
+
+#kc-social-providers .pf-v5-c-button svg {
+    width: 22px;
+    height: 22px;
+}
+
+#kc-social-providers .pf-v5-c-button span {
+    display: none;
+}
+
+/* Noch kein Konto? Registrieren */
+#kc-info {
+    display: block;
+    padding: 14px 0 0;
+    text-align: center;
+}
+
+#kc-info-wrapper,
+#kc-registration {
+    color: var(--ep-text-soft);
+    font-size: 14px;
+}
+
+#kc-registration a {
+    font-weight: 600;
+}
+
+/* Registrieren: Vor- und Nachname nebeneinander, damit die Seite nicht scrollt */
+#kc-register-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#kc-register-form > * {
+    grid-column: 1 / -1;
+}
+
+#kc-register-form > :has(#firstName),
+#kc-register-form > :has(#lastName) {
+    grid-column: auto;
+}
+
+/* Zurück zur Anmeldung als Link, nicht als eckiger Button */
+.pf-v5-c-form__actions .pf-v5-c-button.pf-m-secondary {
+    padding-block: 2px;
+    color: var(--ep-purple-500);
+    font-size: 14px;
+    background: transparent;
+}
+
+.pf-v5-c-form__actions .pf-v5-c-button.pf-m-secondary::after {
+    display: none;
+}
+
+/* die Seite erklärt das schon im Untertitel */
+.subtitle,
+[data-page-id="login-login-reset-password"] #kc-info {
+    display: none;
+}
+
+#kc-form-options {
+    margin-top: 6px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Meldungen wie "E-Mail wurde verschickt" oder "Falsches Passwort" */
+.pf-v5-c-alert {
+    border-radius: 12px;
+}
+
+.pf-v5-c-helper-text__item.pf-m-error,
+.kc-feedback-text {
+    font-size: 13px;
+}
+
+/* Am Handy füllt die Karte den Bildschirm (die Seite läuft dort im Browser der Reiter-App) */
+@media (max-width: 600px) {
+    .pf-v5-c-login {
+        align-items: stretch;
+        padding-block: 0;
+    }
+
+    .pf-v5-c-login__container {
+        row-gap: 0;
+        padding: 0;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #kc-header {
+        margin-bottom: -102px;
+    }
+
+    #kc-header-wrapper {
+        margin-top: 60px;
+    }
+
+    .pf-v5-c-login__main {
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .pf-v5-c-login__main-header {
+        padding: 124px 24px 0;
+    }
+
+    .pf-v5-c-login__main-body {
+        padding-inline: 24px;
+    }
+}

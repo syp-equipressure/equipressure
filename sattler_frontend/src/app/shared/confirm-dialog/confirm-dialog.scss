@@ -1,0 +1,66 @@
+@use '../../styles/theme' as t;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 301;
+  width: min(420px, calc(100vw - 32px));
+  padding: 22px 24px;
+  border: 1px solid t.$border;
+  border-radius: t.$radius-card;
+  background: t.$bg-card;
+  box-shadow: t.$shadow-elev;
+  transform: translate(-50%, -50%);
+
+  h2 {
+    margin: 0 0 8px;
+    color: t.$text-strong;
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  p {
+    margin: 0;
+    color: t.$text-soft;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+
+  button {
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.cancel {
+  border: 1px solid t.$border;
+  background: transparent;
+  color: t.$text;
+}
+
+.confirm {
+  border: 1px solid transparent;
+  background: t.$danger-bg;
+  color: t.$danger-text;
+}

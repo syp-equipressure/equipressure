@@ -1,10 +1,15 @@
 // File: lib/screens/new_person_screen.dart
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/person.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
 
+/// Legt einen eigenen Reiter für Messungen an oder bearbeitet ihn ([existingRider]).
+/// Gibt den gespeicherten Reiter zurück, nach dem Löschen null.
 class NewPersonScreen extends StatefulWidget {
-  const NewPersonScreen({super.key});
+  final Person? existingRider;
+
+  const NewPersonScreen({super.key, this.existingRider});
 
   @override
   State<NewPersonScreen> createState() => _NewPersonScreenState();
@@ -17,26 +22,38 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
   final _lastname = TextEditingController();
   final _height = TextEditingController();
   final _weight = TextEditingController();
-  final _email = TextEditingController();
 
-  bool hidden = false;
   bool _isLoading = false;
+
+  bool get _isEditing => widget.existingRider != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final rider = widget.existingRider;
+    if (rider != null) {
+      _firstname.text = rider.firstname;
+      _lastname.text = rider.lastname;
+      _height.text = rider.heightCm.toString();
+      _weight.text = rider.weightKg.toString();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
+          onPressed: () => Navigator.pop(context, widget.existingRider),
         ),
-        title: const Text(
-          'Neuen Reiter anlegen',
-          style: TextStyle(
-            color: Colors.black,
+        title: Text(
+          _isEditing ? 'Reiter bearbeiten' : 'Neuen Reiter anlegen',
+          style: const TextStyle(
+            color: AppColors.textStrong,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -49,7 +66,7 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   padding: const EdgeInsets.all(24),
@@ -65,27 +82,15 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                         _buildNumberField('Größe', _height, 'cm'),
                         const SizedBox(height: 24),
                         _buildNumberField('Gewicht', _weight, 'kg'),
-                        const SizedBox(height: 24),
-                        CheckboxListTile(
-                          value: hidden,
-                          onChanged: (v) => setState(() => hidden = v!),
-                          title: const Text(
-                            'Als versteckter Benutzer anzeigen',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: Colors.deepPurple,
-                        ),
-                        const SizedBox(height: 200),
+                        const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
                             onPressed: _save,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple[100],
-                              foregroundColor: Colors.black,
+                              backgroundColor: AppColors.purple100,
+                              foregroundColor: AppColors.textStrong,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -107,6 +112,19 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                             ),
                           ),
                         ),
+                        if (_isEditing) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: TextButton.icon(
+                              onPressed: _delete,
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              label: const Text('Reiter löschen'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -134,18 +152,18 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.deepPurple),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
-          validator: (v) => v == null || v.isEmpty ? 'Pflichtfeld' : null,
+          validator: (v) => v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
         ),
       ],
     );
@@ -171,20 +189,22 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
             suffixText: unit,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.deepPurple),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Pflichtfeld';
-            if (int.tryParse(v) == null) return 'Nur Zahlen erlaubt';
+            final value = int.tryParse(v);
+            if (value == null) return 'Nur Zahlen erlaubt';
+            if (value <= 0) return 'Muss größer als 0 sein';
             return null;
           },
         ),
@@ -199,27 +219,17 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
 
     try {
       final service = PersonService();
-      final nextId = await service.getNextId();
-
-      final person = Person(
-          id: nextId,
-          firstname: _firstname.text,
-          lastname: _lastname.text,
-          heightCm: int.parse(_height.text),
-          weightKg: int.parse(_weight.text),
-          plz: 0,
-          city: '',
-          street: '',
-          housenumber: 0,
-          email: _email.text,
-          hidden: hidden,
-        );
-
-      await service.addPerson(person);
-        
+      final firstname = _firstname.text.trim();
+      final lastname = _lastname.text.trim();
+      final heightCm = int.parse(_height.text);
+      final weightKg = int.parse(_weight.text);
+      final rider = widget.existingRider;
+      final savedRider = rider == null
+          ? await service.addRider(firstname, lastname, heightCm, weightKg)
+          : await service.updateRider(rider.id, firstname, lastname, heightCm, weightKg);
 
       if (mounted) {
-        Navigator.pop(context, person); 
+        Navigator.pop(context, savedRider);
       }
     } catch (e) {
       if (mounted) {
@@ -234,13 +244,55 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
     }
   }
 
+  Future<void> _delete() async {
+    final rider = widget.existingRider!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reiter löschen'),
+        content: Text(
+          '${rider.fullName} wird mit allen Messungen endgültig gelöscht. '
+          'Das kann nicht rückgängig gemacht werden.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Endgültig löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await PersonService().deleteRider(rider.id);
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Löschen: $e')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _firstname.dispose();
     _lastname.dispose();
     _height.dispose();
     _weight.dispose();
-    _email.dispose();
     super.dispose();
   }
 }

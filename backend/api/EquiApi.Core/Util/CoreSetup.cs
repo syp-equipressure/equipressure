@@ -1,6 +1,4 @@
-using EquiApi.Core.Services;
-using EquiApi.Persistence.Repositories;
-using EquiApi.Persistence.Util;
+﻿using EquiApi.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EquiApi.Core.Util;
@@ -10,12 +8,14 @@ public static class CoreSetup
     public static void ConfigureCore(this IServiceCollection services)
     {
         services.AddSingleton<IClock>(SystemClock.Instance);
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<ILocationService, LocationService>();
-        services.AddScoped<IRocketService, RocketService>();
         services.AddScoped<IHorseService, HorseService>();
         services.AddScoped<IDeviceService, DeviceService>();
-
+        services.AddScoped<IMeasurementService, MeasurementService>();
+        services.AddScoped<IAccessService, AccessService>();
+        services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IChatNotifier, ChatNotifier>();
+        services.AddSingleton<IPushSender, NoPushSender>();
     }
 }

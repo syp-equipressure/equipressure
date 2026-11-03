@@ -1,18 +1,26 @@
-import 'dart:async';
+import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/chat.dart';
-import '../../models/message.dart';
 import '../../models/horse.dart';
+import '../../models/measurement.dart';
+import '../../models/message.dart';
+import '../../models/saddler.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/person_avatar.dart';
 import '../../services/horse_service.dart';
+import '../../services/measurement_service.dart';
+import '../../services/saddler_service.dart';
+import '../find_saddler/saddler_profile_screen.dart';
+import '../horses/horse_history_measurement.dart';
 import '../../widgets/chat_attachment_menu.dart';
 import '../../widgets/horse_selection_dialog.dart';
-import '../../widgets/horse_chat_card.dart';
-import '../../widgets/chat_image_message.dart';
-import '../../widgets/chat_file_message.dart';
+import '../../widgets/measurement_selection_dialog.dart';
 
 class ChatScreen extends StatefulWidget {
   final Chat chat;
@@ -28,37 +36,58 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final ChatService _chatService = ChatService();
   final HorseService _horseService = HorseService();
-  final ImagePicker _imagePicker = ImagePicker();
 
-  late List<Message> _messages;
   List<Horse> _horses = [];
-  StreamSubscription? _messageSubscription;
+  bool _isLoading = true;
+  bool _isSending = false;
+  String? _error;
+  int _messageCount = 0;
+
+  String get _contactId => widget.chat.contactId;
+
+  List<Message> get _messages => _chatService.messagesWith(_contactId) ?? [];
 
   @override
   void initState() {
     super.initState();
-    _messages = List.from(widget.chat.messages);
+    _chatService.activeContactId = _contactId;
+    _chatService.addListener(_onChatChanged);
+    _loadMessages();
     _loadHorses();
-    _listenForNewMessages();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  Future<void> _loadMessages() async {
+    try {
+      await _chatService.loadMessages(_contactId);
+      await _chatService.markAsRead(_contactId);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _error = 'Nachrichten konnten nicht geladen werden.';
+      });
+    }
   }
 
   Future<void> _loadHorses() async {
-    final horses = await _horseService.getHorses();
-    setState(() {
-      _horses = horses;
-    });
+    try {
+      final horses = await _horseService.getHorses();
+      if (!mounted) return;
+      setState(() => _horses = horses);
+    } catch (_) {
+      // ohne Pferde gibt es nur nichts zu teilen
+    }
   }
 
-  void _listenForNewMessages() {
-    _messageSubscription = _chatService.newMessages.listen((message) {
-      if (message.chatId == widget.chat.id && !message.isFromMe) {
-        setState(() {
-          _messages.add(message);
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-      }
-    });
+  void _onChatChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (_messages.length != _messageCount) {
+      _messageCount = _messages.length;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
   }
 
   void _scrollToBottom() {
@@ -71,28 +100,92 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
-
-    final message = Message(
-      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-      chatId: widget.chat.id,
-      senderId: 'user1',
-      content: text,
-      timestamp: DateTime.now(),
-      isFromMe: true,
-      type: MessageType.text,
-    );
-
+  Future<void> _send(Future<Message> Function() send) async {
     setState(() {
-      _messages.add(message);
+      _isSending = true;
+      _error = null;
     });
+    try {
+      await send();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
 
-    _chatService.sendMessage(widget.chat.id, message);
-    _messageController.clear();
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty || _isSending) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    final replyTo = _replyTo;
+    await _send(() => _chatService.sendText(_contactId, text, replyToId: replyTo?.id));
+    if (_error == null) {
+      _messageController.clear();
+      setState(() => _replyTo = null);
+    }
+  }
+
+  /// Die Nachricht, auf die gerade geantwortet wird
+  Message? _replyTo;
+
+  Future<void> _showMessageActions(Message message) async {
+    if (message.isDeleted) return;
+
+    final isFromMe = message.senderId != _contactId;
+    final text = message.text;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('Antworten'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                setState(() => _replyTo = message);
+              },
+            ),
+            if (text != null && text.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.copy_outlined),
+                title: const Text('Kopieren'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Clipboard.setData(ClipboardData(text: text));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Nachricht kopiert')),
+                  );
+                },
+              ),
+            if (isFromMe && message.acceptedAt == null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                title: const Text('Für alle löschen', style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _deleteMessage(message);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteMessage(Message message) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _chatService.deleteMessage(message);
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Die Nachricht konnte nicht gelöscht werden.')),
+      );
+    }
   }
 
   void _showAttachmentMenu() {
@@ -100,21 +193,21 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => ChatAttachmentMenu(
-        onFilesSelected: () {
-          Navigator.pop(context);
-          _pickFiles();
-        },
         onImagesSelected: () {
           Navigator.pop(context);
           _pickImages();
         },
-        onProfileSelected: () {
+        onFilesSelected: () {
           Navigator.pop(context);
-          // Profile sharing not implemented
+          _pickFiles();
         },
         onHorsesSelected: () {
           Navigator.pop(context);
           _showHorseSelectionDialog();
+        },
+        onMeasurementSelected: () {
+          Navigator.pop(context);
+          _showMeasurementSelectionDialog();
         },
       ),
     );
@@ -122,42 +215,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _pickImages() async {
     try {
-      final List<XFile> images = await _imagePicker.pickMultiImage(
+      final images = await ImagePicker().pickMultiImage(
         imageQuality: 80,
         maxWidth: 1920,
         maxHeight: 1920,
       );
-
-      if (images.isEmpty) return;
-
-      final attachments = images.map((image) {
-        return MessageAttachment(
-          id: 'att_${DateTime.now().millisecondsSinceEpoch}_${image.name}',
-          fileName: image.name,
-          filePath: image.path,
-          mimeType: 'image/${image.name.split('.').last}',
-        );
-      }).toList();
-
-      final message = Message(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        chatId: widget.chat.id,
-        senderId: 'user1',
-        content: '',
-        timestamp: DateTime.now(),
-        isFromMe: true,
-        type: MessageType.image,
-        attachments: attachments,
-      );
-
-      setState(() {
-        _messages.add(message);
-      });
-
-      _chatService.sendMessage(widget.chat.id, message);
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    } catch (e) {
-      // Handle error
+      final files = <({String name, Uint8List bytes})>[];
+      for (final image in images) {
+        files.add((name: image.name, bytes: await image.readAsBytes()));
+      }
+      await _sendFiles(files);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Bilder konnten nicht geladen werden.');
     }
   }
 
@@ -165,71 +234,103 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
-        type: FileType.any,
+        withData: true,
       );
-
-      if (result == null || result.files.isEmpty) return;
-
-      final attachments = result.files.map((file) {
-        return MessageAttachment(
-          id: 'att_${DateTime.now().millisecondsSinceEpoch}_${file.name}',
-          fileName: file.name,
-          filePath: file.path ?? '',
-          mimeType: _getMimeType(file.name),
-          fileSize: file.size,
-        );
-      }).toList();
-
-      final message = Message(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        chatId: widget.chat.id,
-        senderId: 'user1',
-        content: '',
-        timestamp: DateTime.now(),
-        isFromMe: true,
-        type: MessageType.file,
-        attachments: attachments,
-      );
-
-      setState(() {
-        _messages.add(message);
-      });
-
-      _chatService.sendMessage(widget.chat.id, message);
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    } catch (e) {
-      // Handle error
+      if (result == null) return;
+      await _sendFiles([
+        for (final file in result.files)
+          if (file.bytes != null) (name: file.name, bytes: file.bytes!),
+      ]);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Dateien konnten nicht geladen werden.');
     }
   }
 
-  String _getMimeType(String fileName) {
-    final ext = fileName.toLowerCase().split('.').last;
-    switch (ext) {
-      case 'pdf':
-        return 'application/pdf';
-      case 'doc':
-      case 'docx':
-        return 'application/msword';
-      case 'xls':
-      case 'xlsx':
-        return 'application/vnd.ms-excel';
-      case 'ppt':
-      case 'pptx':
-        return 'application/vnd.ms-powerpoint';
-      case 'txt':
-        return 'text/plain';
-      case 'zip':
-        return 'application/zip';
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'gif':
-        return 'image/gif';
-      default:
-        return 'application/octet-stream';
+  /// Schickt die Dateien nacheinander, der eingegebene Text geht mit der ersten mit.
+  Future<void> _sendFiles(List<({String name, Uint8List bytes})> files) async {
+    if (files.isEmpty) return;
+    for (final file in files) {
+      if (file.bytes.length > ChatService.maxFileSize) {
+        setState(() => _error = '${file.name} ist größer als 10 MB.');
+        return;
+      }
     }
+
+    final text = _messageController.text.trim();
+    await _send(() async {
+      late Message last;
+      for (var i = 0; i < files.length; i++) {
+        last = await _chatService.sendFile(
+          _contactId,
+          bytes: files[i].bytes,
+          fileName: files[i].name,
+          text: i == 0 ? text : null,
+        );
+      }
+      return last;
+    });
+    if (_error == null) _messageController.clear();
+  }
+
+  Future<void> _openFile(Message message) async {
+    final uri = Uri.parse(_chatService.fileUrl(message));
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Die Datei konnte nicht geöffnet werden.')),
+      );
+    }
+  }
+
+  /// Großansicht eines Bildes, zoombar. Lässt es sich nicht laden, kann es
+  /// im Browser bzw. einer anderen App geöffnet werden.
+  void _showImage(Message message) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: AppColors.onPrimary,
+            title: Text(
+              message.file?.fileName ?? 'Bild',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.open_in_new),
+                tooltip: 'Im Browser öffnen',
+                onPressed: () => _openFile(message),
+              ),
+            ],
+          ),
+          body: InteractiveViewer(
+            maxScale: 5,
+            child: Center(
+              child: Image.network(
+                _chatService.fileUrl(message),
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : const CircularProgressIndicator(color: AppColors.surface),
+                errorBuilder: (context, error, stackTrace) => _buildImageError(message),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageError(Message message) {
+    return TextButton.icon(
+      onPressed: () => _openFile(message),
+      icon: const Icon(Icons.open_in_new),
+      label: const Text('Bild öffnen'),
+    );
   }
 
   void _showHorseSelectionDialog() {
@@ -237,39 +338,66 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => HorseSelectionDialog(
         horses: _horses,
-        onHorsesSelected: (selectedHorses) {
-          _sendHorsesMessage(selectedHorses);
-        },
+        onHorsesSelected: (selectedHorses) => _send(() async {
+          late Message last;
+          for (final horse in selectedHorses) {
+            last = await _chatService.shareHorse(_contactId, horse.id);
+          }
+          return last;
+        }),
       ),
     );
   }
 
-  void _sendHorsesMessage(List<Horse> selectedHorses) {
-    if (selectedHorses.isEmpty) return;
-
-    final message = Message(
-      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-      chatId: widget.chat.id,
-      senderId: 'user1',
-      content: '',
-      timestamp: DateTime.now(),
-      isFromMe: true,
-      type: MessageType.horses,
-      attachedHorseIds: selectedHorses.map((h) => h.id).toList(),
+  void _showMeasurementSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => MeasurementSelectionDialog(
+        horses: _horses,
+        onMeasurementSelected: (Measurement measurement) => _send(
+          () => _chatService.shareMeasurement(_contactId, measurement.id),
+        ),
+      ),
     );
+  }
 
-    setState(() {
-      _messages.add(message);
-    });
-
-    _chatService.sendMessage(widget.chat.id, message);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  /// Öffnet eine geteilte Messung, z.B. eine, die die Sattler*in geschickt hat.
+  Future<void> _openMeasurement(SharedMeasurement shared) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final results = await Future.wait([
+        _horseService.getHorseById(shared.horseId),
+        MeasurementService().getMeasurementById(shared.id, horseId: shared.horseId),
+      ]);
+      final horse = results[0] as Horse?;
+      final measurement = results[1] as Measurement?;
+      if (!mounted) return;
+      if (horse == null || measurement == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Die Messung gibt es nicht mehr.')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              MeasurementDetailScreen(measurement: measurement, horse: horse),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Die Messung konnte nicht geladen werden.')),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _messageSubscription?.cancel();
+    if (_chatService.activeContactId == _contactId) {
+      _chatService.activeContactId = null;
+    }
+    _chatService.removeListener(_onChatChanged);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -277,149 +405,439 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final messages = _messages;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
-              },
+          if (!_chatService.isConnected)
+            Container(
+              width: double.infinity,
+              color: AppColors.warningLight,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Text(
+                'Live-Verbindung wird aufgebaut …',
+                style: TextStyle(color: AppColors.warning, fontSize: 12),
+              ),
             ),
+          Expanded(
+            child: _isLoading && messages.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : messages.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) => _buildMessage(
+                          messages[index],
+                          index == 0 ? null : messages[index - 1],
+                        ),
+                      ),
           ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(
+                _error!,
+                style: TextStyle(color: AppColors.error, fontSize: 13),
+              ),
+            ),
           _buildMessageInput(),
         ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: Row(
-        children: [
-          _buildSaddlerAvatar(),
-          const SizedBox(width: 12),
-          Text(
-            widget.chat.saddler.name,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-            ),
-          ),
-        ],
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text(
+          'Noch keine Nachrichten.\nSchreib ${widget.chat.contactName} oder teile '
+          'Bilder, Dateien, Pferde oder Messungen über die Büroklammer.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.textMuted),
+        ),
       ),
     );
   }
 
-  Widget _buildSaddlerAvatar() {
-    if (widget.chat.saddler.imagePath != null) {
-      return CircleAvatar(
-        radius: 18,
-        backgroundImage: AssetImage(widget.chat.saddler.imagePath!),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppColors.surface,
+      elevation: 1,
+      shadowColor: AppColors.shadow(0.1),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
+        onPressed: () => Navigator.pop(context),
+      ),
+      // ein Tipp auf Name oder Bild öffnet das Profil der Sattler*in
+      title: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _openProfile,
+        child: Row(
+          children: [
+            PersonAvatar(
+              personId: widget.chat.contactId,
+              imageUpdatedAt: widget.chat.contactImageUpdatedAt,
+              name: widget.chat.contactName,
+              radius: 18,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.chat.contactName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textStrong,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openProfile() async {
+    final messenger = ScaffoldMessenger.of(context);
+    Saddler? saddler;
+    try {
+      saddler = await SaddlerService().getSaddlerById(_contactId);
+    } catch (_) {
+      saddler = null;
+    }
+    if (!mounted) return;
+    if (saddler == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Das Profil konnte nicht geladen werden.')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SaddlerProfileScreen(saddler: saddler!, openedFromChat: true),
+      ),
+    );
+  }
+
+  Widget _buildMessage(Message message, Message? previous) {
+    final isFromMe = message.senderId != _contactId;
+    final showDate = previous == null ||
+        !DateUtils.isSameDay(previous.sentAt, message.sentAt);
+
+    return Column(
+      children: [
+        if (showDate) _buildDateDivider(message.sentAt),
+        Align(
+          alignment: isFromMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: GestureDetector(
+            onLongPress: () => _showMessageActions(message),
+            child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            // wie im Sattler-Frontend: auf der Seite des Absenders unten eine kleine Ecke
+            decoration: BoxDecoration(
+              color: isFromMe ? AppColors.purple50 : AppColors.surface,
+              border: Border.all(
+                color: isFromMe
+                    ? AppColors.purple100
+                    : AppColors.border,
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(14),
+                topRight: const Radius.circular(14),
+                bottomLeft: Radius.circular(isFromMe ? 14 : 4),
+                bottomRight: Radius.circular(isFromMe ? 4 : 14),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: isFromMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (message.replyTo != null) _buildReplyQuote(message.replyTo!),
+                if (message.isDeleted)
+                  const Text(
+                    'Diese Nachricht wurde gelöscht',
+                    style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textMuted),
+                  )
+                else if (message.file != null)
+                  _buildFile(message)
+                else if (message.type != MessageType.text)
+                  _buildShareCard(message),
+                if (message.text != null && message.text!.isNotEmpty)
+                  Text(
+                    message.text!,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isFromMe ? AppColors.textStrong : AppColors.text,
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                _buildMeta(message, isFromMe),
+              ],
+            ),
+          ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReplyQuote(ChatReply reply) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      decoration: const BoxDecoration(
+        color: AppColors.bgPanel,
+        border: Border(left: BorderSide(color: AppColors.primary, width: 3)),
+      ),
+      child: Text(
+        reply.preview,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13, color: AppColors.textSoft),
+      ),
+    );
+  }
+
+  /// Uhrzeit, bei eigenen Nachrichten mit Häkchen wie bei WhatsApp/Signal:
+  /// eines wenn gesendet, zwei wenn zugestellt, zwei farbige wenn gelesen.
+  Widget _buildMeta(Message message, bool isFromMe) {
+    final time = TimeOfDay.fromDateTime(message.sentAt);
+    final text =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    final isRead = message.readAt != null;
+    final isDelivered = isRead || message.deliveredAt != null;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: isFromMe ? AppColors.textSoft : AppColors.textMuted,
+          ),
+        ),
+        if (isFromMe) ...[
+          const SizedBox(width: 3),
+          Icon(
+            isDelivered ? Icons.done_all : Icons.done,
+            size: 15,
+            color: isRead ? AppColors.primary : AppColors.textSoft,
+            semanticLabel: isRead ? 'Gelesen' : isDelivered ? 'Zugestellt' : 'Gesendet',
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDateDivider(DateTime date) {
+    final now = DateTime.now();
+    final label = DateUtils.isSameDay(date, now)
+        ? 'Heute'
+        : DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))
+            ? 'Gestern'
+            : '${date.day}.${date.month}.${date.year}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.purple50,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSoft),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFile(Message message) {
+    final file = message.file!;
+    if (file.isImage) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: GestureDetector(
+          onTap: () => _showImage(message),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              _chatService.fileUrl(message),
+              height: 200,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : const SizedBox(
+                      height: 200,
+                      width: 200,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+              errorBuilder: (context, error, stackTrace) => SizedBox(
+                height: 80,
+                width: 160,
+                child: Center(child: _buildImageError(message)),
+              ),
+            ),
+          ),
+        ),
       );
     }
 
-    return CircleAvatar(
-      radius: 18,
-      backgroundColor: Colors.green[50],
-      child: Text(
-        _getInitials(widget.chat.saddler.name),
-        style: TextStyle(
-          color: Colors.green[700],
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _openFile(message),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.bgPanel,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.insert_drive_file_outlined, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    file.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    file.sizeFormatted,
+                    style: TextStyle(fontSize: 12, color: AppColors.text),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.download, size: 20, color: AppColors.textSoft),
+          ],
         ),
       ),
     );
   }
 
-  String _getInitials(String name) {
-    final parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
+  Widget _buildShareCard(Message message) {
+    final horse = message.horse;
+    final measurement = message.measurement;
+    final date = measurement?.date;
 
-  Widget _buildMessageBubble(Message message) {
-    switch (message.type) {
-      case MessageType.horses:
-        return _buildHorsesMessage(message);
-      case MessageType.image:
-        return ChatImageMessage(message: message);
-      case MessageType.file:
-        return ChatFileMessage(message: message);
-      case MessageType.text:
-        return _buildTextMessage(message);
-      case MessageType.profile:
-        throw UnimplementedError();
-    }
-  }
-
-  Widget _buildTextMessage(Message message) {
-    final isFromMe = message.isFromMe;
-
-    return Align(
-      alignment: isFromMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: isFromMe ? const Color(0xFFD6EAF8) : const Color(0xFFFCE4EC),
-          borderRadius: BorderRadius.circular(16),
-        ),
+    // das Backend entfernt den Verweis, wenn das Pferd bzw. die Messung gelöscht wird
+    if (horse == null && measurement == null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
         child: Text(
-          message.content,
-          style: const TextStyle(
-            fontSize: 15,
-            color: Colors.black87,
+          message.type == MessageType.horse
+              ? 'Das geteilte Pferd wurde gelöscht.'
+              : 'Die geteilte Messung wurde gelöscht.',
+          style: TextStyle(
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            color: AppColors.textSoft,
           ),
         ),
+      );
+    }
+
+    final card = Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.bgPanel,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          if (horse != null)
+            SvgPicture.asset(
+              'assets/icon/horseIcon.svg',
+              width: 26,
+              height: 26,
+              colorFilter:
+                  const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+            )
+          else
+            const Icon(Icons.analytics_outlined, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  horse != null ? 'Pferd geteilt' : 'Messung geteilt',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSoft),
+                ),
+                Text(
+                  horse?.name ?? measurement?.horseName ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  horse != null
+                      ? 'mit allen Messungen'
+                      : date != null
+                          ? 'Messung vom ${date.day}.${date.month}.${date.year}'
+                          : measurement?.name ?? '',
+                  style: TextStyle(fontSize: 12, color: AppColors.text),
+                ),
+                if (message.acceptedAt != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Hinzugefügt',
+                        style: TextStyle(fontSize: 12, color: AppColors.success),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (measurement != null) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, color: AppColors.textSoft),
+          ],
+        ],
       ),
     );
-  }
 
-  Widget _buildHorsesMessage(Message message) {
-    final horseIds = message.attachedHorseIds ?? [];
-    final attachedHorses =
-        _horses.where((h) => horseIds.contains(h.id)).toList();
-
-    return Align(
-      alignment: message.isFromMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        child: Column(
-          crossAxisAlignment: message.isFromMe
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: attachedHorses.map((horse) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: HorseChatCard(horse: horse),
-            );
-          }).toList(),
-        ),
-      ),
+    // eine geteilte Messung lässt sich öffnen, egal wer sie geschickt hat
+    if (measurement == null) return card;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _openMeasurement(measurement),
+      child: card,
     );
   }
 
@@ -427,33 +845,58 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: AppColors.textMuted.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_replyTo != null)
+            Row(
+              children: [
+                const Icon(Icons.reply, size: 18, color: AppColors.textSoft),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _replyTo!.preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSoft),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Antwort abbrechen',
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => setState(() => _replyTo = null),
+                ),
+              ],
+            ),
+          Row(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: AppColors.bgPage,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _messageController,
+                      maxLength: 2000,
                       decoration: const InputDecoration(
                         hintText: 'Nachricht ...',
-                        hintStyle: TextStyle(color: Colors.grey),
+                        hintStyle: TextStyle(color: AppColors.textMuted),
                         border: InputBorder.none,
+                        counterText: '',
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
@@ -465,14 +908,22 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     icon: Icon(
                       FontAwesomeIcons.paperclip,
-                      color: Colors.grey[600],
+                      color: AppColors.textSoft,
                       size: 20,
                     ),
-                    onPressed: _showAttachmentMenu,
+                    tooltip: 'Anhang senden',
+                    onPressed: _isSending ? null : _showAttachmentMenu,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send, color: AppColors.primary),
+                    tooltip: 'Senden',
+                    onPressed: _isSending ? null : _sendMessage,
                   ),
                 ],
               ),
             ),
+          ),
+        ],
           ),
         ],
       ),
