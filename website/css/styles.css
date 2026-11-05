@@ -1,0 +1,27 @@
+:root {
+  --ink: #111827;
+  --bg: #ffffff;
+  --brand: #a52c27;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+img { max-width: 100%; display: block; }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.logo { width: 160px; }
