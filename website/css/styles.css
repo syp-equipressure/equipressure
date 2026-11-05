@@ -1,27 +1,132 @@
+/* Farben und Stil wie in der Reiter-App (lib/theme/app_colors.dart)
+   und im Sattler-Frontend (src/styles.scss) */
 :root {
-  --ink: #111827;
-  --bg: #ffffff;
-  --brand: #a52c27;
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+
+  --purple-50: #f4f2fb;
+  --purple-100: #eae6f7;
+  --purple-200: #d5cded;
+  --purple-300: #b9acde;
+  --purple-400: #8f7bc7;
+  --purple-500: #6955ae;
+  --purple-600: #55438f;
+  --purple-700: #40336b;
+
+  --primary: var(--purple-500);
+  --primary-dark: var(--purple-600);
+  --primary-light: var(--purple-100);
+
+  --bg-page: #f5f6f8;
+  --bg-card: #ffffff;
+  --bg-panel: #fafafc;
+  --border: #dde1e7;
+  --border-soft: #e7e9ee;
+
+  --text-strong: #18212f;
+  --text: #293342;
+  --text-soft: #5f6b7a;
+  --text-muted: #8993a0;
+
+  --accent-red: #e53935;
+  --accent-orange: #f2a23a;
+  --accent-green: #2e7d32;
+
+  --shadow-card: 0 1px 2px rgba(24, 33, 47, 0.05), 0 4px 14px rgba(24, 33, 47, 0.07);
+  --shadow-elev: 0 10px 28px rgba(24, 33, 47, 0.14);
+
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --logo-filter: none;
+  --font: Roboto, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --purple-50: #2a2538;
+    --purple-100: #383049;
+    --purple-200: #4a3c65;
+    --purple-300: #746397;
+    --purple-400: #ad9bd6;
+    --purple-500: #b4a1ec;
+    --purple-600: #c5b8f0;
+    --purple-700: #d8cff7;
+
+    --bg-page: #15171c;
+    --bg-card: #20232a;
+    --bg-panel: #252830;
+    --border: #383c46;
+    --border-soft: #30343d;
+
+    --text-strong: #f1f2f5;
+    --text: #d9dce3;
+    --text-soft: #a7adba;
+    --text-muted: #858d9b;
+
+    --accent-red: #ff7b78;
+    --accent-orange: #ffc06e;
+
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.18);
+    --shadow-elev: 0 12px 32px rgba(0, 0, 0, 0.36);
+
+    --logo-filter: invert(1);
+  }
+}
+
+/* ===== Basis ===== */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: var(--font);
   line-height: 1.6;
-  color: var(--ink);
-  background: var(--bg);
+  color: var(--text);
+  background: var(--bg-page);
 }
 
+h1, h2, h3 { color: var(--text-strong); line-height: 1.2; font-weight: 600; }
 img { max-width: 100%; display: block; }
+a { color: var(--primary); }
 
+.container { width: min(1140px, 100% - 32px); margin-inline: auto; }
+
+/* ===== Header ===== */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-soft);
 }
 
-.logo { width: 160px; }
+.logo { width: 160px; filter: var(--logo-filter); }
+
+/* ===== Bausteine ===== */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--bg-card);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover { background: var(--primary-dark); }
+
+.btn--light { background: var(--primary-light); color: var(--primary); }
+.btn--light:hover { background: var(--purple-200); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
