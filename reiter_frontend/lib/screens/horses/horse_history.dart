@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
 import 'package:reiterappfrontend/models/measurement.dart';
 import 'package:reiterappfrontend/screens/horses/horse_history_measurement.dart';
+import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/services/measurement_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:reiterappfrontend/widgets/date_range_filter_chip.dart';
 import 'package:reiterappfrontend/widgets/dropdown_filter.dart';
 import 'package:reiterappfrontend/widgets/measurement_card.dart';
-import 'package:reiterappfrontend/widgets/sidenav.dart';
 
 class HorseHistoryScreen extends StatefulWidget {
   final Horse horse;
@@ -178,12 +178,32 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
     );
   }
 
+  /// Zurück zum Pferd: vom Profil aus einfach zurück. Nach einer Messung ist die Historie die
+  /// einzige Seite, dann führt der Weg über die Pferdeliste zum Profil.
+  void _backToHorse() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HorsesScreen()),
+      (route) => false,
+    );
+    navigator.push(MaterialPageRoute(builder: (_) => HorseProfileScreen(horse: widget.horse)));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // auch die Zurück-Taste des Handys führt zum Pferd
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _backToHorse();
+      },
+      child: Scaffold(
       backgroundColor: AppColors.bgPanel,
-      appBar: const CustomAppBar(title: 'EquiPressure'),
-      drawer: const SideNav(),
+      appBar: const CustomAppBar(title: 'EquiPressure', showBack: false),
       body: Column(
         children: [
           // Header mit Zurück-Button und Titel
@@ -194,15 +214,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const HorsesScreen(), // Ihr Screen Name
-                      ),
-                      (route) => false,
-                    );
-                  },
+                  onPressed: _backToHorse,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -303,6 +315,7 @@ class _HorseHistoryScreenState extends State<HorseHistoryScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }
