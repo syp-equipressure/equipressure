@@ -89,8 +89,8 @@ class _NewPersonScreenState extends State<NewPersonScreen> {
                           child: ElevatedButton(
                             onPressed: _save,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.purple100,
-                              foregroundColor: AppColors.textStrong,
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

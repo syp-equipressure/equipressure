@@ -1,6 +1,7 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
+/// Zwei kurze Angaben unter einer Auswahl, z.B. Größe und Gewicht
 class InfoBoxes extends StatelessWidget {
   final String value1;
   final String unit1;
@@ -17,34 +18,13 @@ class InfoBoxes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        Expanded(
-          child: _buildInfoBox('$value1 $unit1'),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildInfoBox('$value2 $unit2'),
-        ),
+        _InfoChip('$value1 $unit1'),
+        _InfoChip('$value2 $unit2'),
       ],
-    );
-  }
-
-  Widget _buildInfoBox(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.bgPage,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.text,
-        ),
-        textAlign: TextAlign.center,
-      ),
     );
   }
 }
@@ -59,19 +39,29 @@ class SingleInfoBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: _InfoChip(text),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final String text;
+
+  const _InfoChip(this.text);
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.bgPage,
+        color: AppColors.purple50,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.text,
-        ),
+        style: const TextStyle(fontSize: 13, color: AppColors.purple700),
       ),
     );
   }

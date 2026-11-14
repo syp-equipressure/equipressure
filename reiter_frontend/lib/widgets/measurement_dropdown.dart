@@ -43,11 +43,12 @@ class SelectionDropdown<T> extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSoft,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
