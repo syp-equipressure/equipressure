@@ -95,7 +95,7 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.bgPage,
         // bleibt immer sichtbar, das Profil scrollt dahinter
         bottomNavigationBar: _buildActions(),
         body: SafeArea(
@@ -108,18 +108,18 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                       ? Image.file(
                           currentHorse.image!,
                           width: double.infinity,
-                          height: 350,
+                          height: 300,
                           fit: BoxFit.cover,
                         )
                       : _horseService.imageUrl(currentHorse) != null
                           ? Image.network(
                               _horseService.imageUrl(currentHorse)!,
                               width: double.infinity,
-                              height: 350,
+                              height: 300,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) => Container(
                                 width: double.infinity,
-                                height: 350,
+                                height: 300,
                                 color: AppColors.border,
                               ),
                             )
@@ -127,12 +127,12 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                           ? Image.asset(
                               currentHorse.assetImage!,
                               width: double.infinity,
-                              height: 350,
+                              height: 300,
                               fit: BoxFit.cover,
                             )
                           : Container(
                               width: double.infinity,
-                              height: 350,
+                              height: 300,
                               color: AppColors.border,
                               child: Icon(
                                 Icons.image_outlined,
@@ -221,14 +221,14 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
               Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
-                    color: AppColors.surface,
+                    color: AppColors.bgPage,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(24),
                       topRight: Radius.circular(24),
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -240,47 +240,38 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Icon(
-                              currentHorse.sex == 'male'
-                                  ? Icons.male
-                                  : Icons.female,
-                              size: 28,
-                              color: currentHorse.sex == 'male' ? AppColors.male : AppColors.female,
-                            ),
+                            _buildSexChip(),
                           ],
                         ),
-                        const SizedBox(height: 32),
-                        _buildInfoRow('Rasse:', currentHorse.breed),
-                        const SizedBox(height: 20),
-                        _buildInfoRow('Geburtsdatum:', currentHorse.birthDate),
-                        const SizedBox(height: 20),
-                        _buildInfoRow(
-                          'Stockmaß:',
-                          currentHorse.height.isEmpty
-                              ? '-'
-                              : '${currentHorse.height} cm',
+                        const SizedBox(height: 16),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.borderSoft),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildInfoRow('Rasse', currentHorse.breed),
+                              _buildInfoRow('Geburtsdatum', currentHorse.birthDate),
+                              _buildInfoRow(
+                                'Stockmaß',
+                                currentHorse.height.isEmpty ? '-' : '${currentHorse.height} cm',
+                              ),
+                              _buildInfoRow(
+                                'Gewicht',
+                                currentHorse.weight.isEmpty ? '-' : '${currentHorse.weight} kg',
+                              ),
+                              _buildInfoRow('Adresse', currentHorse.fullStableAddress, isLast: true),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        _buildInfoRow(
-                          'Gewicht:',
-                          currentHorse.weight.isEmpty
-                              ? '-'
-                              : '${currentHorse.weight} kg',
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        // ← NEU: Stalladresse anzeigen
-                        _buildInfoRow(
-                          'Adresse:',
-                          currentHorse.fullStableAddress,
-                        ),
-                        
                       ],
                     ),
                   ),
@@ -319,10 +310,6 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => NewMeasurementScreen(horse: currentHorse)),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple100,
-                foregroundColor: AppColors.primary,
-              ),
               child: const Text(
                 'Messung starten',
                 style: TextStyle(fontWeight: FontWeight.w600),
@@ -334,30 +321,56 @@ class _HorseProfileScreenState extends State<HorseProfileScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 140,
-          child: Text(
+  Widget _buildSexChip() {
+    final male = currentHorse.sex == 'male';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.purple50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            male ? Icons.male : Icons.female,
+            size: 16,
+            color: male ? AppColors.male : AppColors.female,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            male ? 'Männlich' : 'Weiblich',
+            style: const TextStyle(fontSize: 13, color: AppColors.purple700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool isLast = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: BoxDecoration(
+        border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.borderSoft)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textStrong,
+            style: const TextStyle(fontSize: 14, color: AppColors.textSoft),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
