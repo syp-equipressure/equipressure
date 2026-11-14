@@ -6,9 +6,13 @@ import '../services/person_service.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
+  /// Ein Zurück-Pfeil, sobald es eine vorherige Seite gibt. Seiten mit eigenem Pfeil schalten ihn aus.
+  final bool showBack;
+
   const CustomAppBar({
     super.key,
     required this.title,
+    this.showBack = true,
   });
 
   @override
@@ -16,26 +20,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppColors.surface,
 
-      // 👇 DAS MACHT DEN SCHATTEN WIE IM BILD
-      elevation: 1,
-      shadowColor: AppColors.shadow(0.2),
-
       centerTitle: true,
-
-      // ☰ MENU
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: AppColors.textStrong),
-        onPressed: () => Scaffold.of(context).openDrawer(),
-      ),
+      toolbarHeight: 64,
+      automaticallyImplyLeading: showBack,
 
       // TITLE
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: AppColors.textStrong,
-          fontSize: 18,
-        ),
+      // das ganze Logo mit Schriftzug, der Titel dient nur noch der Barrierefreiheit
+      title: Semantics(
+        label: title,
+        child: Image.asset('assets/images/equipressure-logo.png', height: 48),
       ),
 
       // 👤 PROFILE
@@ -59,7 +52,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(64);
 }
 
 /// Das eigene Profilbild, ohne Bild oder bei einem Fehler das Personen-Symbol.

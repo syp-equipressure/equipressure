@@ -5,7 +5,6 @@ import 'package:reiterappfrontend/models/user_data.dart';
 import 'package:reiterappfrontend/screens/horses/horses_screen.dart';
 import 'package:reiterappfrontend/screens/onboarding/auth_gate.dart';
 import 'package:reiterappfrontend/services/auth_service.dart';
-import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/screens/profil/personal_data_screen.dart';
 import 'package:reiterappfrontend/screens/profil/devices_screen.dart';
 import 'package:reiterappfrontend/services/person_service.dart';
@@ -133,21 +132,10 @@ class _ProfilScreenState extends State<ProfilScreen> {
     final devices = _devices!;
     return Scaffold(
       backgroundColor: AppColors.purple300,
-      drawer: const SideNav(),
       appBar: AppBar(
         backgroundColor: AppColors.purple300,
         shape: const Border(),
         elevation: 0,
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.textStrong),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
       ),
       body: Column(
         children: [

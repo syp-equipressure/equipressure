@@ -1,9 +1,9 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'package:reiterappfrontend/widgets/bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart' show CustomAppBar;
 import '../../widgets/person_avatar.dart';
-import '../../widgets/sidenav.dart';
 import '../../models/chat.dart';
 import '../../services/chat_service.dart';
 import 'chat_screen.dart';
@@ -19,6 +19,9 @@ class _SaddlerContactState extends State<SaddlerContact> {
   final ChatService _chatService = ChatService();
 
   List<Chat> get _chats => _chatService.chats;
+
+  /// Suchtext über der Liste
+  String _query = '';
 
   @override
   void initState() {
@@ -43,8 +46,8 @@ class _SaddlerContactState extends State<SaddlerContact> {
     return ListenableBuilder(
       listenable: _chatService,
       builder: (context, _) => Scaffold(
-        backgroundColor: AppColors.surface,
-        drawer: const SideNav(),
+        backgroundColor: AppColors.bgPage,
+        bottomNavigationBar: const AppBottomNav(current: AppTab.chat),
         appBar: const CustomAppBar(
           title: 'EquiPressure',
         ),
@@ -53,9 +56,8 @@ class _SaddlerContactState extends State<SaddlerContact> {
             : _buildBody(),
         floatingActionButton: _chats.isNotEmpty
             ? FloatingActionButton(
-                backgroundColor: AppColors.primary,
                 onPressed: _navigateToSaddlerMap,
-                child: const Icon(Icons.add, color: AppColors.text),
+                child: const Icon(Icons.add),
               )
             : null,
       ),
@@ -67,16 +69,24 @@ class _SaddlerContactState extends State<SaddlerContact> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-          child: const Center(
-          child: Text(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+          child: const Text(
             'Sattler-Chat',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+          ),
+        ),
+        if (_chats.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              onChanged: (value) => setState(() => _query = value),
+              decoration: const InputDecoration(
+                hintText: 'Suchen',
+                prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+                isDense: true,
+              ),
             ),
           ),
-        ), ),
         if (_chatService.error != null)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -148,23 +158,45 @@ class _SaddlerContactState extends State<SaddlerContact> {
   }
 
   Widget _buildChatList() {
-    return ListView.builder(
-      itemCount: _chats.length,
-      itemBuilder: (context, index) {
-        final chat = _chats[index];
-        return _ChatListItem(
-          chat: chat,
-          onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(chat: chat),
-              ),
-            );
-            _loadChats();
-          },
-        );
-      },
+    final query = _query.trim().toLowerCase();
+    final chats = _chats.where((chat) => chat.contactName.toLowerCase().contains(query)).toList();
+
+    return ListView(
+      // unten Platz für den Hinzufügen-Button
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        if (chats.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 32),
+            child: Center(
+              child: Text('Keine Chats gefunden', style: TextStyle(color: AppColors.textMuted)),
+            ),
+          )
+        else
+          Card(
+            margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final (index, chat) in chats.indexed)
+                  _ChatListItem(
+                    chat: chat,
+                    isLast: index == chats.length - 1,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(chat: chat),
+                        ),
+                      );
+                      _loadChats();
+                    },
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -172,10 +204,12 @@ class _SaddlerContactState extends State<SaddlerContact> {
 class _ChatListItem extends StatelessWidget {
   final Chat chat;
   final VoidCallback onTap;
+  final bool isLast;
 
   const _ChatListItem({
     required this.chat,
     required this.onTap,
+    this.isLast = false,
   });
 
   @override
@@ -183,14 +217,9 @@ class _ChatListItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.purple100,
-              width: 1,
-            ),
-          ),
+          border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.borderSoft)),
         ),
         child: Row(
           children: [
@@ -205,8 +234,8 @@ class _ChatListItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
                   ),
                   const SizedBox(height: 2),

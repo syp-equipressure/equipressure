@@ -1,4 +1,5 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'package:reiterappfrontend/widgets/bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/device.dart';
 import 'package:reiterappfrontend/models/horse.dart';
@@ -16,7 +17,6 @@ import 'package:reiterappfrontend/services/horse_service.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import 'package:reiterappfrontend/widgets/measurement_dropdown.dart';
 import 'package:reiterappfrontend/widgets/measurement_infobox.dart';
-import 'package:reiterappfrontend/widgets/sidenav.dart';
 import 'package:reiterappfrontend/widgets/info_button.dart'; // ← NEU: InfoButton importieren
 import 'package:reiterappfrontend/screens/measurement/measurement_input_screen.dart';
 
@@ -291,7 +291,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      drawer: const SideNav(),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.measurement),
       appBar: const CustomAppBar(title: 'EquiPressure'),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -300,16 +300,14 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ← HIER: Row mit Text und InfoButton (zentriert)
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
+                  // Überschrift mit InfoButton
+                  Row(
+                                          children: [
                         const Text(
                           'Neue Messung',
                           style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -320,8 +318,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
                   // Reiter:in Dropdown
                   SelectionDropdown<Person>(
@@ -342,7 +339,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                   ),
 
                   if (selectedPerson != null) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     InfoBoxes(
                       value1: selectedPerson!.heightCm.toString(),
                       unit1: 'cm',
@@ -370,7 +367,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                   ),
 
                   if (selectedHorse != null) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     InfoBoxes(
                       value1: selectedHorse!.height,
                       unit1: 'cm',
@@ -403,7 +400,7 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                   ),
 
                   if (selectedSaddle != null) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     SingleInfoBox(text: 'Kategorie ${selectedSaddle!.category}'),
                   ],
 
@@ -435,9 +432,9 @@ class _NewMeasurementScreenState extends State<NewMeasurementScreen> {
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.purple100,
-                        foregroundColor: AppColors.primary,
-                        disabledBackgroundColor: AppColors.border,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.onPrimary,
+                        disabledBackgroundColor: AppColors.purple100,
                         disabledForegroundColor: AppColors.textMuted,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

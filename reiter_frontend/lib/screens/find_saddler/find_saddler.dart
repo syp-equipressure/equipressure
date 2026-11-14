@@ -1,4 +1,5 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'package:reiterappfrontend/widgets/bottom_nav.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -9,7 +10,6 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/app_bar.dart' show CustomAppBar;
-import '../../widgets/sidenav.dart';
 import '../../models/saddler.dart';
 import '../../models/horse.dart';
 import '../../services/saddler_service.dart';
@@ -444,7 +444,7 @@ class _FindSaddlerState extends State<FindSaddler> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const SideNav(),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.map),
       appBar: const CustomAppBar(title: 'EquiPressure'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -1,4 +1,5 @@
 import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'package:reiterappfrontend/widgets/bottom_nav.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/models/horse.dart';
@@ -7,7 +8,6 @@ import 'package:reiterappfrontend/services/push_service.dart';
 import 'package:reiterappfrontend/screens/horses/horse_profil_screen.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart';
 import '../../widgets/dashed_border.dart';
-import '../../widgets/sidenav.dart';
 import 'add_horse_screen.dart';
 
 enum HorsesView { add, list }
@@ -117,7 +117,7 @@ class _HorsesScreenState extends State<HorsesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgPanel,
-      drawer: const SideNav(),
+      bottomNavigationBar: view == HorsesView.add ? null : const AppBottomNav(current: AppTab.horses),
       appBar: view == HorsesView.add
           ? null
           : const CustomAppBar(title: 'EquiPressure'),
@@ -140,14 +140,12 @@ class _HorsesScreenState extends State<HorsesScreen> {
     return CustomScrollView(
       slivers: [
         const SliverPadding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 40),
+          padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
           sliver: SliverToBoxAdapter(
-            child: Center(
-              child: Text(
-                'Meine Pferde',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            child: Text(
+              'Meine Pferde',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.3),
               ),
-            ),
           ),
         ),
         if (horses.isEmpty)
@@ -239,22 +237,16 @@ class _HorsesScreenState extends State<HorsesScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-              color: AppColors.shadow(0.05),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderSoft),
         ),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(11),
                 child: SizedBox(
                   width: double.infinity,
                   child: horse.image != null
@@ -268,11 +260,11 @@ class _HorsesScreenState extends State<HorsesScreen> {
                       : horse.assetImage != null
                       ? Image.asset(horse.assetImage!, fit: BoxFit.cover)
                       : Container(
-                          color: AppColors.borderSoft,
+                          color: AppColors.purple50,
                           child: Icon(
                             Icons.image_outlined,
-                            size: 48,
-                            color: AppColors.textMuted,
+                            size: 40,
+                            color: AppColors.purple300,
                           ),
                         ),
                 ),
@@ -285,12 +277,12 @@ class _HorsesScreenState extends State<HorsesScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
             const SizedBox(height: 4),
             // ✅ Alter | Rasse wird bei Überlänge mit ... abgekürzt
             Text(
-              '${_calculateAge(horse.birthDate)} | ${horse.breed}',
+              '${_calculateAge(horse.birthDate)} · ${horse.breed}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
