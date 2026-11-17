@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/SolutionItems/">
-    <File Path=".github/workflows/build_on_push.yml" />
+    <File Path=".gitattributes" />
+    <File Path="global.json" />
+    <File Path="DevelopmentSeedData.md" />
     <File Path="Directory.Build.props" />
     <File Path="ManageMigration.ps1" />
   </Folder>

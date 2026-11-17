@@ -5,7 +5,9 @@ import '../../widgets/common/app_button.dart';
 import '../horses/horses_screen.dart';
 
 class ConnectionSuccessScreen extends StatelessWidget {
-  const ConnectionSuccessScreen({super.key});
+  final String serialNumber;
+
+  const ConnectionSuccessScreen({super.key, required this.serialNumber});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +21,7 @@ class ConnectionSuccessScreen extends StatelessWidget {
             children: [
               const Spacer(),
               Text(
-                'Sie wurden erfolgreich mit\ndem Satteldruckmessgerät',
+                'Du wurdest erfolgreich mit\ndem Satteldruckmessgerät',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.h3.copyWith(height: 1.4),
               ),
@@ -31,7 +33,7 @@ class ConnectionSuccessScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'EP0706',
+                  serialNumber,
                   style: AppTextStyles.h3.copyWith(color: AppColors.primary),
                 ),
               ),

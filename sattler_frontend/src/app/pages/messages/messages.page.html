@@ -1,0 +1,238 @@
+<app-page-header title="Nachrichten"></app-page-header>
+
+<section class="messages-page">
+  @if (!personId()) {
+    <p class="empty-chat">
+      Der Chat braucht eine Person aus dem Backend. Trage in den
+      <a routerLink="/settings">Einstellungen</a> deine Person-ID ein.
+    </p>
+  } @else {
+  <div class="messages-layout">
+    <aside class="customer-panel" aria-label="Kundenliste">
+      @if (notificationPermission() === 'default') {
+        <button type="button" class="notify-button" (click)="enableNotifications()">
+          <span class="material-icons" aria-hidden="true">notifications_active</span>
+          Desktop-Benachrichtigungen aktivieren
+        </button>
+      }
+      @if (!chat.connected()) {
+        <p class="list-message" role="status">Live-Verbindung wird aufgebaut …</p>
+      }
+      @if (chat.error()) {
+        <p class="list-message" role="alert">{{ chat.error() }}</p>
+      }
+      <div class="customer-list">
+        @for (item of contactItems(); track item.contact.id) {
+          <button
+            class="customer-item"
+            [class.selected]="item.contact.id === selectedContactId()"
+            [attr.aria-pressed]="item.contact.id === selectedContactId()"
+            (click)="selectContact(item.contact.id)"
+          >
+            <span class="customer-avatar">
+              @if (avatarUrl(item.contact); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ initials(item.contact) }}
+              }
+            </span>
+            <span class="customer-meta">
+              <span class="customer-name">{{ item.contact.firstName }} {{ item.contact.lastName }}</span>
+              <span class="customer-preview" [class.unread]="item.unread">{{ item.preview }}</span>
+            </span>
+            <span class="contact-side">
+              <time class="contact-time">{{ item.time }}</time>
+              @if (item.unread) {
+                <span class="unread-badge" [attr.aria-label]="item.unread + ' ungelesen'">{{ item.unread }}</span>
+              }
+            </span>
+          </button>
+        } @empty {
+          @if (chat.conversationsLoading()) {
+            <p class="list-message" role="status">Nachrichten werden geladen …</p>
+          } @else {
+            <p class="list-message">Noch keine Nachrichten.</p>
+          }
+        }
+      </div>
+    </aside>
+
+    <section class="chat-panel" aria-label="Chatverlauf">
+      @if (selectedContact(); as contact) {
+        <header class="chat-header">
+          <a class="chat-contact-link" [routerLink]="['/customers', contact.id]" title="Profil öffnen">
+            <span class="customer-avatar">
+              @if (avatarUrl(contact); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                {{ initials(contact) }}
+              }
+            </span>
+            <div class="chat-contact">
+              <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
+            </div>
+          </a>
+        </header>
+
+        <div class="chat-history" aria-live="polite" #history>
+          @for (day of messageDays(); track day.label) {
+            <div class="date-divider"><span>{{ day.label }}</span></div>
+            @for (message of day.messages; track message.id) {
+              <article class="message" [class.outgoing]="isOutgoing(message)">
+                @if (!message.deletedAt) {
+                  <div class="message-actions">
+                    <button type="button" aria-label="Antworten" title="Antworten" (click)="replyingTo.set(message)">
+                      <span class="material-icons">reply</span>
+                    </button>
+                    @if (message.text) {
+                      <button type="button" aria-label="Kopieren" title="Kopieren" (click)="copy(message)">
+                        <span class="material-icons">content_copy</span>
+                      </button>
+                    }
+                    @if (canDelete(message)) {
+                      <button type="button" aria-label="Für alle löschen" title="Für alle löschen" (click)="delete(message)">
+                        <span class="material-icons">delete_outline</span>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (message.replyTo; as reply) {
+                  <blockquote class="reply-quote">{{ reply.preview }}</blockquote>
+                }
+                @if (message.deletedAt) {
+                  <p class="deleted-message">Diese Nachricht wurde gelöscht</p>
+                }
+                @if (message.horse || message.measurement) {
+                  <div class="share-card">
+                    @if (message.horse) {
+                      <img class="share-horse-icon" src="/assets/horse-icon.svg" alt="" />
+                    } @else {
+                      <span class="material-icons share-icon" aria-hidden="true">analytics</span>
+                    }
+                    <span class="share-info">
+                      @if (message.horse; as horse) {
+                        <small>Pferd geteilt</small>
+                        <strong>{{ horse.name }}</strong>
+                        <span>mit allen Messungen</span>
+                      } @else if (message.measurement; as measurement) {
+                        <small>Messung geteilt</small>
+                        <strong>{{ measurement.horseName }}</strong>
+                        <span>{{ measurement.name }} · {{ germanDate(measurement.date) }}</span>
+                      }
+                    </span>
+                  </div>
+                  @if (!isOutgoing(message)) {
+                    @if (isAccepted(message)) {
+                      <a class="share-action done" [routerLink]="shareLink(message)" [queryParams]="shareQueryParams(message)">
+                        <span class="material-icons" aria-hidden="true">check_circle</span>
+                        Hinzugefügt · Öffnen
+                      </a>
+                    } @else {
+                      <button type="button" class="share-action" [disabled]="acceptingId() === message.id"
+                        (click)="accept(message)">
+                        <span class="material-icons" aria-hidden="true">add</span>
+                        {{ message.horse ? 'Pferd hinzufügen' : 'Messung hinzufügen' }}
+                      </button>
+                    }
+                  } @else if (message.acceptedAt) {
+                    <small class="share-state">Hinzugefügt</small>
+                  }
+                } @else if (!message.deletedAt && (message.type === 'Horse' || message.type === 'Measurement')) {
+                  <!-- the backend removes the reference when the horse or measurement is deleted -->
+                  <small class="share-state">
+                    {{ message.type === 'Horse' ? 'Das geteilte Pferd wurde gelöscht.' : 'Die geteilte Messung wurde gelöscht.' }}
+                  </small>
+                }
+                @if (message.file; as file) {
+                  @if (isImage(message)) {
+                    <a class="attachment" [href]="chat.fileUrl(message)" target="_blank" rel="noopener"
+                      [title]="file.fileName + ' öffnen'">
+                      <img [src]="chat.fileUrl(message)" [alt]="file.fileName" loading="lazy" />
+                    </a>
+                  } @else {
+                    <a class="attachment file" [href]="chat.fileUrl(message)" [download]="file.fileName"
+                      [title]="file.fileName + ' herunterladen'">
+                      <span class="material-icons" aria-hidden="true">description</span>
+                      <span class="attachment-name">{{ file.fileName }}</span>
+                      <small>{{ fileSize(file.size) }}</small>
+                    </a>
+                  }
+                }
+                @if (message.text) {
+                  <p>{{ message.text }}</p>
+                }
+                <time>
+                  {{ time(message.sentAt) }}
+                  <!-- like in WhatsApp/Signal: one tick when sent, two ticks when delivered, coloured when read -->
+                  @if (isOutgoing(message)) {
+                    <span class="material-icons ticks" [class.read]="message.readAt"
+                      [attr.aria-label]="tickLabel(message)" [title]="tickLabel(message)">
+                      {{ message.readAt || message.deliveredAt ? 'done_all' : 'done' }}
+                    </span>
+                  }
+                </time>
+              </article>
+            }
+          } @empty {
+            @if (messagesLoading()) {
+              <p class="empty-chat" role="status">Nachrichten werden geladen …</p>
+            } @else {
+              <p class="empty-chat">Noch keine Nachrichten. Beginne den Chat mit {{ contact.firstName }}.</p>
+            }
+          }
+        </div>
+
+        @if (sendError()) {
+          <p class="send-error" role="alert">{{ sendError() }}</p>
+        }
+
+        @if (showPicker()) {
+          <app-measurement-picker
+            [contactId]="contact.id"
+            [sending]="sending()"
+            (selected)="sendMeasurement($event)"
+            (cancel)="showPicker.set(false)"
+          ></app-measurement-picker>
+        }
+
+        @if (replyingTo(); as reply) {
+          <div class="reply-banner">
+            <span class="material-icons" aria-hidden="true">reply</span>
+            <span class="reply-banner-text">{{ preview(reply) }}</span>
+            <button type="button" aria-label="Antwort abbrechen" title="Antwort abbrechen" (click)="replyingTo.set(null)">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+        }
+
+        <form class="chat-composer" (ngSubmit)="sendMessage()">
+          <label class="visually-hidden" for="message-draft">Nachricht schreiben</label>
+          <input
+            id="message-draft"
+            type="text"
+            placeholder="Nachricht schreiben …"
+            maxlength="2000"
+            [ngModel]="draft()"
+            (ngModelChange)="draft.set($event)"
+            name="message"
+          />
+          <input #fileInput type="file" multiple hidden (change)="attachFiles($event)" />
+          <button type="button" class="attach-button" aria-label="Bild oder Datei senden" title="Bild oder Datei senden"
+            [disabled]="sending()" (click)="fileInput.click()">
+            <span class="material-icons">attach_file</span>
+          </button>
+          <button type="button" class="attach-button" aria-label="Messung senden" title="Messung senden"
+            [class.active]="showPicker()" (click)="showPicker.set(!showPicker())">
+            <span class="material-icons">analytics</span>
+          </button>
+          <button type="submit" class="send-button" [disabled]="!draft().trim() || sending()" aria-label="Nachricht senden">
+            <span class="material-icons">send</span>
+          </button>
+        </form>
+      } @else {
+        <p class="empty-chat">Wähle einen Kunden aus, um den Chat zu öffnen.</p>
+      }
+    </section>
+  </div>
+  }
+</section>

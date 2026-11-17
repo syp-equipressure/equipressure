@@ -1,0 +1,31 @@
+<div class="backdrop" (click)="closed.emit()"></div>
+<section class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="title">
+  <header>
+    <div>
+      <h2>{{ title }}</h2>
+      @if (subtitle) {
+        <p>{{ subtitle }}</p>
+      }
+    </div>
+    <button type="button" class="close" aria-label="Schließen" title="Schließen (Esc)" (click)="closed.emit()">
+      <span class="material-icons" aria-hidden="true">close</span>
+    </button>
+  </header>
+
+  <div class="body">
+    <div class="heatmap-box">
+      @if (grid.length) {
+        <app-pressure-heatmap [grid]="grid" [mode]="mode" [max]="max"></app-pressure-heatmap>
+      } @else {
+        <p class="empty">Für diese Filter gibt es keine Teilmessungen.</p>
+      }
+    </div>
+    <div class="scale" aria-hidden="true">
+      <span>{{ max.toFixed(2).replace('.', ',') }}</span>
+      <div class="scale-bar"></div>
+      <span>0 N/cm²</span>
+    </div>
+  </div>
+
+  <ng-content></ng-content>
+</section>

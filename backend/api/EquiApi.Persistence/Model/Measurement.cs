@@ -1,7 +1,4 @@
-﻿using NodaTime;
-
-namespace EquiApi.Persistence.Model;
-
+﻿namespace EquiApi.Persistence.Model;
 
 public class MeasurementGroup
 {
@@ -35,10 +32,10 @@ public class Measurement
     // just says which side of the horse is faced to the middle of the riding hall
     public required string Hand { get; set; }
     public string? Description { get; set; }
-    
+
     public int GroupId { get; set; }
     public MeasurementGroup Group { get; set; } = null!;
-    
+
     public List<MeasurementData> MeasurementDates { get; set; } = [];
 }
 

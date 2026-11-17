@@ -1,7 +1,4 @@
-﻿using NodaTime;
-
-namespace EquiApi.Persistence.Model;
-
+﻿namespace EquiApi.Persistence.Model;
 
 public class Release
 {

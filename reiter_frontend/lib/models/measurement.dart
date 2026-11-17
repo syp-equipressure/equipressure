@@ -69,12 +69,19 @@ class Measurement {
 class MeasurementSectionData {
   final String gait;
   final String hand;
+  /// Durchschnitt über alle Aufnahmen (20x20 Werte)
   final List<double> pressureData;
+  /// Die einzelnen Aufnahmen der Sensormatte in zeitlicher Reihenfolge (je 20x20 Werte)
+  final List<List<double>> frames;
+  /// Wie lange die Teilmessung gedauert hat, null wenn unbekannt
+  final Duration? duration;
 
   MeasurementSectionData({
     required this.gait,
     required this.hand,
     this.pressureData = const [],
+    this.frames = const [],
+    this.duration,
   });
 
   factory MeasurementSectionData.fromJson(Map<String, dynamic> json) {
@@ -84,6 +91,14 @@ class MeasurementSectionData {
       pressureData: json['pressureData'] != null
           ? (json['pressureData'] as List).map((e) => (e as num).toDouble()).toList()
           : [],
+      frames: json['frames'] != null
+          ? (json['frames'] as List)
+              .map((f) => (f as List).map((e) => (e as num).toDouble()).toList())
+              .toList()
+          : [],
+      duration: json['durationSeconds'] != null
+          ? Duration(seconds: (json['durationSeconds'] as num).toInt())
+          : null,
     );
   }
 
@@ -92,6 +107,8 @@ class MeasurementSectionData {
       'gait': gait,
       'hand': hand,
       'pressureData': pressureData,
+      'frames': frames,
+      'durationSeconds': duration?.inSeconds,
     };
   }
 }

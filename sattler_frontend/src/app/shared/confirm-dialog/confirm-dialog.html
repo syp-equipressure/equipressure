@@ -1,0 +1,11 @@
+@if (confirm.request(); as request) {
+  <div class="backdrop" (click)="cancel()"></div>
+  <section class="dialog" role="alertdialog" aria-modal="true" [attr.aria-label]="request.title">
+    <h2>{{ request.title }}</h2>
+    <p>{{ request.message }}</p>
+    <div class="actions">
+      <button class="cancel" type="button" (click)="cancel()">Abbrechen</button>
+      <button class="confirm" type="button" (click)="confirm.answer(true)">{{ request.confirmLabel ?? 'Löschen' }}</button>
+    </div>
+  </section>
+}

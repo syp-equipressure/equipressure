@@ -1,19 +1,39 @@
-﻿using NodaTime;
-
-namespace EquiApi.Persistence.Model;
-
+﻿namespace EquiApi.Persistence.Model;
 
 public class Person
 {
     public int Id { get; set; }
+
+    /// <summary>
+    ///     Id of the user in Keycloak (sub claim of the access token), null for persons without an account
+    ///     (e.g. customers created by a saddler)
+    /// </summary>
+    public string? ExternalId { get; set; }
+
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
     public decimal Height { get; set; } // in cm
     public decimal Weight { get; set; } // in kg
-    public LocalDate DateOfBirth { get; set; }
+    public LocalDate? DateOfBirth { get; set; } // unknown for riders added by another person
     public string? Email { get; set; }
     public string? WebsiteLink { get; set; }
     public string? Description { get; set; }
+
+    /// <summary>
+    ///     When the person was added, set by the database ("member since" in the apps)
+    /// </summary>
+    public Instant CreatedAt { get; set; }
+
+    // only with an image, the content is stored separately so that lists of persons stay small
+    public string? ImageContentType { get; set; }
+    public Instant? ImageUpdatedAt { get; set; }
+    public PersonImage? Image { get; set; }
+
+    /// <summary>
+    ///     The person who added this rider for their own measurements, null for everybody else
+    /// </summary>
+    public int? CreatedById { get; set; }
+    public Person? CreatedBy { get; set; }
 
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
@@ -27,7 +47,31 @@ public class Person
     public List<Release> Releases { get; set; } = [];
 }
 
-// m-m bzh zwischen Person und Person
+/// <summary>
+///     A device of a person that receives push notifications
+/// </summary>
+public class PushToken
+{
+    public int Id { get; set; }
+    public required string Token { get; set; }
+    public Instant UpdatedAt { get; set; }
+
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
+}
+
+/// <summary>
+///     The content of the image of a person
+/// </summary>
+public class PersonImage
+{
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
+
+    public required byte[] Data { get; set; }
+}
+
+// m:n relationship between an equestrian and a saddler
 public class PersonRelationship
 {
     public int EquestrianId { get; set; }

@@ -7,6 +7,7 @@ class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
   final TextInputType? keyboardType;
   final bool centerText;
+  final String? errorText;
 
   const AppTextField({
     super.key,
@@ -15,6 +16,7 @@ class AppTextField extends StatelessWidget {
     this.controller,
     this.keyboardType,
     this.centerText = false,
+    this.errorText,
   });
 
   @override
@@ -28,7 +30,7 @@ class AppTextField extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           textAlign: centerText ? TextAlign.center : TextAlign.start,
-          decoration: InputDecoration(hintText: hint),
+          decoration: InputDecoration(hintText: hint, errorText: errorText),
         ),
       ],
     );
@@ -39,12 +41,14 @@ class AppTextFieldSmall extends StatelessWidget {
   final String hint;
   final TextEditingController? controller;
   final TextInputType? keyboardType;
+  final bool hasError;
 
   const AppTextFieldSmall({
     super.key,
     required this.hint,
     this.controller,
     this.keyboardType,
+    this.hasError = false,
   });
 
   @override
@@ -53,7 +57,7 @@ class AppTextFieldSmall extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       textAlign: TextAlign.center,
-      decoration: InputDecoration(hintText: hint),
+      decoration: InputDecoration(hintText: hint, errorText: hasError ? '' : null),
     );
   }
 }
@@ -62,12 +66,14 @@ class AppTextFieldWithSuffix extends StatelessWidget {
   final String label;
   final String suffix;
   final TextEditingController? controller;
+  final String? errorText;
 
   const AppTextFieldWithSuffix({
     super.key,
     required this.label,
     required this.suffix,
     this.controller,
+    this.errorText,
   });
 
   @override
@@ -83,6 +89,7 @@ class AppTextFieldWithSuffix extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
+                decoration: InputDecoration(errorText: errorText),
               ),
             ),
             const SizedBox(width: 8),

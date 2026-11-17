@@ -1,87 +1,120 @@
 ﻿using EquiApi.Persistence.Model;
+using EquiApi.Persistence.Repositories;
 using EquiApi.Persistence.Util;
-using EquiPressure.Core.Service;
-using OneOf.Types;
 using OneOf;
+using OneOf.Types;
 
 namespace EquiApi.Core.Services;
 
-using GetCitiesAsyncResult
-    = OneOf<Success<IReadOnlyCollection<Address>>, NotFound>;
-using AddAddressAsyncResult
-    = OneOf<Success<Address>,
-        IBaseService.InvalidData, ILocationService.AddressAlreadyExists>;
+/// <summary>
+///     The values of an address
+/// </summary>
+/// <param name="AddressName">Optional street and house number</param>
+/// <param name="PLZ">The postal code</param>
+/// <param name="CityName">The name of the city</param>
+public sealed record AddressData(string? AddressName, string PLZ, string CityName);
 
 public interface ILocationService
 {
     /// <summary>
-    /// gets cities that are filtered
+    ///     Gets the cities that are used by addresses, most used cities first
     /// </summary>
-    /// <param name="length">amount of cities returned</param>
-    /// <param name="nameFilter">name filter for city names</param>
-    /// <returns>
-    /// <item><description><see cref="Success{T}"/> with a read only collection of <see cref="Address"/> entitys</description></item>
-    /// <item><description>or <see cref="NotFound"/> when no cities are found.</description></item>
-    /// </returns>
-    public ValueTask<GetCitiesAsyncResult> GetCitiesAsync(int? length, string? nameFilter);
-    
-    /// <summary>
-    /// adds a address if it doesnt already exist
-    /// </summary>
-    /// <param name="addressName">optional name of address</param>
-    /// <param name="plz">plz</param>
-    /// <param name="cityName">name of the city</param>
-    /// <returns>
-    /// <item><description><see cref="Success{T}"/> contains <see cref="Address"/> entity</description></item>
-    /// <item><description>oder <see cref="IBaseService.InvalidData"/> if params are invalid data</description></item>
-    /// <item><description>oder <see cref="AddressAlreadyExists"/>if address already exists</description></item>
-    /// </returns>
-    public ValueTask<AddAddressAsyncResult> AddAddressAsync(string? addressName, string plz, string cityName);
+    /// <param name="length">Optional maximum number of cities to return</param>
+    /// <param name="nameFilter">Optional case-insensitive filter for the city name</param>
+    /// <returns>The matching cities, which may be empty</returns>
+    public ValueTask<IReadOnlyCollection<CityData>> GetCitiesAsync(int? length, string? nameFilter);
 
     /// <summary>
-    /// covers the case, when adding address, if it already exists
+    ///     Gets an address
     /// </summary>
-    public record AddressAlreadyExists();
+    /// <param name="addressId">The id of the address</param>
+    /// <returns>The address or <see cref="NotFound" /> if it does not exist</returns>
+    public ValueTask<OneOf<Success<Address>, NotFound>> GetAddressByIdAsync(int addressId);
+
+    /// <summary>
+    ///     Adds an address if it does not exist yet
+    /// </summary>
+    /// <param name="address">The values of the new address</param>
+    /// <returns>The new address or <see cref="AddressAlreadyExists" /> if the same address already exists</returns>
+    public ValueTask<OneOf<Success<Address>, AddressAlreadyExists>> AddAddressAsync(AddressData address);
+
+    /// <summary>
+    ///     Returned if an address with the same values already exists
+    /// </summary>
+    /// <param name="ExistingAddressId">The id of the existing address</param>
+    public readonly record struct AddressAlreadyExists(int ExistingAddressId);
 }
 
-public class LocationService(IUnitOfWork uow, ILogger<LocationService> logger) : ILocationService
+internal sealed class LocationService(IUnitOfWork uow, ILogger<LocationService> logger) : ILocationService
 {
-    public async ValueTask<GetCitiesAsyncResult> GetCitiesAsync(int? length, string? nameFilter)
-    {
-        var res = await uow.LocationRepository.GetCitiesAsync(length, nameFilter);
+    public async ValueTask<IReadOnlyCollection<CityData>> GetCitiesAsync(int? length, string? nameFilter) =>
+        await uow.LocationRepository.GetCitiesAsync(length, nameFilter);
 
-        if (!res.Any())
+    public async ValueTask<OneOf<Success<Address>, NotFound>> GetAddressByIdAsync(int addressId)
+    {
+        var address = await uow.LocationRepository.GetAddressByIdAsync(addressId);
+        if (address is null)
         {
-            logger.LogWarning("GetCitiesAsync returned no results for length={Length}, nameFilter={NameFilter}", length, nameFilter);
+            logger.LogInformation("Address {AddressId} not found", addressId);
+
             return new NotFound();
         }
-        
-        return new Success<IReadOnlyCollection<Address>>(res);
+
+        return new Success<Address>(address);
     }
 
-    public async ValueTask<AddAddressAsyncResult> AddAddressAsync(string? addressName, string plz, string cityName)
+    public async ValueTask<OneOf<Success<Address>, ILocationService.AddressAlreadyExists>> AddAddressAsync(
+        AddressData address)
     {
-        
-
-        if (await uow.LocationRepository.AddressExists(addressName, plz, cityName))
+        var existingAddress = await uow.LocationRepository.FindAddressAsync(address.AddressName, address.PLZ,
+                                                                            address.CityName);
+        if (existingAddress is not null)
         {
-            logger.LogWarning("AddAddressAsync — address already exists: addressName={AddressName}," +
-                              " plz={PLZ}, cityName={CityName}",
-                              addressName, plz, cityName);
-            return new ILocationService.AddressAlreadyExists();
+            logger.LogWarning("Address {AddressId} already exists", existingAddress.Id);
+
+            return new ILocationService.AddressAlreadyExists(existingAddress.Id);
         }
 
-        var address = new Address
+        var newAddress = new Address
         {
-            AddressName = addressName,
-            PLZ = plz,
-            CityName = cityName
+            AddressName = address.AddressName,
+            PLZ = address.PLZ,
+            CityName = address.CityName
         };
-        
-        uow.LocationRepository.AddAddress(address);
-        await uow.SaveChangesAsync();
 
-        logger.LogInformation("AddAddressAsync — address successfully created with id={Id}", address.Id);
-        return new Success<Address>(address);
+        uow.LocationRepository.AddAddress(newAddress);
+        await uow.SaveChangesAsync();
+        logger.LogInformation("Address {AddressId} added", newAddress.Id);
+
+        return new Success<Address>(newAddress);
+    }
+}
+
+internal static class LocationRepositoryExtensions
+{
+    extension(ILocationRepository repository)
+    {
+        /// <summary>
+        ///     Returns the existing address with the given values or adds a new one (without saving)
+        /// </summary>
+        public async ValueTask<Address> FindOrAddAddressAsync(AddressData address)
+        {
+            var existingAddress = await repository.FindAddressAsync(address.AddressName, address.PLZ,
+                                                                    address.CityName);
+            if (existingAddress is not null)
+            {
+                return existingAddress;
+            }
+
+            var newAddress = new Address
+            {
+                AddressName = address.AddressName,
+                PLZ = address.PLZ,
+                CityName = address.CityName
+            };
+            repository.AddAddress(newAddress);
+
+            return newAddress;
+        }
     }
 }

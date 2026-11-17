@@ -33,36 +33,6 @@ class AppButton extends StatelessWidget {
   }
 }
 
-class AppSocialButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const AppSocialButton({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        child: Row(
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 16),
-            Text(label, style: AppTextStyles.button),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class AppTextButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;

@@ -19,6 +19,9 @@ class Person {
 
   final bool hidden;
 
+  /// Vom angemeldeten Reiter selbst angelegt, nur diese lassen sich bearbeiten und löschen
+  final bool isOwnRider;
+
   const Person({
     required this.id,
     required this.firstname,
@@ -34,6 +37,7 @@ class Person {
     this.description,
     this.dob,
     this.hidden = false,
+    this.isOwnRider = false,
   });
 
   factory Person.fromJson(Map<String, dynamic> json) {

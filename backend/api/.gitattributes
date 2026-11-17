@@ -1,0 +1,2 @@
+# Keep C# files in sync with the end_of_line setting in .editorconfig, also on Linux/macOS (e.g. CI)
+*.cs text eol=crlf

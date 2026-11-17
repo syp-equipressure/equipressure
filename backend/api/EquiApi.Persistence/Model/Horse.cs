@@ -1,6 +1,4 @@
-﻿using NodaTime;
-
-namespace EquiApi.Persistence.Model;
+﻿namespace EquiApi.Persistence.Model;
 
 public class Horse
 {
@@ -10,6 +8,11 @@ public class Horse
     public decimal Weight { get; set; }
     public decimal Height { get; set; }
     public HorseGender Gender { get; set; }
+
+    // only with an image, the content is stored separately so that lists of horses stay small
+    public string? ImageContentType { get; set; }
+    public Instant? ImageUpdatedAt { get; set; }
+    public HorseImage? Image { get; set; }
 
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
@@ -21,11 +24,22 @@ public class Horse
     public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
 }
 
+/// <summary>
+///     The content of the image of a horse
+/// </summary>
+public class HorseImage
+{
+    public int HorseId { get; set; }
+    public Horse Horse { get; set; } = null!;
+
+    public required byte[] Data { get; set; }
+}
+
 public class HorseBreed
 {
     public int BreedId { get; set; }
     public Breed Breed { get; set; } = null!;
-    
+
     public int HorseId { get; set; }
     public Horse Horse { get; set; } = null!;
 }

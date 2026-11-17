@@ -1,10 +1,8 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using EquiApi;
+﻿using EquiApi;
+using EquiApi.BackgroundServices;
 using EquiApi.Shared;
 using EquiApi.Util;
 using Microsoft.AspNetCore.Mvc;
-using NodaTime.Serialization.SystemTextJson;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,9 +14,20 @@ builder.AddLogging();
 builder.Services.AddApplicationServices(configurationManager, isDev);
 builder.Services.AddOpenApi();
 builder.Services.AddCors(settings);
+builder.Services.AddKeycloakAuthentication(configurationManager);
+builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => { o.ModelBinderProviders.Insert(0, new NodaTimeModelBinderProvider()); })
        .AddJsonOptions(o => ConfigureJsonSerialization(o, isDev));
 builder.Services.ConfigureAdditionalRouteConstraints();
+
+builder.Services.AddOptions<BluetoothOptions>().BindConfiguration(BluetoothOptions.SectionName);
+// only one handler is used, register LoggingBluetoothDataHandler instead to inspect the raw data
+builder.Services.AddSingleton<IBluetoothDataHandler, MeasurementDataBluetoothHandler>();
+// with the plain net10.0 target InTheHand.BluetoothLE only supports BlueZ, on other systems every scan would fail
+builder.Services.AddSingleton<BluetoothConnectionService>();
+builder.Services.AddSingleton<IBluetoothConnectionManager>(sp => sp.GetRequiredService<BluetoothConnectionService>());
+// only for a clean disconnect on shutdown, it does NOT start the connection
+builder.Services.AddHostedService(sp => sp.GetRequiredService<BluetoothConnectionService>());
 
 var app = builder.Build();
 
@@ -26,10 +35,20 @@ var app = builder.Build();
 
 app.UseCors(Setup.CorsPolicyName);
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+// chat events are pushed to the clients over websockets, the interval keeps idle connections open behind proxies
+app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+
+if (isDev && settings.SeedDevelopmentData)
+{
+    await app.SeedDevelopmentDataAsync();
 }
 
 await app.RunAsync();
@@ -42,4 +61,4 @@ static void ConfigureJsonSerialization(JsonOptions options, bool isDev)
 }
 
 // used for integration testing
-public partial class Program { }
+public partial class Program;

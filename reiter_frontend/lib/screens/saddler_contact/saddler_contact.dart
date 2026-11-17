@@ -1,7 +1,9 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
+import 'package:reiterappfrontend/widgets/bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:reiterappfrontend/screens/find_saddler/find_saddler.dart';
 import 'package:reiterappfrontend/widgets/app_bar.dart' show CustomAppBar;
-import '../../widgets/sidenav.dart';
+import '../../widgets/person_avatar.dart';
 import '../../models/chat.dart';
 import '../../services/chat_service.dart';
 import 'chat_screen.dart';
@@ -15,8 +17,11 @@ class SaddlerContact extends StatefulWidget {
 
 class _SaddlerContactState extends State<SaddlerContact> {
   final ChatService _chatService = ChatService();
-  List<Chat> _chats = [];
-  bool _isLoading = true;
+
+  List<Chat> get _chats => _chatService.chats;
+
+  /// Suchtext über der Liste
+  String _query = '';
 
   @override
   void initState() {
@@ -24,13 +29,8 @@ class _SaddlerContactState extends State<SaddlerContact> {
     _loadChats();
   }
 
-  Future<void> _loadChats() async {
-    final chats = await _chatService.getChats();
-    setState(() {
-      _chats = chats;
-      _isLoading = false;
-    });
-  }
+  // start() lädt neu und verbindet erneut, falls die Backend-Person gewechselt hat
+  Future<void> _loadChats() => _chatService.start();
 
   void _navigateToSaddlerMap() {
     Navigator.push(
@@ -43,22 +43,24 @@ class _SaddlerContactState extends State<SaddlerContact> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      drawer: const SideNav(),
-      appBar: const CustomAppBar(
-        title: 'EquiPressure',
+    return ListenableBuilder(
+      listenable: _chatService,
+      builder: (context, _) => Scaffold(
+        backgroundColor: AppColors.bgPage,
+        bottomNavigationBar: const AppBottomNav(current: AppTab.chat),
+        appBar: const CustomAppBar(
+          title: 'EquiPressure',
+        ),
+        body: _chatService.isLoading && _chats.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _buildBody(),
+        floatingActionButton: _chats.isNotEmpty
+            ? FloatingActionButton(
+                onPressed: _navigateToSaddlerMap,
+                child: const Icon(Icons.add),
+              )
+            : null,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildBody(),
-      floatingActionButton: _chats.isNotEmpty
-          ? FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 178, 149, 230),
-              onPressed: _navigateToSaddlerMap,
-              child: const Icon(Icons.add, color: Color.fromARGB(255, 83, 83, 83)),
-            )
-          : null,
     );
   }
 
@@ -67,24 +69,55 @@ class _SaddlerContactState extends State<SaddlerContact> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-          child: const Center(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
           child: const Text(
-            'Sattler*innen',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+            'Sattler-Chat',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+          ),
+        ),
+        if (_chats.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              onChanged: (value) => setState(() => _query = value),
+              decoration: const InputDecoration(
+                hintText: 'Suchen',
+                prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+                isDense: true,
+              ),
             ),
           ),
-        ), ),
+        if (_chatService.error != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: Text(
+              _chatService.error!,
+              style: TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+          ),
         Expanded(
-          child: _chats.isEmpty ? _buildEmptyState() : _buildChatList(),
+          child: RefreshIndicator(
+            onRefresh: _chatService.refreshChats,
+            child: _chats.isEmpty ? _buildEmptyState() : _buildChatList(),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildEmptyState() {
+    // scrollbar, damit Ziehen zum Aktualisieren auch ohne Chats geht
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 40),
+          child: Center(child: _buildEmptyPrompt()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyPrompt() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -92,7 +125,7 @@ class _SaddlerContactState extends State<SaddlerContact> {
           onTap: _navigateToSaddlerMap,
           child: CustomPaint(
             painter: DashedBorderPainter(
-              color: Colors.grey[300]!,
+              color: AppColors.border,
               strokeWidth: 1.5,
               gap: 5,
             ),
@@ -104,14 +137,14 @@ class _SaddlerContactState extends State<SaddlerContact> {
                   Icon(
                     Icons.location_on_outlined,
                     size: 40,
-                    color: Colors.grey[400],
+                    color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Füge eine*n Sattler*in hinzu\num zu chatten',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: AppColors.textMuted,
                       fontSize: 14,
                     ),
                   ),
@@ -125,23 +158,45 @@ class _SaddlerContactState extends State<SaddlerContact> {
   }
 
   Widget _buildChatList() {
-    return ListView.builder(
-      itemCount: _chats.length,
-      itemBuilder: (context, index) {
-        final chat = _chats[index];
-        return _ChatListItem(
-          chat: chat,
-          onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(chat: chat),
-              ),
-            );
-            _loadChats();
-          },
-        );
-      },
+    final query = _query.trim().toLowerCase();
+    final chats = _chats.where((chat) => chat.contactName.toLowerCase().contains(query)).toList();
+
+    return ListView(
+      // unten Platz für den Hinzufügen-Button
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        if (chats.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 32),
+            child: Center(
+              child: Text('Keine Chats gefunden', style: TextStyle(color: AppColors.textMuted)),
+            ),
+          )
+        else
+          Card(
+            margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final (index, chat) in chats.indexed)
+                  _ChatListItem(
+                    chat: chat,
+                    isLast: index == chats.length - 1,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(chat: chat),
+                        ),
+                      );
+                      _loadChats();
+                    },
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -149,10 +204,12 @@ class _SaddlerContactState extends State<SaddlerContact> {
 class _ChatListItem extends StatelessWidget {
   final Chat chat;
   final VoidCallback onTap;
+  final bool isLast;
 
   const _ChatListItem({
     required this.chat,
     required this.onTap,
+    this.isLast = false,
   });
 
   @override
@@ -160,14 +217,9 @@ class _ChatListItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.purple[100]!,
-              width: 1,
-            ),
-          ),
+          border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.borderSoft)),
         ),
         child: Row(
           children: [
@@ -178,17 +230,20 @@ class _ChatListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    chat.saddler.name,
+                    chat.contactName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     chat.lastMessagePreview,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: chat.unreadCount > 0 ? AppColors.text : AppColors.textSoft,
+                      fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                       fontSize: 14,
                     ),
                     maxLines: 1,
@@ -197,12 +252,35 @@ class _ChatListItem extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              chat.formattedLastMessageTime,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 12,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  chat.formattedLastMessageTime,
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                  ),
+                ),
+                if (chat.unreadCount > 0) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${chat.unreadCount}',
+                      style: const TextStyle(
+                        color: AppColors.surface,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -211,33 +289,11 @@ class _ChatListItem extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    if (chat.saddler.imagePath != null) {
-      return CircleAvatar(
-        radius: 28,
-        backgroundImage: AssetImage(chat.saddler.imagePath!),
-      );
-    }
-
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: Colors.green[50],
-      child: Text(
-        _getInitials(chat.saddler.name),
-        style: TextStyle(
-          color: Colors.green[700],
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
+    return PersonAvatar(
+      personId: chat.contactId,
+      imageUpdatedAt: chat.contactImageUpdatedAt,
+      name: chat.contactName,
     );
-  }
-
-  String _getInitials(String name) {
-    final parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 }
 

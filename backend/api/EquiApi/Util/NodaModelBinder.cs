@@ -11,7 +11,7 @@ public sealed class NodaTimeModelBinderProvider : IModelBinderProvider
         {
             return new InstantModelBinder();
         }
-        
+
         return context.Metadata.ModelType == typeof(LocalDate)
         ? new LocalDateModelBinder()
         : null;
@@ -23,33 +23,33 @@ file abstract class NodaTimeModelBinder<T> : IModelBinder
     public Task BindModelAsync(ModelBindingContext bindingContext)
     {
         var valueProviderResult = bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
-        
+
         if (valueProviderResult == ValueProviderResult.None)
         {
             return Task.CompletedTask;
         }
-        
+
         string? dateString = valueProviderResult.FirstValue;
         if (string.IsNullOrWhiteSpace(dateString))
         {
             bindingContext.ModelState.TryAddModelError(bindingContext.ModelName, "Empty date");
-            
+
             return Task.CompletedTask;
         }
-        
+
         ParseResult<T> parseResult = Parse(dateString);
         if (!parseResult.Success)
         {
             bindingContext.ModelState.TryAddModelError(bindingContext.ModelName, "Invalid date format");
-            
+
             return Task.CompletedTask;
         }
-        
+
         bindingContext.Result = ModelBindingResult.Success(parseResult.Value);
-        
+
         return Task.CompletedTask;
     }
-    
+
     protected abstract ParseResult<T> Parse(string dateString);
 }
 

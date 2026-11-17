@@ -1,17 +1,24 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/services/device_connection_service.dart';
+import 'package:reiterappfrontend/services/measurement_service.dart';
 
 class LiveMeasurementResult {
   final Duration duration;
   final List<double> pressureData;
 
+  /// Die Aufnahmen des Messgeräts, leer bei einer Simulation
+  final List<List<double>> frames;
+
   LiveMeasurementResult({
     required this.duration,
     required this.pressureData,
+    this.frames = const [],
   });
 }
 
@@ -33,8 +40,8 @@ class LiveMeasurementScreen extends StatefulWidget {
 class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   static const int gridSize = 20;
   static const int outputSize = 300;
-  static const Color _accent = Color(0xFF6B4C9A);
-  static const Color _accentLight = Color(0xFFD4B5F5);
+  static const Color _accent = AppColors.primary;
+  static const Color _accentLight = AppColors.purple100;
 
   late final Stopwatch _stopwatch;
   Timer? _uiTimer;
@@ -45,11 +52,29 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   ui.Image? _currentFrame;
   final Random _rng = Random();
 
+  final DeviceConnectionService _connection = DeviceConnectionService();
+
+  /// True wenn die Werte vom Messgerät kommen, sonst läuft eine sichtbar markierte Simulation
+  late final bool _isLive = _connection.status == DeviceConnectionStatus.connected &&
+      !_connection.isSimulated;
+  StreamSubscription<List<double>>? _deviceFrames;
+  bool _hasNewFrame = false;
+
+  /// Alle 300 ms die neueste Aufnahme, wird mit der Teilmessung gespeichert
+  final List<List<double>> _recordedFrames = [];
+
   @override
   void initState() {
     super.initState();
     _basePattern = _generateBasePattern();
-    _currentData = List.from(_basePattern);
+    if (_isLive) {
+      _deviceFrames = _connection.frames.listen((frame) {
+        _currentData = frame;
+        _hasNewFrame = true;
+      });
+    } else {
+      _currentData = List.from(_basePattern);
+    }
     _stopwatch = Stopwatch()..start();
 
     _uiTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
@@ -68,6 +93,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     _stopwatch.stop();
     _uiTimer?.cancel();
     _frameTimer?.cancel();
+    _deviceFrames?.cancel();
     _currentFrame?.dispose();
     super.dispose();
   }
@@ -124,15 +150,23 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
   }
 
   void _updateFrame() async {
-    final noisy = List<double>.generate(400, (i) {
-      final base = _basePattern[i];
-      final noise = (_rng.nextDouble() - 0.5) * base * 0.3;
-      return max(0, base + noise);
-    });
+    final List<double> data;
+    if (_isLive) {
+      // bis zur ersten Aufnahme bleibt die Ladeanzeige stehen
+      if (!_hasNewFrame) return;
+      _hasNewFrame = false;
+      data = _currentData;
+      _recordedFrames.add(data);
+    } else {
+      data = List<double>.generate(400, (i) {
+        final base = _basePattern[i];
+        final noise = (_rng.nextDouble() - 0.5) * base * 0.3;
+        return max(0, base + noise);
+      });
+      _currentData = data;
+    }
 
-    _currentData = noisy;
-
-    final pixels = _renderPixels(noisy);
+    final pixels = _renderPixels(data);
     final image = await _pixelsToImage(pixels);
 
     if (mounted) {
@@ -238,11 +272,42 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     return '$minutes:$seconds';
   }
 
+  /// Woher die Werte kommen, eine Simulation darf nicht wie eine echte Messung aussehen
+  Widget _buildSourceHint() {
+    return ListenableBuilder(
+      listenable: _connection,
+      builder: (context, _) {
+        final lost = _isLive && _connection.status != DeviceConnectionStatus.connected;
+        final String text;
+        final Color color;
+        if (!_isLive) {
+          text = 'Simulation, es ist kein Messgerät verbunden';
+          color = AppColors.warning;
+        } else if (lost) {
+          text = 'Verbindung zum Messgerät verloren';
+          color = AppColors.error;
+        } else {
+          text = 'Live vom Messgerät';
+          color = AppColors.success;
+        }
+
+        return Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: color),
+        );
+      },
+    );
+  }
+
   void _stopMeasurement() {
     _stopwatch.stop();
     final result = LiveMeasurementResult(
       duration: _stopwatch.elapsed,
-      pressureData: List.from(_currentData),
+      pressureData: _recordedFrames.isEmpty
+          ? List.from(_currentData)
+          : MeasurementService.averageFrames(_recordedFrames),
+      frames: _recordedFrames,
     );
     Navigator.pop(context, result);
   }
@@ -253,7 +318,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
     final elapsed = _stopwatch.elapsed;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -269,10 +334,12 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: AppColors.textStrong,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    _buildSourceHint(),
+                    const SizedBox(height: 16),
 
                     // Heatmap
                     Container(
@@ -308,7 +375,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: null,
-                        backgroundColor: Colors.grey[200],
+                        backgroundColor: AppColors.borderSoft,
                         color: _accentLight,
                         minHeight: 6,
                       ),
@@ -318,7 +385,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
                       '${_formatDuration(elapsed)} min',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.textSoft,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -382,7 +449,7 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: AppColors.textSoft,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -391,13 +458,13 @@ class _LiveMeasurementScreenState extends State<LiveMeasurementScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
           ),
           child: Text(
             value,
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.black87,
+              color: AppColors.text,
             ),
           ),
         ),

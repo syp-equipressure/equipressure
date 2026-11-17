@@ -1,8 +1,10 @@
 ﻿namespace EquiApi.Persistence.Model;
 
-
 public class MeasurementDevice
 {
+    /// <summary>
+    ///     Serial number of the device, provided by the client
+    /// </summary>
     public required string Id { get; set; }
 
     public int OwnerId { get; set; }
@@ -12,18 +14,29 @@ public class MeasurementDevice
     public DeviceCategory Category { get; set; } = null!;
 
     public List<MeasurementGroup> MeasurementGroups { get; set; } = [];
+
+    /// <summary>
+    ///     Additional users of the device - the owner is not part of this list
+    /// </summary>
     public List<DeviceUser> Users { get; set; } = [];
 }
 
 public class DeviceCategory
 {
     public int Id { get; set; }
-    // TODO: Ask if that is the real meaning behind thsi
+
+    // TODO: confirm that this is the maximum number of users (excluding the owner) of a device
     public int NumOfAllowedPeople { get; set; }
+
     // TODO: enum for name?
     public required string Name { get; set; }
 
-    public List<MeasurementDevice> Devices = [];
+    /// <summary>
+    ///     Role the owner gets when claiming a device of this category (saddler or equestrian version)
+    /// </summary>
+    public RoleName Role { get; set; } = RoleName.Equestrian;
+
+    public List<MeasurementDevice> Devices { get; set; } = [];
 }
 
 public class DeviceUser

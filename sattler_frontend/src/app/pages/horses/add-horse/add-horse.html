@@ -1,0 +1,215 @@
+<div class="form-overlay" (click)="cancel()"></div>
+
+<div class="form-panel" role="dialog" aria-modal="true" [attr.aria-label]="horse() ? 'Pferd bearbeiten' : 'Neues Pferd hinzufügen'">
+  <div class="form-header">
+    <h2 class="form-title">{{ horse() ? 'Pferd bearbeiten' : 'Neues Pferd' }}</h2>
+    <button class="close-btn" (click)="cancel()" aria-label="Schließen">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+
+  <div class="form-body">
+
+
+
+    <div class="form-field">
+      <label class="form-label">Bild (optional)</label>
+      <label class="file-input-label" for="imageFile">
+        <span class="material-icons">upload</span>
+        Bild auswählen
+      </label>
+      <input
+        id="imageFile"
+        class="file-input-hidden"
+        type="file"
+        [accept]="imageFileTypes"
+        (change)="onFileSelected($event)"
+      />
+      @if (selectedImage(); as image) {
+        <p class="form-hint">{{ image.name }}</p>
+      }
+      @if (imageError()) {
+        <p class="form-error" role="alert">{{ imageError() }}</p>
+      }
+    </div>
+
+    <div class="form-field" [class.has-error]="errors()['name']">
+      <label class="form-label" for="horseName">Name *</label>
+      <input
+        id="horseName"
+        class="form-input"
+        type="text"
+        placeholder="z. B. Wolke"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+      />
+      @if (errors()['name']) {
+        <span class="form-error">{{ errors()['name'] }}</span>
+      }
+    </div>
+
+    <div class="form-field" [class.has-error]="errors()['breed']">
+      <label class="form-label" for="breed">Rasse *</label>
+      <input
+        id="breed"
+        class="form-input"
+        type="text"
+        placeholder="z. B. Hannoveraner"
+        list="supported-horse-breeds"
+        [ngModel]="breed()"
+        (ngModelChange)="onBreedChange($event)"
+      />
+      <datalist id="supported-horse-breeds">
+        @for (supportedBreed of supportedBreeds(); track supportedBreed) {
+          <option [value]="supportedBreed"></option>
+        }
+      </datalist>
+      @if (breedHint()) {
+        <p class="form-error" role="alert">{{ breedHint() }}</p>
+      }
+      @if (errors()['breed']) {
+        <span class="form-error">{{ errors()['breed'] }}</span>
+      }
+      @if (backendMode()) {
+        <span class="form-hint">Rasse aus der Liste auswählen, mehrere Rassen mit Komma trennen.</span>
+      }
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <span class="form-label" id="sex-label">Geschlecht</span>
+        <div class="sex-toggle" role="group" aria-labelledby="sex-label">
+          <button
+            type="button"
+            class="sex-option female"
+            [class.selected]="sex() === 'Weiblich'"
+            [attr.aria-pressed]="sex() === 'Weiblich'"
+            aria-label="Weiblich"
+            title="Weiblich"
+            (click)="sex.set('Weiblich')"
+          >
+            <span class="material-icons" aria-hidden="true">female</span>
+          </button>
+          <button
+            type="button"
+            class="sex-option male"
+            [class.selected]="sex() === 'Männlich'"
+            [attr.aria-pressed]="sex() === 'Männlich'"
+            aria-label="Männlich"
+            title="Männlich"
+            (click)="sex.set('Männlich')"
+          >
+            <span class="material-icons" aria-hidden="true">male</span>
+          </button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="birthDate">Geburtsdatum *</label>
+        <input
+          id="birthDate"
+          class="form-input"
+          type="date"
+          [max]="today"
+          [ngModel]="birthDate()"
+          (ngModelChange)="birthDate.set($event)"
+        />
+        @if (errors()['birthDate']) {
+          <span class="form-error">{{ errors()['birthDate'] }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['heightCm']">
+        <label class="form-label" for="heightCm">Stockmaß (cm) *</label>
+        <input
+          id="heightCm"
+          class="form-input"
+          type="number"
+          placeholder="z. B. 168"
+          min="100"
+          max="220"
+          [ngModel]="heightCm()"
+          (ngModelChange)="setNumber(heightCm.set.bind(heightCm), $event)"
+        />
+        @if (errors()['heightCm']) {
+          <span class="form-error">{{ errors()['heightCm'] }}</span>
+        }
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['weightKg']">
+        <label class="form-label" for="weightKg">Gewicht (kg) *</label>
+        <input
+          id="weightKg"
+          class="form-input"
+          type="number"
+          placeholder="z. B. 580"
+          min="50"
+          max="1200"
+          [ngModel]="weightKg()"
+          (ngModelChange)="setNumber(weightKg.set.bind(weightKg), $event)"
+        />
+        @if (errors()['weightKg']) {
+          <span class="form-error">{{ errors()['weightKg'] }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="street">Straße und Hausnummer</label>
+      <input
+        id="street"
+        class="form-input"
+        type="text"
+        placeholder="z. B. Reiterhof Sonnenhügel 5"
+        autocomplete="address-line1"
+        [ngModel]="street()"
+        (ngModelChange)="street.set($event)"
+      />
+    </div>
+
+    <div class="form-row">
+      <div class="form-field" [class.has-error]="errors()['address']">
+        <label class="form-label" for="postalCode">PLZ{{ backendMode() ? ' *' : '' }}</label>
+        <input
+          id="postalCode"
+          class="form-input"
+          type="text"
+          inputmode="numeric"
+          placeholder="z. B. 4050"
+          autocomplete="postal-code"
+          [ngModel]="postalCode()"
+          (ngModelChange)="postalCode.set($event)"
+        />
+      </div>
+
+      <div class="form-field" [class.has-error]="errors()['address']">
+        <label class="form-label" for="city">Ort{{ backendMode() ? ' *' : '' }}</label>
+        <input
+          id="city"
+          class="form-input"
+          type="text"
+          placeholder="z. B. Traun"
+          autocomplete="address-level2"
+          [ngModel]="city()"
+          (ngModelChange)="city.set($event)"
+        />
+      </div>
+    </div>
+    @if (errors()['address']) {
+      <span class="form-error">{{ errors()['address'] }}</span>
+    }
+
+  </div>
+
+  <div class="form-footer">
+    @if (saveError()) {
+      <p class="form-error" role="alert">{{ saveError() }}</p>
+    }
+    <button class="secondary-btn" (click)="cancel()" [disabled]="saving()">Abbrechen</button>
+    <button class="primary-btn" (click)="submit()" [disabled]="saving()">
+      <span class="material-icons">check</span>
+      {{ saving() ? 'Wird gespeichert …' : 'Speichern' }}
+    </button>
+  </div>
+</div>

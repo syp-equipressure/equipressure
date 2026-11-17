@@ -1,84 +1,92 @@
 ﻿using EquiApi.Persistence.Model;
 using Microsoft.EntityFrameworkCore;
-using OneOf.Types;
 
 namespace EquiApi.Persistence.Repositories;
 
-/// <summary>
-/// Provides direct data access to location entities, including cities and addresses.
-/// </summary>
 public interface ILocationRepository
 {
     /// <summary>
-    /// Retrieves a filtered list of cities/addresses.
+    ///     Gets the cities that are used by addresses, most used cities first
     /// </summary>
-    /// <param name="length">optional number of cities to return</param>
-    /// <param name="nameFilter">optional name filter for city name</param>
-    /// <returns>
-    /// <item><description><see cref="Success{T}"/> readonly collection of <see cref="Address"/> entities</description></item>
-    /// <item><description>or <see cref="NotFound"/> if no cities exist.</description></item>
-    /// </returns>
-    public ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter);
-    
+    /// <param name="length">Optional maximum number of cities to return</param>
+    /// <param name="nameFilter">Optional case-insensitive filter for the city name</param>
+    /// <returns>The matching cities</returns>
+    public ValueTask<IReadOnlyCollection<CityData>> GetCitiesAsync(int? length, string? nameFilter);
+
     /// <summary>
-    /// checks if address exists
+    ///     Gets an address
     /// </summary>
-    /// <param name="addressName">optional adressname</param>
-    /// <param name="plz">optional plz</param>
-    /// <param name="cityName">optional cityName</param>
-    /// <returns>
-    /// <item><description><see cref="bool"/> true if address exists, false otherwise</description></item>
-    /// </returns>
-    public ValueTask<bool> AddressExists(string? addressName, string plz, string cityName);
-    
+    /// <param name="addressId">The id of the address</param>
+    /// <returns>The address or null if it does not exist</returns>
+    public ValueTask<Address?> GetAddressByIdAsync(int addressId);
+
     /// <summary>
-    /// adds address to addressset
+    ///     Finds an address by its values, city name and address name are compared case-insensitive
     /// </summary>
-    /// <param name="address">address entity to be added</param>
+    /// <param name="addressName">Optional street and house number</param>
+    /// <param name="plz">The postal code</param>
+    /// <param name="cityName">The name of the city</param>
+    /// <returns>The tracked address or null if no matching address exists</returns>
+    public ValueTask<Address?> FindAddressAsync(string? addressName, string plz, string cityName);
+
+    /// <summary>
+    ///     Adds a new address
+    /// </summary>
+    /// <param name="address">The address to add</param>
     public void AddAddress(Address address);
 }
 
-public class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
-{ 
-    public async ValueTask<IReadOnlyCollection<Address>> GetCitiesAsync(int? length, string? nameFilter)
+internal sealed class LocationRepository(DbSet<Address> addressSet) : ILocationRepository
+{
+    public async ValueTask<IReadOnlyCollection<CityData>> GetCitiesAsync(int? length, string? nameFilter)
     {
-        var result = addressSet
-            .GroupBy(a => new { a.CityName, Plz = a.PLZ })
-            .Select(g => new
-            {
-                CityName = g.Key.CityName,
-                Plz = g.Key.Plz,
-                Count = g.Sum(a => a.Persons.Count + a.Horses.Count),
-                Representative = g.First()
-            });
+        IQueryable<Address> addresses = addressSet.AsNoTracking();
 
-        if (nameFilter != null)
+        if (!string.IsNullOrWhiteSpace(nameFilter))
         {
-            result = result.Where(g => g.CityName.ToLower().Contains(nameFilter.ToLower()));
+            string filter = nameFilter.ToLower();
+            addresses = addresses.Where(a => a.CityName.ToLower().Contains(filter));
         }
 
-        result = result.OrderBy(r => r.Count);
-
-        if (length != null)
+        // a city can have several addresses, so the usages (persons and horses) of all its addresses are summed up
+        var usagesPerAddress = addresses.Select(a => new
         {
-            result = result.Take(length.Value);
+            a.CityName,
+            a.PLZ,
+            Usages = a.Persons.Count + a.Horses.Count
+        });
+
+        var cities = usagesPerAddress.GroupBy(a => new { a.CityName, a.PLZ })
+                                     .Select(g => new { g.Key.CityName, g.Key.PLZ, Usages = g.Sum(a => a.Usages) })
+                                     .OrderByDescending(c => c.Usages)
+                                     .ThenBy(c => c.CityName)
+                                     .Select(c => new CityData(c.CityName, c.PLZ));
+
+        if (length.HasValue)
+        {
+            cities = cities.Take(length.Value);
         }
 
-        return await result.Select(r => r.Representative).ToListAsync();
+        return await cities.ToListAsync();
     }
 
-    public async ValueTask<bool> AddressExists(string? addressName, string plz, string cityName)
+    public async ValueTask<Address?> GetAddressByIdAsync(int addressId) =>
+        await addressSet.AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.Id == addressId);
+
+    public async ValueTask<Address?> FindAddressAsync(string? addressName, string plz, string cityName)
     {
-        return await addressSet.AsNoTracking().AnyAsync(a =>
-            a.CityName.ToLower() == cityName.ToLower() &&
-            a.PLZ.ToLower() == plz.ToLower() &&
-            a.AddressName == addressName);
+        string normalizedAddressName = addressName?.ToLower() ?? string.Empty;
+        string normalizedCityName = cityName.ToLower();
+
+        return await addressSet.FirstOrDefaultAsync(a => a.PLZ == plz
+                                                         && a.CityName.ToLower() == normalizedCityName
+                                                         && (a.AddressName ?? string.Empty).ToLower()
+                                                         == normalizedAddressName);
     }
 
     public void AddAddress(Address address)
     {
         addressSet.Add(address);
     }
-
 }
-

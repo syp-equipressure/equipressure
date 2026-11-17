@@ -1,0 +1,123 @@
+<app-page-header title="Startseite"></app-page-header>
+
+<main class="dashboard">
+  <section class="welcome">
+    <div class="welcome-copy">
+      <p class="eyebrow">Dein Arbeitsbereich</p>
+      <h2>Willkommen zurück, {{ customer().firstName }}.</h2>
+    </div>
+  </section>
+
+  <div class="dashboard-grid">
+    <div class="main-column">
+      <section class="panel devices-panel">
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">Verbindung</p>
+            <h2>Satteldruckmessgeräte</h2>
+          </div>
+          <a class="subtle-link" routerLink="/devices">Verwalten</a>
+        </header>
+        @for (device of devices(); track device.id) {
+          <div class="dashboard-device">
+            <span class="action-icon material-icons" aria-hidden="true">sensors</span>
+            <span class="dashboard-device-info">
+              <strong>{{ device.name }}</strong>
+              <small>Nr. {{ device.number }}@if (connection.isConnectedTo(device)) { · Verbunden }</small>
+            </span>
+            <button type="button" class="connect-button" [disabled]="connection.isConnectingTo(device)"
+              (click)="toggleConnection(device)">
+              @if (connection.isConnectedTo(device)) {
+                Trennen
+              } @else if (connection.isConnectingTo(device)) {
+                Verbinde …
+              } @else {
+                Verbinden
+              }
+            </button>
+          </div>
+        } @empty {
+          <p class="no-devices">Noch keine Geräte hinterlegt.</p>
+        }
+        @if (backendDeviceError()) {
+          <p class="bluetooth-notice" role="alert">{{ backendDeviceError() }}</p>
+        }
+        @if (backendProfileError()) {
+          <p class="bluetooth-notice" role="alert">{{ backendProfileError() }}</p>
+        }
+        @if (connection.error()) {
+          <p class="bluetooth-notice" role="alert">{{ connection.error() }}</p>
+        }
+      </section>
+
+      <section class="panel recent-panel">
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">Verlauf</p>
+            <h2>Zuletzt gemessen</h2>
+          </div>
+        </header>
+
+        <div class="recent-list">
+          @for (item of recentMeasurements(); track item.id) {
+            <a class="recent-row" [routerLink]="item.link" [queryParams]="{ measurementId: item.id }">
+              <span class="recent-info">
+                <strong>{{ item.horseName }}</strong>
+                <span>{{ item.ownerName }}</span>
+              </span>
+              <span class="recent-meta">
+                <strong>{{ item.date }}</strong>
+                @if (item.meanNcm2 !== null) {
+                  <span>Ø Druck {{ item.meanNcm2.toFixed(2).replace('.', ',') }} N/cm²</span>
+                } @else {
+                  <span>Keine Messdaten</span>
+                }
+              </span>
+            </a>
+          } @empty {
+            @if (recentLoading()) {
+              <div class="empty-state" role="status">
+                <span class="material-icons">hourglass_empty</span>
+                <strong>Messungen werden geladen …</strong>
+              </div>
+            } @else {
+            <div class="empty-state">
+              <span class="material-icons">analytics</span>
+              <strong>Noch keine Messungen</strong>
+              <span>Deine abgeschlossenen Messungen werden hier angezeigt.</span>
+            </div>
+            }
+          }
+        </div>
+      </section>
+    </div>
+
+    <aside class="panel actions-panel">
+      <p class="eyebrow">Schnellzugriff</p>
+      <h2>Was möchtest du tun?</h2>
+
+      <a class="action-link primary-link" routerLink="/new-measurement">
+        <span class="action-icon material-icons">add_circle_outline</span>
+        <span><strong>Messung starten</strong><small>Passform und Druckverteilung prüfen</small></span>
+        <span class="material-icons action-arrow">arrow_forward</span>
+      </a>
+      <a class="action-link" routerLink="/customers">
+        <span class="action-icon material-icons">people_outline</span>
+        <span><strong>Kundenverwaltung</strong><small>Kund*innen, Pferde und Messverläufe</small></span>
+        <span class="material-icons action-arrow">arrow_forward</span>
+      </a>
+      <a class="action-link" routerLink="/my-horses">
+        <span class="action-icon horse-action-icon">
+          <img src="/assets/horse-icon.svg" alt="" />
+        </span>
+        <span><strong>Meine Pferde</strong><small>Eigene Pferde und Messverläufe</small></span>
+        <span class="material-icons action-arrow">arrow_forward</span>
+      </a>
+      <a class="action-link" routerLink="/messages">
+        <span class="action-icon material-icons">chat_bubble_outline</span>
+        <span><strong>Nachrichten öffnen</strong><small>Mit deiner Kundschaft in Kontakt</small></span>
+        <span class="material-icons action-arrow">arrow_forward</span>
+      </a>
+    </aside>
+  </div>
+</main>

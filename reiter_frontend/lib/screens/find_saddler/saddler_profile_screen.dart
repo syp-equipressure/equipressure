@@ -1,11 +1,12 @@
+import 'package:reiterappfrontend/theme/app_colors.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:reiterappfrontend/widgets/person_avatar.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/saddler.dart';
-import '../../models/chat.dart';
 import '../../services/saddler_service.dart';
 import '../../services/chat_service.dart';
 import '../saddler_contact/chat_screen.dart';
@@ -13,7 +14,14 @@ import '../saddler_contact/chat_screen.dart';
 class SaddlerProfileScreen extends StatefulWidget {
   final Saddler saddler;
 
-  const SaddlerProfileScreen({super.key, required this.saddler});
+  /// Aus dem Chat geöffnet: "Chat" führt dann zurück statt einen zweiten Chat zu öffnen.
+  final bool openedFromChat;
+
+  const SaddlerProfileScreen({
+    super.key,
+    required this.saddler,
+    this.openedFromChat = false,
+  });
 
   @override
   State<SaddlerProfileScreen> createState() => _SaddlerProfileScreenState();
@@ -47,67 +55,37 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
     }
   }
 
-  Future<void> _startChat() async {
-    // Check if a chat with this saddler already exists
-    final chats = await _chatService.getChats();
-    Chat? existingChat;
-
-    for (final chat in chats) {
-      if (chat.saddler.id == _saddler.id) {
-        existingChat = chat;
-        break;
-      }
+  void _startChat() {
+    if (widget.openedFromChat) {
+      Navigator.pop(context);
+      return;
     }
-
-    if (existingChat != null) {
-      // Open existing chat
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(chat: existingChat!),
-          ),
-        );
-      }
-    } else {
-      // Create new chat
-      final newChat = Chat(
-        id: 'chat_${DateTime.now().millisecondsSinceEpoch}',
-        saddler: _saddler,
-        messages: [],
-        lastMessageTime: DateTime.now(),
-        lastMessagePreview: 'Neuer Chat',
-      );
-
-      await _chatService.addChat(newChat);
-
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(chat: newChat),
-          ),
-        );
-      }
-    }
+    // der Chat entsteht im Backend mit der ersten Nachricht
+    final chat = _chatService.chatWith(_saddler.id, _saddler.name);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(chat: chat),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textStrong),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
             icon: Icon(
               _saddler.isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: _saddler.isFavorite ? Colors.red : Colors.grey[600],
+              color: _saddler.isFavorite ? AppColors.error : AppColors.textSoft,
             ),
             onPressed: _toggleFavorite,
           ),
@@ -139,14 +117,21 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.green[50],
+              color: AppColors.successLight,
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.green[100]!,
+                color: AppColors.successLight,
                 width: 2,
               ),
             ),
-            child: _saddler.logoPath != null
+            child: _saddler.imageUpdatedAt != null
+                ? PersonAvatar(
+                    personId: _saddler.id,
+                    imageUpdatedAt: _saddler.imageUpdatedAt,
+                    name: _saddler.name,
+                    radius: 50,
+                  )
+                : _saddler.logoPath != null
                 ? ClipOval(
                     child: Image.asset(
                       _saddler.logoPath!,
@@ -156,7 +141,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
                 : Icon(
                     Icons.eco,
                     size: 50,
-                    color: Colors.green[400],
+                    color: AppColors.success,
                   ),
           ),
           const SizedBox(height: 16),
@@ -223,7 +208,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
               _saddler.description!,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: AppColors.text,
                 height: 1.5,
               ),
             ),
@@ -245,7 +230,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
         Icon(
           icon,
           size: 20,
-          color: Colors.grey[600],
+          color: AppColors.textSoft,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -253,7 +238,7 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isLink ? const Color(0xFF6B4C9A) : Colors.grey[700],
+              color: isLink ? AppColors.primary : AppColors.text,
               decoration: isLink ? TextDecoration.underline : null,
             ),
           ),
@@ -313,20 +298,20 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE53935),
+                                color: AppColors.error,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                border: Border.all(color: AppColors.surface, width: 2),
                               ),
                               child: const Icon(
                                 Icons.location_on,
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 size: 20,
                               ),
                             ),
                             CustomPaint(
                               size: const Size(10, 7),
                               painter: _MarkerTrianglePainter(
-                                color: const Color(0xFFE53935),
+                                color: AppColors.error,
                               ),
                             ),
                           ],
@@ -347,10 +332,10 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.shadow(0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -360,8 +345,8 @@ class _SaddlerProfileScreenState extends State<SaddlerProfileScreen> {
         child: ElevatedButton(
           onPressed: _startChat,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6B4C9A),
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
