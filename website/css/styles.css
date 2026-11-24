@@ -513,8 +513,19 @@ a { color: var(--primary); }
   font-size: 0.9375rem;
 }
 
-/* Button immer unten, auch wenn die Karten unterschiedlich lang sind */
-.plan .btn { margin-top: auto; }
+/* Hinweis immer unten, auch wenn die Karten unterschiedlich lang sind */
+.soon {
+  margin: auto 0 0;
+  padding: 12px;
+  border: 1px dashed var(--purple-300);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--primary);
+}
 
 @media (max-width: 760px) {
   .plans { grid-template-columns: 1fr; }
