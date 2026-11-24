@@ -173,3 +173,7 @@ document.getElementById('order-again').addEventListener('click', () => {
   renderSummary();
   showDone(false);
 });
+
+// ===== Footer =====
+document.getElementById('contact-link').href = `mailto:${ORDER_EMAIL}`;
+document.getElementById('year').textContent = String(new Date().getFullYear());

@@ -733,3 +733,39 @@ a { color: var(--primary); }
 .faq__item[open] summary::after { content: "–"; }
 
 .faq__item p { margin: 0; padding: 0 20px 18px; color: var(--text-soft); }
+
+/* ===== Footer ===== */
+.footer {
+  padding: 56px 0 24px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-soft);
+}
+
+.footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.footer__slogan { margin: 12px 0 0; font-weight: 500; color: var(--text-strong); }
+
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footer__links a { color: var(--text-soft); text-decoration: none; }
+.footer__links a:hover { color: var(--primary); }
+
+.footer__bottom {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.footer__bottom p { margin: 0; }
