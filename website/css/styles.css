@@ -509,6 +509,58 @@ a { color: var(--primary); }
   color: var(--primary) !important;
 }
 
+.partner {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  align-items: start;
+  gap: 32px;
+}
+
+.partner__card {
+  display: flex;
+  gap: 24px;
+  padding: 32px;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+.partner__card p { margin: 0 0 12px; color: var(--text-soft); }
+.partner__card p:last-child { margin: 0; }
+
+.partner__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.partner__name { margin: 0; font-size: 1.5rem; }
+
+.craft {
+  padding: 32px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+.craft h3 { margin: 0 0 16px; }
+
+.craft__list { display: grid; gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; color: var(--text-soft); }
+.craft__list strong { display: block; color: var(--text-strong); }
+
+.craft__goal {
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--primary);
+  font-weight: 500;
+}
+
 .cta { text-align: center; }
 .cta .section-title,
 .cta .lead { margin-inline: auto; }
@@ -516,11 +568,13 @@ a { color: var(--primary); }
 
 @media (max-width: 860px) {
   .story { grid-template-columns: 1fr; gap: 16px; }
+  .partner { grid-template-columns: 1fr; }
   .members { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 560px) {
   .members { grid-template-columns: 1fr; }
+  .partner__card { flex-direction: column; padding: 24px; }
 }
 
 /* ===== FAQ ===== */
