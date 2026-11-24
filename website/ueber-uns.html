@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Über uns · EquiPressure</title>
+  <link rel="icon" type="image/png" href="assets/img/icon.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a href="./" aria-label="EquiPressure, zur Startseite">
+        <img src="assets/img/logo.png" alt="EquiPressure" class="logo" width="600" height="181">
+      </a>
+
+      <button class="nav-toggle" type="button" aria-controls="nav" aria-expanded="false" aria-label="Menü öffnen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+
+      <nav class="nav" id="nav" aria-label="Hauptnavigation">
+        <ul class="nav__list">
+          <li><a href="./#ablauf">So funktioniert's</a></li>
+          <li><a href="./#reiter">Für wen</a></li>
+          <li><a href="./#preise">Preise</a></li>
+          <li><a href="./#faq">Fragen</a></li>
+          <li><a href="ueber-uns.html" aria-current="page">Über uns</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero hero--small">
+      <div class="container">
+        <p class="eyebrow">Über uns</p>
+        <h1 class="hero__title">Wer hinter <span class="accent">EquiPressure</span> steckt</h1>
+        <p class="lead">
+          Wir sind Schüler:innen der HTL Leonding und entwickeln EquiPressure gemeinsam
+          mit einer Sattlerin aus der Praxis.
+        </p>
+      </div>
+    </section>
+
+    <section class="section section--alt" id="geschichte">
+      <div class="container story">
+        <div>
+          <p class="eyebrow">Wie alles begann</p>
+          <h2 class="section-title">Eine Idee aus dem <span class="accent">Sattleralltag</span></h2>
+        </div>
+        <div class="story__text">
+          <p>
+            Die Idee kommt von Sophie Grüneis. Sie ist Sattlerin und misst den Satteldruck
+            bei ihren Kund:innen mit einem professionellen Gerät, das rund 10.000 € kostet.
+            Oft kommen Reiter:innen mit Sorgen zu ihr, und die Messung zeigt dann: Der Sattel passt.
+          </p>
+          <p>
+            Ihr Gedanke: Wenn Reiter:innen selbst messen könnten, würden sie sich unnötige Termine
+            sparen, und Sattler:innen könnten sich auf die Fälle konzentrieren, in denen wirklich
+            etwas angepasst werden muss. Mit dieser Idee kam sie an die HTL Leonding, und wir
+            haben das Projekt übernommen.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="team">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Team</p>
+          <h2 class="section-title">Sechs Köpfe, <span class="accent">eine Vision</span></h2>
+        </div>
+        <ul class="members">
+          <li class="member">
+            <img src="assets/img/team/lena.webp" width="240" height="240" loading="lazy" alt="">
+            <h3>Lena Graßauer</h3>
+            <p class="member__role">Teamleitung &amp; Frontend</p>
+            <p>Reitet selbst und hat das Projekt ins Rollen gebracht. Sie hält das Team zusammen und gestaltet die Oberflächen.</p>
+          </li>
+          <li class="member">
+            <img src="assets/img/team/almina.webp" width="240" height="240" loading="lazy" alt="">
+            <h3>Almina Silnovic</h3>
+            <p class="member__role">Frontend</p>
+            <p>Hat im Backend begonnen und entwickelt jetzt die Web-App für Sattler:innen mit Angular.</p>
+          </li>
+          <li class="member">
+            <img src="assets/img/team/flora.webp" width="240" height="240" loading="lazy" alt="">
+            <h3>Flora Dallinger</h3>
+            <p class="member__role">Backend</p>
+            <p>Bringt Erfahrung aus Data-Science-Praktika mit und kümmert sich um Datenbank und Messdaten.</p>
+          </li>
+          <li class="member">
+            <img src="assets/img/team/katharina.webp" width="240" height="240" loading="lazy" alt="">
+            <h3>Katharina Einzenberger</h3>
+            <p class="member__role">Backend</p>
+            <p>Entwickelt die Schnittstellen hinter den Apps und sorgt für Struktur im Code.</p>
+          </li>
+          <li class="member">
+            <img src="assets/img/team/jonas.webp" width="240" height="240" loading="lazy" alt="">
+            <h3>Jonas Pfeiffer</h3>
+            <p class="member__role">Hardware</p>
+            <p>Medizintechniker, baut den Prototyp der Sensor-Satteldecke, der die Daten an die App überträgt.</p>
+          </li>
+          <li class="member">
+            <img src="assets/img/team/christoph.webp" width="240" height="240" loading="lazy" alt="">
+            <h3>Christoph Fehleisen</h3>
+            <p class="member__role">Hardware</p>
+            <p>Medizintechniker, entwickelt die technischen Komponenten des Messgeräts mit.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--alt" id="roadmap">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Roadmap</p>
+          <h2 class="section-title">Wo geht's <span class="accent">hin?</span></h2>
+        </div>
+        <ol class="roadmap">
+          <li class="roadmap__item roadmap__item--now">
+            <p class="roadmap__when">Heute</p>
+            <h3>Prototyp &amp; Feedback</h3>
+            <p>Reiter-App und Sattler-Web-App laufen, die Sensor-Satteldecke entsteht als Prototyp.</p>
+          </li>
+          <li class="roadmap__item">
+            <p class="roadmap__when">2027</p>
+            <h3>Fertigstellung &amp; Testphase</h3>
+            <p>Hardware und Apps werden verbunden und mit echten Pferden getestet.</p>
+          </li>
+          <li class="roadmap__item">
+            <p class="roadmap__when">2027</p>
+            <h3>Marktstart</h3>
+            <p>Projektabschluss an der Schule und Start als Unternehmen.</p>
+          </li>
+          <li class="roadmap__item">
+            <p class="roadmap__when">2028</p>
+            <h3>DACH-Raum</h3>
+            <p>Nach Österreich folgen Deutschland und die Schweiz.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="kontakt">
+      <div class="container cta">
+        <h2 class="section-title">Steig in den Sattel und werde Teil von <span class="accent">EquiPressure</span></h2>
+        <p class="lead">Du hast Fragen, Feedback oder willst EquiPressure testen? Schreib uns.</p>
+        <a class="btn btn--lg" href="mailto:equipressure.app@gmail.com">equipressure.app@gmail.com</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <img src="assets/img/logo.png" alt="EquiPressure" class="logo" width="600" height="181" loading="lazy">
+        <p class="footer__slogan">Sieh, was dein Pferd <span class="accent">spürt.</span></p>
+      </div>
+      <ul class="footer__links">
+        <li><a href="mailto:equipressure.app@gmail.com">Kontakt</a></li>
+        <li><a href="impressum.html">Impressum</a></li>
+      </ul>
+    </div>
+    <div class="container footer__bottom">
+      <p>© <span id="year">2026</span> EquiPressure · Ein Schulprojekt</p>
+    </div>
+  </footer>
+
+</body>
+</html>
