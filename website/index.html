@@ -11,10 +11,27 @@
 <body>
 
   <header class="header">
-    <a href="#top"><img src="assets/img/logo.png" alt="EquiPressure" class="logo"></a>
-    <nav>
-      <!-- TODO: Navigation -->
-    </nav>
+    <div class="container header__inner">
+      <a href="#top" aria-label="EquiPressure, zum Seitenanfang">
+        <img src="assets/img/logo.png" alt="EquiPressure" class="logo" width="600" height="181">
+      </a>
+
+      <button class="nav-toggle" type="button" aria-controls="nav" aria-expanded="false" aria-label="Menü öffnen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+
+      <nav class="nav" id="nav" aria-label="Hauptnavigation">
+        <ul class="nav__list">
+          <li><a href="#loesung">Lösung</a></li>
+          <li><a href="#ablauf">So funktioniert's</a></li>
+          <li><a href="#preise">Preise</a></li>
+          <li><a href="#team">Team</a></li>
+        </ul>
+        <a class="btn" href="#vorbestellen">Vorbestellen</a>
+      </nav>
+    </div>
   </header>
 
   <main id="top">
