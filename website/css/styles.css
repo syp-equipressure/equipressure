@@ -92,7 +92,7 @@ body {
 }
 
 h1, h2, h3 { color: var(--text-strong); line-height: 1.2; font-weight: 600; }
-img { max-width: 100%; display: block; }
+img { max-width: 100%; height: auto; display: block; }
 a { color: var(--primary); }
 
 .container { width: min(1140px, 100% - 32px); margin-inline: auto; }
