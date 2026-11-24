@@ -288,6 +288,7 @@ a { color: var(--primary); }
 }
 .btn:hover { background: var(--primary-dark); }
 .btn:focus-visible { outline: 3px solid var(--purple-300); outline-offset: 2px; }
+.btn--block { display: block; width: 100%; text-align: center; }
 .btn--lg { padding: 14px 28px; font-size: 1.0625rem; }
 
 .btn--light { background: var(--primary-light); color: var(--primary); }
@@ -467,4 +468,49 @@ a { color: var(--primary); }
 
 @media (max-width: 720px) {
   .compare { grid-template-columns: 1fr; }
+}
+
+/* ===== Preise ===== */
+.plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+}
+
+.plan--highlight {
+  border: 2px solid var(--primary);
+  background: var(--purple-50);
+}
+
+.plan__title { margin: 0 0 16px; font-size: 1.25rem; }
+
+.plan__price { margin: 0; color: var(--text-soft); }
+.plan__amount { font-size: 2rem; font-weight: 600; color: var(--text-strong); }
+.plan__note { margin: 4px 0 0; font-size: 0.9375rem; color: var(--text-muted); }
+
+.plan .checklist { margin-bottom: 24px; }
+
+.plan__extras {
+  margin: 0 0 24px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  font-size: 0.9375rem;
+}
+
+/* Button immer unten, auch wenn die Karten unterschiedlich lang sind */
+.plan .btn { margin-top: auto; }
+
+@media (max-width: 760px) {
+  .plans { grid-template-columns: 1fr; }
 }
