@@ -240,6 +240,27 @@ a { color: var(--primary); }
 }
 
 /* ===== Bausteine ===== */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 32px;
+}
+
+.icon-box {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  border: 2px solid var(--text-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-strong);
+}
+.icon-box svg { width: 28px; height: 28px; }
+
+.feature h3 { margin: 0 0 8px; font-size: 1.125rem; }
+.feature p { margin: 0; color: var(--text-soft); }
+
 .btn {
   display: inline-block;
   padding: 10px 20px;
