@@ -430,3 +430,41 @@ a { color: var(--primary); }
 }
 
 .stat__unit { color: var(--text-soft); }
+
+/* ===== Mehrwert ===== */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.compare__col {
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.compare__col h3 { margin: 0; color: var(--text-soft); }
+.compare__col .checklist { margin-top: 20px; }
+
+.compare__col--highlight {
+  border: 2px solid var(--primary);
+  background: var(--purple-50);
+}
+.compare__col--highlight h3 { color: var(--primary); }
+
+.dashlist {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-soft);
+}
+.dashlist li { padding-left: 34px; position: relative; }
+.dashlist li::before { content: "–"; position: absolute; left: 6px; }
+
+@media (max-width: 720px) {
+  .compare { grid-template-columns: 1fr; }
+}
