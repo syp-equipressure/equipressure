@@ -4,10 +4,12 @@ Statische Website (HTML, CSS, JS) zur Vorstellung von EquiPressure.
 
 == Lokal ansehen
 
+Braucht nur Node.js, es wird nichts installiert.
+
 [source,bash]
 ----
 cd website
-python3 -m http.server 8000
+npm start
 # http://localhost:8000
 ----
 

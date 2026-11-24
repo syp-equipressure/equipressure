@@ -1,0 +1,8 @@
+{
+  "name": "equipressure-website",
+  "private": true,
+  "description": "Statische Verkaufswebsite von EquiPressure",
+  "scripts": {
+    "start": "npx --yes serve@14.2.6 --listen 8000 ."
+  }
+}
