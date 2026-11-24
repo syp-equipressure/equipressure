@@ -488,4 +488,89 @@ Patent rennt ja aus, wir könnten uns mit Medilogic zusammenreden und ihnen anbi
 * der Sattler kann keine User zu seinem Gerät hinzufügen, ist das gewollt?
 
 
+== 2026-11-24 Sendance
+.Teilnehmer
+[%collapsible]
+====
+|===
+|anwesend | |
+
+|Vorname
+|Nachname
+|Klasse
+
+
+| Daniela
+| Sendance
+
+| Lena
+| Graßauer
+| 5AHIF
+
+| Flora
+| Dallinger
+| 5AHIF
+
+| Katharina
+| Einzenberger
+| 5AHIF
+
+| Almina
+| Silnovic
+| 5AHIF
+|===
+====
+.Ort und Zeit
+[%collapsible]
+====
+[cols=2*]
+|===
+|Ort
+|Raum E11
+
+|Datum
+|Di. 24/11/2026
+
+|Dauer
+|10:00 -
+|===
+====
+
+=== Besprochenes
+* EquiPressure Pitch
+
+=== Pitch
+* zu schnell eingestiegen
+* Präsi per Mail schicken für Geschäftsführung und der Kundin
+* einbauen, dass es kein Sattel ist sondern ein Messgerät/Messtool 
+
+=== Sendance
+* Daniela ist Gründerin
+* 5 1/2 Jahre seit Gründung
+* Sensormatrix in dehnbaren Materialien beliebig angereiht
+* Auslesegerät mit Bluetooth GAT-Protokoll und Flash-Speicher
+* Drucksensoren werden kalibriert, messen ADC Wert und messen Spannungskurve
+* sie sind die Technologieprovider, nicht die Hersteller der Endprodukte
+* sie glaubt dass ihre Technologie gut dafür geignet ist
+* 40x25 cm ist die maximale Größe die sie grade bauen können, 64 Sensoren 8x8 Matrix pro Matte 
+** 1,5-2 cm Abstand zwischen den Sensoren, man kann aber auch in speziellen Gebieten enger Anliegen
+** man könnte 2 Sensormatten in die Satteldecke legen
+* 2mm EVA Schaumstoff mit dem sie arbeiten, wäre ein erster Schritt für den Prototypen
+* entweder es wird am Flash gespeichert (und beim nächsten Verbinden in die App geladen) oder es wird mit Bluetooth live in die App übertragen
+* SDL-File vom Pferd könnte man reinladen?
+* Butterfly Diagramm für Gandanalyse beim Fuß, könnte man für 4 Füße machen bei Pferden
+* 3,5mm Durchmesser oder 7mm Durchmesser Sensoren; 7mm ist teurer weil mehr Kupfer
+
+=== Organisatorisch
+* wir brauchen externen Hardware-Partner der die Satteldecke produziert
+* wir würden Rabatt bekommen, aber sie können uns keinen Prototypen gratis zur Verfügung stellen, weil sie selber ein Startup sind
+* sie kann uns mit Kunde von ihr in Kontakt bringen, die sich mit Hufdruck beschäftigt
+* 1000 Stück mit je 20 Sensoren => 50/60 Euro pro Matte
+** 1000 Stück mit je 64 Sensoren => 200 Euro pro Matte
+** Prototyp weils selbstgebaut ist etc. bei ca. 600 Euro pro Matte
+** 250€ Designkosten am Anfang 
+** 100€ im Monat Cloud-Zugang zum Auslesen
+
+=== Satteldecke
+* man kann auch überlegen ob man 2 Streifen macht mit weniger Sensoren, damits weniger kostet
 
