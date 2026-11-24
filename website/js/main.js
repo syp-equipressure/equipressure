@@ -22,3 +22,6 @@ nav.addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') setNavOpen(false);
 });
+
+// ===== Footer =====
+document.getElementById('year').textContent = String(new Date().getFullYear());
