@@ -23,7 +23,7 @@ npm start
 |Startseite: Hero, Warum EquiPressure, Ablauf, Für Reiter:innen und Sattler:innen, Preise, FAQ
 
 |`ueber-uns.html`
-|Geschichte, Team und Roadmap
+|Geschichte, Team und Partnerin
 
 |`impressum.html`
 |Impressum (Anschrift fehlt noch, siehe TODO)
