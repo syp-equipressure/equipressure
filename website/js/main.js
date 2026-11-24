@@ -54,3 +54,49 @@ document.querySelectorAll('a[data-plan]').forEach((link) => {
 });
 
 updatePlanFields();
+
+// ===== Vorbestellung: Übersicht =====
+const PLANS = {
+  reiter: { name: 'Messgerät mit Reiter-App', price: 'auf Anfrage' },
+  sattler: { name: 'Messgerät mit Sattler-Web-App', price: 'auf Anfrage' },
+};
+
+function count(name) {
+  const value = Number.parseInt(orderForm.elements[name].value, 10);
+  return Number.isNaN(value) ? 0 : value;
+}
+
+// Positionen der Vorbestellung als [Bezeichnung, Wert]
+function orderLines() {
+  const plan = selectedPlan();
+  const lines = [[`${count('devices')} × ${PLANS[plan].name}`, PLANS[plan].price]];
+
+  if (plan === 'reiter') {
+    if (count('extraHorses') > 0) lines.push([`${count('extraHorses')} × zusätzlicher Pferdeplatz`, 'auf Anfrage']);
+    if (count('extraRiders') > 0) lines.push([`${count('extraRiders')} × zusätzlicher Reiterplatz`, 'auf Anfrage']);
+    if (orderForm.elements.extraMeasurements.checked) lines.push(['Zusätzliche Messungen', 'auf Anfrage']);
+    lines.push(['Reiter-App', 'inklusive']);
+  } else {
+    lines.push(['Sattler-Web-App', '20 € / Monat']);
+  }
+  return lines;
+}
+
+const summaryList = document.getElementById('summary-list');
+
+function renderSummary() {
+  summaryList.replaceChildren(...orderLines().map(([label, value]) => {
+    const li = document.createElement('li');
+    const left = document.createElement('span');
+    const right = document.createElement('span');
+    left.textContent = label;
+    right.textContent = value;
+    li.append(left, right);
+    return li;
+  }));
+}
+
+orderForm.addEventListener('input', renderSummary);
+orderForm.addEventListener('change', renderSummary);
+document.querySelectorAll('a[data-plan]').forEach((link) => link.addEventListener('click', renderSummary));
+renderSummary();
