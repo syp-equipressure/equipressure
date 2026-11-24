@@ -74,7 +74,7 @@
     --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.18);
     --shadow-elev: 0 12px 32px rgba(0, 0, 0, 0.36);
 
-    --logo-filter: invert(1);
+    --logo-filter: brightness(0) invert(1);
   }
 }
 
