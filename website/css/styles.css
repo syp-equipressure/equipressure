@@ -702,3 +702,34 @@ a { color: var(--primary); }
 @media (max-width: 860px) {
   .team { grid-template-columns: 1fr; }
 }
+
+/* ===== FAQ ===== */
+.faq { display: grid; gap: 12px; max-width: 820px; }
+
+.faq__item {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.faq__item summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  font-weight: 600;
+  color: var(--text-strong);
+  cursor: pointer;
+  list-style: none;
+}
+.faq__item summary::-webkit-details-marker { display: none; }
+
+.faq__item summary::after {
+  content: "+";
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--primary);
+}
+.faq__item[open] summary::after { content: "–"; }
+
+.faq__item p { margin: 0; padding: 0 20px 18px; color: var(--text-soft); }
