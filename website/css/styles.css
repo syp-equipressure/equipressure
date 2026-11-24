@@ -639,3 +639,9 @@ a { color: var(--primary); }
   color: var(--text-muted);
 }
 .footer__bottom p { margin: 0; }
+
+/* ===== Rechtliches ===== */
+.legal { max-width: 720px; }
+.legal__intro { margin: 0 0 32px; color: var(--text-soft); }
+.legal h2 { margin: 32px 0 8px; font-size: 1.125rem; }
+.legal p { margin: 0; }
