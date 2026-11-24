@@ -480,6 +480,12 @@ a { color: var(--primary); }
 }
 .story__text p { margin: 0 0 16px; font-size: 1.0625rem; }
 .story__text p:last-child { margin: 0; }
+.story__vision {
+  margin-top: 24px !important;
+  font-size: 1.25rem !important;
+  font-weight: 600;
+  color: var(--primary);
+}
 
 .members {
   display: grid;
