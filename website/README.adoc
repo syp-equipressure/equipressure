@@ -10,3 +10,35 @@ cd website
 python3 -m http.server 8000
 # http://localhost:8000
 ----
+
+== Aufbau
+
+[cols="1,3"]
+|===
+|Datei |Inhalt
+
+|`index.html`
+|Die ganze Seite: Hero, Problem, Lösung, Ablauf, Zielgruppen, Messung, Mehrwert, Preise, Vorbestellung, Team, FAQ
+
+|`css/styles.css`
+|Farben und Stil wie in Reiter-App und Sattler-Frontend, inklusive Dark Mode
+
+|`js/main.js`
+|Handy-Menü und Vorbestellung (Paketauswahl, Übersicht, Absenden)
+
+|`js/config.js`
+|Einstellungen für die Vorbestellung
+
+|`assets/img/`
+|Logo, App-Screenshots und Team-Avatare aus der Präsentation
+|===
+
+== Vorbestellung
+
+Über die Website wird nichts bezahlt, Vorbestellungen sind kostenlos und unverbindlich.
+Wohin sie gehen, steht in `js/config.js`:
+
+* `endpoint` leer: Das Formular öffnet das E-Mail-Programm mit der fertigen Vorbestellung an `email`.
+* `endpoint` gesetzt: Die Vorbestellung wird als JSON per `POST` an diese URL geschickt.
+
+Die Preise stehen direkt in `index.html` (Abschnitt `#preise`) und in `js/main.js` (`PLANS`).
