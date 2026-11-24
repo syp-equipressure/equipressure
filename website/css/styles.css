@@ -113,7 +113,7 @@ a { color: var(--primary); }
 .section-title {
   margin: 0 0 16px;
   font-size: clamp(1.75rem, 4vw, 2.5rem);
-  max-width: 22ch;
+  max-width: 28ch;
 }
 
 .accent { color: var(--primary); }
@@ -126,6 +126,11 @@ a { color: var(--primary); }
 }
 
 .section-head { margin-bottom: 48px; }
+
+@media (max-width: 600px) {
+  .section { padding: 64px 0; }
+  .section-head { margin-bottom: 32px; }
+}
 
 /* ===== Header ===== */
 .header {
@@ -219,7 +224,7 @@ a { color: var(--primary); }
 
 .hero__title {
   margin: 0 0 20px;
-  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-size: clamp(2.125rem, 6vw, 4rem);
   letter-spacing: -0.01em;
 }
 
