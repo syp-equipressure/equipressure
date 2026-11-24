@@ -291,6 +291,121 @@
       </div>
     </section>
 
+    <section class="section section--alt" id="vorbestellen">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Vorbestellen</p>
+          <h2 class="section-title">Sichere dir dein <span class="accent">EquiPressure</span></h2>
+          <p class="lead">
+            Die Vorbestellung ist kostenlos und unverbindlich. Wir melden uns bei dir mit dem
+            genauen Preis und dem Liefertermin. Bezahlt wird erst, wenn du zusagst.
+          </p>
+        </div>
+
+        <div class="order">
+          <form class="order__form" id="order-form">
+            <fieldset class="order__step">
+              <legend><span class="order__num">1</span> Paket wählen</legend>
+              <div class="choice-grid">
+                <label class="choice">
+                  <input type="radio" name="plan" value="reiter" required checked>
+                  <span class="choice__body">
+                    <strong>Reiter:innen</strong>
+                    <span>Messgerät mit Reiter-App</span>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="radio" name="plan" value="sattler" required>
+                  <span class="choice__body">
+                    <strong>Sattler:innen</strong>
+                    <span>Messgerät mit Sattler-Web-App, 20 € / Monat</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="order__step">
+              <legend><span class="order__num">2</span> Ausstattung</legend>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Anzahl Messgeräte</span>
+                  <input type="number" name="devices" min="1" max="20" value="1" required>
+                </label>
+                <label class="field" data-for="reiter">
+                  <span>Zusätzliche Pferdeplätze</span>
+                  <input type="number" name="extraHorses" min="0" max="50" value="0">
+                </label>
+                <label class="field" data-for="reiter">
+                  <span>Zusätzliche Reiterplätze</span>
+                  <input type="number" name="extraRiders" min="0" max="50" value="0">
+                </label>
+                <label class="field" data-for="sattler" hidden>
+                  <span>Name der Sattlerei</span>
+                  <input type="text" name="company" autocomplete="organization">
+                </label>
+              </div>
+              <label class="check" data-for="reiter">
+                <input type="checkbox" name="extraMeasurements">
+                <span>Ich interessiere mich für zusätzliche Messungen</span>
+              </label>
+            </fieldset>
+
+            <fieldset class="order__step">
+              <legend><span class="order__num">3</span> Deine Daten</legend>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Vorname</span>
+                  <input type="text" name="firstName" autocomplete="given-name" required>
+                </label>
+                <label class="field">
+                  <span>Nachname</span>
+                  <input type="text" name="lastName" autocomplete="family-name" required>
+                </label>
+                <label class="field">
+                  <span>E-Mail</span>
+                  <input type="email" name="email" autocomplete="email" required>
+                </label>
+                <label class="field">
+                  <span>Telefon <em>(optional)</em></span>
+                  <input type="tel" name="phone" autocomplete="tel">
+                </label>
+                <label class="field">
+                  <span>PLZ</span>
+                  <input type="text" name="zip" autocomplete="postal-code" inputmode="numeric" required>
+                </label>
+                <label class="field">
+                  <span>Ort</span>
+                  <input type="text" name="city" autocomplete="address-level2" required>
+                </label>
+                <label class="field field--wide">
+                  <span>Nachricht <em>(optional)</em></span>
+                  <textarea name="message" rows="3"></textarea>
+                </label>
+              </div>
+              <label class="check">
+                <input type="checkbox" name="consent" required>
+                <span>Ich bin einverstanden, dass meine Angaben verwendet werden, um meine Vorbestellung zu bearbeiten und mich zu kontaktieren.</span>
+              </label>
+            </fieldset>
+          </form>
+
+          <aside class="order__summary" aria-labelledby="summary-title">
+            <h3 id="summary-title">Deine Vorbestellung</h3>
+            <ul class="summary-list" id="summary-list"></ul>
+            <p class="summary-note">Die Vorbestellung ist kostenlos und unverbindlich.</p>
+            <button class="btn btn--lg btn--block" type="submit" form="order-form">Unverbindlich vorbestellen</button>
+            <p class="form-status" id="order-status" role="status" aria-live="polite"></p>
+          </aside>
+
+          <div class="order__done card" id="order-done" hidden tabindex="-1">
+            <h3>Danke für deine Vorbestellung!</h3>
+            <p id="order-done-text"></p>
+            <button class="btn btn--light" type="button" id="order-again">Noch eine Vorbestellung</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- TODO: weitere Abschnitte -->
   </main>
 
