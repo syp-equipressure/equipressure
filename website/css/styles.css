@@ -393,6 +393,11 @@ a { color: var(--primary); }
 }
 .phones img:nth-child(2) { width: 38%; margin-inline: -4%; position: relative; z-index: 1; }
 
+.browser img {
+  width: 100%;
+  filter: drop-shadow(0 18px 30px rgba(64, 51, 107, 0.18));
+}
+
 @media (max-width: 860px) {
   .split { grid-template-columns: 1fr; gap: 40px; }
   .split--reverse > :first-child { order: 0; }
