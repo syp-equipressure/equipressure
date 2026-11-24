@@ -100,3 +100,76 @@ orderForm.addEventListener('input', renderSummary);
 orderForm.addEventListener('change', renderSummary);
 document.querySelectorAll('a[data-plan]').forEach((link) => link.addEventListener('click', renderSummary));
 renderSummary();
+
+// ===== Vorbestellung: Absenden =====
+const orderSummary = document.querySelector('.order__summary');
+const orderStatus = document.getElementById('order-status');
+const orderDone = document.getElementById('order-done');
+const orderDoneText = document.getElementById('order-done-text');
+const { email: ORDER_EMAIL, endpoint: ORDER_ENDPOINT } = window.ORDER_CONFIG;
+
+function orderText(data, lines) {
+  const contact = [
+    `Name: ${data.firstName} ${data.lastName}`,
+    data.company ? `Sattlerei: ${data.company}` : '',
+    `E-Mail: ${data.email}`,
+    data.phone ? `Telefon: ${data.phone}` : '',
+    `Ort: ${data.zip} ${data.city}`,
+  ].filter(Boolean);
+
+  return [
+    'Vorbestellung über equipressure.com',
+    '',
+    ...lines.map(([label, value]) => `- ${label}: ${value}`),
+    '',
+    ...contact,
+    data.message ? `\nNachricht:\n${data.message}` : '',
+  ].join('\n');
+}
+
+async function sendOrder(data, lines) {
+  if (ORDER_ENDPOINT) {
+    const response = await fetch(ORDER_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, lines }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return `Wir haben deine Vorbestellung erhalten und melden uns bei dir unter ${data.email}.`;
+  }
+
+  const subject = `Vorbestellung: ${PLANS[data.plan].name}`;
+  window.location.href = `mailto:${ORDER_EMAIL}`
+    + `?subject=${encodeURIComponent(subject)}`
+    + `&body=${encodeURIComponent(orderText(data, lines))}`;
+  return 'Dein E-Mail-Programm hat sich mit deiner Vorbestellung geöffnet. '
+    + `Schick die E-Mail noch ab, dann melden wir uns bei dir unter ${data.email}.`;
+}
+
+function showDone(open) {
+  orderForm.hidden = open;
+  orderSummary.hidden = open;
+  orderDone.hidden = !open;
+}
+
+orderForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  orderStatus.textContent = '';
+
+  const data = Object.fromEntries(new FormData(orderForm));
+  try {
+    orderDoneText.textContent = await sendOrder(data, orderLines());
+    showDone(true);
+    orderDone.focus();
+  } catch {
+    orderStatus.textContent = 'Das hat leider nicht geklappt. Bitte versuch es noch einmal '
+      + `oder schreib uns an ${ORDER_EMAIL}.`;
+  }
+});
+
+document.getElementById('order-again').addEventListener('click', () => {
+  orderForm.reset();
+  updatePlanFields();
+  renderSummary();
+  showDone(false);
+});
