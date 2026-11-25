@@ -1,0 +1,306 @@
+@use '../../styles/theme' as t;
+@use './stable-pin';
+
+$control-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+app-stable-map {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  min-height: 360px;
+}
+
+.stable-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: t.$bg-panel;
+}
+
+.stable-map-status {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 500;
+  padding: 6px 12px;
+  border: 1px solid t.$border;
+  border-radius: t.$radius-pill;
+  background: t.$bg-card;
+  color: t.$text-soft;
+  font-size: 12px;
+  transform: translateX(-50%);
+}
+
+// ── Buttons (wie in der Reiter-App) ──────────────────────────────────────────
+
+.stable-map-tools {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 500;
+  display: grid;
+  gap: 8px;
+}
+
+.map-square-button,
+.map-round-button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: #fff;
+  box-shadow: $control-shadow;
+  color: #2b2b2b;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    color: t.$purple-600;
+  }
+
+  &:focus-visible {
+    outline: 3px solid t.$purple-300;
+    outline-offset: 2px;
+  }
+}
+
+.map-square-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+
+  .material-icons {
+    font-size: 22px;
+  }
+
+  &.is-active {
+    background: t.$purple-500;
+    color: #fff;
+  }
+}
+
+.stable-map-nav {
+  position: absolute;
+  bottom: 28px;
+  left: 14px;
+  z-index: 500;
+  display: grid;
+  gap: 12px;
+}
+
+.map-round-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+
+  .material-icons {
+    font-size: 24px;
+  }
+}
+
+// Zoom-Buttons von Leaflet im selben Stil
+.leaflet-touch .leaflet-bar,
+.leaflet-bar {
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: $control-shadow;
+
+  a {
+    width: 40px;
+    height: 40px;
+    color: #2b2b2b;
+    line-height: 40px;
+  }
+}
+
+.leaflet-top.leaflet-left {
+  top: 2px;
+  left: 2px;
+}
+
+// ── Karte mit der Kundschaft eines Stalls ────────────────────────────────────
+
+.stable-card {
+  position: absolute;
+  right: 14px;
+  bottom: 24px;
+  left: 14px;
+  z-index: 600;
+  display: flex;
+  overflow: hidden;
+  max-width: 520px;
+  max-height: min(300px, calc(100% - 48px));
+  flex-direction: column;
+  border-radius: 16px;
+  background: t.$bg-card;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: stable-card-in 0.18s ease-out;
+}
+
+@keyframes stable-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stable-card {
+    animation: none;
+  }
+}
+
+.stable-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: t.$purple-50;
+}
+
+.stable-card-icon {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: t.$purple-500;
+
+  .stable-pin-horse {
+    top: 18%;
+    left: 18%;
+    width: 64%;
+  }
+}
+
+.stable-card-title {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+
+  strong {
+    overflow: hidden;
+    color: t.$text-strong;
+    font-size: 16px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: t.$text-soft;
+    font-size: 13px;
+  }
+}
+
+.stable-card-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: t.$text-soft;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: t.$text-strong;
+  }
+}
+
+.stable-card-list {
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+
+  li {
+    position: relative;
+  }
+
+  // Trennlinie erst ab dem Text, wie in der Reiter-App
+  li + li::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 68px;
+    border-top: 1px solid t.$border-soft;
+    content: '';
+  }
+}
+
+.stable-card-customer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    background: t.$bg-page;
+
+    .stable-card-arrow {
+      color: t.$purple-500;
+    }
+  }
+}
+
+.stable-card-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: t.$purple-50;
+  color: t.$purple-600;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stable-card-text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+
+  strong {
+    color: t.$text-strong;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  small {
+    color: t.$text-soft;
+    font-size: 12px;
+  }
+}
+
+.stable-card-arrow {
+  color: t.$text-muted;
+  font-size: 20px;
+}
+
+// ── Vollbild über das ganze Fenster (siehe StableMapComponent) ───────────────
+
+.is-fullscreen {
+  position: fixed !important;
+  inset: 0;
+  z-index: 2000;
+  border-radius: 0 !important;
+}
+
+app-stable-map.is-fullscreen {
+  min-height: 100vh;
+}
+
+body.stable-map-fullscreen-open {
+  overflow: hidden;
+}

@@ -1,0 +1,78 @@
+<div class="stable-map" #mapElement role="region" aria-label="Karte der Ställe"></div>
+
+<!-- oben rechts: eckige Buttons wie in der Reiter-App -->
+<div class="stable-map-tools">
+  <button
+    type="button"
+    class="map-square-button"
+    [attr.aria-label]="isFullscreen() ? 'Vollbild beenden' : 'Vollbild'"
+    [title]="isFullscreen() ? 'Vollbild beenden' : 'Vollbild'"
+    (click)="toggleFullscreen()"
+  >
+    <span class="material-icons" aria-hidden="true">{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</span>
+  </button>
+  <button
+    type="button"
+    class="map-square-button"
+    [class.is-active]="isSatellite()"
+    [attr.aria-pressed]="isSatellite()"
+    [attr.aria-label]="isSatellite() ? 'Kartenansicht' : 'Satellitenansicht'"
+    [title]="isSatellite() ? 'Kartenansicht' : 'Satellitenansicht'"
+    (click)="toggleSatellite()"
+  >
+    <span class="material-icons" aria-hidden="true">{{ isSatellite() ? 'map' : 'satellite_alt' }}</span>
+  </button>
+</div>
+
+<!-- unten links: runde Buttons wie in der Reiter-App, solange keine Stall-Karte offen ist -->
+@if (!selectedStable()) {
+<div class="stable-map-nav">
+  @if (homePosition()) {
+    <button type="button" class="map-round-button" aria-label="Meine Sattlerei" title="Meine Sattlerei" (click)="goHome()">
+      <span class="material-icons" aria-hidden="true">home</span>
+    </button>
+  }
+  <button type="button" class="map-round-button" aria-label="Übersicht" title="Übersicht" (click)="showOverview()">
+    <span class="material-icons" aria-hidden="true">my_location</span>
+  </button>
+</div>
+}
+
+@if (locating()) {
+  <span class="stable-map-status" role="status">Ställe werden gesucht …</span>
+}
+
+<!-- Karte mit der Kundschaft des angeklickten Stalls -->
+@if (selectedStable(); as stable) {
+  <section class="stable-card" role="dialog" [attr.aria-label]="'Stall ' + stable.name">
+    <header class="stable-card-header">
+      <span class="stable-card-icon"><span class="stable-pin-horse"></span></span>
+      <div class="stable-card-title">
+        <strong>{{ stable.name }}</strong>
+        <small>
+          @if (stable.place) {
+            {{ stable.place }} ·
+          }
+          {{ plural(stable.customers.length, 'Kunde', 'Kunden') }} · {{ plural(stable.horseCount, 'Pferd', 'Pferde') }}
+        </small>
+      </div>
+      <button type="button" class="stable-card-close" aria-label="Schließen" (click)="closeCard()">
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <ul class="stable-card-list">
+      @for (entry of stable.customers; track entry.customer.id) {
+        <li>
+          <a class="stable-card-customer" [routerLink]="['/customers', entry.customer.id]">
+            <span class="stable-card-avatar">{{ entry.customer.firstName.charAt(0) }}{{ entry.customer.lastName.charAt(0) }}</span>
+            <span class="stable-card-text">
+              <strong>{{ fullName(entry.customer) }}</strong>
+              <small>{{ horseNames(stable, entry.customer.id) }}</small>
+            </span>
+            <span class="material-icons stable-card-arrow" aria-hidden="true">chevron_right</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}
