@@ -1,17 +1,21 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
 import { BackendApiService } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { Customer, fullName } from '../../models/customer.model';
 import {AddCustomer} from './add-customer/add-customer';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import { Horse } from '../../models/horse.model';
+import { StableMapComponent } from '../../shared/stable-map/stable-map';
+import { Stable, StableService, groupStables } from '../../services/stable.service';
 
 @Component({
   selector: 'app-customers-page',
   standalone: true,
-  imports: [AddCustomer, RouterLink, PageHeaderComponent],
+  imports: [AddCustomer, RouterLink, PageHeaderComponent, StableMapComponent],
   templateUrl: './customers.page.html',
   styleUrl: './customers.page.scss',
 })
@@ -19,6 +23,9 @@ export class CustomersPage {
   private readonly data = inject(DataService);
   private readonly api = inject(BackendApiService);
   private readonly personContext = inject(BackendPersonContextService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
 
   readonly query = signal('');
   readonly measurementDateFrom = signal('');
@@ -34,6 +41,27 @@ export class CustomersPage {
   /** Tage aller Messungen je Backend-Kunde, für den Filter "Messungen von/bis". */
   private readonly backendMeasurementDates = signal<Map<string, number[]>>(new Map());
   readonly measurementDatesLoading = signal(false);
+  /** Pferde je Backend-Kunde, für die Kartenansicht (Ställe). */
+  private readonly backendHorses = signal<Map<string, Horse[]>>(new Map());
+
+  /** Liste oder Karte, steht in der URL (?ansicht=karte), damit man aus dem Kundenprofil direkt hinspringen kann. */
+  readonly view = computed<'list' | 'map'>(() => (this.queryParams().get('ansicht') === 'karte' ? 'map' : 'list'));
+  readonly selectedStableKey = computed(() => this.queryParams().get('stall'));
+  /** Ställe, die auf der Karte nicht gefunden wurden (z.B. unbekannte Adresse). */
+  readonly unlocatedStables = signal<string[]>([]);
+  /** Eigene Adresse (Sattlerei), wird mit einem Haus auf der Karte gezeigt. */
+  readonly ownAddress = toSignal(inject(StableService).loadOwnAddress(), { initialValue: null });
+
+  /** Alle Ställe = Pferde der Kundschaft mit derselben Adresse. */
+  readonly stables = computed<Stable[]>(() => {
+    const backendHorses = this.backendHorses();
+    const useBackend = Boolean(this.backendCustomers());
+    return groupStables(this.customers().map(customer => ({
+      customer,
+      horses: useBackend ? backendHorses.get(customer.id) ?? [] : this.data.getHorsesOf(customer.id),
+    })));
+  });
+  readonly stablesLoading = computed(() => Boolean(this.backendCustomers()) && this.measurementDatesLoading());
 
   constructor() {
     // die Messtage der Pferde jedes Kunden laden (nur die Daten der Messgruppen, keine Aufnahmen)
@@ -41,12 +69,14 @@ export class CustomersPage {
       const customers = this.backendCustomers();
       if (!customers?.length) {
         this.backendMeasurementDates.set(new Map());
+        this.backendHorses.set(new Map());
         this.measurementDatesLoading.set(false);
         return;
       }
       this.measurementDatesLoading.set(true);
       const subscription = forkJoin(customers.map(customer =>
         this.api.getHorses(customer.id).pipe(
+          tap(horses => this.backendHorses.update(all => new Map(all).set(customer.id, horses))),
           switchMap(horses => horses.length
             ? forkJoin(horses.map(horse => this.api.getMeasurementDatesOfHorse(horse.id)))
             : of([] as string[][])),
@@ -156,6 +186,31 @@ export class CustomersPage {
 
   avatarUrl(customer: Customer): string | undefined {
     return this.api.personImageUrl(customer.id, customer.imageUpdatedAt);
+  }
+
+  setView(view: 'list' | 'map'): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { ansicht: view === 'map' ? 'karte' : null, stall: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  selectStable(key: string | null): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { ansicht: 'karte', stall: key },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  isUnlocated(stable: Stable): boolean {
+    return this.unlocatedStables().includes(stable.key);
+  }
+
+  plural(count: number, one: string, many: string): string {
+    return `${count} ${count === 1 ? one : many}`;
   }
 
   /** Die Tage aller Messungen eines Kunden (über alle seine Pferde). */

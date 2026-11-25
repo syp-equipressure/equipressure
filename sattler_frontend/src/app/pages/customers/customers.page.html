@@ -7,12 +7,96 @@
         <p class="eyebrow">Verwaltung</p>
         <h2>Kundschaft</h2>
       </div>
-      <button class="primary-btn" type="button" (click)="showForm.set(true)">
-        <span class="material-icons">add</span>
-        Neue Kund*in
-      </button>
+      <div class="heading-actions">
+        <div class="view-toggle" role="group" aria-label="Ansicht">
+          <button type="button" [class.active]="view() === 'list'" [attr.aria-pressed]="view() === 'list'"
+                  (click)="setView('list')">
+            <span class="material-icons">view_list</span>
+            Liste
+          </button>
+          <button type="button" [class.active]="view() === 'map'" [attr.aria-pressed]="view() === 'map'"
+                  (click)="setView('map')">
+            <span class="material-icons">map</span>
+            Karte
+          </button>
+        </div>
+        <button class="primary-btn" type="button" (click)="showForm.set(true)">
+          <span class="material-icons">add</span>
+          Neue Kund*in
+        </button>
+      </div>
     </header>
 
+    @if (view() === 'map') {
+      @if (showForm()) {
+        <app-new-customer-form
+          [backendMode]="!!backendPersonId()"
+          (saved)="addCustomer($event)"
+          (cancelled)="showForm.set(false)"
+        />
+      }
+      @if (backendLoading()) {
+        <div class="load-state" role="status">Kontakte werden geladen …</div>
+      } @else if (backendError()) {
+        <div class="load-state error" role="alert">{{ backendError() }}</div>
+      } @else {
+        <div class="stable-view" #stableView>
+          <app-stable-map
+            class="stable-view-map"
+            [stables]="stables()"
+            [homeAddress]="ownAddress()"
+            [fullscreenTarget]="stableView"
+            [selectedKey]="selectedStableKey()"
+            (selected)="selectStable($event)"
+            (unlocated)="unlocatedStables.set($event)"
+          />
+
+          <aside class="stable-panel" aria-live="polite">
+            <header class="stable-panel-heading">
+              <div>
+                <h3>Ställe</h3>
+                <p>Tippe auf einen Stall, um zu sehen, welche Kund*innen dort Pferde haben.</p>
+              </div>
+            </header>
+            @if (stablesLoading()) {
+              <div class="load-state" role="status">Pferde werden geladen …</div>
+            } @else if (stables().length === 0) {
+              <div class="empty">
+                <span class="material-icons">location_off</span>
+                <strong>Keine Ställe gefunden</strong>
+                <span>Bei den Pferden deiner Kundschaft ist noch keine Adresse hinterlegt.</span>
+              </div>
+            } @else {
+              <ul class="stable-list">
+                @for (stable of stables(); track stable.key) {
+                  <li>
+                    <button
+                      class="stable-list-item"
+                      type="button"
+                      [class.is-selected]="stable.key === selectedStableKey()"
+                      [attr.aria-current]="stable.key === selectedStableKey() ? 'true' : null"
+                      (click)="selectStable(stable.key === selectedStableKey() ? null : stable.key)"
+                    >
+                      <span class="stable-count">{{ stable.customers.length }}</span>
+                      <span class="stable-customer-text">
+                        <strong>{{ stable.name }}</strong>
+                        <small>
+                          {{ stable.place || 'nur PLZ bekannt' }} · {{ plural(stable.horseCount, 'Pferd', 'Pferde') }}
+                          @if (isUnlocated(stable)) {
+                            · nicht auf der Karte
+                          }
+                        </small>
+                      </span>
+                      <span class="material-icons row-arrow">chevron_right</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </aside>
+        </div>
+      }
+    } @else {
     <div class="filters">
       <input
         class="search-input"
@@ -115,6 +199,7 @@
         </div>
       }
     </div>
+    }
     }
   </div>
 </section>

@@ -379,3 +379,225 @@
   }
 
 }
+
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid t.$border;
+  border-radius: 9px;
+  background: t.$bg-card;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: t.$text-soft;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+
+    .material-icons {
+      font-size: 18px;
+    }
+
+    &:hover {
+      color: t.$purple-600;
+    }
+
+    &.active {
+      background: t.$purple-50;
+      color: t.$purple-600;
+      font-weight: 600;
+    }
+  }
+}
+
+.stable-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  overflow: hidden;
+  min-height: 560px;
+  border: 1px solid t.$border;
+  border-radius: 12px;
+  background: t.$bg-card;
+}
+
+.stable-view-map {
+  min-height: 560px;
+  border-right: 1px solid t.$border;
+}
+
+.stable-panel {
+  display: flex;
+  overflow-y: auto;
+  max-height: 560px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.stable-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  h3 {
+    margin: 0;
+    color: t.$text-strong;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 3px 0 0;
+    color: t.$text-soft;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.stable-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li + li {
+    border-top: 1px solid t.$border-soft;
+  }
+}
+
+.stable-list-item {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+
+  &:hover {
+    background: t.$bg-page;
+
+    .row-arrow {
+      color: t.$purple-500;
+    }
+  }
+
+  &.is-selected {
+    background: t.$purple-50;
+
+    .stable-count {
+      background: t.$purple-500;
+      color: #fff;
+    }
+
+    .row-arrow {
+      color: t.$purple-500;
+    }
+  }
+}
+
+.stable-count {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: t.$purple-100;
+  color: t.$purple-700;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stable-customer-text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+
+  strong {
+    overflow: hidden;
+    color: t.$text-strong;
+    font-size: 14px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: t.$text-soft;
+    font-size: 12px;
+  }
+}
+
+.row-arrow {
+  color: t.$text-muted;
+  font-size: 20px;
+}
+
+@media (max-width: 900px) {
+  .heading-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .stable-view {
+    grid-template-columns: 1fr;
+  }
+
+  .stable-view-map {
+    min-height: 360px;
+    border-right: 0;
+    border-bottom: 1px solid t.$border;
+  }
+
+  .stable-panel {
+    max-height: none;
+  }
+}
+
+// Vollbild: Karte und Liste füllen das ganze Fenster
+.stable-view.is-fullscreen {
+  min-height: 100vh;
+  border: 0;
+  border-radius: 0;
+
+  .stable-view-map {
+    min-height: 100vh;
+  }
+
+  .stable-panel {
+    max-height: 100vh;
+  }
+}
+
+@media (max-width: 900px) {
+  // untereinander: Karte nicht ganz so hoch, damit man zur Liste scrollen kann
+  .stable-view.is-fullscreen {
+    overflow-y: auto;
+
+    .stable-view-map {
+      min-height: 65vh;
+    }
+  }
+}
