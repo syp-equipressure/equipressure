@@ -1,0 +1,39 @@
+@use '../../styles/theme' as t;
+@use './stable-pin';
+
+app-stable-mini-map {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 150px;
+  border: 1px solid t.$border;
+  border-radius: 12px;
+  background: t.$bg-panel;
+}
+
+.stable-mini-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: t.$bg-panel;
+
+  .leaflet-control-attribution {
+    font-size: 9px;
+  }
+}
+
+.stable-mini-map-note {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: t.$text-soft;
+  font-size: 12px;
+
+  .material-icons {
+    font-size: 18px;
+  }
+}

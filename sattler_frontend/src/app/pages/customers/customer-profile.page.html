@@ -40,6 +40,16 @@
         <div class="detail-row"><span>Gewicht</span><strong>{{ customer.weightKg }} kg</strong></div>
         <div class="detail-row"><span>Größe</span><strong>{{ customer.heightCm }} cm</strong></div>
       </div>
+      @if (customerStables().length) {
+        <a class="stable-strip" [routerLink]="['/customers']" [queryParams]="mapQueryParams()"
+           aria-label="Stall auf der Karte zeigen">
+          <app-stable-mini-map [stables]="customerStables()" />
+          <span class="mini-map-hint">
+            Auf Karte zeigen
+            <span class="material-icons" aria-hidden="true">open_in_full</span>
+          </span>
+        </a>
+      }
       <a class="horses-overview-link" [routerLink]="['horses']">
         <span class="horse-avatar">
           <img class="horse-symbol" src="/assets/horse-icon.svg" alt="" />

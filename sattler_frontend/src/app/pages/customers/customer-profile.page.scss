@@ -236,3 +236,48 @@
     grid-template-columns: 1fr;
   }
 }
+
+// Länglicher Kartenausschnitt mit den Ställen der Pferde, öffnet die große Karte
+.stable-strip {
+  position: relative;
+  display: block;
+  margin-top: 18px;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+
+  app-stable-mini-map {
+    height: 120px;
+  }
+
+  &:hover app-stable-mini-map,
+  &:focus-visible app-stable-mini-map {
+    border-color: t.$purple-300;
+  }
+
+  &:focus-visible {
+    outline: 3px solid t.$purple-300;
+    outline-offset: 2px;
+  }
+}
+
+.mini-map-hint {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  color: t.$purple-600;
+  font-size: 12px;
+  font-weight: 500;
+
+  .material-icons {
+    font-size: 14px;
+  }
+}

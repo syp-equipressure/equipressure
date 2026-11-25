@@ -8,11 +8,13 @@ import { BackendApiService } from '../../services/backend-api.service';
 import { BackendPersonContextService } from '../../services/backend-person-context.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { AddCustomer } from './add-customer/add-customer';
+import { Stable, StableService } from '../../services/stable.service';
+import { StableMiniMapComponent } from '../../shared/stable-map/stable-mini-map';
 
 @Component({
   selector: 'app-customer-profile-page',
   standalone: true,
-  imports: [PageHeaderComponent, RouterLink, AddCustomer],
+  imports: [PageHeaderComponent, RouterLink, AddCustomer, StableMiniMapComponent],
   templateUrl: './customer-profile.page.html',
   styleUrl: './customer-profile.page.scss',
 })
@@ -40,7 +42,30 @@ export class CustomerProfilePage {
   });
   readonly fullName = fullName;
 
+  private readonly stableService = inject(StableService);
+  private readonly allStables = signal<Stable[] | null>(null);
+  /** Die Ställe, in denen dieser Kunde Pferde hat (für den Kartenausschnitt). */
+  readonly customerStables = computed<Stable[]>(() => {
+    const id = this.customerId();
+    return (this.allStables() ?? []).filter(stable => stable.customers.some(entry => entry.customer.id === id));
+  });
+  /** Bei genau einem Stall öffnet der Kartenausschnitt die große Karte gleich mit diesem Stall. */
+  readonly mapQueryParams = computed(() => {
+    const stables = this.customerStables();
+    return { ansicht: 'karte', stall: stables.length === 1 ? stables[0].key : null };
+  });
+
   constructor() {
+    effect(onCleanup => {
+      this.customerId();
+      this.allStables.set(null);
+      const subscription = this.stableService.loadStables().subscribe({
+        next: stables => this.allStables.set(stables),
+        error: () => this.allStables.set([]),
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+
     effect(onCleanup => {
       const id = this.customerId();
       this.backendCustomerError.set('');
