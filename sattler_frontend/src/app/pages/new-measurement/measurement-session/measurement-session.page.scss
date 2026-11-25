@@ -90,8 +90,11 @@
   margin: 8px -12px 0;
 
   label { display: grid; gap: 3px; }
+  .custom-gait { grid-column: 1 / -1; }
   label span { color: t.$text; font-size: 12px; font-weight: 600; }
-  select {
+  select,
+  input {
+    box-sizing: border-box;
     width: 100%;
     height: 32px;
     border: 1px solid t.$border;

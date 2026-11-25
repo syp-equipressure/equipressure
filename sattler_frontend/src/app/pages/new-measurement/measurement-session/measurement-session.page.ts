@@ -7,7 +7,7 @@ import { PageHeaderComponent } from '../../../shared/page-header/page-header';
 import { DataService } from '../../../services/data.service';
 import { MeasurementSessionService } from '../../../services/measurement-session.service';
 import { formatDuration } from '../../../utils/time-format';
-import { Gait, Side } from '../../../models/measurement.model';
+import { Side, isStandardGait } from '../../../models/measurement.model';
 import { MeasurementSegment } from '../../../models/measurement-session.model';
 import { fullName } from '../../../models/customer.model';
 
@@ -90,9 +90,25 @@ export class MeasurementSessionPage {
   }
 
   updateSegment(segment: MeasurementSegment, field: 'gait' | 'side', value: string): void {
-    const gait = field === 'gait' && isGait(value) ? value : segment.gait;
+    // "Sonstiges" is stored as gait until a name is typed in, like in the Reiter app
+    const gait = field === 'gait' && (isStandardGait(value) || value === OTHER_GAIT) ? value : segment.gait;
     const side = field === 'side' && isSide(value) ? value : segment.side;
     this.sessionService.updateSegment(segment.id, gait, side);
+  }
+
+  /** Value of the select: the gait itself or "Sonstiges" for a gait the user typed in. */
+  gaitSelection(segment: MeasurementSegment): string {
+    return isStandardGait(segment.gait) ? segment.gait : OTHER_GAIT;
+  }
+
+  /** The typed in name of the gait, empty while only "Sonstiges" is selected. */
+  customGait(segment: MeasurementSegment): string {
+    return isStandardGait(segment.gait) || segment.gait === OTHER_GAIT ? '' : segment.gait;
+  }
+
+  updateCustomGait(segment: MeasurementSegment, value: string): void {
+    // not trimmed while typing, otherwise a space between two words would be removed at once
+    this.sessionService.updateSegment(segment.id, value.trim() ? value : OTHER_GAIT, segment.side);
   }
 
   startSegment(segment: MeasurementSegment): void {
@@ -166,9 +182,7 @@ export class MeasurementSessionPage {
   readonly formatDuration = formatDuration;
 }
 
-function isGait(value: string): value is Gait {
-  return value === 'Schritt' || value === 'Trab' || value === 'Galopp';
-}
+const OTHER_GAIT = 'Sonstiges';
 
 function isSide(value: string): value is Side {
   return value === 'Links' || value === 'Rechts';

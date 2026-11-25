@@ -339,7 +339,8 @@ export class MeasurementsPage implements OnDestroy {
   }
 
   selectGait(value: string): void {
-    const gait = isGait(value) ? value : '';
+    // also gaits typed in for "Sonstiges" (e.g. Sprung), so every gait of the measurement can be chosen
+    const gait = this.gaitOptions().includes(value) ? value : '';
     this.activeGait.set(gait);
     const side = this.activeSide();
     if (side && !this.sideOptions().includes(side)) {
@@ -584,10 +585,6 @@ function frameAt(segments: MeasurementSegmentResult[], phase: number): number[][
     return frames[lower].map((row, y) => row.map((value, x) => value * (1 - t) + frames[upper][y][x] * t));
   }
   return null;
-}
-
-function isGait(value: string): value is Gait {
-  return value === 'Schritt' || value === 'Trab' || value === 'Galopp';
 }
 
 function isSide(value: string): value is Side {

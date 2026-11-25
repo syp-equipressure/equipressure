@@ -123,6 +123,8 @@ export class MeasurementSessionService {
     const segments = [...new Map(
       session.segments
         .filter(segment => segment.completed)
+        // a typed in gait ("Sonstiges") may still have spaces at the end
+        .map(segment => ({ ...segment, gait: segment.gait.trim() }))
         .map(segment => [`${segment.gait}|${segment.side}`, segment] as const),
     ).values()];
     const date = new Date();

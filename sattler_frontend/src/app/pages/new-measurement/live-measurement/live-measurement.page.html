@@ -31,6 +31,9 @@
             @for (option of ['Schritt', 'Trab', 'Galopp']; track option) {
               <button type="button" [class.active]="gait() === option" disabled>{{ option }}</button>
             }
+            @if (!isStandardGait(gait())) {
+              <button type="button" class="active" disabled>{{ gait() }}</button>
+            }
           </div>
         </section>
 

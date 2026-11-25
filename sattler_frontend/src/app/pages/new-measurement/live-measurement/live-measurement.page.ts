@@ -6,7 +6,7 @@ import { PressureHeatmapComponent } from '../../../shared/pressure-heatmap/press
 import { MeasurementSessionService } from '../../../services/measurement-session.service';
 import { DataService } from '../../../services/data.service';
 import { DeviceConnectionService } from '../../../services/device-connection.service';
-import { Gait, Side } from '../../../models/measurement.model';
+import { Gait, Side, isStandardGait } from '../../../models/measurement.model';
 import { formatDuration } from '../../../utils/time-format';
 
 @Component({
@@ -37,6 +37,7 @@ export class LiveMeasurementPage implements OnDestroy {
   readonly phase = signal(0);
   readonly elapsedSeconds = computed(() => Math.floor(this.phase()));
   readonly gait = signal<Gait>('Schritt');
+  readonly isStandardGait = isStandardGait;
   readonly side = signal<Side>('Links');
   /** True if the values come from the device, otherwise a clearly marked simulation runs. */
   readonly isLive = this.connection.status() === 'connected';

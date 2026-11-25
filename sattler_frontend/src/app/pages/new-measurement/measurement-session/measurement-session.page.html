@@ -55,10 +55,11 @@
                 <div class="segment-selectors">
                   <label>
                     <span>Gangart</span>
-                    <select [value]="segment.gait" (change)="updateSegment(segment, 'gait', $any($event.target).value)">
+                    <select [value]="gaitSelection(segment)" (change)="updateSegment(segment, 'gait', $any($event.target).value)">
                       <option value="Schritt">Schritt</option>
                       <option value="Trab">Trab</option>
                       <option value="Galopp">Galopp</option>
+                      <option value="Sonstiges">Sonstiges</option>
                     </select>
                   </label>
                   <label>
@@ -68,6 +69,18 @@
                       <option value="Rechts">Rechts</option>
                     </select>
                   </label>
+                  @if (gaitSelection(segment) === 'Sonstiges') {
+                    <label class="custom-gait">
+                      <span>Name der Gangart</span>
+                      <input
+                        type="text"
+                        maxlength="40"
+                        placeholder="z.B. Tölt"
+                        [value]="customGait(segment)"
+                        (input)="updateCustomGait(segment, $any($event.target).value)"
+                      />
+                    </label>
+                  }
                 </div>
                 <button type="button" class="start-segment" (click)="startSegment(segment)">
                   Teilmessung starten

@@ -1,4 +1,13 @@
-export type Gait = 'Schritt' | 'Trab' | 'Galopp';
+/** The usual gaits, every other gait is a free text ("Sonstiges" in the apps, e.g. Sprung or Bergauf). */
+export const STANDARD_GAITS = ['Schritt', 'Trab', 'Galopp'] as const;
+export type StandardGait = (typeof STANDARD_GAITS)[number];
+/** A standard gait or the name the user typed in for "Sonstiges" */
+export type Gait = StandardGait | (string & {});
+
+export function isStandardGait(value: string): value is StandardGait {
+  return (STANDARD_GAITS as readonly string[]).includes(value);
+}
+
 export type Side = 'Links' | 'Rechts';
 
 export interface Measurement {
